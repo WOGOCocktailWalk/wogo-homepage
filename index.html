@@ -6,7 +6,8 @@
 <title>WOGO Cocktail Walk</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { background: #FAF6F2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #1a1410; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; overflow: hidden; }
+  html, body { background: #FAF6F2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #1a1410; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; overflow-x: hidden; scrollbar-width: none; -ms-overflow-style: none; }
+  html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display: none; }
   img { max-width: 100%; display: block; }
   a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid #E2641E; outline-offset: 2px; border-radius: 6px; }
   .w-hero { position: relative; width: 100%; min-height: 440px; overflow: hidden; background: #1a1410; color: #fff; }
@@ -153,7 +154,7 @@
     <div class="w-hero-overline">Amsterdam · Utrecht · Rotterdam · Groningen</div>
     <h1 data-i18n="hero_h1">The cocktail walk that turns a city into a story.</h1>
     <p data-i18n="hero_p">Your own route through the city's hidden bars. 3 cocktails (or mocktails), all reservations handled. Just show up. <strong>From €29.95 per person.</strong></p>
-    <a href="https://www.wogococktailwalk.com/book-online" target="_top" class="w-hero-cta w-navlink" data-i18n="hero_cta">Choose your route →</a>
+    <a href="#cities" class="w-hero-cta w-scroll" data-i18n="hero_cta">Choose your route →</a>
     <div class="w-hero-trust"><span data-i18n="t_google"><span class="w-star">★</span> 4.4 on Google</span><span>·</span><span data-i18n="t_guests">80,000+ guests served</span><span>·</span><span data-i18n="t_partner">Partner of Gemeente Rotterdam</span></div>
   </div>
 </section>
@@ -263,7 +264,7 @@
 <section class="w-section dark w-pad w-final">
   <h2 data-i18n="final_h2">Ready to walk?</h2>
   <p data-i18n="final_p">7 routes · 4 cities · from €29.95 per person · the city's waiting</p>
-  <a href="https://www.wogococktailwalk.com/book-online" target="_top" class="w-final-btn w-navlink" data-i18n="final_btn">Pick your route →</a>
+  <a href="#cities" class="w-final-btn w-scroll" data-i18n="final_btn">Pick your route →</a>
 </section>
 
 <script>
