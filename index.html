@@ -366,7 +366,7 @@
     });
   });
   function reportHeight() {
-    var h = Math.ceil(document.documentElement.scrollHeight);
+    var h = Math.ceil(document.documentElement.scrollHeight) + 24;
     try { window.parent.postMessage({ type: 'wogoHeight', height: h }, '*'); } catch (e) {}
   }
   window.addEventListener('load', reportHeight);
