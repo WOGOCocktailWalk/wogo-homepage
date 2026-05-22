@@ -57,9 +57,9 @@
   .w-citycard-flag { position: absolute; top: 10px; right: 10px; background: #d6452f; color: #fff; font-size: 9.5px; font-weight: 800; letter-spacing: 0.06em; padding: 5px 9px; border-radius: 999px; text-transform: uppercase; z-index: 3; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
   .w-citycard-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.35) 100%); z-index: 1; }
   .w-citycard-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 5px; flex: 1 1 auto; }
-  .w-citycard-route { font-size: 15px; font-weight: 800; color: #1a1410; line-height: 1.25; }
+  .w-citycard-route { font-size: 15px; font-weight: 800; color: #1a1410; line-height: 1.25; overflow-wrap: break-word; word-break: normal; hyphens: none; }
   .w-citycard-rows { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
-  .w-citycard-row { font-size: 12px; color: #5C2A14; font-weight: 600; line-height: 1.3; }
+  .w-citycard-row { font-size: 12px; color: #5C2A14; font-weight: 600; line-height: 1.35; overflow-wrap: break-word; word-break: normal; hyphens: none; }
   .w-citycard-price { font-size: 19px; font-weight: 900; color: #1a1410; margin-top: auto; padding-top: 12px; }
   .w-citycard-price small { font-size: 11.5px; font-weight: 600; color: #5C2A14; }
   .w-citycard-urgency { font-size: 11px; font-weight: 800; color: #C8551A; margin-top: 6px; letter-spacing: 0.02em; }
@@ -117,20 +117,21 @@
   .w-final-btn { display: inline-block; background: #E2641E; color: #fff; text-decoration: none; padding: 16px 36px; border-radius: 999px; font-size: 15px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(226,100,30,0.4); transition: transform 0.2s, background 0.2s; }
   .w-final-btn:hover { background: #C8551A; transform: translateY(-2px); }
   @media (max-width: 720px) {
-    .w-hero { min-height: 400px; } .w-hero-content { min-height: 400px; padding: 40px 18px; }
-    .w-hero-overline { font-size: 10px; letter-spacing: 0.18em; margin-bottom: 12px; }
-    .w-hero h1 { font-size: 26px; margin-bottom: 10px; } .w-hero p { font-size: 13.5px; margin-bottom: 16px; }
-    .w-hero-trust { font-size: 10.5px; gap: 4px 10px; margin-top: 12px; }
+    .w-hero { min-height: 460px; } .w-hero-content { min-height: 460px; padding: 54px 22px; }
+    .w-hero-overline { font-size: 10px; letter-spacing: 0.16em; margin-bottom: 16px; }
+    .w-hero h1 { font-size: 25px; line-height: 1.14; margin-bottom: 14px; } .w-hero p { font-size: 13.5px; line-height: 1.55; margin-bottom: 20px; }
+    .w-hero-trust { font-size: 10.5px; gap: 6px 10px; margin-top: 16px; }
     .w-hero-trust span:nth-child(2), .w-hero-trust span:nth-child(4) { display: none; }
     .w-mocktail { font-size: 12px; padding: 11px 14px; line-height: 1.4; }
     .w-section { padding: 40px 0; } .w-pad { padding-left: 16px; padding-right: 16px; }
     .w-head { margin-bottom: 20px; }
     .w-scroller { padding: 4px 14px 14px; gap: 12px; } .w-scroller::after { content: ""; flex: 0 0 6px; }
-    .w-citycard { flex: 0 0 78%; max-width: 230px; }
+    .w-citycard { flex: 0 0 82%; max-width: 280px; }
     .w-citycard-img { aspect-ratio: 3/2; }
-    .w-citycard-body { padding: 13px 14px 15px; gap: 4px; }
-    .w-citycard-route { font-size: 14px; }
-    .w-citycard-row { font-size: 11.5px; }
+    .w-citycard-body { padding: 15px 16px 17px; gap: 5px; }
+    .w-citycard-route { font-size: 14.5px; }
+    .w-citycard-rows { gap: 6px; }
+    .w-citycard-row { font-size: 12px; line-height: 1.45; }
     .w-citycard-price { font-size: 17px; padding-top: 9px; }
     .w-citycard-btn { font-size: 11px; padding: 11px 4px; letter-spacing: 0.02em; }
     .w-arrow { display: none; }
@@ -153,7 +154,7 @@
   <div class="w-hero-content">
     <div class="w-hero-overline">Amsterdam · Utrecht · Rotterdam · Groningen</div>
     <h1 data-i18n="hero_h1">A self-guided cocktail walk through the city's best bars.</h1>
-    <p data-i18n="hero_p">Your own route through handpicked bars, every reservation arranged for you. Enjoy 3 cocktails (or mocktails) along the way — just show up. <strong>From €29.95 per person.</strong></p>
+    <p data-i18n="hero_p">Your own route through handpicked bars — reservations arranged, 3 cocktails along the way. Just show up. <strong>From €29.95 per person.</strong></p>
     <a href="#cities" class="w-hero-cta w-scroll" data-i18n="hero_cta">Choose your route →</a>
     <div class="w-hero-trust"><span data-i18n="t_google"><span class="w-star">★</span> 4.4 on Google</span><span>·</span><span data-i18n="t_guests">80,000+ guests served</span><span>·</span><span data-i18n="t_partner">Partner of Gemeente Rotterdam</span></div>
   </div>
@@ -271,7 +272,7 @@
 (function () {
   var NL = {
     hero_h1: "Een self-guided cocktail walk langs de leukste bars van de stad.",
-    hero_p: "Jouw eigen route langs zorgvuldig geselecteerde bars, alle reserveringen voor je geregeld. Geniet onderweg van 3 cocktails (of mocktails) — jij komt alleen opdagen. <strong>Vanaf €29,95 per persoon.</strong>",
+    hero_p: "Jouw eigen route langs geselecteerde bars — reserveringen geregeld, 3 cocktails onderweg. Jij komt alleen opdagen. <strong>Vanaf €29,95 per persoon.</strong>",
     hero_cta: "Kies je route →",
     t_google: "<span class=\"w-star\">★</span> 4.4 op Google",
     t_guests: "80.000+ gasten",
@@ -348,6 +349,13 @@
     a.addEventListener('click', function (e) { var t = document.querySelector(a.getAttribute('href')); if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
   });
   document.querySelectorAll('.w-citycard-img-inner').forEach(function (im) { im.onerror = function () { this.style.display = 'none'; }; });
+  var faqItems = document.querySelectorAll('.w-faq details');
+  faqItems.forEach(function (d) {
+    d.addEventListener('toggle', function () {
+      if (d.open) { faqItems.forEach(function (o) { if (o !== d) o.open = false; }); }
+      reportHeight();
+    });
+  });
   document.querySelectorAll('.w-filter-btn').forEach(function (b) {
     b.addEventListener('click', function () {
       var city = b.getAttribute('data-city');
