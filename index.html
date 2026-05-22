@@ -365,8 +365,15 @@
       sc.scrollBy({ left: btn.classList.contains('w-arrow-left') ? -step : step, behavior: 'smooth' });
     });
   });
-  function reportHeight() { var h = document.body.scrollHeight; try { window.parent.postMessage({ type: 'setHeight', height: h }, '*'); } catch (e) {} try { window.parent.postMessage('height:' + h, '*'); } catch (e) {} }
-  window.addEventListener('load', reportHeight); window.addEventListener('resize', reportHeight); setTimeout(reportHeight, 1200);
+  function reportHeight() {
+    var h = Math.ceil(document.documentElement.scrollHeight);
+    try { window.parent.postMessage({ type: 'wogoHeight', height: h }, '*'); } catch (e) {}
+  }
+  window.addEventListener('load', reportHeight);
+  window.addEventListener('resize', reportHeight);
+  if (window.ResizeObserver) { try { new ResizeObserver(reportHeight).observe(document.body); } catch (e) {} }
+  document.querySelectorAll('img').forEach(function (im) { im.addEventListener('load', reportHeight); });
+  [400, 1000, 2000, 3500].forEach(function (t) { setTimeout(reportHeight, t); });
 })();
 </script>
 
