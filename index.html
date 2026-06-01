@@ -104,6 +104,12 @@
   .w-gift p { font-size: 14.5px; line-height: 1.55; color: #5C2A14; font-weight: 500; max-width: 480px; }
   .w-gift-btn { flex: 0 0 auto; background: #5C2A14; color: #F5C9A8; text-decoration: none; padding: 16px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; transition: transform 0.2s, background 0.2s; }
   .w-gift-btn:hover { background: #1a1410; transform: translateY(-2px); }
+  .w-group-wrap { max-width: 920px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; }
+  .w-group-text { flex: 1 1 340px; }
+  .w-group h2 { font-size: clamp(24px, 3vw, 34px); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; margin: 4px 0 8px; color: #1a1410; }
+  .w-group p { font-size: 14.5px; line-height: 1.55; color: #5C2A14; font-weight: 500; max-width: 480px; }
+  .w-group-btn { flex: 0 0 auto; background: #E2641E; color: #fff; text-decoration: none; padding: 16px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(226,100,30,0.35); transition: transform 0.2s, background 0.2s; }
+  .w-group-btn:hover { background: #C8551A; transform: translateY(-2px); }
   .w-faq-wrap { max-width: 740px; margin: 0 auto; }
   .w-faq details { border-bottom: 1px solid rgba(92,42,20,0.15); }
   .w-faq summary { padding: 16px 0; font-size: 15px; font-weight: 800; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; color: #1a1410; transition: color 0.2s; }
@@ -142,6 +148,9 @@
     .w-stats-grid { grid-template-columns: 1fr; gap: 14px; }
     .w-review { flex: 0 0 82%; max-width: 300px; }
     .w-gift-wrap { text-align: center; justify-content: center; } .w-gift p { margin: 0 auto; }
+    .w-group-text { flex: 1 1 100%; }
+    .w-group-btn { width: 100%; max-width: 320px; }
+    .w-group-wrap { text-align: center; justify-content: center; } .w-group p { margin: 0 auto; }
     .w-faq summary { padding: 14px 0; font-size: 14.5px; }
   }
 </style>
@@ -184,6 +193,17 @@
       <div class="w-citycard" data-city="amsterdam"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="https://static.wixstatic.com/media/2a3b9e_99fbb075fa914c2fbb49e09e2301db3d~mv2.jpg/v1/fill/w_640,h_400,al_c,q_80,enc_auto/2a3b9e_99fbb075fa914c2fbb49e09e2301db3d~mv2.jpg" alt="Amsterdam Noord - City Centre"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">Amsterdam</div><div class="w-citycard-flag" data-i18n="flag_new">New</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="c6_route">Amsterdam Route 1 — Noord · City Centre</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="c6_theme">★ Theme: Iconic Amsterdam</div><div class="w-citycard-row" data-i18n="drinks3">🍸 3 cocktails or mocktails</div><div class="w-citycard-row" data-i18n="c6_day">📅 Thu–Sat · start 5.30–8pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-price">€29,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="https://www.wogococktailwalk.com/booking-calendar/wogo-cocktail-walk-route-1" target="_top" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book Now</a><a href="https://www.wogococktailwalk.com/amsterdam-cocktailwalk-route1" target="_top" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">Info</a></div></div></div>
       <div class="w-citycard" data-city="groningen"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="https://static.wixstatic.com/media/2a3b9e_368e90d57d1c41c4a11817877c92deb4~mv2.png/v1/fill/w_640,h_400,al_c,q_80,enc_auto/2a3b9e_368e90d57d1c41c4a11817877c92deb4~mv2.png" alt="Groningen"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">Groningen</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="c7_route">Groningen — Bobby's Gin Walk</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="c7_theme">★ Theme: Best Bars</div><div class="w-citycard-row" data-i18n="drinks3">🍸 3 cocktails or mocktails</div><div class="w-citycard-row" data-i18n="c7_day">📅 Wed–Sat</div><div class="w-citycard-row" data-i18n="time3">🕐 3 hours</div></div><div class="w-citycard-price">€29,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="https://www.wogococktailwalk.com/booking-calendar/groningen-cocktail-walk" target="_top" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book Now</a><a href="https://www.wogococktailwalk.com/groningen-cocktail-walk" target="_top" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">Info</a></div></div></div>
     </div>
+  </div>
+</section>
+
+<section class="w-section peach w-pad w-group">
+  <div class="w-group-wrap">
+    <div class="w-group-text">
+      <div class="w-eyebrow" data-i18n="group_eyebrow" style="text-align:left;margin-bottom:6px;">For groups</div>
+      <h2 data-i18n="group_h2">Bachelorettes, birthdays &amp; team uitjes</h2>
+      <p data-i18n="group_p">Planning something bigger? We coordinate the bars, the timing and the tables — you bring the crew. Perfect for groups of 8 to 30.</p>
+    </div>
+    <a href="https://www.wogococktailwalk.com/groupbookings" target="_top" class="w-group-btn w-navlink" data-i18n="group_btn">Plan your group walk →</a>
   </div>
 </section>
 
@@ -271,6 +291,18 @@
 
 <script>
 (function () {
+  (function () {
+    var keep = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','fbclid','gclid','msclkid'];
+    var carry = {};
+    try { var sp = new URLSearchParams(window.location.search); keep.forEach(function (k) { var v = sp.get(k); if (v) carry[k] = v; }); } catch (e) {}
+    try {
+      if (document.referrer) {
+        var rp = new URL(document.referrer).searchParams;
+        keep.forEach(function (k) { if (!carry[k]) { var v = rp.get(k); if (v) carry[k] = v; } });
+      }
+    } catch (e) {}
+    if (Object.keys(carry).length) window.__wogoCarry = carry;
+  })();
   var NL = {
     hero_h1: "Een self-guided cocktail walk langs de leukste bars van de stad.",
     hero_p: "Jouw eigen route langs geselecteerde bars — reserveringen geregeld, 3 cocktails onderweg. Jij komt alleen opdagen. <strong>Vanaf €29,95 per persoon.</strong>",
@@ -309,6 +341,9 @@
     r4q: "“Echt een goed idee — perfect om verborgen bars te ontdekken waar je anders nooit was binnengestapt. We hebben veel lol gehad!”",
     r4n: "GetYourGuide-reiziger", r4m: "Duitsland · Geverifieerde boeking",
     press_eyebrow: "Bekend van", partners_eyebrow: "Onze schenkpartners", partners_h2: "Geschonken door de beste merken ter wereld",
+    group_eyebrow: "Voor groepen", group_h2: "Vrijgezellenfeesten, verjaardagen &amp; teamuitjes",
+    group_p: "Iets groters plannen? Wij regelen de bars, de tijden en de tafels — jullie nemen het gezelschap mee. Perfect voor groepen van 8 tot 30.",
+    group_btn: "Plan jullie groepswandeling →",
     gift_eyebrow: "Het perfecte cadeau", gift_h2: "WOGO Cadeaubonnen",
     gift_p: "Geef een avond waar ze weken over napraten. Geldig voor elke route, in elke stad — direct per e-mail geleverd. Gemaakt voor verjaardagen, vrijgezellenfeesten en grote bedankjes.",
     gift_btn: "Koop een cadeaubon →",
@@ -333,9 +368,14 @@
     document.querySelectorAll('.w-citycard-btn, .w-gift-btn, .w-navlink').forEach(function (a) {
       if (!a.getAttribute('data-href')) a.setAttribute('data-href', a.getAttribute('href') || '');
       var base = a.getAttribute('data-href');
-      if (lang === 'nl' && base.indexOf('//www.wogococktailwalk.com/') !== -1 && base.indexOf('/nl/') === -1) {
-        a.href = base.replace('wogococktailwalk.com/', 'wogococktailwalk.com/nl/');
-      } else { a.href = base; }
+      var url = base;
+      if (lang === 'nl' && url.indexOf('//www.wogococktailwalk.com/') !== -1 && url.indexOf('/nl/') === -1) {
+        url = url.replace('wogococktailwalk.com/', 'wogococktailwalk.com/nl/');
+      }
+      if (window.__wogoCarry) {
+        try { var u = new URL(url); Object.keys(window.__wogoCarry).forEach(function (k) { u.searchParams.set(k, window.__wogoCarry[k]); }); url = u.toString(); } catch (e) {}
+      }
+      a.href = url;
     });
     document.documentElement.lang = lang;
     document.querySelectorAll('.w-lang button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-lang') === lang); });
