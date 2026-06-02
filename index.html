@@ -19,6 +19,8 @@
   .w-lang button.active { background: #E2641E; opacity: 1; }
   .w-hero-content { position: relative; z-index: 2; min-height: 440px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 48px 24px; max-width: 920px; margin: 0 auto; }
   .w-hero-overline { font-size: 11.5px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #F5C9A8; margin-bottom: 16px; }
+  .w-hero-brand { font-size: clamp(18px, 2.6vw, 26px); font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #F5C9A8; line-height: 1; margin-bottom: 8px; }
+  .w-hero-cities { font-size: 10.5px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(245,201,168,0.78); margin-bottom: 18px; }
   .w-hero h1 { font-size: clamp(28px, 4.6vw, 52px); font-weight: 900; line-height: 1.05; letter-spacing: -0.015em; margin-bottom: 14px; max-width: 16ch; text-shadow: 0 2px 16px rgba(0,0,0,0.45); }
   .w-hero p { font-size: clamp(14px, 1.3vw, 18px); font-weight: 500; line-height: 1.5; max-width: 540px; margin-bottom: 22px; opacity: 0.95; }
   .w-hero-cta { display: inline-block; background: #E2641E; color: #fff; text-decoration: none; padding: 15px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(226,100,30,0.4); transition: transform 0.2s, background 0.2s; }
@@ -126,6 +128,8 @@
   @media (max-width: 720px) {
     .w-hero { min-height: 460px; } .w-hero-content { min-height: 460px; padding: 54px 22px; }
     .w-hero-overline { font-size: 10px; letter-spacing: 0.16em; margin-bottom: 16px; }
+    .w-hero-brand { font-size: 17px; letter-spacing: 0.20em; margin-bottom: 6px; }
+    .w-hero-cities { font-size: 9.5px; letter-spacing: 0.18em; margin-bottom: 14px; }
     .w-hero h1 { font-size: 25px; line-height: 1.14; margin-bottom: 14px; } .w-hero p { font-size: 13.5px; line-height: 1.55; margin-bottom: 20px; }
     .w-hero-trust { font-size: 10.5px; gap: 6px 10px; margin-top: 16px; }
     .w-hero-trust span:nth-child(2), .w-hero-trust span:nth-child(4) { display: none; }
@@ -162,7 +166,8 @@
   <div class="w-hero-overlay"></div>
   <div class="w-lang"><button data-lang="en" class="active">EN</button><button data-lang="nl">NL</button></div>
   <div class="w-hero-content">
-    <div class="w-hero-overline">WOGO Cocktail Walk · Amsterdam · Utrecht · Rotterdam · Groningen</div>
+    <div class="w-hero-brand">The Cocktail Walk</div>
+    <div class="w-hero-cities">Amsterdam · Utrecht · Rotterdam · Groningen</div>
     <h1 data-i18n="hero_h1">Three cocktails. Three bars. One unforgettable night.</h1>
     <p data-i18n="hero_p">A self-guided cocktail walk through the city's hidden bars. Reservations sorted, drinks waiting — you just show up. <strong>From €29,95 per person.</strong></p>
     <a href="#cities" class="w-hero-cta w-scroll" data-i18n="hero_cta">Choose your route →</a>
