@@ -430,20 +430,13 @@
   var auto = (navigator.language || '').toLowerCase().indexOf('nl') === 0 || /\/(nl)(\/|$|\?)/.test(document.referrer || '');
   setLang(saved || (auto ? 'nl' : 'en'));
   document.querySelectorAll('.w-lang button').forEach(function (b) { b.addEventListener('click', function () { setLang(b.getAttribute('data-lang')); }); });
-  // Jump to the target section. iOS Safari silently ignores SMOOTH scrollIntoView
-  // when the page runs inside a cross-origin iframe (the Wix embed), so use the
-  // instant, legacy-style scrollIntoView(true) which works there. On desktop /
-  // standalone we still get a smooth glide first, then snap-align as a fallback.
+  // Smooth-scroll the page to the target section.
   document.querySelectorAll('a.w-scroll').forEach(function (a) {
     a.addEventListener('click', function (e) {
       var t = document.querySelector(a.getAttribute('href'));
       if (!t) return;
       e.preventDefault();
-      try { t.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (err) {}
-      // Instant alignment — reliable inside iframes incl. iOS Safari.
-      setTimeout(function () {
-        try { t.scrollIntoView(true); } catch (e2) { window.location.hash = a.getAttribute('href'); }
-      }, 120);
+      t.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
   document.querySelectorAll('.w-citycard-img-inner').forEach(function (im) { im.onerror = function () { this.style.display = 'none'; }; });
