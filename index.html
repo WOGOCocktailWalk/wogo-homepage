@@ -430,23 +430,13 @@
   var auto = (navigator.language || '').toLowerCase().indexOf('nl') === 0 || /\/(nl)(\/|$|\?)/.test(document.referrer || '');
   setLang(saved || (auto ? 'nl' : 'en'));
   document.querySelectorAll('.w-lang button').forEach(function (b) { b.addEventListener('click', function () { setLang(b.getAttribute('data-lang')); }); });
-  // Sealed (cross-origin) iframe + touch device = Wix mobile embed, where a
-  // framed page cannot scroll its host. There, open the full homepage at the
-  // target section so the tap always reaches the routes. Everywhere else
-  // (desktop, or the page viewed on its own) keep the normal smooth scroll.
-  var EMBEDDED = window.self !== window.top;
-  var TOUCH = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+  // Smooth-scroll to the target section. This scrolls the host page even when
+  // the homepage is embedded in a (cross-origin) iframe such as the Wix site.
   document.querySelectorAll('a.w-scroll').forEach(function (a) {
     a.addEventListener('click', function (e) {
-      var sel = a.getAttribute('href');
-      var t = document.querySelector(sel);
+      var t = document.querySelector(a.getAttribute('href'));
       if (!t) return;
       e.preventDefault();
-      if (EMBEDDED && TOUCH) {
-        try { window.top.location.href = 'https://wogococktailwalk.github.io/wogo-homepage/' + sel; }
-        catch (err) { window.location.href = sel; }
-        return;
-      }
       t.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
