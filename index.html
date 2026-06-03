@@ -435,6 +435,14 @@
   // ask the host page to scroll via postMessage — keeps the visitor on the site.
   // (Requires the tiny WOGO scroll listener in the Wix site's Custom Code.)
   var EMBEDDED = window.self !== window.top;
+  // When embedded in the Wix page (sized tall enough to fit this whole homepage),
+  // turn OFF this page's own vertical scrolling — so there's no inner scrollbar
+  // and nothing to get trapped in; all scrolling happens on the Wix page itself.
+  // Standalone view keeps normal scrolling.
+  if (EMBEDDED) {
+    document.documentElement.style.overflowY = 'hidden';
+    document.body.style.overflowY = 'hidden';
+  }
   document.querySelectorAll('a.w-scroll').forEach(function (a) {
     a.addEventListener('click', function (e) {
       var t = document.querySelector(a.getAttribute('href'));
