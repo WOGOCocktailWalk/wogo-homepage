@@ -430,23 +430,13 @@
   var auto = (navigator.language || '').toLowerCase().indexOf('nl') === 0 || /\/(nl)(\/|$|\?)/.test(document.referrer || '');
   setLang(saved || (auto ? 'nl' : 'en'));
   document.querySelectorAll('.w-lang button').forEach(function (b) { b.addEventListener('click', function () { setLang(b.getAttribute('data-lang')); }); });
-  // Scroll to the target section. On a PHONE inside a (cross-origin) iframe such
-  // as the Wix embed, the page cannot scroll its host — iOS/Android silently
-  // ignore it — so open the full homepage at the target section instead, which
-  // always works. On desktop, or when viewed on its own, keep the smooth scroll.
-  var EMBEDDED = window.self !== window.top;
-  var MOBILE = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  // Smooth-scroll the page to the target section (stays on the site, never
+  // navigates away).
   document.querySelectorAll('a.w-scroll').forEach(function (a) {
     a.addEventListener('click', function (e) {
-      var sel = a.getAttribute('href');
-      var t = document.querySelector(sel);
+      var t = document.querySelector(a.getAttribute('href'));
       if (!t) return;
       e.preventDefault();
-      if (EMBEDDED && MOBILE) {
-        try { window.top.location.href = 'https://wogococktailwalk.github.io/wogo-homepage/' + sel; }
-        catch (err) { window.location.href = sel; }
-        return;
-      }
       t.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
