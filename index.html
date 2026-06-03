@@ -442,7 +442,9 @@
       e.preventDefault();
       if (EMBEDDED) {
         var offset = t.getBoundingClientRect().top + (window.pageYOffset || 0);
-        try { window.parent.postMessage({ wogoScrollTo: offset }, '*'); } catch (err) {}
+        var msg = { wogoScrollTo: offset };
+        try { window.parent.postMessage(msg, '*'); } catch (err) {}
+        try { if (window.top && window.top !== window.parent) window.top.postMessage(msg, '*'); } catch (e3) {}
       } else {
         t.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
