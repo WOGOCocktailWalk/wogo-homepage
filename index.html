@@ -430,14 +430,22 @@
   var auto = (navigator.language || '').toLowerCase().indexOf('nl') === 0 || /\/(nl)(\/|$|\?)/.test(document.referrer || '');
   setLang(saved || (auto ? 'nl' : 'en'));
   document.querySelectorAll('.w-lang button').forEach(function (b) { b.addEventListener('click', function () { setLang(b.getAttribute('data-lang')); }); });
-  // Smooth-scroll the page to the target section (stays on the site, never
-  // navigates away).
+  // Scroll to the target section. Standalone: scroll directly. Embedded (e.g.
+  // inside the Wix page): a phone won't let a framed page scroll its host, so
+  // ask the host page to scroll via postMessage — keeps the visitor on the site.
+  // (Requires the tiny WOGO scroll listener in the Wix site's Custom Code.)
+  var EMBEDDED = window.self !== window.top;
   document.querySelectorAll('a.w-scroll').forEach(function (a) {
     a.addEventListener('click', function (e) {
       var t = document.querySelector(a.getAttribute('href'));
       if (!t) return;
       e.preventDefault();
-      t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (EMBEDDED) {
+        var offset = t.getBoundingClientRect().top + (window.pageYOffset || 0);
+        try { window.parent.postMessage({ wogoScrollTo: offset }, '*'); } catch (err) {}
+      } else {
+        t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     });
   });
   document.querySelectorAll('.w-citycard-img-inner').forEach(function (im) { im.onerror = function () { this.style.display = 'none'; }; });
