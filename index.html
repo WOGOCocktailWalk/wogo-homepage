@@ -102,6 +102,10 @@
   .w-step p { font-size: 13px; line-height: 1.5; font-weight: 500; color: rgba(245,201,168,0.85); max-width: 230px; margin: 0 auto; }
   .w-how .w-head h2 { color: #fff; }
   .w-how .w-eyebrow { color: rgba(245,201,168,0.7); }
+  .w-howstrip { display: flex; align-items: stretch; justify-content: center; gap: 10px; max-width: 920px; margin: 0 auto; }
+  .w-hs-item { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 4px 10px; }
+  .w-hs-ico { font-size: 26px; line-height: 1; }
+  .w-hs-tx { font-size: 13.5px; font-weight: 700; line-height: 1.35; color: #F5C9A8; max-width: 15ch; }
   .w-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: 900px; margin: 0 auto 12px; text-align: center; }
   .w-stat-num { font-size: clamp(26px, 3.4vw, 38px); font-weight: 900; color: #1a1410; line-height: 1; margin-bottom: 4px; }
   .w-stat-num .w-star { color: #5C2A14; }
@@ -199,8 +203,6 @@
   </div>
 </section>
 
-<div class="w-mocktail" data-i18n="mocktail">🍸 Every route works in mocktails too. 0% alcohol, 100% of the night.</div>
-
 <section class="w-section" id="cities">
   <div class="w-head w-pad"><h2 data-i18n="cities_h2">Choose your route</h2><p data-i18n="cities_p">6 routes · 4 cities · walk it your way · from €29.95 per person</p><div class="w-hint" data-i18n="cities_hint">swipe to browse all 6 routes →</div></div>
   <div class="w-filter w-pad">
@@ -235,33 +237,13 @@
   </div>
 </section>
 
-<section class="w-section brown w-pad w-how">
-  <div class="w-head"><div class="w-eyebrow" data-i18n="how_eyebrow">How it works</div><h2 data-i18n="how_h2">Four steps to an unforgettable night out</h2></div>
-  <div class="w-how-steps">
-    <div class="w-step"><div class="w-step-num">01</div><h3 data-i18n="s1_h">Choose your route</h3><p data-i18n="s1_p">Pick your city and route. Each one features 3 handpicked cocktail bars, chosen for quality and atmosphere.</p></div>
-    <div class="w-step"><div class="w-step-num">02</div><h3 data-i18n="s2_h">Book your date &amp; time</h3><p data-i18n="s2_p">Pick a date and time. We sort the bars and reservations — you plan nothing.</p></div>
-    <div class="w-step"><div class="w-step-num">03</div><h3 data-i18n="s3_h">Get your digital map</h3><p data-i18n="s3_p">Right after booking you receive your route: bar order, timings, addresses and simple instructions.</p></div>
-    <div class="w-step"><div class="w-step-num">04</div><h3 data-i18n="s4_h">Show up &amp; enjoy</h3><p data-i18n="s4_p">Show up. Three bars, three drinks, your pace — all included.</p></div>
+<section class="w-section brown w-pad w-how" style="padding:38px 0;">
+  <div class="w-eyebrow" data-i18n="how_eyebrow" style="text-align:center;">How it works</div>
+  <div class="w-howstrip" style="margin-top:18px;">
+    <div class="w-hs-item"><div class="w-hs-ico">🗺️</div><div class="w-hs-tx" data-i18n="hs_1">Pick your route &amp; date</div></div>
+    <div class="w-hs-item"><div class="w-hs-ico">🍸</div><div class="w-hs-tx" data-i18n="hs_2">We pick your three bars</div></div>
+    <div class="w-hs-item"><div class="w-hs-ico">🚶</div><div class="w-hs-tx" data-i18n="hs_3">Walk the city, your pace</div></div>
   </div>
-</section>
-
-<section class="w-section peach w-pad" id="whats-included">
-  <div class="w-head"><div class="w-eyebrow" data-i18n="incl_eyebrow">What's included</div><h2 data-i18n="incl_h2">All planned. All included.</h2></div>
-  <ul style="list-style:none;max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px;">
-    <li style="font-size:15px;font-weight:600;color:#1a1410;"><span style="color:#5C2A14;font-weight:900;margin-right:10px;">✓</span><span data-i18n="incl_1">3 cocktails (or mocktails) at handpicked bars</span></li>
-    <li style="font-size:15px;font-weight:600;color:#1a1410;"><span style="color:#5C2A14;font-weight:900;margin-right:10px;">✓</span><span data-i18n="incl_2">Tables reserved — walk straight in, no waiting</span></li>
-    <li style="font-size:15px;font-weight:600;color:#1a1410;"><span style="color:#5C2A14;font-weight:900;margin-right:10px;">✓</span><span data-i18n="incl_3">Your digital route — bars, order and times in your inbox</span></li>
-    <li style="font-size:15px;font-weight:600;color:#1a1410;"><span style="color:#5C2A14;font-weight:900;margin-right:10px;">✓</span><span data-i18n="incl_4">Self-guided — your night, your pace, no tour group</span></li>
-  </ul>
-</section>
-
-<section class="w-section w-pad">
-  <div class="w-stats-grid">
-    <div><div class="w-stat-num">80,000+</div><div class="w-stat-label" data-i18n="stat1_label">Guests since 2020</div></div>
-    <div><div class="w-stat-num"><span class="w-star">★</span> 4.4</div><div class="w-stat-label" data-i18n="stat2_label">Google rating</div></div>
-    <div><div class="w-stat-num">6</div><div class="w-stat-label" data-i18n="stat3_label">Routes in 4 cities</div></div>
-  </div>
-  <div class="w-stats-partner" data-i18n="stats_partner">Official partner of <strong>Gemeente Rotterdam</strong></div>
 </section>
 
 <section class="w-section peach w-reviews">
@@ -278,7 +260,7 @@
   </div>
 </section>
 
-<section class="w-section w-pad" style="text-align:center;">
+<section class="w-section w-pad" style="text-align:center;padding:30px 24px;">
   <div class="w-eyebrow" data-i18n="press_eyebrow">As featured in</div>
   <div class="w-press-list" style="margin-top:14px;">
     <a href="https://amsterdamcocktailweek.nl/wogo-cocktail-walk-explore-amsterdam-through-cocktails/" target="_top" class="w-chip">Amsterdam Cocktail Week</a>
@@ -286,14 +268,6 @@
     <a href="https://www.rotterdamcentrum.nl/en/discover/food-and-drinks/cocktails-drinken-rotterdam/cocktail-walk-rotterdam" target="_top" class="w-chip">#RotterdamCentrum</a>
     <a href="https://www.uitagendarotterdam.nl/alle-artikelen/ontdek-rotterdam-met-de-wogo-cocktail-walk/" target="_top" class="w-chip">Uitagenda Rotterdam</a>
     <a href="https://www.rotterdampas.nl/inspiratie/reviews/een-goede-cocktail-zo-lekker" target="_top" class="w-chip">Rotterdampas</a>
-  </div>
-</section>
-
-<section class="w-section brown w-pad w-partners" style="text-align:center;">
-  <div class="w-eyebrow" data-i18n="partners_eyebrow">Our pour partners</div>
-  <div class="w-head" style="margin-bottom:20px;"><h2 data-i18n="partners_h2">Poured by the world's best brands</h2></div>
-  <div class="w-partners-grid">
-    <span class="w-chip">The London Essence Co.</span><span class="w-chip">Damrak Gin</span><span class="w-chip">Gin 1689</span><span class="w-chip">Lillet</span><span class="w-chip">Three Cents</span><span class="w-chip">Passoã</span><span class="w-chip">Coca-Cola</span><span class="w-chip">Bols Amsterdam</span><span class="w-chip">Bacardí</span><span class="w-chip">Bandoeng 22</span><span class="w-chip">Beefeater</span><span class="w-chip">Lyre's</span><span class="w-chip">Hendrick's Gin</span><span class="w-chip">Leonista</span><span class="w-chip">Tequila Patrón</span><span class="w-chip">Bobby's Gin</span><span class="w-chip">Smith &amp; Sinclair</span><span class="w-chip">Absolut</span><span class="w-chip">Crystal Head Vodka</span><span class="w-chip">aidsfonds</span>
   </div>
 </section>
 
@@ -308,31 +282,12 @@
   </div>
 </section>
 
-<section class="w-section w-pad" id="perfect-for" style="text-align:center;">
-  <div class="w-eyebrow" data-i18n="pf_eyebrow">Perfect for</div>
-  <h2 class="w-head" style="font-size:clamp(22px,3vw,32px);font-weight:900;text-transform:uppercase;letter-spacing:-0.01em;margin:8px 0 20px;" data-i18n="pf_h2">Every kind of night out</h2>
-  <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;max-width:760px;margin:0 auto;">
-    <span class="w-chip" data-i18n="pf_1">Date night</span>
-    <span class="w-chip" data-i18n="pf_2">Bachelorette</span>
-    <span class="w-chip" data-i18n="pf_3">Birthday</span>
-    <span class="w-chip" data-i18n="pf_4">Team outing</span>
-    <span class="w-chip" data-i18n="pf_5">Friends in town</span>
-    <span class="w-chip" data-i18n="pf_6">Bar-crawl alternative</span>
-    <span class="w-chip" data-i18n="pf_7">Solo night</span>
-    <span class="w-chip" data-i18n="pf_8">Group of friends</span>
-  </div>
-</section>
-
 <section class="w-section alt w-pad w-faq">
   <div class="w-head"><h2 data-i18n="faq_h2">Good to know</h2><p data-i18n="faq_sub">The details, before you book</p></div>
   <div class="w-faq-wrap">
-    <details><summary data-i18n="q1">Do I need to book in advance or can I show up?</summary><div class="w-faq-body" data-i18n="a1">Yes — book ahead. We reserve all 3 tables for you, so there's no waiting and no walk-ins.</div></details>
     <details><summary data-i18n="q2">Is there a guide or is it really self-guided?</summary><div class="w-faq-body" data-i18n="a2">Truly self-guided. There's no guide and no group. You receive your route in your inbox right after booking, then walk it at your own pace. Most guests finish in 3–4 hours.</div></details>
     <details><summary data-i18n="q3">What's included in the price?</summary><div class="w-faq-body" data-i18n="a3">At each of 3 hand-picked bars: your pick of 3 cocktails or mocktails, table reserved, plus a digital route map. No app needed.</div></details>
     <details><summary data-i18n="q4">I don't drink alcohol — can I still join?</summary><div class="w-faq-body" data-i18n="a4">Absolutely. Mocktails (alcohol-free cocktails) are available at every bar on every route, so non-drinkers can enjoy the full experience too.</div></details>
-    <details><summary data-i18n="q5">Is it suitable for groups, bachelorettes, or birthdays?</summary><div class="w-faq-body" data-i18n="a5">Yes — most of our guests come in groups of 2–8. Bigger groups (8+) welcome too; just contact us before booking so we can coordinate timings with the bars. Gift cards are a great fit for celebrations.</div></details>
-    <details><summary data-i18n="q6">Can I reschedule if my plans change?</summary><div class="w-faq-body" data-i18n="a6">Yes — reschedule free up to 24 hours before. Within 24 hours, tables are locked in, so bookings are final.</div></details>
-    <details><summary data-i18n="q7">Do I need to be 18?</summary><div class="w-faq-body" data-i18n="a7">Yes — Dutch law requires all guests to be 18+ to drink alcohol. Bring ID, just in case. Under-18s are welcome on the mocktail version when accompanied by an adult — contact us to arrange.</div></details>
   </div>
 </section>
 
@@ -378,6 +333,7 @@
     c6_route: "Amsterdam Route 1 — Noord · Centrum", c6_theme: "★ Thema: Iconisch Amsterdam", c6_day: "📅 do–za · start 17.30–20.00",
     c7_route: "Groningen — Bobby's Gin Walk", c7_theme: "★ Thema: Beste bars", c7_day: "📅 wo–za · start 17.00–20.00",
     how_eyebrow: "Hoe het werkt", how_h2: "In vier stappen naar een onvergetelijke avond uit",
+    hs_1: "Kies je route &amp; datum", hs_2: "Wij kiezen jouw drie bars", hs_3: "Loop de stad, jouw tempo",
     s1_h: "Kies je route", s1_p: "Kies je stad en route. Elke route heeft 3 zorgvuldig geselecteerde cocktailbars, gekozen op kwaliteit en sfeer.",
     s2_h: "Boek je datum &amp; tijd", s2_p: "Kies een dag en tijd. Wij regelen de bars en reserveringen — jij plant niets.",
     s3_h: "Ontvang je digitale kaart", s3_p: "Direct na het boeken ontvang je je route: volgorde van de bars, tijden, adressen en simpele instructies.",
