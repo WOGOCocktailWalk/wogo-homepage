@@ -183,13 +183,21 @@
     .w-group-btn { width: 100%; max-width: 320px; }
     .w-group-wrap { text-align: center; justify-content: center; } .w-group p { margin: 0 auto; }
     .w-faq summary { padding: 14px 0; font-size: 14.5px; }
+    /* mobile booking ease: one-line filter scroll + big full-width Book button */
+    .w-filter { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; justify-content: flex-start; scrollbar-width: none; }
+    .w-filter::-webkit-scrollbar { display: none; }
+    .w-filter-btn { flex: 0 0 auto; }
+    .w-citycard-actions { flex-direction: column; gap: 8px; }
+    .w-citycard-btn-primary { width: 100%; min-height: 50px; padding: 15px 10px; font-size: 13px; }
+    .w-citycard-btn-secondary { width: 100%; background: transparent; border: none; color: #5C2A14; text-decoration: underline; text-underline-offset: 3px; padding: 4px; font-size: 12px; }
+    .w-mid-cta-btn { width: 100%; max-width: 340px; }
   }
 </style>
 </head>
 <body>
 
 <section class="w-hero">
-  <video class="w-hero-video" autoplay muted loop playsinline preload="metadata" poster="https://images.ctfassets.net/ujjnpzbu47yu/4IzPikgLAwAzqXSje4kWke/1d5b462811b343b5add6933792a31275/DSC_4746.webp?w=1600&fm=jpg&q=80"><source src="https://video.wixstatic.com/video/2a3b9e_e8d70b9030194e548b6bee0d953d309f/720p/mp4/file.mp4" type="video/mp4"><source src="https://videos.ctfassets.net/ujjnpzbu47yu/4M4kTYcdisSrvAH7XwiIOi/68f2e268faca8bc93275a4bf5327ad7b/hero-background-image.webm" type="video/webm"></video>
+  <video class="w-hero-video" autoplay muted loop playsinline preload="metadata" poster="https://images.ctfassets.net/ujjnpzbu47yu/4IzPikgLAwAzqXSje4kWke/1d5b462811b343b5add6933792a31275/DSC_4746.webp?w=900&fm=webp&q=72"><source src="https://video.wixstatic.com/video/2a3b9e_e8d70b9030194e548b6bee0d953d309f/720p/mp4/file.mp4" type="video/mp4"><source src="https://videos.ctfassets.net/ujjnpzbu47yu/4M4kTYcdisSrvAH7XwiIOi/68f2e268faca8bc93275a4bf5327ad7b/hero-background-image.webm" type="video/webm"></video>
   <div class="w-hero-overlay"></div>
   <div class="w-lang"><button data-lang="en" class="active">EN</button><button data-lang="nl">NL</button></div>
   <div class="w-hero-content">
@@ -197,9 +205,9 @@
     <div class="w-hero-cities">Amsterdam · Utrecht · Rotterdam · Groningen</div>
     <h1 data-i18n="hero_h1">Three cocktails. Three bars. One unforgettable night.</h1>
     <p data-i18n="hero_p">A self-guided cocktail walk through the city's hidden bars. Reservations sorted, drinks waiting — you just show up. <strong>From €29,95 per person.</strong></p>
+    <div class="w-hero-trust" style="margin-top:0;margin-bottom:18px;"><span data-i18n="t_google"><span class="w-star">★</span> 4.4 on Google</span><span>·</span><span data-i18n="t_guests">80,000+ guests served</span><span>·</span><span data-i18n="t_partner">Partner of Gemeente Rotterdam</span></div>
     <a href="#cities" class="w-hero-cta w-scroll" data-i18n="hero_cta">Choose your route →</a>
     <p data-i18n="hero_tagline" style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.80);margin-top:10px;margin-bottom:0;max-width:480px;">You bring the company. We've planned the rest.</p>
-    <div class="w-hero-trust"><span data-i18n="t_google"><span class="w-star">★</span> 4.4 on Google</span><span>·</span><span data-i18n="t_guests">80,000+ guests served</span><span>·</span><span data-i18n="t_partner">Partner of Gemeente Rotterdam</span></div>
   </div>
 </section>
 
@@ -261,6 +269,8 @@
   </div>
   <div class="w-pad" style="text-align:center;margin-top:18px;"><a href="https://www.google.com/maps/search/WOGO+Cocktail+Walk" target="_top" data-i18n="rev_tp" style="display:inline-block;font-size:12.5px;font-weight:800;color:#5C2A14;text-decoration:underline;text-underline-offset:3px;">Read all our reviews on Google →</a></div>
 </section>
+
+<div class="w-pad" style="text-align:center;padding:30px 16px 4px;"><a href="#cities" class="w-final-btn w-mid-cta-btn w-scroll" data-i18n="mid_cta">Book your walk → from €29,95</a></div>
 
 <section class="w-section w-pad" style="text-align:center;padding:30px 24px;">
   <div class="w-eyebrow" data-i18n="press_eyebrow">As featured in</div>
@@ -345,6 +355,7 @@
     stats_partner: "Officiële partner van <strong>Gemeente Rotterdam</strong>",
     rev_h2: "Wat onze gasten zeggen", rev_sub: "★ echte woorden van echte gasten ★",
     rev_tp: "Lees al onze reviews op Google →",
+    mid_cta: "Boek je walk → vanaf €29,95",
     r1q: "“Super makkelijk — naar binnen gelopen, de reservering stond op 'WOGO and GO!' De middelste bar was top, met heerlijke betaalbare Thaise gerechten. Ik boek meteen Route 2. TOP. 7 sterren.”",
     r1n: "Klup-uitje — groep van 6", r1m: "Google review",
     r2q: "“Heel leuk om met vriendinnen te doen! Goede organisatie. Ze kozen leuke cocktailbars voor ons in Amsterdam, reageerden snel en waren super vriendelijk. Een aanrader!”",
