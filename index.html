@@ -164,7 +164,7 @@
     .w-section { padding: 40px 0; } .w-pad { padding-left: 16px; padding-right: 16px; }
     .w-head { margin-bottom: 20px; }
     .w-scroller { padding: 4px 14px 14px; gap: 12px; } .w-scroller::after { content: ""; flex: 0 0 6px; }
-    .w-citycard { flex: 0 0 82%; max-width: 280px; }
+    .w-citycard { flex: 0 0 calc(100vw - 56px); max-width: 360px; }
     .w-citycard-img { aspect-ratio: 3/2; }
     .w-citycard-body { padding: 15px 16px 17px; gap: 5px; }
     .w-citycard-route { font-size: 14.5px; }
@@ -191,6 +191,9 @@
     .w-citycard-btn-primary { width: 100%; min-height: 50px; padding: 15px 10px; font-size: 13px; }
     .w-citycard-btn-secondary { width: 100%; background: transparent; border: none; color: #5C2A14; text-decoration: underline; text-underline-offset: 3px; padding: 4px; font-size: 12px; }
     .w-mid-cta-btn { width: 100%; max-width: 340px; }
+    /* comfortable thumb tap targets */
+    .w-filter-btn { min-height: 40px; }
+    .w-faq summary { min-height: 52px; }
   }
 </style>
 </head>
@@ -244,6 +247,7 @@
     </div>
     <a href="https://www.wogococktailwalk.com/groupbookings" target="_top" class="w-group-btn w-navlink" data-i18n="group_btn">Plan your group walk →</a>
   </div>
+  <div style="text-align:center;margin-top:18px;"><a href="#cities" class="w-scroll" data-i18n="group_solo" style="color:#5C2A14;font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px;">→ Or book a solo walk from €29,95</a></div>
 </section>
 
 <section class="w-section brown w-pad w-how" style="padding:38px 0;">
@@ -356,6 +360,7 @@
     rev_h2: "Wat onze gasten zeggen", rev_sub: "★ echte woorden van echte gasten ★",
     rev_tp: "Lees al onze reviews op Google →",
     mid_cta: "Boek je walk → vanaf €29,95",
+    group_solo: "→ Of boek een solo-walk vanaf €29,95",
     r1q: "“Super makkelijk — naar binnen gelopen, de reservering stond op 'WOGO and GO!' De middelste bar was top, met heerlijke betaalbare Thaise gerechten. Ik boek meteen Route 2. TOP. 7 sterren.”",
     r1n: "Klup-uitje — groep van 6", r1m: "Google review",
     r2q: "“Heel leuk om met vriendinnen te doen! Goede organisatie. Ze kozen leuke cocktailbars voor ons in Amsterdam, reageerden snel en waren super vriendelijk. Een aanrader!”",
