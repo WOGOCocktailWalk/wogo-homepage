@@ -39,7 +39,7 @@
   .w-lang { position: absolute; top: 12px; right: 14px; z-index: 5; display: flex; gap: 2px; background: rgba(0,0,0,0.4); border-radius: 999px; padding: 3px; }
   .w-lang button { background: none; border: none; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; padding: 5px 11px; border-radius: 999px; cursor: pointer; opacity: 0.65; transition: opacity 0.2s, background 0.2s; }
   .w-lang button.active { background: #E2641E; opacity: 1; }
-  .w-hero-content { position: relative; z-index: 2; min-height: 440px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 48px 24px; max-width: 920px; margin: 0 auto; }
+  .w-hero-content { position: relative; z-index: 2; min-height: 440px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 104px 24px 56px; max-width: 920px; margin: 0 auto; }
   .w-hero-overline { font-size: 11.5px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #F5C9A8; margin-bottom: 16px; }
   .w-hero-brand { font-size: clamp(18px, 2.6vw, 26px); font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #F5C9A8; line-height: 1; margin-bottom: 8px; }
   .w-hero-cities { font-size: 10.5px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(245,201,168,0.78); margin-bottom: 18px; }
@@ -152,8 +152,123 @@
   .w-final p { font-size: 14.5px; font-weight: 500; color: #F5C9A8; margin-bottom: 24px; }
   .w-final-btn { display: inline-block; background: #E2641E; color: #fff; text-decoration: none; padding: 16px 36px; border-radius: 999px; font-size: 15px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(226,100,30,0.4); transition: transform 0.2s, background 0.2s; }
   .w-final-btn:hover { background: #C8551A; transform: translateY(-2px); }
+
+  /* ===== SITE NAV styles (reusable — keep self-contained) ===== */
+  html { scroll-padding-top: 76px; }           /* so anchor jumps clear the fixed nav */
+  #cities { scroll-margin-top: 76px; }
+  .w-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; transition: background 0.3s ease, box-shadow 0.3s ease; }
+  /* Legibility scrim: a soft dark gradient fading to transparent, so the transparent
+     nav reads clearly over both bright and dark parts of the hero video the moment
+     the page loads. Sits behind the nav content; fades out once the nav goes solid. */
+  .w-nav::before { content: ""; position: absolute; inset: 0 0 -22px 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(26,20,16,0.62) 0%, rgba(26,20,16,0.34) 55%, rgba(26,20,16,0) 100%); opacity: 1; transition: opacity 0.3s ease; }
+  .w-nav.scrolled::before, .w-nav.menu-open::before { opacity: 0; }
+  .w-nav.w-nav-embedded { position: absolute; }  /* inside the Wix iframe the host scrolls, so don't pin */
+  .w-nav-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 14px; padding: 14px 24px; }
+  /* Logo + wordmark lockup */
+  .w-nav-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #F5C9A8; text-decoration: none; transition: color 0.3s ease; text-shadow: 0 1px 10px rgba(0,0,0,0.45); }
+  .w-nav-logo { height: 34px; width: auto; display: block; flex: 0 0 auto; }
+  .w-nav-word { line-height: 1; }
+  /* solid state after scroll */
+  .w-nav.scrolled, .w-nav.menu-open { background: #FAF6F2; }
+  .w-nav.scrolled { box-shadow: 0 2px 14px rgba(26,20,16,0.10); }
+  .w-nav.scrolled .w-nav-brand, .w-nav.menu-open .w-nav-brand { color: #5C2A14; text-shadow: none; }
+  .w-nav-links { list-style: none; display: flex; align-items: center; gap: 2px; margin: 0 auto 0 22px; }
+  .w-nav-links > li { position: relative; }
+  .w-nav-links a, .w-nav-links button { font-family: inherit; }
+  .w-nav-links a { display: inline-flex; align-items: center; font-size: 13.5px; font-weight: 700; letter-spacing: 0.02em; color: #fff; text-decoration: none; padding: 8px 12px; border-radius: 8px; transition: color 0.2s, background 0.2s; text-shadow: 0 1px 8px rgba(0,0,0,0.5); }
+  .w-nav-links a:hover { background: rgba(255,255,255,0.14); }
+  .w-nav.scrolled .w-nav-links a { color: #1a1410; text-shadow: none; }
+  .w-nav.scrolled .w-nav-links a:hover { background: rgba(92,42,20,0.08); }
+  /* Routes dropdown */
+  .w-nav-drop { display: flex; align-items: center; }
+  .w-nav-caret { font-size: 10px; color: #fff; margin: 0 4px 0 -4px; transition: transform 0.2s, color 0.3s; pointer-events: none; text-shadow: 0 1px 8px rgba(0,0,0,0.5); }
+  .w-nav.scrolled .w-nav-caret { text-shadow: none; }
+  .w-nav.scrolled .w-nav-caret { color: #1a1410; }
+  .w-nav-drop:hover .w-nav-caret, .w-nav-drop:focus-within .w-nav-caret { transform: rotate(180deg); }
+  .w-nav-menu { position: absolute; top: 100%; left: 0; margin: 0; padding: 8px; min-width: 190px; list-style: none; display: flex; flex-direction: column; gap: 2px; background: #fff; border-radius: 12px; box-shadow: 0 12px 30px rgba(26,20,16,0.18); opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s; }
+  .w-nav-drop:hover .w-nav-menu, .w-nav-drop:focus-within .w-nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+  .w-nav-menu a { color: #1a1410; font-weight: 700; padding: 10px 14px; border-radius: 8px; }
+  .w-nav-menu a:hover, .w-nav.scrolled .w-nav-menu a:hover { background: #F5C9A8; }
+  /* Country grouping header inside the Routes dropdown — only shown once there is
+     more than one country, so today's single-country menu stays clean. */
+  .w-nav-country { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #8a7066; padding: 10px 14px 4px; }
+  .w-nav-country + .w-nav-country, li.w-nav-country ~ li.w-nav-country { margin-top: 4px; }
+  /* Mobile overlay country label (multi-country only) */
+  .w-nav-ov-country { width: 100%; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #8a7066; margin: 6px 0 2px; }
+  /* Footer routes links container (data-driven) */
+  .w-footer-routes { display: flex; flex-direction: column; gap: 10px; }
+  .w-footer-routes .w-footer-country { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,201,168,0.55); margin-top: 6px; }
+  .w-nav-right { display: flex; align-items: center; gap: 10px; }
+  .w-nav .w-lang { position: static; top: auto; right: auto; }  /* reuse hero pill styling, un-pin it */
+  .w-nav-cta { background: #E2641E; color: #fff; text-decoration: none; padding: 11px 20px; border-radius: 999px; font-size: 13px; font-weight: 800; letter-spacing: 0.03em; white-space: nowrap; box-shadow: 0 4px 14px rgba(226,100,30,0.40); transition: transform 0.2s, background 0.2s; }
+  .w-nav-cta:hover { background: #C8551A; color: #fff; transform: translateY(-2px); }
+  .w-nav-cta:active { transform: scale(0.96); }
+  /* hamburger */
+  .w-nav-burger { display: none; flex-direction: column; justify-content: center; gap: 5px; width: 44px; height: 44px; padding: 11px; background: none; border: none; cursor: pointer; }
+  .w-nav-burger span { display: block; width: 100%; height: 2px; border-radius: 2px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.45); transition: transform 0.25s ease, opacity 0.2s ease, background 0.3s ease; }
+  .w-nav.scrolled .w-nav-burger span { background: #1a1410; box-shadow: none; }
+  .w-nav-burger.open span { background: #1a1410; }
+  .w-nav-burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .w-nav-burger.open span:nth-child(2) { opacity: 0; }
+  .w-nav-burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+  /* mobile full-screen menu */
+  .w-nav-overlay { position: fixed; inset: 0; z-index: 49; display: none; flex-direction: column; padding: 86px 24px 40px; background: #FAF6F2; overflow-y: auto; }
+  .w-nav-overlay.open { display: flex; }
+  .w-nav-overlay-links { list-style: none; display: flex; flex-direction: column; }
+  .w-nav-ov-link { display: block; font-size: 22px; font-weight: 800; color: #1a1410; text-decoration: none; padding: 15px 6px; border-bottom: 1px solid rgba(92,42,20,0.12); }
+  .w-nav-ov-link:hover { color: #C8551A; }
+  .w-nav-ov-cities { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 6px 16px; border-bottom: 1px solid rgba(92,42,20,0.12); }
+  .w-nav-ov-cities a { font-size: 14px; font-weight: 700; color: #5C2A14; text-decoration: none; background: #F5C9A8; padding: 11px 18px; border-radius: 999px; }
+  .w-nav-overlay .w-nav-cta { margin-top: 26px; text-align: center; font-size: 15px; padding: 16px 24px; }
+
+  /* ===== SITE FOOTER styles (reusable — keep self-contained) ===== */
+  .w-footer { background: #5C2A14; color: #F5C9A8; padding: 56px 0 0; }
+  .w-footer-inner { max-width: 1100px; margin: 0 auto; }
+  .w-footer-top { display: flex; flex-wrap: wrap; gap: 40px; padding-bottom: 34px; }
+  .w-footer-brand { flex: 1 1 260px; max-width: 340px; }
+  .w-footer-word { font-size: 26px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #F5C9A8; margin-bottom: 14px; }
+  .w-footer-tag { font-size: 15px; line-height: 1.55; font-weight: 500; color: rgba(245,201,168,0.82); }
+  .w-footer-cols { flex: 2 1 480px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
+  .w-footer-col { display: flex; flex-direction: column; gap: 10px; }
+  .w-footer-col h3 { font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #fff; margin-bottom: 4px; }
+  .w-footer-col a, .w-footer-col span { font-size: 13.5px; font-weight: 500; line-height: 1.4; color: rgba(245,201,168,0.85); text-decoration: none; transition: color 0.2s; }
+  .w-footer-col a:hover { color: #fff; }
+  .w-footer-trust { border-top: 1px solid rgba(245,201,168,0.18); padding: 20px 16px; text-align: center; font-size: 13px; font-weight: 700; color: rgba(245,201,168,0.92); }
+  .w-footer-socials { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; padding: 0 16px 22px; }
+  .w-footer-socials a { display: inline-flex; align-items: baseline; gap: 6px; font-size: 13px; font-weight: 700; color: #F5C9A8; text-decoration: none; border: 1.5px solid rgba(245,201,168,0.28); padding: 8px 16px; border-radius: 999px; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+  .w-footer-socials a:hover { background: #F5C9A8; color: #5C2A14; border-color: #F5C9A8; }
+  .w-footer-socials a span { font-size: 12px; font-weight: 500; opacity: 0.72; }
+  .w-footer-socials a:hover span { opacity: 1; }
+  .w-footer-legal { border-top: 1px solid rgba(245,201,168,0.18); padding: 18px 16px 26px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; font-size: 11.5px; color: rgba(245,201,168,0.66); }
+  .w-footer-legal-links { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .w-footer-legal-links a { color: rgba(245,201,168,0.66); text-decoration: none; }
+  .w-footer-legal-links a:hover { color: #fff; text-decoration: underline; }
+  /* nav: collapse to hamburger */
+  @media (max-width: 900px) {
+    .w-nav-links { display: none; }
+    .w-nav-burger { display: flex; }
+    .w-nav-inner { padding: 12px 16px; gap: 10px; }
+    .w-nav-right { margin-left: auto; }
+  }
+  @media (max-width: 420px) {
+    .w-nav-brand { font-size: 17px; letter-spacing: 0.14em; gap: 8px; }
+    .w-nav-logo { height: 28px; }
+    .w-nav-cta { padding: 9px 13px; font-size: 11px; }
+    .w-nav-inner { gap: 7px; padding: 11px 12px; }
+    .w-nav .w-lang { padding: 2px; }
+    .w-nav .w-lang button { padding: 5px 8px; font-size: 10px; }
+  }
+  /* footer: stack columns */
   @media (max-width: 720px) {
-    .w-hero { min-height: 460px; } .w-hero-content { min-height: 460px; padding: 54px 22px; }
+    .w-footer { padding-top: 44px; }
+    .w-footer-top { flex-direction: column; gap: 30px; }
+    .w-footer-cols { flex-basis: 100%; grid-template-columns: 1fr 1fr; gap: 26px 20px; }
+    .w-footer-legal { justify-content: center; text-align: center; }
+    .w-footer-legal-links { justify-content: center; width: 100%; }
+  }
+
+  @media (max-width: 720px) {
+    .w-hero { min-height: 460px; } .w-hero-content { min-height: 460px; padding: 96px 22px 48px; }
     .w-hero-overline { font-size: 10px; letter-spacing: 0.16em; margin-bottom: 16px; }
     .w-hero-brand { font-size: 17px; letter-spacing: 0.20em; margin-bottom: 6px; }
     .w-hero-cities { font-size: 9.5px; letter-spacing: 0.18em; margin-bottom: 14px; }
@@ -199,12 +314,61 @@
 </head>
 <body>
 
+<!-- ===== SITE NAV (reusable — keep self-contained) ===== -->
+<nav class="w-nav" id="wNav" aria-label="Primary">
+  <div class="w-nav-inner">
+    <!-- Logo + wordmark lockup → back to top (aria-label names the link, so the
+         image is decorative alt="" to avoid the screen reader saying "WOGO" twice) -->
+    <a href="#" class="w-nav-brand w-scroll-top" aria-label="WOGO — back to top">
+      <img class="w-nav-logo" src="wogo-logo.png" alt="" width="34" height="34">
+      <span class="w-nav-word">WOGO</span>
+    </a>
+
+    <!-- Desktop links -->
+    <ul class="w-nav-links">
+      <li class="w-nav-drop">
+        <a href="#cities" class="w-scroll" data-i18n="nav_routes">Routes</a>
+        <span class="w-nav-caret" aria-hidden="true">▾</span>
+        <!-- Routes popover — populated from the WOGO_ROUTES data structure in JS so
+             new countries/cities are a one-line data edit. TODO: point to internal
+             /routes/<city> when built. -->
+        <ul class="w-nav-menu" id="wNavMenu"></ul>
+      </li>
+      <li><a href="#" data-i18n="nav_how">How it works</a></li> <!-- TODO: future How it works page/section -->
+      <li><a href="https://www.wogococktailwalk.com/groupbookings" target="_top" class="w-navlink" data-i18n="nav_groups">Groups</a></li>
+      <li><a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-navlink" data-i18n="nav_gift">Gift cards</a></li>
+      <li><a href="#" data-i18n="nav_about">About</a></li> <!-- TODO: future About page -->
+    </ul>
+
+    <!-- Right cluster: single EN/NL toggle (moved here from the hero) + primary CTA + mobile burger -->
+    <div class="w-nav-right">
+      <div class="w-lang"><button data-lang="en" class="active">EN</button><button data-lang="nl">NL</button></div>
+      <a href="#cities" class="w-nav-cta w-scroll" data-i18n="nav_cta">Book now</a>
+      <button class="w-nav-burger" id="wNavBurger" aria-label="Open menu" aria-controls="wNavOverlay" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+
+  <!-- Mobile full-screen menu -->
+  <div class="w-nav-overlay" id="wNavOverlay" aria-hidden="true">
+    <ul class="w-nav-overlay-links">
+      <li><a href="#cities" class="w-scroll w-nav-ov-link" data-i18n="nav_routes">Routes</a></li>
+      <!-- City chips populated from WOGO_ROUTES (see JS) -->
+      <li class="w-nav-ov-cities" id="wNavOvCities"></li>
+      <li><a href="#" class="w-nav-ov-link" data-i18n="nav_how">How it works</a></li> <!-- TODO -->
+      <li><a href="https://www.wogococktailwalk.com/groupbookings" target="_top" class="w-navlink w-nav-ov-link" data-i18n="nav_groups">Groups</a></li>
+      <li><a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-navlink w-nav-ov-link" data-i18n="nav_gift">Gift cards</a></li>
+      <li><a href="#" class="w-nav-ov-link" data-i18n="nav_about">About</a></li> <!-- TODO -->
+    </ul>
+    <a href="#cities" class="w-nav-cta w-scroll" data-i18n="nav_cta">Book now</a>
+  </div>
+</nav>
+<!-- ===== /SITE NAV ===== -->
+
 <section class="w-hero">
   <video class="w-hero-video" autoplay muted loop playsinline preload="metadata" poster="https://images.ctfassets.net/ujjnpzbu47yu/4IzPikgLAwAzqXSje4kWke/1d5b462811b343b5add6933792a31275/DSC_4746.webp?w=900&fm=webp&q=72"><source src="https://video.wixstatic.com/video/2a3b9e_e8d70b9030194e548b6bee0d953d309f/720p/mp4/file.mp4" type="video/mp4"><source src="https://videos.ctfassets.net/ujjnpzbu47yu/4M4kTYcdisSrvAH7XwiIOi/68f2e268faca8bc93275a4bf5327ad7b/hero-background-image.webm" type="video/webm"></video>
   <div class="w-hero-overlay"></div>
-  <div class="w-lang"><button data-lang="en" class="active">EN</button><button data-lang="nl">NL</button></div>
   <div class="w-hero-content">
-    <div class="w-hero-brand">The Cocktail Walk</div>
+    <div class="w-hero-brand" data-i18n="hero_brand">The Cocktail Walk</div>
     <div class="w-hero-cities">Amsterdam · Utrecht · Rotterdam · Groningen</div>
     <h1 data-i18n="hero_h1">Three cocktails. Three bars. One unforgettable night.</h1>
     <p data-i18n="hero_p">A self-guided cocktail walk through the city's hidden bars. Reservations sorted, drinks waiting — you just show up. <strong>From €29,95 per person.</strong></p>
@@ -313,6 +477,70 @@
   <a href="#cities" class="w-final-btn w-scroll" data-i18n="final_btn">Pick your route →</a>
 </section>
 
+<!-- ===== SITE FOOTER (reusable — keep self-contained) ===== -->
+<footer class="w-footer">
+  <div class="w-footer-inner w-pad">
+    <div class="w-footer-top">
+      <div class="w-footer-brand">
+        <div class="w-footer-word">WOGO</div>
+        <p class="w-footer-tag" data-i18n="foot_tag">Three bars you'd never have found. One night you'll always remember.</p>
+      </div>
+      <div class="w-footer-cols">
+        <!-- Column 1: Routes -->
+        <nav class="w-footer-col" aria-label="Routes">
+          <h3 data-i18n="foot_c1_h">Routes</h3>
+          <!-- Links populated from WOGO_ROUTES (see JS) -->
+          <div class="w-footer-routes" id="wFooterRoutes"></div>
+        </nav>
+        <!-- Column 2: Discover -->
+        <nav class="w-footer-col" aria-label="Discover">
+          <h3 data-i18n="foot_c2_h">Discover</h3>
+          <a href="#" data-i18n="foot_how">How it works</a> <!-- TODO: link to How it works page/section -->
+          <a href="https://www.wogococktailwalk.com/groupbookings" target="_top" class="w-navlink" data-i18n="foot_groups">Group bookings</a>
+          <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-navlink" data-i18n="foot_gift">Gift cards</a>
+          <a href="#" data-i18n="foot_faq">FAQ</a> <!-- TODO: link to FAQ page/section -->
+        </nav>
+        <!-- Column 3: WOGO -->
+        <nav class="w-footer-col" aria-label="WOGO">
+          <h3>WOGO</h3>
+          <a href="#" data-i18n="foot_about">About</a> <!-- TODO: future About page -->
+          <a href="#" data-i18n="foot_work">Work with us</a> <!-- TODO: future partnerships page -->
+          <a href="mailto:info@wogoamsterdam.com" data-i18n="foot_contact_link">Contact</a>
+        </nav>
+        <!-- Contact block -->
+        <div class="w-footer-col">
+          <h3>Contact</h3>
+          <a href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a>
+          <a href="tel:+31641054495">+31 6 41054495</a>
+          <span data-i18n="foot_hours">Monday – Friday, 10:00 – 18:00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trust / badge line -->
+    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.5 / 5 · 80,000+ guests · Partner of Gemeente Rotterdam · 18+</div>
+
+    <!-- Socials -->
+    <div class="w-footer-socials" aria-label="WOGO on social media">
+      <a href="https://www.instagram.com/wogococktailwalk/" target="_blank" rel="noopener">Instagram <span>@wogococktailwalk</span></a>
+      <a href="https://www.tiktok.com/@wogococktailwalk" target="_blank" rel="noopener">TikTok <span>@wogococktailwalk</span></a>
+      <a href="https://www.facebook.com/wogoamsterdam" target="_blank" rel="noopener">Facebook <span>/wogoamsterdam</span></a>
+    </div>
+
+    <!-- Bottom legal bar -->
+    <div class="w-footer-legal">
+      <span data-i18n="foot_copyright">© 2026 WOGO Amsterdam B.V. · KvK 92237347 · VAT NL865949323B01 · Oude-IJsselstraat 32-2, Amsterdam</span>
+      <span class="w-footer-legal-links">
+        <!-- TODO: point to real legal pages when added -->
+        <a href="#" data-i18n="foot_privacy">Privacy policy</a>
+        <a href="#" data-i18n="foot_cookie">Cookie policy</a>
+        <a href="#" data-i18n="foot_terms">Terms &amp; conditions</a>
+      </span>
+    </div>
+  </div>
+</footer>
+<!-- ===== /SITE FOOTER ===== -->
+
 <script>
 (function () {
   (function () {
@@ -328,6 +556,7 @@
     if (Object.keys(carry).length) window.__wogoCarry = carry;
   })();
   var NL = {
+    hero_brand: "De Cocktail Walk",
     hero_h1: "Drie cocktails. Drie bars. Eén onvergetelijke avond.",
     hero_p: "Een self-guided cocktail walk langs de verborgen bars van de stad. Reserveringen geregeld, drankjes klaar — jij komt alleen opdagen. <strong>Vanaf €29,95 per persoon.</strong>",
     hero_tagline: "Jij brengt het gezelschap. Wij regelen de rest.",
@@ -395,12 +624,73 @@
     pf_1: "Date night", pf_2: "Vrijgezellenfeest", pf_3: "Verjaardag",
     pf_4: "Bedrijfsuitje", pf_5: "Vrienden op bezoek",
     pf_6: "Bar-crawl alternatief", pf_7: "Solo avondje", pf_8: "Groep vrienden",
-    final_h2: "Klaar om te wandelen?", final_p: "6 routes · 4 steden · vanaf €29,95 per persoon · de stad wacht op je", final_btn: "Kies je route →"
+    final_h2: "Klaar om te wandelen?", final_p: "6 routes · 4 steden · vanaf €29,95 per persoon · de stad wacht op je", final_btn: "Kies je route →",
+    /* --- nav --- */
+    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_about: "Over ons", nav_cta: "Boek nu",
+    /* --- footer --- */
+    foot_tag: "Drie bars die je nooit zelf had gevonden. Eén avond die je altijd bijblijft.",
+    foot_c1_h: "Routes", foot_c2_h: "Ontdek",
+    foot_how: "Hoe het werkt", foot_groups: "Groepsboekingen", foot_gift: "Cadeaukaarten", foot_faq: "FAQ",
+    foot_about: "Over ons", foot_work: "Samenwerken", foot_contact_link: "Contact",
+    foot_hours: "Maandag – vrijdag, 10:00 – 18:00",
+    foot_trust: "★ 4.4 op Google · Trustpilot 4,5 / 5 · 80.000+ gasten · Partner van Gemeente Rotterdam · 18+",
+    foot_copyright: "© 2026 WOGO Amsterdam B.V. · KvK 92237347 · BTW NL865949323B01 · Oude-IJsselstraat 32-2, Amsterdam",
+    foot_privacy: "Privacybeleid", foot_cookie: "Cookiebeleid", foot_terms: "Algemene voorwaarden"
   };
+  // ===== Routes data (expansion-ready) =====
+  // Single source of truth for the Routes menus. Adding a country or city later is
+  // a one-line data edit here — the desktop dropdown, mobile menu and footer all
+  // render from this. Country grouping headers appear automatically once there is
+  // more than one country. TODO: point city URLs at internal /routes/<city> pages.
+  var WOGO_ROUTES = {
+    countries: [
+      { code: 'nl', name: { en: 'Netherlands', nl: 'Nederland' }, cities: [
+        { name: 'Amsterdam', url: 'https://www.wogococktailwalk.com/amsterdam-cocktailwalk-route1' },
+        { name: 'Rotterdam', url: 'https://www.wogococktailwalk.com/rotterdam-cocktail-walk-route1' },
+        { name: 'Utrecht',   url: 'https://www.wogococktailwalk.com/utrecht' },
+        { name: 'Groningen', url: 'https://www.wogococktailwalk.com/groningen-cocktail-walk' }
+      ] }
+      /* Future: { code:'be', name:{en:'Belgium', nl:'België'}, cities:[ ... ] } */
+    ]
+  };
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function renderRoutes(lang) {
+    var countries = WOGO_ROUTES.countries;
+    var multi = countries.length > 1;   // only label countries once there are several
+    var navMenu = document.getElementById('wNavMenu');
+    var ovCities = document.getElementById('wNavOvCities');
+    var footRoutes = document.getElementById('wFooterRoutes');
+    var navHTML = '', ovHTML = '', footHTML = '';
+    countries.forEach(function (c) {
+      var cname = esc((c.name && (c.name[lang] || c.name.en)) || '');
+      if (multi) {
+        navHTML += '<li class="w-nav-country" aria-hidden="true">' + cname + '</li>';
+        ovHTML += '<span class="w-nav-ov-country">' + cname + '</span>';
+        footHTML += '<span class="w-footer-country">' + cname + '</span>';
+      }
+      c.cities.forEach(function (city) {
+        var link = '<a href="' + esc(city.url) + '" target="_top" class="w-navlink">' + esc(city.name) + '</a>';
+        navHTML += '<li>' + link + '</li>';
+        ovHTML += link;
+        footHTML += link;
+      });
+    });
+    if (navMenu) navMenu.innerHTML = navHTML;
+    if (ovCities) ovCities.innerHTML = ovHTML;
+    if (footRoutes) footRoutes.innerHTML = footHTML;
+  }
+
+  // ===== i18n =====
   var EN = {};
   document.querySelectorAll('[data-i18n]').forEach(function (el) { EN[el.getAttribute('data-i18n')] = el.innerHTML; });
+  // Language registry — to add a language later: add its dictionary here AND a
+  // matching <button data-lang="xx"> in the .w-lang toggle. 'en' is harvested from
+  // the page copy above; every other language is a dictionary of overrides.
+  var DICTS = { en: EN, nl: NL };
   function setLang(lang) {
-    var dict = lang === 'nl' ? NL : EN;
+    if (!DICTS[lang]) lang = 'en';
+    var dict = DICTS[lang];
+    renderRoutes(lang);   // rebuild route links first so they get localized below
     document.querySelectorAll('[data-i18n]').forEach(function (el) {
       var k = el.getAttribute('data-i18n');
       if (dict[k] != null) el.innerHTML = dict[k];
@@ -409,8 +699,9 @@
       if (!a.getAttribute('data-href')) a.setAttribute('data-href', a.getAttribute('href') || '');
       var base = a.getAttribute('data-href');
       var url = base;
-      if (lang === 'nl' && url.indexOf('//www.wogococktailwalk.com/') !== -1 && url.indexOf('/nl/') === -1) {
-        url = url.replace('wogococktailwalk.com/', 'wogococktailwalk.com/nl/');
+      // Non-English languages get a /<lang>/ path prefix on wogococktailwalk.com links
+      if (lang !== 'en' && url.indexOf('//www.wogococktailwalk.com/') !== -1 && url.indexOf('/' + lang + '/') === -1) {
+        url = url.replace('wogococktailwalk.com/', 'wogococktailwalk.com/' + lang + '/');
       }
       if (window.__wogoCarry) {
         try { var u = new URL(url); Object.keys(window.__wogoCarry).forEach(function (k) { u.searchParams.set(k, window.__wogoCarry[k]); }); url = u.toString(); } catch (e) {}
@@ -505,6 +796,49 @@
       wogoTrack('group');
     }
   }, true);
+  /* ===== SITE NAV behaviour (scroll state + mobile menu) ===== */
+  var wNav = document.getElementById('wNav');
+  if (EMBEDDED && wNav) wNav.classList.add('w-nav-embedded');   // don't pin inside the Wix iframe
+  function navScrollState() {
+    if (wNav) wNav.classList.toggle('scrolled', (window.pageYOffset || window.scrollY || 0) > 60);
+  }
+  window.addEventListener('scroll', navScrollState, { passive: true });
+  navScrollState();
+
+  var wBurger = document.getElementById('wNavBurger');
+  var wOverlay = document.getElementById('wNavOverlay');
+  function setMenu(open) {
+    if (!wOverlay || !wBurger || !wNav) return;
+    wOverlay.classList.toggle('open', open);
+    wBurger.classList.toggle('open', open);
+    wNav.classList.toggle('menu-open', open);
+    wBurger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    wBurger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    wOverlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+    if (!EMBEDDED) document.body.style.overflow = open ? 'hidden' : '';  // lock page scroll while menu is open
+    reportHeight();
+  }
+  if (wBurger) wBurger.addEventListener('click', function () { setMenu(!wOverlay.classList.contains('open')); });
+  // Delegated so re-rendered route links (see renderRoutes) still close the menu
+  if (wOverlay) wOverlay.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('a')) setMenu(false); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      setMenu(false);
+      var af = document.activeElement;   // also close the Routes popover if focus is inside it
+      if (af && af.closest && af.closest('.w-nav-drop')) af.blur();
+    }
+  });
+  document.querySelectorAll('a.w-scroll-top').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (EMBEDDED) {
+        var msg = { wogoScrollTo: 0 };
+        try { window.parent.postMessage(msg, '*'); } catch (x) {}
+        try { if (window.top && window.top !== window.parent) window.top.postMessage(msg, '*'); } catch (x) {}
+      } else { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    });
+  });
+
   function reportHeight() {
     var h = Math.ceil(document.documentElement.scrollHeight) + 24;
     try { window.parent.postMessage({ type: 'wogoHeight', height: h }, '*'); } catch (e) {}
