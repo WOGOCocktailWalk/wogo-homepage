@@ -628,7 +628,7 @@
 <main id="wMain" tabindex="-1">
 <style>
   .conf-sec{background:var(--wogo-cream,#fffaf6);min-height:78vh;display:flex;align-items:center;padding:140px 20px 80px;}
-  .conf-wrap{max-width:600px;margin:0 auto;width:100%;text-align:center;}
+  .conf-wrap{max-width:780px;margin:0 auto;width:100%;text-align:center;}
   .conf-emoji{font-size:56px;line-height:1;margin:0 0 14px;}
   .conf-sec h1{font-size:clamp(26px,5vw,38px);font-weight:900;color:var(--wogo-ink,#201611);margin:0 0 10px;line-height:1.15;}
   .conf-sec p{font-size:16px;line-height:1.6;color:var(--wogo-espresso,#3f2b21);margin:0 auto 18px;max-width:520px;}
@@ -643,6 +643,12 @@
   .conf-ghost{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:11px 22px;border-radius:999px;font-weight:800;font-size:13px;border:2px solid var(--wogo-espresso,#3f2b21);color:var(--wogo-espresso,#3f2b21);}
   .conf-spin{width:38px;height:38px;border:3px solid rgba(63,43,33,0.15);border-top-color:var(--wogo-salmon,#ffaa81);border-radius:50%;margin:0 auto 16px;animation:confspin 0.8s linear infinite;}
   @keyframes confspin{to{transform:rotate(360deg);}}
+  /* Booked panel: details on the left, the route poster on the right, in one rounded card. */
+  .conf-panel{display:flex;gap:24px;align-items:stretch;max-width:720px;margin:22px auto;border:2px solid rgba(63,43,33,0.16);border-radius:22px;background:#fff;box-shadow:0 14px 38px rgba(26,20,16,0.10);padding:22px;text-align:left;}
+  .conf-panel .conf-card{flex:1 1 auto;margin:0;border:none;box-shadow:none;border-radius:0;padding:2px 4px;max-width:none;background:none;}
+  .conf-poster{flex:0 0 210px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#ffe5d9,#3f2b21);}
+  .conf-poster img{width:100%;height:100%;min-height:300px;object-fit:cover;display:block;}
+  @media(max-width:640px){.conf-panel{flex-direction:column;gap:18px;padding:16px;}.conf-poster{flex-basis:auto;}.conf-poster img{min-height:220px;}}
 </style>
 <section class="conf-sec"><div class="conf-wrap">
   <div id="conf-loading">
@@ -655,7 +661,10 @@
     <div class="conf-emoji">🍸</div>
     <h1 id="conf-title">You're booked!</h1>
     <p data-i18n="conf_ok_p">Your table is reserved. Here are your details:</p>
-    <div class="conf-card" id="conf-card"></div>
+    <div class="conf-panel">
+      <div class="conf-card" id="conf-card"></div>
+      <div class="conf-poster"><img id="conf-poster-img" src="" alt="" loading="lazy"></div>
+    </div>
     <div class="conf-email" data-i18n="conf_ok_email">📬 Your confirmation email — with your route map — is on its way. Don't see it within a few minutes? Check your spam or promotions folder.</div>
     <div class="conf-cta">
       <a href="../" class="w-nav-cta" data-i18n="conf_cta_home">Back to home</a>
@@ -1694,15 +1703,18 @@
   function trackPurchase(b){ var run=function(c){ if(c&&c.marketing) firePixel(b); };
     if(window.wogoOnConsent) window.wogoOnConsent(run); else run(window.wogoConsent||{}); }
   function render(b){
-    // Show the page in the CUSTOMER's booked language (nl/en), overriding the
-    // browser default, so a Dutch booking always confirms in Dutch and vice versa.
-    if(b.locale && window.__wogoSetLang){ try{ window.__wogoSetLang(b.locale==='nl'?'nl':'en'); }catch(e){} }
-    var L=LABELS[lang()];
-    var nm=b.first_name?(', '+b.first_name):'';
-    var t=$('conf-title'); if(t) t.textContent=(lang()==='nl'?'Je boeking is bevestigd'+nm+'! ':"You're booked"+nm+'! ")+'🍸';
-    var pw=b.party===1?L.g1:L.gN, card=$('conf-card');
-    if(card) card.innerHTML = rowH(esc(L.exp),esc(b.route_name))+rowH(esc(L.date),esc(niceDate(b.date)))+rowH(esc(L.time),esc(b.slot))+rowH(esc(L.guests),esc(b.party+' '+pw))+rowH(esc(L.total),esc(money(b.amount_cents,b.currency)));
-    show('conf-ok'); trackPurchase(b);
+    show('conf-ok');  // reveal the booked view FIRST — details always appear, never stuck loading
+    // Show the page in the CUSTOMER's booked language (nl/en), overriding the browser default.
+    try{ if(b.locale && window.__wogoSetLang) window.__wogoSetLang(b.locale==='nl'?'nl':'en'); }catch(e){}
+    try{
+      var L=LABELS[lang()]||LABELS.en;
+      var nm=b.first_name?(', '+b.first_name):'';
+      var t=$('conf-title'); if(t) t.textContent=(lang()==='nl'?'Je boeking is bevestigd'+nm+'! ':"You're booked"+nm+'! ")+'🍸';
+      var pw=b.party===1?L.g1:L.gN, card=$('conf-card');
+      if(card) card.innerHTML = rowH(esc(L.exp),esc(b.route_name))+rowH(esc(L.date),esc(niceDate(b.date)))+rowH(esc(L.time),esc(b.slot))+rowH(esc(L.guests),esc(b.party+' '+pw))+rowH(esc(L.total),esc(money(b.amount_cents,b.currency)));
+      var pi=$('conf-poster-img'); if(pi){ if(b.poster_url){ pi.src=b.poster_url; pi.alt=b.route_name||'WOGO Cocktail Walk'; } else if(pi.parentNode){ pi.parentNode.style.display='none'; } }
+    }catch(e){}
+    try{ trackPurchase(b); }catch(e){}
   }
   var sid=new URLSearchParams(location.search).get('session_id');
   if(!sid){ show('conf-fallback'); return; }
