@@ -1709,7 +1709,7 @@
     try{
       var L=LABELS[lang()]||LABELS.en;
       var nm=b.first_name?(', '+b.first_name):'';
-      var t=$('conf-title'); if(t) t.textContent=(lang()==='nl'?'Je boeking is bevestigd'+nm+'! ':"You're booked"+nm+'! ")+'🍸';
+      var t=$('conf-title'); if(t){ t.textContent=(lang()==='nl'?'Je boeking is bevestigd':"You're booked")+nm+'! 🍸'; }
       var pw=b.party===1?L.g1:L.gN, card=$('conf-card');
       if(card) card.innerHTML = rowH(esc(L.exp),esc(b.route_name))+rowH(esc(L.date),esc(niceDate(b.date)))+rowH(esc(L.time),esc(b.slot))+rowH(esc(L.guests),esc(b.party+' '+pw))+rowH(esc(L.total),esc(money(b.amount_cents,b.currency)));
       var pi=$('conf-poster-img'); if(pi){ if(b.poster_url){ pi.src=b.poster_url; pi.alt=b.route_name||'WOGO Cocktail Walk'; } else if(pi.parentNode){ pi.parentNode.style.display='none'; } }
