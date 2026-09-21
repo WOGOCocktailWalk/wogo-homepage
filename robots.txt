@@ -1,0 +1,17 @@
+# robots.txt — wogococktailwalk.com
+#
+# READY FOR CUTOVER: this file has no real effect yet — every customer-facing
+# page in this repo still carries <meta name="robots" content="noindex">
+# and the site isn't live at the final domain. Nothing needs to change in
+# THIS file at cutover; just make sure it's the one served at
+# https://www.wogococktailwalk.com/robots.txt and that the noindex meta tags
+# have been removed from the pages (see each page's own "REMOVE at cutover"
+# comment).
+#
+# Nothing on this site is private — no admin area, no account area — so
+# everything is allowed.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://www.wogococktailwalk.com/sitemap.xml

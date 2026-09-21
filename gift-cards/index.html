@@ -34,20 +34,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- PAGE-EDIT: title + description + canonical -->
-<title>WOGO Gift Cards — Give a Cocktail Walk | WOGO</title>
+<title>Cocktail Walk Gift Cards · From €25 | WOGO</title>
 <meta name="robots" content="noindex"> <!-- REMOVE at cutover -->
 <link rel="canonical" href="https://www.wogococktailwalk.com/gift-cards/">
-<meta name="description" content="Give someone a night they'll talk about. WOGO gift cards from €25, valid on any city or route, delivered by email.">
+<meta name="description" content="Give a WOGO cocktail walk gift card — from €25, valid on any city or route, delivered by email in seconds.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="WOGO Cocktail Walk">
-<meta property="og:title" content="WOGO Gift Cards — Give a Cocktail Walk">
-<meta property="og:description" content="Give someone a night they'll talk about. WOGO gift cards from €25, valid on any city or route, delivered by email.">
+<meta property="og:title" content="Cocktail Walk Gift Cards · From €25 | WOGO">
+<meta property="og:description" content="Give a WOGO cocktail walk gift card — from €25, valid on any city or route, delivered by email in seconds.">
 <meta property="og:url" content="https://www.wogococktailwalk.com/gift-cards/">
 <meta property="og:image" content="https://static.wixstatic.com/media/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="WOGO Gift Cards — Give a Cocktail Walk">
+<meta name="twitter:title" content="WOGO Gift Cards · Give a Cocktail Walk">
 <meta name="twitter:description" content="Any route, any city, redeemable on all our walks. From €25, delivered by email.">
 <meta name="twitter:image" content="https://static.wixstatic.com/media/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png">
 <!-- PAGE-EDIT: structured data — gift cards carry Product + AggregateOffer
@@ -58,7 +58,7 @@
 {"@context":"https://schema.org","@type":"Product","name":"WOGO Gift Card","description":"A WOGO Cocktail Walk gift card, redeemable on all WOGO self-guided cocktail walks in Amsterdam, Rotterdam, Utrecht and Groningen. Choose an amount, add a personalized message, delivered by email.","image":"https://static.wixstatic.com/media/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png","brand":{"@type":"Brand","name":"WOGO Cocktail Walk"},"offers":{"@type":"AggregateOffer","priceCurrency":"EUR","lowPrice":"25","highPrice":"100","offerCount":"3","availability":"https://schema.org/InStock","url":"https://www.wogococktailwalk.com/gift-cards"}}
 </script>
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Organization","name":"WOGO Cocktail Walk","url":"https://www.wogococktailwalk.com/","logo":"https://static.wixstatic.com/media/2a3b9e_5f773a87430442dd8c6848e71f5f12a1~mv2.png","email":"info@wogoamsterdam.com","telephone":"+31202101168","address":{"@type":"PostalAddress","streetAddress":"Oude-IJsselstraat 32-2","postalCode":"1078 CP","addressLocality":"Amsterdam","addressCountry":"NL"},"sameAs":["https://www.instagram.com/wogococktailwalk/","https://www.tiktok.com/@wogococktailwalk","https://www.facebook.com/wogoamsterdam/"]}
+{"@context":"https://schema.org","@type":"Organization","name":"WOGO Cocktail Walk","url":"https://www.wogococktailwalk.com/","logo":"https://www.wogococktailwalk.com/wogo-logo.png","email":"info@wogoamsterdam.com","telephone":"+31202101168","address":{"@type":"PostalAddress","addressLocality":"Amsterdam","addressCountry":"NL"},"sameAs":["https://www.instagram.com/wogococktailwalk/","https://www.tiktok.com/@wogococktailwalk","https://www.facebook.com/wogoamsterdam/"]}
 </script>
 <!-- Anti-flicker for Dutch visitors: the page is authored in English and translated by
      the script at the foot of the body, so briefly hide the body ONLY when Dutch is about
@@ -74,66 +74,112 @@
 }catch(e){}})();
 </script>
 <style>
+  /* Accessibility: skip-to-content link (shared, keep IDENTICAL across pages) */
+  .w-skip{position:fixed;top:8px;left:-9999px;z-index:100000;background:#3f2b21;color:#fffaf6;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:800;text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.28);}
+  .w-skip:focus{left:12px;}
+
+  /* ===== V5 primary-CTA token — warm salmon→coral, the single high-converting
+     action colour (BRAND.md lists salmon for warm CTAs; #f2905c is canonical
+     salmon-deep, not terracotta). Drives every primary button on this page. ===== */
+  :root{
+    --wogo-cta-bg:       linear-gradient(135deg, #ffaa81 0%, #f2905c 100%);
+    --wogo-cta-bg-hover: linear-gradient(135deg, #f2905c 0%, #f2905c 100%);
+    --wogo-cta-ink:      #3f2b21;
+    --wogo-cta-shadow:   0 8px 20px rgba(242,144,92,0.45);
+  }
   /* ===== WOGO SHARED VISUAL SYSTEM (copied from the homepage — keep in sync) ===== */
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { background: #1a1410; overflow-x: hidden; }
   body { background: #FAF6F2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #1a1410; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; overflow-x: hidden; scrollbar-width: none; -ms-overflow-style: none; }
   html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display: none; }
   img { max-width: 100%; display: block; }
-  a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid #E2641E; outline-offset: 2px; border-radius: 6px; }
+  a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid #3f2b21; outline-offset: 2px; border-radius: 6px; }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; } }
   .w-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   .w-hero { position: relative; width: 100%; min-height: 440px; overflow: hidden; background: #1a1410; color: #fff; }
   /* Content-page hero: no photo/video — a quiet espresso gradient band instead
      (fast, zero assets to swap when this template is copied). */
-  .w-hero-flat { min-height: 360px; background: linear-gradient(160deg, #1a1410 0%, #3d1d0e 55%, #5C2A14 100%); }
+  .w-hero-flat { min-height: 360px; background: linear-gradient(160deg, #1a1410 0%, #201611 50%, #3f2b21 100%); }
   .w-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(26,20,16,0.40) 0%, rgba(26,20,16,0.72) 100%); z-index: 1; }
-  .w-lang { position: absolute; top: 12px; right: 14px; z-index: 5; display: flex; gap: 2px; background: rgba(0,0,0,0.4); border-radius: 999px; padding: 3px; }
-  .w-lang button { background: none; border: none; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; padding: 5px 11px; min-height: 36px; border-radius: 999px; cursor: pointer; opacity: 0.65; transition: opacity 0.2s, background 0.2s; }
-  .w-lang button.active { background: #E2641E; opacity: 1; }
+  /* ── Language dropdown: trigger pill + expandable menu (data-driven — see WOGO_LANGS in the foot script; scales beyond EN/NL) ── */
+  .w-lang { position: relative; display: inline-flex; }
+  .w-lang-btn { display: inline-flex; align-items: center; gap: 6px; background: rgba(32,22,17,0.65); border: none; color: var(--wogo-cream); font-family: inherit; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; padding: 8px 13px; min-height: 40px; border-radius: 999px; cursor: pointer; transition: background 0.2s; }
+  .w-lang-btn:hover { background: rgba(32,22,17,0.8); }
+  .w-lang-globe { width: 14px; height: 14px; flex: 0 0 auto; opacity: 0.9; }
+  .w-lang-caret { font-size: 8px; opacity: 0.85; transition: transform 0.2s; }
+  .w-lang.open .w-lang-caret { transform: rotate(180deg); }
+  .w-lang-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; margin: 0; padding: 6px; min-width: 164px; list-style: none; background: var(--wogo-cream); border-radius: 12px; box-shadow: 0 12px 30px rgba(26,20,16,0.18); opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s; }
+  .w-lang.open .w-lang-menu { opacity: 1; visibility: visible; transform: translateY(0); transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s; }
+  .w-lang-opt { display: flex; align-items: center; gap: 9px; color: var(--wogo-ink); font-size: 13px; font-weight: 700; padding: 11px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+  .w-lang-opt:hover { background: var(--wogo-blush); }
+  .w-lang-opt:focus { background: var(--wogo-blush); outline: 2px solid var(--wogo-salmon-deep); outline-offset: -2px; }
+  .w-lang-opt-code { min-width: 21px; font-size: 10px; font-weight: 800; letter-spacing: 0.06em; color: var(--wogo-brown-soft); }
+  .w-lang-opt[aria-selected="true"]::after { content: "✓"; margin-left: auto; padding-left: 12px; color: var(--wogo-salmon-deep); font-weight: 900; }
+  .w-nav-ov-lang { display: flex; padding: 16px 6px; border-bottom: 1px solid rgba(63,43,33,0.12); }
+  .w-nav-overlay .w-lang-menu { right: auto; left: 0; }
   .w-hero-content { position: relative; z-index: 2; min-height: 440px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 104px 24px 56px; max-width: 920px; margin: 0 auto; }
   .w-hero-flat .w-hero-content { min-height: 360px; padding: 118px 24px 50px; }
-  .w-hero-overline { font-size: 11.5px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #F5C9A8; margin-bottom: 16px; }
+  .w-hero-overline { font-size: 11.5px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #ffe5d9; margin-bottom: 16px; }
   .w-hero h1 { font-size: clamp(28px, 4.6vw, 48px); font-weight: 900; line-height: 1.05; letter-spacing: -0.015em; margin-bottom: 14px; max-width: 20ch; text-shadow: 0 2px 16px rgba(0,0,0,0.45); }
   .w-hero p { font-size: clamp(14px, 1.3vw, 18px); font-weight: 500; line-height: 1.5; max-width: 560px; margin-bottom: 22px; opacity: 0.95; }
-  .w-hero-cta { display: inline-block; background: #E2641E; color: #fff; text-decoration: none; padding: 15px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(226,100,30,0.4); transition: transform 0.2s, background 0.2s; }
+  .w-hero-cta { display: inline-block; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 15px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform 0.2s, background 0.2s; }
   .w-hero-cta:active, .w-gift-btn:active, .w-group-btn:active, .w-final-btn:active, .w-tier-btn:active, .w-sticky-cta-btn:active { transform: scale(0.96); }
   .w-mail { color: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
-  .w-hero-cta:hover { background: #C8551A; color: #fff; transform: translateY(-2px); }
+  .w-hero-cta:hover { background: var(--wogo-cta-bg-hover); color: var(--wogo-cta-ink); transform: translateY(-2px); }
   .w-hero-trust { margin-top: 16px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.86); display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-  .w-hero-trust .w-star { color: #F5C9A8; }
-  .w-section { padding: 50px 0; }
-  .w-section.alt { background: #fff; }
-  .w-section.brown { background: #5C2A14; }
-  .w-section.peach { background: #F5C9A8; }
-  .w-section.dark { background: #1a1410; }
+  .w-hero-trust .w-star { color: #ffe5d9; }
+  /* ===== WOGO V6 SECTION RHYTHM — alternate light/dark; espresso is the recurring
+     dark band so adjacent seams never wash out. Blush/cream/peach are near-identical
+     in value, so two lights never sit back-to-back; a brown/ink band separates them. */
+  .w-section { padding: 50px 0; background: #ffe5d9; }          /* LIGHT  · blush */
+  .w-section.cream, .w-section.alt { background: #fffaf6; }     /* LIGHT  · cream (lightest) */
+  .w-section.peach { background: #fbe9df; }                     /* LIGHT  · salmon-tint */
+  .w-section.brown { background: #3f2b21; }                     /* DARK   · espresso (recurring band) */
+  .w-section.dark { background: #1a1410; }                      /* DARKEST · ink */
+  /* One inversion helper: add `brown`/`dark` and the section's own text flips. */
+  .w-section.brown, .w-section.dark { color: #ffe5d9; }
+  .w-section.brown h2, .w-section.dark h2,
+  .w-section.brown .w-head h2, .w-section.dark .w-head h2 { color: #fffaf6; }
+  .w-section.brown .w-eyebrow, .w-section.dark .w-eyebrow,
+  .w-section.brown .w-head p, .w-section.dark .w-head p { color: rgba(255,229,217,0.72); }
+  .w-section.brown p, .w-section.dark p { color: rgba(255,229,217,0.88); }
+  .w-section.brown a:not(.w-btn):not([class*="btn"]),
+  .w-section.dark a:not(.w-btn):not([class*="btn"]) { color: #ffaa81; }
+  /* Bespoke children that sit directly on a dark band (no cream card of their own). */
+  .w-section.brown .w-stepcard { border-bottom-color: rgba(255,229,217,0.18); }
+  .w-section.brown .w-stepcard h3 { color: #fffaf6; }
+  .w-section.brown .w-faq details { border-bottom-color: rgba(255,229,217,0.18); }
+  .w-section.brown .w-faq summary { color: #fffaf6; }
+  .w-section.brown .w-faq summary:hover { color: #ffaa81; }
+  .w-section.brown .w-faq summary::after { color: rgba(255,229,217,0.82); }
+  .w-section.brown .w-faq-body { color: rgba(255,229,217,0.88); }
   .w-pad { padding-left: 24px; padding-right: 24px; }
   .w-head { text-align: center; margin-bottom: 28px; }
   .w-head h2 { font-size: clamp(26px, 3.4vw, 38px); font-weight: 900; letter-spacing: -0.01em; text-transform: uppercase; margin-bottom: 6px; }
-  .w-head p { font-size: 14px; color: #5C2A14; font-weight: 600; }
+  .w-head p { font-size: 14px; color: #3f2b21; font-weight: 600; }
   .w-head .w-hint { font-size: 12px; color: #8a7066; margin-top: 6px; font-weight: 500; }
-  .w-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #5C2A14; margin-bottom: 10px; text-align: center; }
+  .w-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #3f2b21; margin-bottom: 10px; text-align: center; }
 
   /* ===== CONTENT-PAGE EXTRAS (kept from the template + this page's own) ===== */
   /* Gift-card amount tiers (this page's core section) */
-  .w-tiers { max-width: 920px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .w-tiers { max-width: 1040px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
   .w-tier { background: #fff; border-radius: 14px; padding: 30px 24px 26px; text-align: center; box-shadow: 0 4px 14px rgba(92,42,20,0.10); display: flex; flex-direction: column; gap: 10px; }
-  .w-tier-amt { font-size: 42px; font-weight: 900; letter-spacing: -0.02em; color: #5C2A14; line-height: 1; }
+  .w-tier-amt { font-size: 42px; font-weight: 900; letter-spacing: -0.02em; color: #3f2b21; line-height: 1; }
   .w-tier-sub { font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #8a7066; }
   .w-tier p { font-size: 13.5px; line-height: 1.6; font-weight: 500; color: #444; flex: 1 1 auto; }
-  .w-tier-btn { display: block; background: #E2641E; color: #fff; text-decoration: none; padding: 14px 20px; border-radius: 999px; font-size: 13px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(226,100,30,0.35); transition: transform 0.2s, background 0.2s; margin-top: 6px; }
-  .w-tier-btn:hover { background: #C8551A; transform: translateY(-2px); }
-  .w-tiers-note { max-width: 640px; margin: 22px auto 0; text-align: center; font-size: 13px; line-height: 1.6; font-weight: 600; color: #5C2A14; }
+  .w-tier-btn { display: block; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 14px 20px; border-radius: 999px; font-size: 13px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform 0.2s, background 0.2s; margin-top: 6px; }
+  .w-tier-btn:hover { background: var(--wogo-cta-bg-hover); transform: translateY(-2px); }
+  .w-tiers-note { max-width: 640px; margin: 22px auto 0; text-align: center; font-size: 13px; line-height: 1.6; font-weight: 600; color: #3f2b21; }
   /* Numbered step walkthrough (redemption steps) */
   .w-steps-wrap { max-width: 760px; margin: 0 auto; }
   .w-stepcard { display: flex; gap: 22px; padding: 26px 0; border-bottom: 1px solid rgba(92,42,20,0.14); }
   .w-stepcard:last-child { border-bottom: none; }
-  .w-stepcard-num { flex: 0 0 56px; width: 56px; height: 56px; border-radius: 50%; background: #F5C9A8; color: #5C2A14; font-size: 24px; font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(92,42,20,0.14); }
+  .w-stepcard-num { flex: 0 0 56px; width: 56px; height: 56px; border-radius: 50%; background: #ffe5d9; color: #3f2b21; font-size: 24px; font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(92,42,20,0.14); }
   .w-stepcard-body { flex: 1 1 auto; }
   .w-stepcard h3 { font-size: 17px; font-weight: 800; color: #1a1410; margin-bottom: 6px; display: flex; align-items: baseline; gap: 8px; }
   .w-stepcard-ico { font-size: 19px; line-height: 1; flex: 0 0 auto; }
   .w-stepcard p { font-size: 14.5px; line-height: 1.65; font-weight: 500; color: #444; }
-  .w-stepcard p a { color: #5C2A14; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+  .w-stepcard p a { color: #3f2b21; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
   /* Definition / SEO copy block (same pattern as the city-hub intro) */
   .w-intro-wrap { max-width: 740px; margin: 0 auto; text-align: center; }
   .w-intro-wrap h2 { font-size: clamp(22px, 3vw, 32px); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; margin-bottom: 14px; color: #1a1410; }
@@ -144,54 +190,59 @@
   .w-gtk-ico { font-size: 26px; line-height: 1; margin-bottom: 10px; }
   .w-gtk-card h3 { font-size: 14.5px; font-weight: 800; color: #1a1410; margin-bottom: 6px; }
   .w-gtk-card p { font-size: 13.5px; line-height: 1.6; font-weight: 500; color: #444; }
+  /* Occasion chip row ("Perfect for") — reuses the homepage/about .w-chip pill;
+     translucent-white fill lifts the pills off the peach section. */
+  .w-chips { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; max-width: 760px; margin: 0 auto; }
+  .w-chip { color: #1a1410; font-size: 13.5px; font-weight: 800; padding: 11px 20px; border: 1.5px solid rgba(26,20,16,0.22); border-radius: 999px; white-space: nowrap; background: rgba(255,255,255,0.38); }
   /* Real-guest quote */
   .w-quote { max-width: 680px; margin: 0 auto; text-align: center; }
   .w-quote blockquote { font-size: clamp(15px, 1.6vw, 18px); line-height: 1.65; font-weight: 600; color: #1a1410; }
-  .w-quote blockquote::before { content: "“"; display: block; font-size: 48px; line-height: 0.6; color: #5C2A14; margin-bottom: 14px; font-weight: 900; }
-  .w-quote-name { margin-top: 14px; font-size: 12.5px; font-weight: 700; color: #5C2A14; }
+  .w-quote blockquote::before { content: "“"; display: block; font-size: 48px; line-height: 0.6; color: #3f2b21; margin-bottom: 14px; font-weight: 900; }
+  .w-quote-name { margin-top: 14px; font-size: 12.5px; font-weight: 700; color: #3f2b21; }
   /* City hub cards (soft internal-link row) */
   .w-cityhub { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
   .w-cityhub-card { display: flex; flex-direction: column; background: #fff; border-radius: 14px; overflow: hidden; text-decoration: none; box-shadow: 0 4px 14px rgba(0,0,0,0.05); transition: transform 0.3s, box-shadow 0.3s; }
   .w-cityhub-card:hover { transform: translateY(-4px); box-shadow: 0 14px 28px rgba(0,0,0,0.12); }
   .w-cityhub-card:hover .w-cityhub-img img { transform: scale(1.05); }
-  .w-cityhub-img { position: relative; aspect-ratio: 16/10; overflow: hidden; background: linear-gradient(135deg, #F5C9A8 0%, #5C2A14 100%); }
+  .w-cityhub-img { position: relative; aspect-ratio: 16/10; overflow: hidden; background: linear-gradient(135deg, #ffe5d9 0%, #3f2b21 100%); }
   .w-cityhub-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; color: transparent; font-size: 0; }
   .w-cityhub-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 4px; flex: 1 1 auto; }
   .w-cityhub-name { font-size: 16px; font-weight: 900; color: #1a1410; text-transform: uppercase; letter-spacing: 0.02em; }
-  .w-cityhub-sub { font-size: 12px; font-weight: 600; color: #5C2A14; }
-  .w-cityhub-go { font-size: 12.5px; font-weight: 800; color: #C8551A; margin-top: 8px; }
+  .w-cityhub-sub { font-size: 12px; font-weight: 600; color: #3f2b21; }
+  .w-cityhub-go { font-size: 12.5px; font-weight: 800; color: #f2905c; margin-top: 8px; }
 
   .w-gift-wrap { max-width: 920px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; }
   .w-gift-text { flex: 1 1 340px; }
-  .w-gift-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #5C2A14; margin-bottom: 8px; }
+  .w-gift-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #3f2b21; margin-bottom: 8px; }
   .w-gift h2 { font-size: clamp(24px, 3vw, 34px); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; margin-bottom: 8px; color: #1a1410; }
-  .w-gift p { font-size: 14.5px; line-height: 1.55; color: #5C2A14; font-weight: 500; max-width: 480px; }
-  .w-gift-btn { flex: 0 0 auto; background: #5C2A14; color: #F5C9A8; text-decoration: none; padding: 16px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; transition: transform 0.2s, background 0.2s; }
+  .w-gift p { font-size: 14.5px; line-height: 1.55; color: #3f2b21; font-weight: 500; max-width: 480px; }
+  .w-gift-btn { flex: 0 0 auto; background: #3f2b21; color: #ffe5d9; text-decoration: none; padding: 16px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; transition: transform 0.2s, background 0.2s; }
   .w-gift-btn:hover { background: #1a1410; transform: translateY(-2px); }
   .w-group-wrap { max-width: 920px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; }
   .w-group-text { flex: 1 1 340px; }
   .w-group h2 { font-size: clamp(24px, 3vw, 34px); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; margin: 4px 0 8px; color: #1a1410; }
-  .w-group p { font-size: 14.5px; line-height: 1.55; color: #5C2A14; font-weight: 500; max-width: 480px; }
-  .w-group-btn { flex: 0 0 auto; background: #E2641E; color: #fff; text-decoration: none; padding: 16px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(226,100,30,0.35); transition: transform 0.2s, background 0.2s; }
-  .w-group-btn:hover { background: #C8551A; transform: translateY(-2px); }
+  .w-group p { font-size: 14.5px; line-height: 1.55; color: #3f2b21; font-weight: 500; max-width: 480px; }
+  .w-group-btn { flex: 0 0 auto; background: #ffaa81; color: #3f2b21; text-decoration: none; padding: 16px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(242,144,92,0.35); transition: transform 0.2s, background 0.2s; }
+  .w-group-btn:hover { background: #f2905c; transform: translateY(-2px); }
   .w-faq-wrap { max-width: 740px; margin: 0 auto; }
   .w-faq details { border-bottom: 1px solid rgba(92,42,20,0.15); }
   .w-faq summary { padding: 16px 0; font-size: 15px; font-weight: 800; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; color: #1a1410; transition: color 0.2s; }
-  .w-faq summary:hover { color: #5C2A14; }
+  .w-faq summary:hover { color: #3f2b21; }
   .w-faq summary::-webkit-details-marker { display: none; }
-  .w-faq summary::after { content: "+"; font-size: 24px; font-weight: 400; color: #5C2A14; line-height: 1; flex-shrink: 0; transition: transform 0.3s; }
+  .w-faq summary::after { content: "+"; font-size: 24px; font-weight: 400; color: #3f2b21; line-height: 1; flex-shrink: 0; transition: transform 0.3s; }
   .w-faq details[open] summary::after { transform: rotate(45deg); }
   .w-faq-body { padding: 0 0 18px; font-size: 14px; line-height: 1.65; font-weight: 500; color: #444; }
-  .w-faq-body a { color: #5C2A14; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+  .w-faq-body a { color: #3f2b21; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
   .w-final { text-align: center; color: #fff; }
   .w-final h2 { font-size: clamp(28px, 4vw, 44px); font-weight: 900; line-height: 1.06; margin-bottom: 12px; text-transform: uppercase; letter-spacing: -0.015em; }
-  .w-final p { font-size: 14.5px; font-weight: 500; color: #F5C9A8; margin-bottom: 24px; }
-  .w-final-btn { display: inline-block; background: #E2641E; color: #fff; text-decoration: none; padding: 16px 36px; border-radius: 999px; font-size: 15px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(226,100,30,0.4); transition: transform 0.2s, background 0.2s; }
-  .w-final-btn:hover { background: #C8551A; transform: translateY(-2px); }
+  .w-final p { font-size: 14.5px; font-weight: 500; color: #ffe5d9; margin-bottom: 24px; }
+  .w-final-btn { display: inline-block; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 16px 36px; border-radius: 999px; font-size: 15px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform 0.2s, background 0.2s; }
+  .w-final-btn:hover { background: var(--wogo-cta-bg-hover); transform: translateY(-2px); }
   /* Sticky mobile buy bar (funnel page → copied from the homepage, per SITE-PLAN) */
   .w-sticky-cta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(250,246,242,0.96); box-shadow: 0 -4px 18px rgba(26,20,16,0.18); transform: translateY(120%); transition: transform 0.25s; display: none; }
   .w-sticky-cta.show { transform: translateY(0); }
-  .w-sticky-cta-btn { display: block; text-align: center; background: #E2641E; color: #fff; text-decoration: none; padding: 14px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(226,100,30,0.4); }
+  .w-nav.menu-open ~ .w-sticky-cta { display: none; }
+  .w-sticky-cta-btn { display: block; text-align: center; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 14px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); }
   @media (max-width: 720px) { .w-sticky-cta { display: block; } }
 
   /* ===== SITE NAV styles (reusable — keep self-contained) ===== */
@@ -202,11 +253,11 @@
   .w-nav.scrolled::before, .w-nav.menu-open::before { opacity: 0; }
   .w-nav.w-nav-embedded { position: absolute; }  /* inside the Wix iframe the host scrolls, so don't pin */
   .w-nav-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 14px; padding: 14px 24px; }
-  .w-nav-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #F5C9A8; text-decoration: none; transition: color 0.3s ease; text-shadow: 0 1px 10px rgba(0,0,0,0.45); }
+  .w-nav-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #ffe5d9; text-decoration: none; transition: color 0.3s ease; text-shadow: 0 1px 10px rgba(0,0,0,0.45); }
   .w-nav-logo { height: 34px; width: auto; display: block; flex: 0 0 auto; }
   .w-nav.scrolled, .w-nav.menu-open { background: #FAF6F2; }
   .w-nav.scrolled { box-shadow: 0 2px 14px rgba(26,20,16,0.10); }
-  .w-nav.scrolled .w-nav-brand, .w-nav.menu-open .w-nav-brand { color: #5C2A14; text-shadow: none; }
+  .w-nav.scrolled .w-nav-brand, .w-nav.menu-open .w-nav-brand { color: #3f2b21; text-shadow: none; }
   .w-nav-links { list-style: none; display: flex; align-items: center; gap: 2px; margin: 0 auto 0 22px; }
   .w-nav-links > li { position: relative; }
   .w-nav-links a, .w-nav-links button { font-family: inherit; }
@@ -222,16 +273,15 @@
   .w-nav-menu { position: absolute; top: 100%; left: 0; margin: 0; padding: 8px; min-width: 190px; list-style: none; display: flex; flex-direction: column; gap: 2px; background: #fff; border-radius: 12px; box-shadow: 0 12px 30px rgba(26,20,16,0.18); opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s; }
   .w-nav-drop:hover .w-nav-menu, .w-nav-drop:focus-within .w-nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
   .w-nav-menu a { color: #1a1410; font-weight: 700; padding: 10px 14px; border-radius: 8px; }
-  .w-nav-menu a:hover, .w-nav.scrolled .w-nav-menu a:hover { background: #F5C9A8; }
+  .w-nav-menu a:hover, .w-nav.scrolled .w-nav-menu a:hover { background: #ffe5d9; }
   .w-nav-country { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #8a7066; padding: 10px 14px 4px; }
   .w-nav-country + .w-nav-country, li.w-nav-country ~ li.w-nav-country { margin-top: 4px; }
   .w-nav-ov-country { width: 100%; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #8a7066; margin: 6px 0 2px; }
   .w-footer-routes { display: flex; flex-direction: column; gap: 10px; }
   .w-footer-routes .w-footer-country { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,201,168,0.55); margin-top: 6px; }
   .w-nav-right { display: flex; align-items: center; gap: 10px; }
-  .w-nav .w-lang { position: static; top: auto; right: auto; }  /* reuse hero pill styling, un-pin it */
-  .w-nav-cta { background: #E2641E; color: #fff; text-decoration: none; padding: 11px 20px; border-radius: 999px; font-size: 13px; font-weight: 800; letter-spacing: 0.03em; white-space: nowrap; box-shadow: 0 4px 14px rgba(226,100,30,0.40); transition: transform 0.2s, background 0.2s; }
-  .w-nav-cta:hover { background: #C8551A; color: #fff; transform: translateY(-2px); }
+  .w-nav-cta { background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 11px 20px; border-radius: 999px; font-size: 13px; font-weight: 800; letter-spacing: 0.03em; white-space: nowrap; box-shadow: var(--wogo-cta-shadow); min-height: 44px; display: inline-flex; align-items: center; justify-content: center; transition: transform 0.2s, background 0.2s; }
+  .w-nav-cta:hover { background: var(--wogo-cta-bg-hover); color: var(--wogo-cta-ink); transform: translateY(-2px); }
   .w-nav-cta:active { transform: scale(0.96); }
   .w-nav-burger { display: none; flex-direction: column; justify-content: center; gap: 5px; width: 44px; height: 44px; padding: 11px; background: none; border: none; cursor: pointer; }
   .w-nav-burger span { display: block; width: 100%; height: 2px; border-radius: 2px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.45); transition: transform 0.25s ease, opacity 0.2s ease, background 0.3s ease; }
@@ -244,17 +294,17 @@
   .w-nav-overlay.open { display: flex; }
   .w-nav-overlay-links { list-style: none; display: flex; flex-direction: column; }
   .w-nav-ov-link { display: block; font-size: 22px; font-weight: 800; color: #1a1410; text-decoration: none; padding: 15px 6px; border-bottom: 1px solid rgba(92,42,20,0.12); }
-  .w-nav-ov-link:hover { color: #C8551A; }
+  .w-nav-ov-link:hover { color: #f2905c; }
   .w-nav-ov-cities { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 6px 16px; border-bottom: 1px solid rgba(92,42,20,0.12); }
-  .w-nav-ov-cities a { font-size: 14px; font-weight: 700; color: #5C2A14; text-decoration: none; background: #F5C9A8; padding: 11px 18px; border-radius: 999px; }
+  .w-nav-ov-cities a { font-size: 14px; font-weight: 700; color: #3f2b21; text-decoration: none; background: #ffe5d9; padding: 11px 18px; border-radius: 999px; }
   .w-nav-overlay .w-nav-cta { margin-top: 26px; text-align: center; font-size: 15px; padding: 16px 24px; }
 
   /* ===== SITE FOOTER styles (reusable — keep self-contained) ===== */
-  .w-footer { background: #5C2A14; color: #F5C9A8; padding: 56px 0 0; }
+  .w-footer { background: #3f2b21; color: #ffe5d9; padding: 56px 0 0; }
   .w-footer-inner { max-width: 1100px; margin: 0 auto; }
   .w-footer-top { display: flex; flex-wrap: wrap; gap: 40px; padding-bottom: 34px; }
   .w-footer-brand { flex: 1 1 260px; max-width: 340px; }
-  .w-footer-word { font-size: 26px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #F5C9A8; margin-bottom: 14px; }
+  .w-footer-word { font-size: 26px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #ffe5d9; margin-bottom: 14px; }
   .w-footer-tag { font-size: 15px; line-height: 1.55; font-weight: 500; color: rgba(245,201,168,0.82); }
   .w-footer-cols { flex: 2 1 480px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
   .w-footer-col { display: flex; flex-direction: column; gap: 10px; }
@@ -263,8 +313,8 @@
   .w-footer-col a:hover { color: #fff; }
   .w-footer-trust { border-top: 1px solid rgba(245,201,168,0.18); padding: 20px 16px; text-align: center; font-size: 13px; font-weight: 700; color: rgba(245,201,168,0.92); }
   .w-footer-socials { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; padding: 0 16px 22px; }
-  .w-footer-socials a { display: inline-flex; align-items: baseline; gap: 6px; font-size: 13px; font-weight: 700; color: #F5C9A8; text-decoration: none; border: 1.5px solid rgba(245,201,168,0.28); padding: 8px 16px; border-radius: 999px; transition: background 0.2s, color 0.2s, border-color 0.2s; }
-  .w-footer-socials a:hover { background: #F5C9A8; color: #5C2A14; border-color: #F5C9A8; }
+  .w-footer-socials a { display: inline-flex; align-items: baseline; gap: 6px; font-size: 13px; font-weight: 700; color: #ffe5d9; text-decoration: none; border: 1.5px solid rgba(245,201,168,0.28); padding: 8px 16px; border-radius: 999px; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+  .w-footer-socials a:hover { background: #ffe5d9; color: #3f2b21; border-color: #ffe5d9; }
   .w-footer-socials a span { font-size: 12px; font-weight: 500; opacity: 0.72; }
   .w-footer-socials a:hover span { opacity: 1; }
   .w-footer-legal { border-top: 1px solid rgba(245,201,168,0.18); padding: 18px 16px 26px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; font-size: 11.5px; color: rgba(245,201,168,0.66); }
@@ -281,10 +331,9 @@
   @media (max-width: 420px) {
     .w-nav-brand { font-size: 17px; letter-spacing: 0.14em; gap: 8px; }
     .w-nav-logo { height: 28px; }
-    .w-nav-cta { padding: 9px 13px; font-size: 11px; }
+    .w-nav-cta { padding: 0 14px; font-size: 11px; }
     .w-nav-inner { gap: 7px; padding: 11px 12px; }
-    .w-nav .w-lang { padding: 2px; }
-    .w-nav .w-lang button { padding: 7px 10px; font-size: 11px; }
+    .w-nav .w-lang-btn { padding: 7px 10px; min-height: 38px; }
   }
   /* footer: stack columns */
   @media (max-width: 720px) {
@@ -300,7 +349,7 @@
     .w-hero-flat { min-height: 340px; } .w-hero-flat .w-hero-content { min-height: 340px; padding: 104px 22px 44px; }
     .w-hero-overline { font-size: 10px; letter-spacing: 0.16em; margin-bottom: 14px; }
     .w-hero h1 { font-size: 25px; line-height: 1.14; margin-bottom: 14px; } .w-hero p { font-size: 13.5px; line-height: 1.55; margin-bottom: 20px; }
-    .w-hero-trust { font-size: 10.5px; gap: 6px 10px; margin-top: 16px; }
+    .w-hero-trust { font-size: 11.5px; gap: 6px 10px; margin-top: 16px; }
     .w-section { padding: 40px 0; } .w-pad { padding-left: 16px; padding-right: 16px; }
     .w-head { margin-bottom: 20px; }
     .w-tiers { grid-template-columns: 1fr; gap: 14px; }
@@ -323,14 +372,137 @@
     .w-group-wrap { text-align: center; justify-content: center; } .w-group p { margin: 0 auto; }
     .w-faq summary { padding: 14px 0; font-size: 14.5px; min-height: 52px; }
   }
+
+  /* ── Icon patterns: stop tag chips + tier benefit line ── */
+  .w-stop-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .w-minichip { display: inline-flex; align-items: center; gap: 6px; background: #FAF6F2; border: 1px solid rgba(92,42,20,0.16); color: #3f2b21; font-size: 12.5px; font-weight: 700; padding: 6px 12px; border-radius: 999px; line-height: 1; }
+  .w-tier-benefit { display: inline-flex; align-items: center; gap: 8px; justify-content: center; font-size: 13.5px; font-weight: 800; color: #3f2b21; flex: 1 1 auto; }
+
+  /* ============================================================
+     GIFT-CARDS V3 — dash-free hero subline, two-column photo-less
+     hero with a CSS gift-card mock, custom-amount tile, CTA sheen.
+     Transform/opacity only + reduced-motion safe (never gates h1/CTA).
+     ============================================================ */
+  /* Dash-free punch under the SEO h1 (selector beats base ".w-hero p") */
+  .w-hero p.w-hero-sub { font-size: clamp(15px,1.6vw,20px); font-weight: 800; letter-spacing: -0.005em; line-height: 1.25; margin: 2px 0 14px; color: #ffe5d9; text-shadow: 0 2px 14px rgba(0,0,0,0.5); max-width: 26ch; opacity: 1; }
+
+  /* Two-column hero: copy left, gift-card mock right */
+  .w-hero-gift { min-height: 480px; }
+  .w-hero-gift .w-hero-content { min-height: 480px; }
+  .w-gift-hero { flex-direction: row; flex-wrap: wrap; gap: 40px; align-items: center; justify-content: center; text-align: left; max-width: 1000px; }
+  .w-gift-copy { flex: 1 1 340px; max-width: 520px; }
+  .w-gift-copy .w-hero-trust { justify-content: flex-start; }
+  .w-gift-cardwrap { flex: 0 0 auto; display: flex; justify-content: center; }
+
+  /* The card mock — pure CSS, espresso + peach, WOGO wordmark, chip */
+  .w-giftcard { position: relative; width: min(360px, 84vw); aspect-ratio: 1.586 / 1; border-radius: 18px; overflow: hidden; padding: 22px 24px; display: flex; flex-direction: column; justify-content: space-between; color: #ffe5d9; isolation: isolate; background: radial-gradient(130% 120% at 85% 15%, #643e2b 0%, #3f2b21 45%, #201611 100%); box-shadow: 0 22px 48px rgba(26,20,16,0.40), inset 0 1px 0 rgba(245,201,168,0.18); border: 1px solid rgba(245,201,168,0.22); transform: rotate(-3deg); transition: transform .4s cubic-bezier(.22,.61,.36,1), box-shadow .4s ease; }
+  .w-giftcard:hover { transform: rotate(-1deg) translateY(-4px); box-shadow: 0 30px 60px rgba(26,20,16,0.5); }
+  @media (hover:none){ .w-giftcard:hover { transform: rotate(-3deg); } }
+  /* Peach diagonal sheen — a subtle gleam that sweeps every few seconds */
+  .w-giftcard-sheen { position: absolute; inset: -40% -10%; z-index: -1; background: linear-gradient(115deg, transparent 40%, rgba(245,201,168,0.18) 50%, transparent 60%); transform: translateX(-60%); }
+  html.wg-js .w-giftcard-sheen { animation: wgSheen 6s ease-in-out 1s infinite; }
+  @keyframes wgSheen { 0% { transform: translateX(-60%); } 18%, 100% { transform: translateX(60%); } }
+  .w-giftcard-top { display: flex; align-items: center; justify-content: space-between; }
+  .w-giftcard-word { font-size: 26px; font-weight: 900; letter-spacing: 0.24em; }
+  .w-giftcard-chip { width: 40px; height: 30px; border-radius: 6px; background: linear-gradient(135deg, #ffaa81, #f2905c); box-shadow: inset 0 0 0 1px rgba(92,42,20,0.35); position: relative; }
+  .w-giftcard-chip::before { content:""; position:absolute; inset:6px 4px; background-image: linear-gradient(#3f2b21 1px, transparent 1px), linear-gradient(90deg, #3f2b21 1px, transparent 1px); background-size: 100% 8px, 12px 100%; opacity:.5; border-radius:3px; }
+  .w-giftcard-mid { font-size: clamp(22px,4vw,30px); font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; color:#fff; }
+  .w-giftcard-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; opacity:.85; }
+  .w-giftcard-cities { font-size: 10px; opacity:.7; white-space: nowrap; }
+  @media (prefers-reduced-motion: reduce){ .w-giftcard { transition: none; transform: rotate(-3deg); } html.wg-js .w-giftcard-sheen { animation: none; } }
+
+  /* ── Palette infusion (feedback #7): warm the amounts section with a canonical
+     blush wash (--wogo-blush #ffe5d9 / --wogo-surface-tint #fbe9df) and bring the
+     salmon accent (--wogo-salmon #ffaa81) onto the custom-amount tile. Soft fills
+     + accents only — salmon stays a spice, never a flat base. ── */
+  #tiers { background: linear-gradient(180deg, #FAF6F2 0%, #FBE9DF 100%); }
+  .w-tiers-note { background: #ffe5d9; border-radius: 14px; padding: 16px 22px; }
+
+  /* Custom-amount tile (4th in the grid) */
+  .w-tier-custom { border: 1.5px dashed #ffaa81; background: linear-gradient(180deg, #fffaf6 0%, #fbe9df 100%); }
+  .w-tier-custom .w-tier-amt { color: #7e5541; }
+  /* 4 cols >900 (base) · 2 cols 721–900 · 1 col ≤720 (existing mobile rule) */
+  @media (min-width: 721px) and (max-width: 900px){ .w-tiers { grid-template-columns: 1fr 1fr; } }
+
+  /* CTA sheen on primary buttons (transform-only, once on hover) */
+  .w-hero-cta, .w-final-btn { position: relative; overflow: hidden; }
+  .w-hero-cta::after, .w-final-btn::after { content:""; position:absolute; top:0; left:-120%; width:60%; height:100%; background: linear-gradient(115deg, transparent, rgba(255,255,255,0.35), transparent); transform: skewX(-18deg); transition: left .6s ease; pointer-events: none; }
+  .w-hero-cta:hover::after, .w-final-btn:hover::after { left: 140%; }
+  @media (hover: none){ .w-hero-cta::after, .w-final-btn::after { display: none; } }
+  @media (prefers-reduced-motion: reduce){ .w-hero-cta::after, .w-final-btn::after { display: none; } }
+
+  /* Mobile: stack the gift hero, re-center copy */
+  @media (max-width: 720px){
+    .w-hero-gift, .w-hero-gift .w-hero-content { min-height: auto; }
+    .w-gift-hero { flex-direction: column; text-align: center; gap: 28px; }
+    .w-gift-copy { flex: 1 1 100%; max-width: 100%; }
+    .w-hero p.w-hero-sub { margin-left: auto; margin-right: auto; }
+    .w-gift-copy .w-hero-trust { justify-content: center; }
+    .w-giftcard { width: min(320px, 84vw); }
+  }
+
+  /* ============================================================
+     WOGO VISUAL PASS — motion layer (JS-gated, reduced-motion safe).
+     Hidden states apply ONLY when <html class="wg-js"> is set, so if
+     JS never runs everything stays visible. Transform/opacity only.
+     ============================================================ */
+
+  /* Scroll-reveal: single element / section */
+  html.wg-js .wg-reveal { opacity: 0; transform: translateY(16px); transition: opacity .55s ease, transform .55s cubic-bezier(.22,.61,.36,1); will-change: opacity, transform; }
+  html.wg-js .wg-reveal.wg-in { opacity: 1; transform: none; }
+
+  /* Scroll-reveal: staggered children */
+  html.wg-js .wg-stagger > * { opacity: 0; transform: translateY(14px); transition: opacity .5s ease, transform .5s cubic-bezier(.22,.61,.36,1); will-change: opacity, transform; }
+  html.wg-js .wg-stagger.wg-in > * { opacity: 1; transform: none; }
+  html.wg-js .wg-stagger > *:nth-child(1) { transition-delay: 0ms; }
+  html.wg-js .wg-stagger > *:nth-child(2) { transition-delay: 70ms; }
+  html.wg-js .wg-stagger > *:nth-child(3) { transition-delay: 140ms; }
+  html.wg-js .wg-stagger > *:nth-child(4) { transition-delay: 210ms; }
+  html.wg-js .wg-stagger > *:nth-child(5) { transition-delay: 280ms; }
+  html.wg-js .wg-stagger > *:nth-child(6) { transition-delay: 350ms; }
+  html.wg-js .wg-stagger > *:nth-child(7) { transition-delay: 420ms; }
+  html.wg-js .wg-stagger > *:nth-child(n+8) { transition-delay: 490ms; }
+
+  /* Hero entrance — TRANSFORM ONLY (no opacity) so the LCP headline paints
+     immediately and is never delayed; it just drifts up into place.
+     (wg-hero-go is set on <html> by the motion JS.) */
+  html.wg-js .wg-hero-anim > * { transform: translateY(14px); transition: transform .6s cubic-bezier(.22,.61,.36,1); }
+  html.wg-js .wg-hero-anim > *:nth-child(2) { transition-delay: 60ms; }
+  html.wg-js .wg-hero-anim > *:nth-child(3) { transition-delay: 120ms; }
+  html.wg-js .wg-hero-anim > *:nth-child(4) { transition-delay: 180ms; }
+  html.wg-js .wg-hero-anim > *:nth-child(5) { transition-delay: 240ms; }
+  html.wg-js .wg-hero-anim > *:nth-child(n+6) { transition-delay: 300ms; }
+  html.wg-js.wg-hero-go .wg-hero-anim > * { transform: none; }
+
+  /* Chip / mini-chip micro-interactions (hover lift + tap press) */
+  .w-chip, .w-minichip { transition: transform .18s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease, color .2s ease; }
+  .w-chip:hover, .w-minichip:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(92,42,20,0.12); }
+  .w-chip:active, .w-minichip:active { transform: scale(.97); }
+  @media (hover: none) { .w-chip:hover, .w-minichip:hover { transform: none; box-shadow: none; } }
+
+  /* Optional one-shot "route line" accent (route pages only) */
+  html.wg-js .wg-routeline path { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1.1s ease .15s; }
+  html.wg-js .wg-routeline.wg-in path { stroke-dashoffset: 0; }
+
+  /* ── Reduced-motion safety net: never leave a gated element hidden ── */
+  @media (prefers-reduced-motion: reduce) {
+    html.wg-js .wg-reveal,
+    html.wg-js .wg-stagger > *,
+    html.wg-js .wg-hero-anim > * { opacity: 1 !important; transform: none !important; }
+    html.wg-js .wg-routeline path { stroke-dashoffset: 0 !important; }
+  }
 </style>
 </head>
 <body>
+<a class="w-skip" href="#wMain">Skip to content</a>
 
-<!-- ===== WOGO SHARED NAV (keep IDENTICAL across pages — only relative link
-     prefixes change: this page is one folder deep, so logo src/home links get ../ .
-     "How it works" points at the real ../how-it-works/ page; "Gift cards" is THIS
-     page, so it anchors to #tiers with aria-current="page". ===== -->
+<script>document.documentElement.classList.add('wg-js');</script>
+
+<!-- ===== WOGO SHARED NAV v4 (copied verbatim onto every page — keep IDENTICAL.
+     Internal links are BASE-relative: static hrefs carry this page's relative
+     prefix, the data-driven Routes menus are BASE-prefixed in JS (see the foot
+     script's var BASE), and only the funnel-aware CTA / on-page anchors differ
+     by page type) ===== -->
 <nav class="w-nav" id="wNav" aria-label="Primary">
   <div class="w-nav-inner">
     <!-- Logo → home page (on the homepage itself this scrolls to top instead). -->
@@ -343,20 +515,24 @@
       <li class="w-nav-drop">
         <a href="#cities" class="w-scroll" data-i18n="nav_routes" aria-haspopup="true">Routes</a>
         <span class="w-nav-caret" aria-hidden="true">▾</span>
-        <!-- Routes popover — populated from the WOGO_ROUTES data structure in JS so
-             new countries/cities are a one-line data edit. TODO: point to internal
-             /<city>/ hubs once all four are built. -->
+        <!-- Routes popover — populated from the WOGO_ROUTES data in JS (the four
+             internal city hubs, BASE-prefixed), so new countries/cities are a
+             one-line data edit. -->
         <ul class="w-nav-menu" id="wNavMenu"></ul>
       </li>
-      <li><a href="../how-it-works/" data-i18n="nav_how">How it works</a></li>
-      <li><a href="https://www.wogococktailwalk.com/groupbookings" target="_top" class="w-navlink" data-i18n="nav_groups">Groups</a></li>
+      <li><a href="../how-it-works/" class="w-navlink" data-i18n="nav_how">How it works</a></li>
+      <li><a href="../groups/" class="w-navlink" data-i18n="nav_groups">Groups</a></li>
       <li><a href="#tiers" class="w-scroll" data-i18n="nav_gift" aria-current="page">Gift cards</a></li>
     </ul>
 
-    <!-- Right cluster: EN/NL toggle + primary CTA + mobile burger -->
+    <!-- Right cluster: EN/NL toggle + primary CTA + mobile burger.
+         The nav CTA is funnel-aware in target AND label: where it only reaches a
+         route grid it says "View dates" / "Bekijk data" (homepage/hubs scroll to
+         the route list, content pages link {BASE}#cities); route pages scroll to
+         the real #book section and keep "Book now" / "Boek nu". -->
     <div class="w-nav-right">
-      <div class="w-lang" role="group" aria-label="Language"><button data-lang="en" class="active" aria-pressed="true">EN</button><button data-lang="nl" aria-pressed="false">NL</button></div>
-      <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-nav-cta w-navlink" data-i18n="nav_cta">Buy a gift card</a>
+      <div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"></ul></div>
+      <a href="../#cities" class="w-nav-cta w-navlink" data-i18n="nav_cta">View dates</a>
       <button class="w-nav-burger" id="wNavBurger" aria-label="Open menu" aria-controls="wNavOverlay" aria-expanded="false"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -367,27 +543,52 @@
       <li><a href="#cities" class="w-scroll w-nav-ov-link" data-i18n="nav_routes">Routes</a></li>
       <!-- City chips populated from WOGO_ROUTES (see JS) -->
       <li class="w-nav-ov-cities" id="wNavOvCities"></li>
-      <li><a href="../how-it-works/" class="w-nav-ov-link" data-i18n="nav_how">How it works</a></li>
-      <li><a href="https://www.wogococktailwalk.com/groupbookings" target="_top" class="w-navlink w-nav-ov-link" data-i18n="nav_groups">Groups</a></li>
+      <li><a href="../how-it-works/" class="w-navlink w-nav-ov-link" data-i18n="nav_how">How it works</a></li>
+      <li><a href="../groups/" class="w-navlink w-nav-ov-link" data-i18n="nav_groups">Groups</a></li>
       <li><a href="#tiers" class="w-scroll w-nav-ov-link" data-i18n="nav_gift" aria-current="page">Gift cards</a></li>
+      <li><a href="../about/" class="w-navlink w-nav-ov-link" data-i18n="nav_about">About</a></li>
+      <li><a href="../faq/" class="w-navlink w-nav-ov-link" data-i18n="foot_faq">FAQ</a></li>
+      <li><a href="../blog/" class="w-navlink w-nav-ov-link" data-i18n="foot_blog">Blog</a></li>
+      <li><a href="../contact/" class="w-navlink w-nav-ov-link" data-i18n="foot_contact">Contact</a></li>
+      <li class="w-nav-ov-lang"><div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"></ul></div></li>
     </ul>
-    <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-nav-cta w-navlink" data-i18n="nav_cta">Buy a gift card</a>
+    <a href="../#cities" class="w-nav-cta w-navlink" data-i18n="nav_cta">View dates</a>
   </div>
 </nav>
-<!-- ===== /WOGO SHARED NAV ===== -->
+<!-- ===== /WOGO SHARED NAV v4 ===== -->
+<main id="wMain" tabindex="-1">
 
 <!-- ============================================================
      SECTION: HERO — PAGE-EDIT
      Funnel page: the hero CTA goes straight to the existing Wix
      gift-card checkout (target=_top; Stripe replaces this later).
      ============================================================ -->
-<section class="w-hero w-hero-flat">
-  <div class="w-hero-content">
-    <div class="w-hero-overline" data-i18n="hero_eyebrow">The perfect gift</div>
-    <h1 data-i18n="hero_h1">WOGO Gift Cards</h1>
-    <p data-i18n="hero_p">Any route. Any city. Redeemable on all our walks. Delivered by email. <strong>From €25.</strong></p>
-    <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-hero-cta w-navlink" data-i18n="hero_cta">Buy a gift card →</a>
-    <div class="w-hero-trust"><span data-i18n="t_google"><span class="w-star">★</span> 4.4 on Google</span><span>·</span><span data-i18n="t_trustpilot"><span class="w-star">★</span> 4.5 Trustpilot</span><span>·</span><span data-i18n="t_guests">80,000+ walks booked</span></div>
+<section class="w-hero w-hero-flat w-hero-gift">
+  <div class="w-hero-content w-gift-hero wg-hero-anim">
+    <div class="w-gift-copy">
+      <div class="w-hero-overline" data-i18n="hero_eyebrow">The perfect gift</div>
+      <h1 data-i18n="hero_h1">Give a Cocktail Walk Gift Card</h1>
+      <!-- Dash-free punch under the SEO h1 (§1a: the "—" ban) -->
+      <p class="w-hero-sub" data-i18n="hero_sub">A night out they'll remember. In their inbox in minutes.</p>
+      <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-hero-cta w-navlink" data-i18n="hero_cta">Buy a gift card →</a>
+    </div>
+    <div class="w-gift-cardwrap">
+      <!-- Pure CSS gift-card mock — no image asset. Espresso + peach, WOGO
+           wordmark, EMV-style chip, subtle recurring sheen. role="img" so a
+           screen reader announces one label, not the decorative inner text. -->
+      <div class="w-giftcard" role="img" aria-label="WOGO gift card">
+        <div class="w-giftcard-sheen" aria-hidden="true"></div>
+        <div class="w-giftcard-top">
+          <span class="w-giftcard-word">WOGO</span>
+          <span class="w-giftcard-chip" aria-hidden="true"></span>
+        </div>
+        <div class="w-giftcard-mid" data-i18n="gc_label">Gift Card</div>
+        <div class="w-giftcard-foot">
+          <span data-i18n="gc_sub">The Cocktail Walk</span>
+          <span class="w-giftcard-cities">AMS · RTM · UTR · GRO</span>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -401,29 +602,46 @@
   <div class="w-head">
     <div class="w-eyebrow" data-i18n="tiers_eyebrow">Choose an amount</div>
     <h2 data-i18n="tiers_h2">Three amounts, zero guesswork</h2>
-    <p data-i18n="tiers_p">Every card works on every route in every city — they pick the walk.</p>
+    <p data-i18n="tiers_p">Every card works on every route in every city. They pick the walk.</p>
   </div>
-  <div class="w-tiers">
+  <div class="w-tiers wg-stagger">
     <div class="w-tier">
       <div class="w-tier-amt">€25</div>
       <div class="w-tier-sub" data-i18n="tier1_sub">Gift card</div>
-      <p data-i18n="tier1_p">A generous head start on their next cocktail walk — three bars, three cocktails, one great excuse to go out.</p>
+      <div class="w-tier-benefit"><span aria-hidden="true">✨</span><span data-i18n="tier1_b">Toward a walk</span></div>
       <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-tier-btn w-navlink" data-i18n="tier_btn">Buy this card →</a>
     </div>
     <div class="w-tier">
       <div class="w-tier-amt">€50</div>
       <div class="w-tier-sub" data-i18n="tier2_sub">Gift card</div>
-      <p data-i18n="tier2_p">Covers a full walk for one, with change left over — walks start at €29,95 per person.</p>
+      <div class="w-tier-benefit"><span aria-hidden="true">🍸</span><span data-i18n="tier2_b">A cocktail walk for one</span></div>
       <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-tier-btn w-navlink" data-i18n="tier_btn">Buy this card →</a>
     </div>
     <div class="w-tier">
       <div class="w-tier-amt">€100</div>
       <div class="w-tier-sub" data-i18n="tier3_sub">Gift card</div>
-      <p data-i18n="tier3_p">A whole evening out for two — or three, if you're feeling generous.</p>
+      <div class="w-tier-benefit"><span aria-hidden="true">👥</span><span data-i18n="tier3_b">A night out for two</span></div>
       <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-tier-btn w-navlink" data-i18n="tier_btn">Buy this card →</a>
+    </div>
+    <!-- CUSTOM AMOUNT tile — 4th in the grid.
+         PHASE 1 (now): links to the live Wix gift-card page, where the buyer
+         enters any amount at checkout. target=_top breaks out of the Wix iframe.
+         PHASE 2 (Stripe): swap the href for the Stripe custom-amount checkout and
+         uncomment the inline amount <input> below (min 10, step 5). -->
+    <div class="w-tier w-tier-custom">
+      <div class="w-tier-amt" aria-hidden="true">€ …</div>
+      <div class="w-tier-sub" data-i18n="tierc_sub">Your amount</div>
+      <div class="w-tier-benefit"><span aria-hidden="true">🎁</span><span data-i18n="tierc_b">Any value you like</span></div>
+      <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-tier-btn w-navlink" data-i18n="tierc_btn">Choose an amount →</a>
+      <!-- PHASE 2 (Stripe) — do not enable until Stripe gift cards are live:
+      <label class="w-tier-input"><span>€</span>
+        <input type="number" min="10" step="5" inputmode="numeric" placeholder="50" aria-label="Custom gift amount in euros">
+      </label>
+      -->
     </div>
   </div>
   <p class="w-tiers-note" data-i18n="tiers_note">Buy 1 to 10 cards in one order and add a personalized message at checkout. The card lands in an inbox within minutes — no shipping, no wrapping.</p>
+  <p class="w-tiers-note" data-i18n="tiers_anchor">A walk is €29,95 per person. €25 covers most of a walk, €50 is a full walk for one, and €100 makes it a night out for two. Prefer an exact number? Enter your own amount at checkout.</p>
 </section>
 
 <!-- ============================================================
@@ -431,35 +649,35 @@
      Redemption copy matches today's REAL Wix mechanism: the code
      is entered at checkout when booking any walk.
      ============================================================ -->
-<section class="w-section alt w-pad" id="how">
+<section class="w-section brown w-pad" id="how">
   <div class="w-head">
     <div class="w-eyebrow" data-i18n="how_eyebrow">How it works</div>
     <h2 data-i18n="how_h2">From your inbox to their night out</h2>
-    <p data-i18n="how_p">Three steps — and the planning is our job, not theirs.</p>
+    <p data-i18n="how_p">Three steps. The planning is our job, not theirs.</p>
   </div>
-  <div class="w-steps-wrap">
+  <div class="w-steps-wrap wg-stagger">
 
     <div class="w-stepcard">
       <div class="w-stepcard-num" aria-hidden="true">1</div>
       <div class="w-stepcard-body">
-        <h3><span class="w-stepcard-ico" aria-hidden="true">💳</span><span data-i18n="g1_h">Pick an amount, write your message</span></h3>
-        <p data-i18n="g1_p">Choose €25, €50 or €100, add a personalized message if you like, and check out. The gift card arrives by email with its own unique code — ready to forward or print.</p>
+        <h3><span class="w-stepcard-ico" aria-hidden="true">💳</span><span data-i18n="g1_h">Choose an amount</span></h3>
+        <p data-i18n="g1_p">Pick €25, €50 or €100 — one to ten cards per order.</p>
       </div>
     </div>
 
     <div class="w-stepcard">
       <div class="w-stepcard-num" aria-hidden="true">2</div>
       <div class="w-stepcard-body">
-        <h3><span class="w-stepcard-ico" aria-hidden="true">🍸</span><span data-i18n="g2_h">They pick their walk</span></h3>
-        <p data-i18n="g2_p">Any route, any city, any date — Amsterdam, Rotterdam, Utrecht or Groningen. Three reserved bars, three signature cocktails and a digital route map, exactly <a href="../how-it-works/">how every WOGO walk works</a>.</p>
+        <h3><span class="w-stepcard-ico" aria-hidden="true">✍️</span><span data-i18n="g2_h">Add a message, check out</span></h3>
+        <p data-i18n="g2_p">Write a personal note and pay securely in seconds.</p>
       </div>
     </div>
 
     <div class="w-stepcard">
       <div class="w-stepcard-num" aria-hidden="true">3</div>
       <div class="w-stepcard-body">
-        <h3><span class="w-stepcard-ico" aria-hidden="true">✅</span><span data-i18n="g3_h">They redeem it at checkout</span></h3>
-        <p data-i18n="g3_p">When booking, they simply enter the gift card code at checkout and the amount comes straight off the total. If the walk costs more than the card, they pay the difference as usual.</p>
+        <h3><span class="w-stepcard-ico" aria-hidden="true">📧</span><span data-i18n="g3_h">They get a code by email</span></h3>
+        <p data-i18n="g3_p">Delivered in minutes — redeemable on any route, any city.</p>
       </div>
     </div>
 
@@ -467,54 +685,17 @@
 </section>
 
 <!-- ============================================================
-     SECTION: SEO COPY BLOCK — PAGE-EDIT. Keywords woven naturally
-     (EN: cocktail walk gift card / wogo gift voucher;
-      NL: cocktailwandeling cadeaubon / wogo cadeaukaart).
-     ============================================================ -->
-<section class="w-section w-pad">
-  <div class="w-intro-wrap">
-    <div class="w-eyebrow" data-i18n="def_eyebrow">Why it works</div>
-    <h2 data-i18n="def_h2">A gift that's a night out, not a thing</h2>
-    <p data-i18n="def_p1">A WOGO gift card is a cocktail walk gift card: an evening along three hand-picked cocktail bars, with a table reserved and a signature cocktail waiting at every stop. The gift voucher is redeemable on all our walks — so they choose the city, the route and the date, and you get full credit for the whole night.</p>
-    <p data-i18n="def_p2">No sizes to guess, nothing to wrap, nothing that ends up in a drawer. Just three bars they'd never have found on their own — and a story they'll tell with your name in it.</p>
-  </div>
-</section>
-
-<!-- ============================================================
-     SECTION: PERFECT FOR — occasion row (reuses the gtk card grid).
+     SECTION: PERFECT FOR — occasion chip row (leaner than the old
+     3-card grid; reuses the shared .w-chip pill).
      ============================================================ -->
 <section class="w-section peach w-pad">
-  <div class="w-head"><h2 data-i18n="occ_h2">Perfect for</h2></div>
-  <div class="w-gtk">
-    <div class="w-gtk-card">
-      <div class="w-gtk-ico" aria-hidden="true">🎂</div>
-      <h3 data-i18n="occ1_h">Birthdays</h3>
-      <p data-i18n="occ1_p">Skip the gadget aisle. Give three bars, three cocktails and a birthday story they'll actually retell.</p>
-    </div>
-    <div class="w-gtk-card">
-      <div class="w-gtk-ico" aria-hidden="true">💐</div>
-      <h3 data-i18n="occ2_h">Thank-yous</h3>
-      <p data-i18n="occ2_p">For the colleague, the host or the friend who came through — and deserves more than a bunch of flowers.</p>
-    </div>
-    <div class="w-gtk-card">
-      <div class="w-gtk-ico" aria-hidden="true">🎁</div>
-      <h3 data-i18n="occ3_h">The friend who has everything</h3>
-      <p data-i18n="occ3_p">They don't need more stuff. They need a night out they didn't have to plan themselves.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================
-     SECTION: REAL GUEST REVIEW — reassurance. Both quotes are REAL
-     and VERBATIM (never fabricate a gift-specific one): EN shows
-     Wendy K. (Trustpilot 5★), the NL dictionary swaps in Esther's
-     Dutch review from the Wix homepage — same honesty, native voice.
-     ============================================================ -->
-<section class="w-section alt w-pad">
-  <div class="w-quote">
-    <div class="w-eyebrow" data-i18n="rev_eyebrow">The night you're giving</div>
-    <blockquote data-i18n="rev_q">So much fun to do with friends! Great organization. They picked lovely cocktail bars for us in Amsterdam, responded quickly and were extremely friendly. Highly recommended!</blockquote>
-    <div class="w-quote-name" data-i18n="rev_name">Wendy K. — friends night in Amsterdam · Trustpilot ★★★★★</div>
+  <div class="w-head"><div class="w-eyebrow" data-i18n="occ_eyebrow">Any occasion</div><h2 data-i18n="occ_h2">The right gift, right on time</h2></div>
+  <div class="w-chips wg-stagger" role="list" aria-label="Occasions a WOGO gift card suits">
+    <span class="w-chip" role="listitem" data-i18n="occ_birthdays">🎂 Birthdays</span>
+    <span class="w-chip" role="listitem" data-i18n="occ_anniv">💍 Anniversaries</span>
+    <span class="w-chip" role="listitem" data-i18n="occ_thanks">💐 Thank-yous</span>
+    <span class="w-chip" role="listitem" data-i18n="occ_xmas">🎄 Christmas</span>
+    <span class="w-chip" role="listitem" data-i18n="occ_justbc">✨ Just because</span>
   </div>
 </section>
 
@@ -526,8 +707,8 @@
      setting is confirmed ≥ the Dutch 2-year statutory minimum,
      replace fq2_b (EN + NL) with the plain validity trust point.
      ============================================================ -->
-<section class="w-section w-pad">
-  <div class="w-head"><h2 data-i18n="faq_h2">Gift card questions</h2></div>
+<section class="w-section brown w-pad">
+  <div class="w-head wg-reveal"><h2 data-i18n="faq_h2">Gift card questions</h2></div>
   <div class="w-faq-wrap w-faq">
     <details>
       <summary data-i18n="fq1_s">How does redeeming a gift card work?</summary>
@@ -542,51 +723,34 @@
       <div class="w-faq-body" data-i18n="fq3_b">Yes — a gift card doesn't have to cover the whole amount. Enter the code at checkout and pay the remainder as usual. Planning a walk for 7 or more? Head to <a href="../groups/">group bookings</a> and mention your code when you get in touch — we'll sort it together.</div>
     </details>
   </div>
-  <div style="text-align:center;margin-top:26px;"><a href="../faq/" data-i18n="faq_more" style="display:inline-block;font-size:13px;font-weight:800;color:#5C2A14;text-decoration:underline;text-underline-offset:3px;">Everything else — see the full FAQ →</a></div>
+  <div style="text-align:center;margin-top:26px;"><a href="../faq/" data-i18n="faq_more" style="display:inline-block;font-size:13px;font-weight:800;color:#ffaa81;text-decoration:underline;text-underline-offset:3px;">Everything else — see the full FAQ →</a></div>
 </section>
 
 <!-- ============================================================
      SECTION: CITY HUB CARDS (#cities) — internal links to all four
      city hubs: this is where the card gets spent.
-     TODO: /utrecht/, /amsterdam/ and /groningen/ hubs are being
-     built per SITE-PLAN — links below assume those folders exist
-     before this page goes live (rotterdam/ already does).
      ============================================================ -->
 <section class="w-section alt" id="cities">
   <div class="w-head w-pad"><h2 data-i18n="cities_h2">Where they'll spend it</h2><p data-i18n="cities_p">6 routes · 4 cities · from €29,95 per person</p></div>
-  <div class="w-cityhub w-pad">
+  <div class="w-cityhub w-pad wg-stagger">
     <a class="w-cityhub-card" href="../amsterdam/">
-      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="https://static.wixstatic.com/media/2a3b9e_99fbb075fa914c2fbb49e09e2301db3d~mv2.jpg/v1/fill/w_640,h_400,al_c,q_80,enc_auto/2a3b9e_99fbb075fa914c2fbb49e09e2301db3d~mv2.jpg" alt="Amsterdam cocktail walk"></div>
+      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="../amsterdam/amsterdam-hero.jpg" alt="Amsterdam cocktail walk"></div>
       <div class="w-cityhub-body"><div class="w-cityhub-name">Amsterdam</div><div class="w-cityhub-sub" data-i18n="chs_ams">Thu–Sat · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Explore this city →</div></div>
     </a>
     <a class="w-cityhub-card" href="../rotterdam/">
-      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="https://static.wixstatic.com/media/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg/v1/fill/w_640,h_400,al_c,q_80,enc_auto/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg" alt="Rotterdam cocktail walk"></div>
+      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="../rotterdam/hidden-gems/hidden-gems-hero.jpg" alt="Rotterdam cocktail walk"></div>
       <div class="w-cityhub-body"><div class="w-cityhub-name">Rotterdam</div><div class="w-cityhub-sub" data-i18n="chs_rot">3 routes · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Explore this city →</div></div>
     </a>
     <a class="w-cityhub-card" href="../utrecht/">
-      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="https://static.wixstatic.com/media/2a3b9e_db1e9b42b70544f18ae1d14b8a0c2ca1~mv2.jpg/v1/fill/w_640,h_400,al_c,q_80,enc_auto/2a3b9e_db1e9b42b70544f18ae1d14b8a0c2ca1~mv2.jpg" alt="Utrecht cocktail walk"></div>
+      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="../utrecht/utrecht-hero.jpg" alt="Utrecht cocktail walk"></div>
       <div class="w-cityhub-body"><div class="w-cityhub-name">Utrecht</div><div class="w-cityhub-sub" data-i18n="chs_utr">Daily · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Explore this city →</div></div>
     </a>
     <a class="w-cityhub-card" href="../groningen/">
-      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="https://static.wixstatic.com/media/2a3b9e_368e90d57d1c41c4a11817877c92deb4~mv2.png/v1/fill/w_640,h_400,al_c,q_80,enc_auto/2a3b9e_368e90d57d1c41c4a11817877c92deb4~mv2.png" alt="Groningen cocktail walk"></div>
+      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="../groningen/gin-walk-hero.jpg" alt="Groningen cocktail walk"></div>
       <div class="w-cityhub-body"><div class="w-cityhub-name">Groningen</div><div class="w-cityhub-sub" data-i18n="chs_gro">Wed–Sat · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Explore this city →</div></div>
     </a>
   </div>
-  <div class="w-pad" style="text-align:center;margin-top:18px;"><span data-i18n="route_reassure" style="display:inline-block;font-size:12.5px;font-weight:700;color:#5C2A14;letter-spacing:0.01em;">✓ Reservations &amp; route map included &nbsp;·&nbsp; ✓ Mocktail option on every route &nbsp;·&nbsp; ✓ Questions? <a class="w-mail" href="mailto:info@wogoamsterdam.com">Write us</a></span></div>
-</section>
-
-<!-- ============================================================
-     SECTION: GROUPS STRIP — shared copy; CTA → internal /groups/ page.
-     ============================================================ -->
-<section class="w-section w-pad w-group">
-  <div class="w-group-wrap">
-    <div class="w-group-text">
-      <div class="w-eyebrow" data-i18n="group_eyebrow" style="text-align:left;margin-bottom:6px;">For groups</div>
-      <h2 data-i18n="group_h2">Bachelorettes, birthdays &amp; team outings</h2>
-      <p data-i18n="group_p">We coordinate the bars, the timing and the tables — you bring the crew. Groups of 7 to 30, with personalised routes possible.</p>
-    </div>
-    <a href="../groups/" class="w-group-btn" data-i18n="group_btn">Plan your group walk →</a>
-  </div>
+  <div class="w-pad" style="text-align:center;margin-top:18px;"><span data-i18n="route_reassure" style="display:inline-block;font-size:12.5px;font-weight:700;color:#3f2b21;letter-spacing:0.01em;">✓ Reservations &amp; route map included &nbsp;·&nbsp; ✓ Mocktail option on every route &nbsp;·&nbsp; ✓ Questions? <a class="w-mail" href="mailto:info@wogoamsterdam.com">Write us</a></span></div>
 </section>
 
 <!-- ============================================================
@@ -594,14 +758,16 @@
      gift-card checkout).
      ============================================================ -->
 <section class="w-section dark w-pad w-final">
-  <h2 data-i18n="final_h2">Give a night, not a thing</h2>
-  <p data-i18n="final_p">Delivered by email in minutes — even if the birthday is today.</p>
+  <h2 class="wg-reveal" data-i18n="final_h2">Give a night, not a thing</h2>
+  <p class="wg-reveal" data-i18n="final_p">Delivered by email in minutes — even if the birthday is today.</p>
   <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-final-btn w-navlink" data-i18n="final_btn">Buy a gift card →</a>
 </section>
 
-<!-- ===== WOGO SHARED FOOTER (keep IDENTICAL across pages — only relative link
-     prefixes change; "How it works" goes to ../how-it-works/ and FAQ to ../faq/
-     because this page has neither section of its own) ===== -->
+</main>
+<!-- ===== WOGO SHARED FOOTER v4 (copied verbatim onto every page — keep IDENTICAL.
+     Discover links point at the internal pages on every page (incl. the homepage);
+     the Routes column renders all six route pages from WOGO_ROUTES, BASE-prefixed;
+     legal links stay commented out until the privacy/cookie/terms pages ship) ===== -->
 <footer class="w-footer">
   <div class="w-footer-inner w-pad">
     <div class="w-footer-top">
@@ -613,22 +779,23 @@
         <!-- Column 1: Routes -->
         <nav class="w-footer-col" aria-label="Routes">
           <h3 data-i18n="foot_c1_h">Routes</h3>
-          <!-- Links populated from WOGO_ROUTES (see JS) -->
+          <!-- Populated from WOGO_ROUTES (see JS): city sub-headings + every route page -->
           <div class="w-footer-routes" id="wFooterRoutes"></div>
         </nav>
         <!-- Column 2: Discover -->
         <nav class="w-footer-col" aria-label="Discover">
           <h3 data-i18n="foot_c2_h">Discover</h3>
-          <a href="../how-it-works/" data-i18n="foot_how">How it works</a>
-          <a href="https://www.wogococktailwalk.com/groupbookings" target="_top" class="w-navlink" data-i18n="foot_groups">Group bookings</a>
-          <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-navlink" data-i18n="foot_gift">Gift cards</a>
-          <a href="../faq/" data-i18n="foot_faq">FAQ</a>
+          <a href="../how-it-works/" class="w-navlink" data-i18n="foot_how">How it works</a>
+          <a href="../groups/" class="w-navlink" data-i18n="foot_groups">Group bookings</a>
+          <a href="../gift-cards/" class="w-navlink" data-i18n="foot_gift">Gift cards</a>
+          <a href="../faq/" class="w-navlink" data-i18n="foot_faq">FAQ</a>
+          <a href="../blog/" class="w-navlink" data-i18n="foot_blog">Blog</a>
+          <a href="../contact/" class="w-navlink" data-i18n="foot_contact">Contact</a>
         </nav>
         <!-- Column 3: WOGO -->
         <nav class="w-footer-col" aria-label="WOGO">
           <h3>WOGO</h3>
-          <!-- About / Work-with-us removed until real pages exist (dead # links cost trust).
-               Re-add with foot_about / foot_work NL keys when the pages are live. -->
+          <a href="../about/" class="w-navlink" data-i18n="foot_about">About WOGO</a>
           <a href="mailto:info@wogoamsterdam.com" data-i18n="foot_contact_link">Contact</a>
         </nav>
         <!-- Contact block -->
@@ -645,7 +812,7 @@
     <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.5 / 5 · 80,000+ walks booked · Partner of Gemeente Rotterdam · 18+</div>
 
     <!-- Socials -->
-    <div class="w-footer-socials" aria-label="WOGO on social media">
+    <div class="w-footer-socials" role="group" aria-label="WOGO on social media">
       <a href="https://www.instagram.com/wogococktailwalk/" target="_blank" rel="noopener">Instagram <span>@wogococktailwalk</span></a>
       <a href="https://www.tiktok.com/@wogococktailwalk" target="_blank" rel="noopener">TikTok <span>@wogococktailwalk</span></a>
       <a href="https://www.facebook.com/wogoamsterdam" target="_blank" rel="noopener">Facebook <span>/wogoamsterdam</span></a>
@@ -653,19 +820,20 @@
 
     <!-- Bottom legal bar -->
     <div class="w-footer-legal">
-      <span data-i18n="foot_copyright">© 2026 WOGO Amsterdam B.V. · KvK 92237347 · VAT NL865949323B01 · Oude-IJsselstraat 32-2, Amsterdam</span>
-      <!-- Legal links hidden until the GDPR-compliant Privacy/Cookie/Terms pages are
-           published — dead # links here are a trust/compliance smell. When live, re-add:
-           <span class="w-footer-legal-links">
-             <a href="..." data-i18n="foot_privacy">Privacy policy</a>
-             <a href="..." data-i18n="foot_cookie">Cookie policy</a>
-             <a href="..." data-i18n="foot_terms">Terms &amp; conditions</a>
-           </span>
-           plus foot_privacy/foot_cookie/foot_terms keys in the NL dictionary. -->
+      <span data-i18n="foot_copyright">© 2026 WOGO Amsterdam B.V. · KvK 92237347 · VAT NL865949323B01 · Amsterdam</span>
+      <span class="w-footer-legal-links">
+        <a href="../privacy/" data-i18n="foot_privacy">Privacy policy</a>
+        <a href="../cookies/" data-i18n="foot_cookie">Cookie policy</a>
+        <a href="../terms/" data-i18n="foot_terms">Terms &amp; conditions</a>
+        <a href="../disclaimer/" data-i18n="foot_disclaimer">Disclaimer</a>
+        <a href="../accessibility/" data-i18n="foot_accessibility">Accessibility</a>
+        <a href="../complaints/" data-i18n="foot_complaints">Complaints</a>
+        <a href="#" onclick="wogoOpenConsent();return false" data-i18n="foot_cookie_settings">Cookie settings</a>
+      </span>
     </div>
   </div>
 </footer>
-<!-- ===== /WOGO SHARED FOOTER ===== -->
+<!-- ===== /WOGO SHARED FOOTER v4 ===== -->
 
 <!-- Sticky mobile buy bar (funnel page per SITE-PLAN — block + JS copied from the
      homepage; hides while the tier cards are on screen so it never stacks on the
@@ -696,57 +864,52 @@
   var NL = {
     /* --- hero --- */
     hero_eyebrow: "Het perfecte cadeau",
-    hero_h1: "WOGO Cadeaubonnen",
-    hero_p: "Elke route. Elke stad. In te wisselen op al onze walks. Direct per e-mail geleverd. <strong>Vanaf €25.</strong>",
+    hero_h1: "Geef een Cocktail Walk cadeaubon",
+    hero_sub: "Een avond uit die bijblijft. Binnen minuten in de inbox.",
     hero_cta: "Koop een cadeaubon →",
-    t_google: "<span class=\"w-star\">★</span> 4.4 op Google",
-    t_trustpilot: "<span class=\"w-star\">★</span> 4,5 Trustpilot",
-    t_guests: "80.000+ walks geboekt",
+    /* gift-card mock face */
+    gc_label: "Cadeaubon",
+    gc_sub: "The Cocktail Walk",
     /* --- amount tiers --- */
     tiers_eyebrow: "Kies een bedrag",
-    tiers_h2: "Drie bedragen, nul gepuzzel",
-    tiers_p: "Elke bon werkt op elke route in elke stad — zij kiezen de walk.",
+    tiers_h2: "Drie bedragen, geen gedoe",
+    tiers_p: "Elke bon werkt op elke route in elke stad. Zij kiezen de walk.",
     tier1_sub: "Cadeaubon",
     tier2_sub: "Cadeaubon",
     tier3_sub: "Cadeaubon",
-    tier1_p: "Een flinke aanzet voor hun volgende cocktailwandeling — drie bars, drie cocktails, één goed excuus om uit te gaan.",
-    tier2_p: "Dekt een volledige walk voor één persoon, met wisselgeld over — walks zijn er vanaf €29,95 per persoon.",
-    tier3_p: "Een hele avond uit voor twee — of drie, als je gul bent.",
+    tier1_b: "Bijna een hele walk",
+    tier2_b: "Een Cocktail Walk voor één",
+    tier3_b: "Een avond uit voor twee",
     tier_btn: "Koop deze bon →",
-    tiers_note: "Koop 1 tot 10 bonnen in één bestelling en voeg bij het afrekenen een persoonlijk bericht toe. De bon valt binnen een paar minuten in de inbox — geen verzending, geen inpakpapier.",
+    tierc_sub: "Eigen bedrag",
+    tierc_b: "Elk bedrag dat je wilt",
+    tierc_btn: "Kies een bedrag →",
+    tiers_note: "Koop 1 tot 10 bonnen in één bestelling en voeg bij het afrekenen een persoonlijk bericht toe. De bon landt binnen een paar minuten in de inbox — geen verzending, geen inpakpapier.",
+    tiers_anchor: "Een walk is €29,95 per persoon. €25 dekt bijna een hele walk, €50 is een volledige walk voor één en €100 maakt er een avond uit voor twee van. Liever een exact bedrag? Vul bij het afrekenen je eigen bedrag in.",
     /* --- how gifting works --- */
     how_eyebrow: "Zo werkt het",
     how_h2: "Van jouw inbox naar hun avond uit",
-    how_p: "Drie stappen — en het regelwerk is ons werk, niet het hunne.",
-    g1_h: "Kies een bedrag, schrijf je bericht",
-    g1_p: "Kies €25, €50 of €100, voeg als je wilt een persoonlijk bericht toe en reken af. De cadeaubon komt per e-mail binnen met een eigen unieke code — klaar om door te sturen of uit te printen.",
-    g2_h: "Zij kiezen hun walk",
-    g2_p: "Elke route, elke stad, elke datum — Amsterdam, Rotterdam, Utrecht of Groningen. Drie gereserveerde bars, drie signature cocktails en een digitale routekaart, precies <a href=\"../how-it-works/\">zoals elke WOGO-walk werkt</a>.",
-    g3_h: "Zij wisselen hem in bij het afrekenen",
-    g3_p: "Bij het boeken vullen ze de code van de cadeaubon gewoon in bij het afrekenen en gaat het bedrag direct van het totaal af. Kost de walk meer dan de bon? Dan betalen ze het verschil zoals gebruikelijk.",
-    /* --- SEO copy block --- */
-    def_eyebrow: "Waarom het werkt",
-    def_h2: "Een cadeau dat een avond uit is, geen ding",
-    def_p1: "Een WOGO cadeaukaart is een cocktailwandeling-cadeaubon: een avond langs drie zorgvuldig gekozen cocktailbars, met bij elke stop een gereserveerde tafel en een signature cocktail die klaarstaat. De cadeaubon is in te wisselen op al onze walks — dus zij kiezen de stad, de route en de datum, en jij krijgt de eer van de hele avond.",
-    def_p2: "Geen maten om te gokken, niets om in te pakken, niets dat in een la belandt. Gewoon drie bars die ze zelf nooit hadden gevonden — en een verhaal waarin jouw naam voorkomt.",
-    /* --- perfect for --- */
-    occ_h2: "Perfect voor",
-    occ1_h: "Verjaardagen",
-    occ1_p: "Sla het gadgetgangpad over. Geef drie bars, drie cocktails en een verjaardagsverhaal dat ze écht navertellen.",
-    occ2_h: "Bedankjes",
-    occ2_p: "Voor de collega, de gastvrouw of de vriend die er voor je was — en meer verdient dan een bos bloemen.",
-    occ3_h: "De vriend(in) die alles al heeft",
-    occ3_p: "Ze hebben geen spullen meer nodig. Ze hebben een avond uit nodig die ze niet zelf hoefden te plannen.",
-    /* --- real guest review (Esther, verbatim from the Wix homepage) --- */
-    rev_eyebrow: "De avond die je cadeau doet",
-    rev_q: "Hele leuke avond gehad! Het personeel bij elke bar was echt super aardig en heel enthousiast dat we via WOGO kwamen. We hebben drie nieuwe plekken ontdekt in Amsterdam waar we anders niet waren gekomen. De afstand tussen elke bar was precies lang genoeg als 'break' en de laatste bar was zelfs op dinsdag lang genoeg open om te blijven hangen voor een extra drankje na afloop!",
-    rev_name: "Esther — gast in Amsterdam",
+    how_p: "Drie stappen. Het regelwerk doen wij, niet zij.",
+    g1_h: "Kies een bedrag",
+    g1_p: "Kies €25, €50 of €100 — één tot tien bonnen per bestelling.",
+    g2_h: "Voeg een bericht toe, reken af",
+    g2_p: "Schrijf een persoonlijk bericht en betaal veilig in seconden.",
+    g3_h: "Zij krijgen een code per e-mail",
+    g3_p: "Binnen enkele minuten geleverd — in te wisselen op elke route, elke stad.",
+    /* --- perfect for (occasion chips) --- */
+    occ_eyebrow: "Elke gelegenheid",
+    occ_h2: "Het juiste cadeau, precies op tijd",
+    occ_birthdays: "🎂 Verjaardagen",
+    occ_anniv: "💍 Jubilea",
+    occ_thanks: "💐 Bedankjes",
+    occ_xmas: "🎄 Kerst",
+    occ_justbc: "✨ Zomaar",
     /* --- mini FAQ --- */
     faq_h2: "Vragen over cadeaubonnen",
     fq1_s: "Hoe werkt het inwisselen van een cadeaubon?",
     fq1_b: "De cadeaubon komt per e-mail binnen met een unieke code. Wanneer de gelukkige een walk boekt op onze site, vult die de code in bij het afrekenen en gaat het bedrag van het totaal af. Dat is alles — geen account, geen app.",
     fq2_s: "Hoe lang is een cadeaubon geldig?",
-    fq2_b: "De precieze geldigheid staat op de cadeaubon zelf wanneer die per e-mail binnenkomt. Heb je nog een bon liggen en weet je niet waar je staat? Mail ons via <a href=\"mailto:info@wogoamsterdam.com\">info@wogoamsterdam.com</a> en we zoeken het voor je uit.",
+    fq2_b: "De precieze geldigheid staat op de cadeaubon zelf wanneer die per e-mail binnenkomt. Heb je nog een bon liggen en weet je niet meer hoelang hij nog geldig is? Mail ons via <a href=\"mailto:info@wogoamsterdam.com\">info@wogoamsterdam.com</a> en we zoeken het voor je uit.",
     fq3_s: "Kan een bon een deel van een grotere of groepsboeking dekken?",
     fq3_b: "Ja — een cadeaubon hoeft niet het hele bedrag te dekken. Vul de code in bij het afrekenen en betaal de rest zoals gebruikelijk. Plan je een walk voor 7 of meer? Kijk bij <a href=\"../groups/\">groepsboekingen</a> en noem je code als je contact opneemt — dan regelen we het samen.",
     faq_more: "Alle andere vragen — bekijk de volledige FAQ →",
@@ -759,44 +922,57 @@
     chs_gro: "wo–za · vanaf €29,95",
     explore: "Ontdek deze stad →",
     route_reassure: "✓ Reserveringen &amp; routekaart inbegrepen &nbsp;·&nbsp; ✓ Mocktail-optie op elke route &nbsp;·&nbsp; ✓ Vragen? <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">Stuur ons een berichtje</a>",
-    /* --- groups strip --- */
-    group_eyebrow: "Voor groepen", group_h2: "Vrijgezellenfeesten, verjaardagen &amp; teamuitjes",
-    group_p: "Wij regelen de bars, de tijden en de tafels — jullie nemen het gezelschap mee. Groepen van 7 tot 30, gepersonaliseerde routes mogelijk.",
-    group_btn: "Plan jullie groepswandeling →",
     /* --- final CTA + sticky --- */
-    final_h2: "Geef een avond, geen ding",
+    final_h2: "Geef een avond, geen cadeau dat stof vangt",
     final_p: "Binnen een paar minuten per e-mail geleverd — ook als de verjaardag vandaag is.",
     final_btn: "Koop een cadeaubon →",
     sticky_cta: "Koop een cadeaubon · vanaf €25",
     /* --- nav --- */
-    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_cta: "Koop een cadeaubon",
+    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_about: "Over WOGO", nav_cta: "Bekijk data",
     /* --- footer --- */
     foot_tag: "Drie bars die je nooit zelf had gevonden. Eén avond die je altijd bijblijft.",
     foot_c1_h: "Routes", foot_c2_h: "Ontdek",
-    foot_how: "Hoe het werkt", foot_groups: "Groepsboekingen", foot_gift: "Cadeaukaarten", foot_faq: "FAQ",
+    foot_how: "Hoe het werkt", foot_groups: "Groepsboekingen", foot_gift: "Cadeaukaarten", foot_contact: "Contact", foot_blog: "Blog", foot_faq: "FAQ",
+    foot_about: "Over WOGO",
     foot_contact_link: "Contact",
     foot_hours: "Maandag – vrijdag, 10:00 – 18:00",
     foot_trust: "★ 4.4 op Google · Trustpilot 4,5 / 5 · 80.000+ walks geboekt · Partner van Gemeente Rotterdam · 18+",
-    foot_copyright: "© 2026 WOGO Amsterdam B.V. · KvK 92237347 · BTW NL865949323B01 · Oude-IJsselstraat 32-2, Amsterdam"
+    /* legal-link keys pre-stubbed: uncomment the footer legal links (see the
+       bottom legal bar comment) when the privacy/cookie/terms pages ship */
+    foot_privacy: "Privacybeleid", foot_cookie: "Cookiebeleid", foot_terms: "Algemene voorwaarden",
+    foot_disclaimer: "Disclaimer", foot_accessibility: "Toegankelijkheid", foot_complaints: "Klachten", foot_cookie_settings: "Cookie-instellingen",
+    foot_copyright: "© 2026 WOGO Amsterdam B.V. · KvK 92237347 · BTW NL865949323B01 · Amsterdam"
   };
 
-  /* ===== Routes data (expansion-ready — keep in sync with the homepage) =====
-     Single source of truth for the Routes menus. Adding a country or city later is
-     a one-line data edit here — the desktop dropdown, mobile menu and footer all
-     render from this. Country grouping headers appear automatically once there is
-     more than one country. TODO: point city URLs at the internal /<city>/ hubs
-     once all four exist (Wix URLs kept for now so no link 404s mid-migration). */
-  var WOGO_ROUTES = {
-    countries: [
-      { code: 'nl', name: { en: 'Netherlands', nl: 'Nederland' }, cities: [
-        { name: 'Amsterdam', url: 'https://www.wogococktailwalk.com/amsterdam-cocktailwalk-route1' },
-        { name: 'Rotterdam', url: '../rotterdam/' },
-        { name: 'Utrecht',   url: 'https://www.wogococktailwalk.com/utrecht' },
-        { name: 'Groningen', url: 'https://www.wogococktailwalk.com/groningen-cocktail-walk' }
-      ] }
-      /* Future: { code:'uk', name:{en:'United Kingdom', nl:'Verenigd Koninkrijk'}, cities:[ {name:'London', url:'../london/'} ] } */
-    ]
-  };
+  /* ===== SHARED NAV/FOOTER v4 wiring =====
+     BASE — this page's relative prefix back to the repo root: '' at the root,
+     '../' one folder deep, '../../' two folders deep. Every internal URL in
+     WOGO_ROUTES below is written from the repo root and BASE-prefixed at
+     render time, so the routes data + render code stay byte-identical on
+     every page — only this one line changes per folder depth. */
+  var BASE = '../';
+  /* ===== Routes data v4 — single source of truth: the desktop Routes dropdown,
+     the mobile overlay city chips AND the footer Routes column all render from
+     this. Cities link to the internal city hubs; the nested routes arrays feed
+     the footer's per-city route lists. Adding a country, city or route later is
+     a one-line data edit here — country grouping headers appear automatically
+     once there is more than one country. */
+  var WOGO_ROUTES = { countries: [ { code:'nl', name:{en:'Netherlands',nl:'Nederland'}, cities: [
+    { name:'Rotterdam', hub:'rotterdam/', routes:[
+        {name:'Rotterdam Route 1', url:'rotterdam/witte-de-with/'},
+        {name:'Rotterdam Route 2', url:'rotterdam/hidden-gems/'},
+        {name:'Rotterdam Premium', url:'rotterdam/premium-gin-walk/'} ] },
+    { name:'Utrecht',   hub:'utrecht/',   routes:[ {name:'Utrecht',           url:'utrecht/'} ] },
+    { name:'Amsterdam', hub:'amsterdam/', routes:[ {name:'Amsterdam Route 1', url:'amsterdam/'} ] },
+    { name:'Groningen', hub:'groningen/', routes:[ {name:'Groningen',         url:'groningen/'} ] },
+    { name:'Delft',     hub:'delft/',     routes:[ {name:'Delft',             url:'delft/'} ] }
+  ] },
+  /* United Kingdom: London is a working PLACEHOLDER example (noindex). The
+     country heading appears automatically now there is more than one country.
+     Replace the London routes below with the real ones at launch. */
+  { code:'gb', name:{en:'United Kingdom',nl:'Verenigd Koninkrijk'}, cities: [
+    { name:'London', hub:'london/', routes:[ {name:'London Soho', url:'london/soho/'} ] }
+  ] } ] };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function renderRoutes(lang) {
     var countries = WOGO_ROUTES.countries;
@@ -813,10 +989,17 @@
         footHTML += '<span class="w-footer-country">' + cname + '</span>';
       }
       c.cities.forEach(function (city) {
-        var link = '<a href="' + esc(city.url) + '" target="_top" class="w-navlink">' + esc(city.name) + '</a>';
-        navHTML += '<li>' + link + '</li>';
-        ovHTML += link;
-        footHTML += link;
+        // Nav dropdown + mobile overlay chips: one link per CITY -> its internal hub.
+        var hubLink = '<a href="' + esc(BASE + city.hub) + '" class="w-navlink">' + esc(city.name) + '</a>';
+        navHTML += '<li>' + hubLink + '</li>';
+        ovHTML += hubLink;
+        // FOOTER: flat list of the exact route-card names (no per-city sub-heading —
+        // the names already carry the city, so it reads Rotterdam Route 1 · Rotterdam
+        // Route 2 · Rotterdam Premium · Utrecht · Amsterdam Route 1 · Groningen).
+        // The country heading still appears above when there is more than one country.
+        (city.routes || []).forEach(function (r) {
+          footHTML += '<a href="' + esc(BASE + r.url) + '" class="w-navlink">' + esc(r.name) + '</a>';
+        });
       });
     });
     if (navMenu) navMenu.innerHTML = navHTML;
@@ -847,12 +1030,12 @@
         url = url.replace('wogococktailwalk.com/', 'wogococktailwalk.com/' + lang + '/');
       }
       if (window.__wogoCarry) {
-        try { var u = new URL(url); Object.keys(window.__wogoCarry).forEach(function (k) { u.searchParams.set(k, window.__wogoCarry[k]); }); url = u.toString(); } catch (e) {}
+        try { var u = new URL(url, window.location.href); Object.keys(window.__wogoCarry).forEach(function (k) { u.searchParams.set(k, window.__wogoCarry[k]); }); url = u.toString(); } catch (e) {}
       }
       a.href = url;
     });
     document.documentElement.lang = lang;
-    document.querySelectorAll('.w-lang button').forEach(function (b) { var on = b.getAttribute('data-lang') === lang; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+    document.querySelectorAll('.w-lang').forEach(function (w) { var c = w.querySelector('.w-lang-code'); if (c) c.textContent = lang.toUpperCase(); var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-label', 'Change language (' + lang.toUpperCase() + ')'); w.querySelectorAll('.w-lang-opt').forEach(function (o) { o.setAttribute('aria-selected', o.getAttribute('data-lang') === lang ? 'true' : 'false'); }); });
     try { localStorage.setItem('wogoLang', lang); } catch (e) {}
   }
   var saved = null;
@@ -862,7 +1045,74 @@
   // Reveal the body — the tiny anti-flicker script in <head> hides it for Dutch
   // visitors so they never see the English copy flash before translation.
   document.body.style.visibility = 'visible';
-  document.querySelectorAll('.w-lang button').forEach(function (b) { b.addEventListener('click', function () { setLang(b.getAttribute('data-lang')); }); });
+  // ===== Language dropdown (shared switcher UI) =====
+  // WOGO_LANGS drives the menu in the nav AND the mobile overlay. To add a language
+  // later (e.g. French): 1) build its full override dictionary and register it in
+  // DICTS above (fr: FR), then 2) enable ONE line here — the dropdown renders itself.
+  var WOGO_LANGS = [
+    { code: 'en', label: 'English' },
+    { code: 'nl', label: 'Nederlands' }
+    // ,{ code: 'fr', label: 'Français' }  // example — enable only once a full FR dictionary exists in DICTS
+  ];
+  (function () {
+    var switchers = Array.prototype.slice.call(document.querySelectorAll('.w-lang'));
+    function closeAll(except) {
+      switchers.forEach(function (w) {
+        if (w === except) return;
+        w.classList.remove('open');
+        var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-expanded', 'false');
+      });
+    }
+    switchers.forEach(function (w) {
+      var btn = w.querySelector('.w-lang-btn'), menu = w.querySelector('.w-lang-menu');
+      if (!btn || !menu) return;
+      var current = document.documentElement.lang || 'en';
+      menu.innerHTML = '';
+      WOGO_LANGS.forEach(function (l) {
+        var li = document.createElement('li');
+        li.className = 'w-lang-opt';
+        li.setAttribute('role', 'option');
+        li.setAttribute('tabindex', '-1');
+        li.setAttribute('data-lang', l.code);
+        li.setAttribute('aria-selected', l.code === current ? 'true' : 'false');
+        li.innerHTML = '<span class="w-lang-opt-code" aria-hidden="true">' + l.code.toUpperCase() + '</span>' + l.label;
+        menu.appendChild(li);
+      });
+      var opts = Array.prototype.slice.call(menu.children);
+      function open(focusOpt) {
+        closeAll(w);
+        w.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+        var target = menu.querySelector('[aria-selected="true"]') || opts[0];
+        if (focusOpt && target) target.focus();
+      }
+      function close(refocus) {
+        w.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+        if (refocus) btn.focus();
+      }
+      btn.addEventListener('click', function () { if (w.classList.contains('open')) { close(false); } else { open(false); } });
+      btn.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); open(true); }
+        else if (e.key === 'Escape') { close(false); }
+      });
+      opts.forEach(function (o, i) {
+        o.addEventListener('click', function () { setLang(o.getAttribute('data-lang')); close(true); });
+        o.addEventListener('keydown', function (e) {
+          if (e.key === 'ArrowDown') { e.preventDefault(); (opts[i + 1] || opts[0]).focus(); }
+          else if (e.key === 'ArrowUp') { e.preventDefault(); (opts[i - 1] || opts[opts.length - 1]).focus(); }
+          else if (e.key === 'Home') { e.preventDefault(); opts[0].focus(); }
+          else if (e.key === 'End') { e.preventDefault(); opts[opts.length - 1].focus(); }
+          else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setLang(o.getAttribute('data-lang')); close(true); }
+          else if (e.key === 'Escape') { e.preventDefault(); close(true); }
+          else if (e.key === 'Tab') { close(false); }
+        });
+      });
+    });
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest || !e.target.closest('.w-lang')) closeAll(null);
+    });
+  })();
 
   /* ===== Smooth-scroll anchors (embedded-in-Wix fallback kept so this page keeps
      working if it's ever iframed like the homepage) ===== */
@@ -941,6 +1191,8 @@
         var r = wTiersSec.getBoundingClientRect();
         if (r.top < window.innerHeight && r.bottom > 0) show = false;
       }
+      var wf = document.querySelector('.w-final, .w-footer');
+      if (show && wf) { var wfr = wf.getBoundingClientRect(); if (wfr.top < window.innerHeight) show = false; }
       wSticky.classList.toggle('show', show);
     };
     window.addEventListener('scroll', stickyState, { passive: true });
@@ -1003,5 +1255,506 @@
 })();
 </script>
 
+<script>
+/* WOGO VISUAL PASS — scroll-reveal + hero entrance. Outside all fenced blocks.
+   Everything is fully visible if this never runs (hidden states need .wg-js,
+   the reveal only ADDS a class). */
+(function () {
+  var root = document.documentElement;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Hero entrance: flip on next frame so the transition plays once. */
+  requestAnimationFrame(function () { root.classList.add('wg-hero-go'); });
+
+  var targets = document.querySelectorAll('.wg-reveal, .wg-stagger, .wg-routeline');
+
+  /* No IntersectionObserver, or user prefers reduced motion → show everything now. */
+  if (reduce || !('IntersectionObserver' in window)) {
+    for (var i = 0; i < targets.length; i++) targets[i].classList.add('wg-in');
+    return;
+  }
+
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add('wg-in'); io.unobserve(e.target); }
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
+
+  for (var j = 0; j < targets.length; j++) io.observe(targets[j]);
+})();
+</script>
+
+<!-- ============================================================================
+     ▼▼▼  WOGO COOKIE CONSENT v1  —  BEGIN  (copy from here)  ▼▼▼
+     Self-contained: CSS + HTML + JS, no library, no external requests, no images.
+     Paste IDENTICALLY on every page just before 
+</body>. Any edit here must be
+     re-applied identically to every page.
+     ============================================================================ -->
+<style>
+  /* Uses the shared WOGO brand tokens when present; falls back to the same hexes
+     so the block is safe even where tokens are not defined. */
+  .wogo-consent, .wogo-consent *{box-sizing:border-box}
+  .wogo-consent [hidden]{display:none !important}
+
+  /* ---- bottom banner ---- */
+  .wogo-cc-banner{
+    position:fixed; left:0; right:0; bottom:0; z-index:2147483000;
+    background:var(--wogo-cream,#fffaf6);
+    color:var(--wogo-espresso,#3f2b21);
+    border-top:1px solid var(--wogo-salmon,#ffaa81);
+    box-shadow:0 -10px 30px rgba(32,22,17,.16);
+    padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));
+    display:flex; flex-direction:column; gap:14px;
+  }
+  .wogo-cc-banner-text{max-width:64ch}
+  .wogo-cc-h{margin:0 0 4px; font-size:1.05rem; line-height:1.3; color:var(--wogo-ink,#201611); font-weight:800}
+  .wogo-cc-p{margin:0; font-size:.9rem; line-height:1.5; color:var(--wogo-brown-soft,#7e5541)}
+  .wogo-cc-p a{color:var(--wogo-brown,#643e2b); text-decoration:underline}
+  .wogo-cc-banner-actions{display:flex; flex-wrap:wrap; gap:10px}
+
+  /* ---- buttons: Reject / Customize are equal-prominence outlines,
+          Accept is the salmon primary. Reject is as easy as Accept (one click). ---- */
+  .wogo-cc-btn{
+    -webkit-appearance:none; appearance:none; cursor:pointer;
+    font:inherit; font-weight:700; font-size:.9rem;
+    border-radius:999px; padding:12px 20px; line-height:1;
+    transition:transform .15s ease, background-color .15s ease, box-shadow .15s ease;
+    flex:1 1 auto; min-width:132px;
+  }
+  .wogo-cc-btn:active{transform:translateY(1px)}
+  .wogo-cc-btn-ghost{
+    background:transparent; color:var(--wogo-espresso,#3f2b21);
+    border:1.5px solid var(--wogo-brown,#643e2b);
+  }
+  .wogo-cc-btn-ghost:hover{background:rgba(63,43,33,.06)}
+  .wogo-cc-btn-primary{
+    background:var(--wogo-cta-bg,linear-gradient(135deg,#ffaa81 0%,#f2905c 100%));
+    color:var(--wogo-cta-ink,#3f2b21); border:1.5px solid transparent;
+    box-shadow:0 8px 20px rgba(242,144,92,.45);
+  }
+  .wogo-cc-btn-primary:hover{box-shadow:0 10px 24px rgba(242,144,92,.55)}
+
+  /* ---- preferences modal ---- */
+  .wogo-cc-scrim{
+    position:fixed; inset:0; z-index:2147483600;
+    background:rgba(32,22,17,.55);
+    display:flex; align-items:flex-end; justify-content:center;
+    padding:0; overflow-y:auto;
+  }
+  .wogo-cc-modal{
+    position:relative; width:100%; max-width:560px;
+    background:var(--wogo-cream,#fffaf6); color:var(--wogo-espresso,#3f2b21);
+    border-radius:20px 20px 0 0;
+    padding:26px 22px calc(24px + env(safe-area-inset-bottom,0px));
+    box-shadow:0 -14px 44px rgba(32,22,17,.30);
+    max-height:92vh; overflow-y:auto;
+  }
+  .wogo-cc-close{
+    position:absolute; top:12px; right:12px; width:38px; height:38px;
+    border:0; border-radius:50%; cursor:pointer; font-size:1.4rem; line-height:1;
+    background:rgba(63,43,33,.08); color:var(--wogo-espresso,#3f2b21);
+  }
+  .wogo-cc-close:hover{background:rgba(63,43,33,.16)}
+  .wogo-cc-modal .wogo-cc-h{font-size:1.25rem}
+  .wogo-cc-modal .wogo-cc-p{margin:0 0 18px}
+  .wogo-cc-cats{list-style:none; margin:0 0 20px; padding:0; display:flex; flex-direction:column; gap:12px}
+  .wogo-cc-cat{
+    border:1px solid rgba(63,43,33,.14); border-radius:14px;
+    padding:14px 16px; background:var(--wogo-blush,#ffe5d9);
+  }
+  .wogo-cc-cat-head{display:flex; align-items:center; justify-content:space-between; gap:12px}
+  .wogo-cc-cat-title{font-weight:800; color:var(--wogo-ink,#201611); font-size:.98rem}
+  .wogo-cc-cat-desc{margin:6px 0 0; font-size:.85rem; line-height:1.5; color:var(--wogo-brown-soft,#7e5541)}
+  .wogo-cc-always{font-size:.78rem; font-weight:700; color:var(--wogo-brown,#643e2b); white-space:nowrap}
+
+  /* ---- toggle switch ---- */
+  .wogo-cc-switch{position:relative; display:inline-flex; align-items:center; flex:0 0 auto}
+  .wogo-cc-switch input{position:absolute; opacity:0; width:52px; height:30px; margin:0; cursor:pointer}
+  .wogo-cc-slider{
+    width:52px; height:30px; border-radius:999px; background:#c9b7ad;
+    position:relative; transition:background-color .18s ease; flex:0 0 auto;
+  }
+  .wogo-cc-slider::after{
+    content:""; position:absolute; top:3px; left:3px; width:24px; height:24px;
+    border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.3);
+    transition:transform .18s ease;
+  }
+  .wogo-cc-switch input:checked + .wogo-cc-slider{background:var(--wogo-salmon-deep,#f2905c)}
+  .wogo-cc-switch input:checked + .wogo-cc-slider::after{transform:translateX(22px)}
+  .wogo-cc-switch input:disabled + .wogo-cc-slider{opacity:.6; cursor:not-allowed}
+  .wogo-cc-switch input:focus-visible + .wogo-cc-slider{outline:3px solid var(--wogo-salmon-deep,#f2905c); outline-offset:2px}
+  .wogo-cc-modal-actions{display:flex; flex-wrap:wrap; gap:10px}
+
+  /* ---- visible focus everywhere (independent of page styles) ---- */
+  .wogo-consent :focus-visible{outline:3px solid var(--wogo-salmon-deep,#f2905c); outline-offset:2px; border-radius:8px}
+
+  /* ---- entrance motion, reduced-motion safe (transform/opacity only) ---- */
+  @media (prefers-reduced-motion:no-preference){
+    .wogo-cc-banner{animation:wogoCcUp .28s ease both}
+    .wogo-cc-modal{animation:wogoCcUp .28s ease both}
+    .wogo-cc-scrim{animation:wogoCcFade .2s ease both}
+    @keyframes wogoCcUp{from{transform:translateY(16px); opacity:0} to{transform:translateY(0); opacity:1}}
+    @keyframes wogoCcFade{from{opacity:0} to{opacity:1}}
+  }
+
+  /* ---- desktop: banner becomes a row, modal becomes a centered card ---- */
+  @media (min-width:720px){
+    .wogo-cc-banner{
+      flex-direction:row; align-items:center; justify-content:space-between;
+      gap:24px; padding:20px 28px;
+    }
+    .wogo-cc-banner-actions{flex-wrap:nowrap; flex:0 0 auto}
+    .wogo-cc-btn{flex:0 0 auto}
+    .wogo-cc-scrim{align-items:center; padding:24px}
+    .wogo-cc-modal{border-radius:20px}
+  }
+</style>
+
+<!-- The whole widget is hidden by default (the [hidden] attribute). JS reveals it
+     ONLY on a first visit with no stored choice. With JavaScript disabled it stays
+     hidden and — because no tracker loads without consent — nothing is tracked.
+     No pre-ticked boxes: optional toggles start OFF. -->
+<div id="wogo-consent" class="wogo-consent" hidden>
+
+  <!-- Banner -->
+  <div class="wogo-cc-banner" id="wogoCcBanner" role="region" aria-label="Cookie consent" tabindex="-1" hidden>
+    <div class="wogo-cc-banner-text">
+      <h2 class="wogo-cc-h" data-cc="banner_title">We value your privacy</h2>
+      <p class="wogo-cc-p" data-cc="banner_body">We use cookies to keep the site working and, only if you agree, to understand our audience and improve our ads. You choose what to allow.</p>
+    </div>
+    <div class="wogo-cc-banner-actions">
+      <button type="button" class="wogo-cc-btn wogo-cc-btn-ghost" data-cc-act="reject" data-cc="btn_reject">Reject all</button>
+      <button type="button" class="wogo-cc-btn wogo-cc-btn-ghost" data-cc-act="customize" data-cc="btn_customize">Customize</button>
+      <button type="button" class="wogo-cc-btn wogo-cc-btn-primary" data-cc-act="accept" data-cc="btn_accept">Accept all</button>
+    </div>
+  </div>
+
+  <!-- Preferences modal -->
+  <div class="wogo-cc-scrim" id="wogoCcScrim" hidden>
+    <div class="wogo-cc-modal" id="wogoCcModal" role="dialog" aria-modal="true"
+         aria-labelledby="wogoCcModalTitle" aria-describedby="wogoCcModalIntro" tabindex="-1">
+      <button type="button" class="wogo-cc-close" data-cc-act="close" aria-label="Close" data-cc-aria="close_label">&times;</button>
+      <h2 class="wogo-cc-h" id="wogoCcModalTitle" data-cc="modal_title">Cookie preferences</h2>
+      <p class="wogo-cc-p" id="wogoCcModalIntro" data-cc="modal_intro">Choose which cookies WOGO may use. You can change this anytime via "Cookie settings" in the footer.</p>
+
+      <ul class="wogo-cc-cats">
+        <!-- Necessary — always on, cannot be switched off -->
+        <li class="wogo-cc-cat">
+          <div class="wogo-cc-cat-head">
+            <span class="wogo-cc-cat-title" data-cc="cat_necessary_h">Necessary</span>
+            <label class="wogo-cc-switch">
+              <input type="checkbox" checked disabled aria-disabled="true" tabindex="-1">
+              <span class="wogo-cc-slider" aria-hidden="true"></span>
+              <span class="wogo-cc-always" data-cc="always_on">Always on</span>
+            </label>
+          </div>
+          <p class="wogo-cc-cat-desc" data-cc="cat_necessary_d">Required for the site to work: security, language choice and remembering this cookie preference. No tracking.</p>
+        </li>
+
+        <!-- Analytics -->
+        <li class="wogo-cc-cat">
+          <div class="wogo-cc-cat-head">
+            <span class="wogo-cc-cat-title" id="wogoCcAnalyticsL" data-cc="cat_analytics_h">Analytics</span>
+            <label class="wogo-cc-switch">
+              <input type="checkbox" data-cc-input="analytics" aria-labelledby="wogoCcAnalyticsL">
+              <span class="wogo-cc-slider" aria-hidden="true"></span>
+            </label>
+          </div>
+          <p class="wogo-cc-cat-desc" data-cc="cat_analytics_d">Anonymous statistics about how the site is used, so we can make it better.</p>
+        </li>
+
+        <!-- Functional -->
+        <li class="wogo-cc-cat">
+          <div class="wogo-cc-cat-head">
+            <span class="wogo-cc-cat-title" id="wogoCcFunctionalL" data-cc="cat_functional_h">Functional</span>
+            <label class="wogo-cc-switch">
+              <input type="checkbox" data-cc-input="functional" aria-labelledby="wogoCcFunctionalL">
+              <span class="wogo-cc-slider" aria-hidden="true"></span>
+            </label>
+          </div>
+          <p class="wogo-cc-cat-desc" data-cc="cat_functional_d">Extra conveniences like embedded maps, videos or chat, if we add them.</p>
+        </li>
+
+        <!-- Marketing -->
+        <li class="wogo-cc-cat">
+          <div class="wogo-cc-cat-head">
+            <span class="wogo-cc-cat-title" id="wogoCcMarketingL" data-cc="cat_marketing_h">Marketing</span>
+            <label class="wogo-cc-switch">
+              <input type="checkbox" data-cc-input="marketing" aria-labelledby="wogoCcMarketingL">
+              <span class="wogo-cc-slider" aria-hidden="true"></span>
+            </label>
+          </div>
+          <p class="wogo-cc-cat-desc" data-cc="cat_marketing_d">Lets us measure our ads (Meta Pixel) so we show them to the right people and waste less budget.</p>
+        </li>
+      </ul>
+
+      <div class="wogo-cc-modal-actions">
+        <button type="button" class="wogo-cc-btn wogo-cc-btn-ghost" data-cc-act="reject" data-cc="btn_reject">Reject all</button>
+        <button type="button" class="wogo-cc-btn wogo-cc-btn-ghost" data-cc-act="accept" data-cc="btn_accept">Accept all</button>
+        <button type="button" class="wogo-cc-btn wogo-cc-btn-primary" data-cc-act="save" data-cc="btn_save">Save my choices</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* WOGO COOKIE CONSENT v1 — vanilla, no dependencies.
+   Exposes: window.wogoConsent, window.wogoOnConsent(fn), window.wogoOpenConsent().
+   Stores the choice + ISO timestamp under localStorage["wogoConsent.v1"]. */
+(function () {
+  "use strict";
+  var VERSION   = 1;
+  var STORE_KEY = "wogoConsent.v1";     /* bump ONLY if categories change (re-prompts everyone) */
+  var CATS      = ["analytics", "functional", "marketing"];
+
+  /* ---------- text: English default + full natural Dutch ---------- */
+  var I18N = {
+    en: {
+      banner_title: "We value your privacy",
+      banner_body:  "We use cookies to keep the site working and, only if you agree, to understand our audience and improve our ads. You choose what to allow.",
+      btn_reject:   "Reject all",
+      btn_accept:   "Accept all",
+      btn_customize:"Customize",
+      btn_save:     "Save my choices",
+      modal_title:  "Cookie preferences",
+      modal_intro:  "Choose which cookies WOGO may use. You can change this anytime via “Cookie settings” in the footer.",
+      close_label:  "Close cookie preferences",
+      always_on:    "Always on",
+      cat_necessary_h: "Necessary",
+      cat_necessary_d: "Required for the site to work: security, language choice and remembering this cookie preference. No tracking.",
+      cat_analytics_h: "Analytics",
+      cat_analytics_d: "Anonymous statistics about how the site is used, so we can make it better.",
+      cat_functional_h: "Functional",
+      cat_functional_d: "Extra conveniences like embedded maps, videos or chat, if we add them.",
+      cat_marketing_h: "Marketing",
+      cat_marketing_d: "Lets us measure our ads (Meta Pixel) so we show them to the right people and waste less budget."
+    },
+    nl: {
+      banner_title: "Jouw privacy telt",
+      banner_body:  "We gebruiken cookies om de site te laten werken en, alleen als je dat goedvindt, om ons publiek te begrijpen en onze advertenties te verbeteren. Jij kiest wat je toestaat.",
+      btn_reject:   "Alles weigeren",
+      btn_accept:   "Alles accepteren",
+      btn_customize:"Zelf instellen",
+      btn_save:     "Mijn keuze opslaan",
+      modal_title:  "Cookievoorkeuren",
+      modal_intro:  "Kies welke cookies WOGO mag gebruiken. Je past dit altijd aan via “Cookie-instellingen” in de footer.",
+      close_label:  "Cookievoorkeuren sluiten",
+      always_on:    "Altijd aan",
+      cat_necessary_h: "Noodzakelijk",
+      cat_necessary_d: "Nodig om de site te laten werken: beveiliging, taalkeuze en het onthouden van deze cookievoorkeur. Geen tracking.",
+      cat_analytics_h: "Analytics",
+      cat_analytics_d: "Anonieme statistieken over hoe de site gebruikt wordt, zodat we hem kunnen verbeteren.",
+      cat_functional_h: "Functioneel",
+      cat_functional_d: "Extra gemak zoals ingesloten kaarten, video’s of chat, mocht dat er komen.",
+      cat_marketing_h: "Marketing",
+      cat_marketing_d: "Hiermee meten we onze advertenties (Meta Pixel), zodat we ze aan de juiste mensen tonen en minder budget verspillen."
+    }
+  };
+
+  /* Detect the visitor's language the same way the site's foot script does:
+     saved wogoLang first, then <html lang>, then browser language. */
+  function readLang() {
+    try { var s = localStorage.getItem("wogoLang"); if (s === "nl" || s === "en") return s; } catch (e) {}
+    var h = (document.documentElement.lang || "").toLowerCase(); if (h.indexOf("nl") === 0) return "nl";
+    var n = (navigator.language || "").toLowerCase(); if (n.indexOf("nl") === 0) return "nl";
+    return "en";
+  }
+
+  /* ---------- stored choice (proof of consent) ---------- */
+  function loadRecord() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return null;
+      var o = JSON.parse(raw);
+      if (!o || o.v !== VERSION) return null;   /* old/absent version => ask again */
+      return o;
+    } catch (e) { return null; }
+  }
+
+  function publish(consent) {
+    window.wogoConsent = {
+      analytics:  !!consent.analytics,
+      functional: !!consent.functional,
+      marketing:  !!consent.marketing
+    };
+    var detail = window.wogoConsent;
+    try {
+      window.dispatchEvent(new CustomEvent("wogoconsentchange", { detail: detail }));
+    } catch (e) {
+      try { var ev = document.createEvent("CustomEvent");
+        ev.initCustomEvent("wogoconsentchange", false, false, detail);
+        window.dispatchEvent(ev); } catch (e2) {}
+    }
+  }
+
+  function saveRecord(consent) {
+    var rec = {
+      v: VERSION,
+      analytics:  !!consent.analytics,
+      functional: !!consent.functional,
+      marketing:  !!consent.marketing,
+      ts: new Date().toISOString(),   /* proof: exactly when consent was given */
+      lang: readLang()
+    };
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(rec)); } catch (e) {}
+    publish(rec);
+    return rec;
+  }
+
+  /* Seed window.wogoConsent immediately so gating code can read it right away.
+     Before any choice, everything optional is FALSE (nothing may fire). */
+  var initial = loadRecord() || { analytics: false, functional: false, marketing: false };
+  window.wogoConsent = {
+    analytics: !!initial.analytics, functional: !!initial.functional, marketing: !!initial.marketing
+  };
+
+  /* Subscribe helper: run now with the current value, then on every change. */
+  window.wogoOnConsent = function (fn) {
+    if (typeof fn !== "function") return;
+    try { fn(window.wogoConsent); } catch (e) {}
+    window.addEventListener("wogoconsentchange", function (e) {
+      try { fn(e.detail || window.wogoConsent); } catch (err) {}
+    });
+  };
+
+  /* ---------- UI ---------- */
+  function boot() {
+    var root   = document.getElementById("wogo-consent");
+    if (!root) return;
+    var banner = document.getElementById("wogoCcBanner");
+    var scrim  = document.getElementById("wogoCcScrim");
+    var modal  = document.getElementById("wogoCcModal");
+    if (!banner || !scrim || !modal) return;
+
+    var lastFocus = null;
+
+    function applyText() {
+      var dict = I18N[readLang()] || I18N.en;
+      root.querySelectorAll("[data-cc]").forEach(function (el) {
+        var k = el.getAttribute("data-cc");
+        if (dict[k] != null) el.textContent = dict[k];   /* textContent = no HTML injection */
+      });
+      root.querySelectorAll("[data-cc-aria]").forEach(function (el) {
+        var k = el.getAttribute("data-cc-aria");
+        if (dict[k] != null) el.setAttribute("aria-label", dict[k]);
+      });
+    }
+
+    function setToggles(consent) {
+      CATS.forEach(function (c) {
+        var input = modal.querySelector('[data-cc-input="' + c + '"]');
+        if (input) input.checked = !!consent[c];
+      });
+    }
+    function readToggles() {
+      var out = {};
+      CATS.forEach(function (c) {
+        var input = modal.querySelector('[data-cc-input="' + c + '"]');
+        out[c] = !!(input && input.checked);
+      });
+      return out;
+    }
+
+    function showBanner() {
+      applyText();
+      root.hidden = false;
+      scrim.hidden = true;
+      banner.hidden = false;
+      try { banner.focus(); } catch (e) {}
+    }
+    function hideAll() {
+      root.hidden = true;
+      scrim.hidden = true;
+      banner.hidden = true;
+    }
+    function openModal() {
+      applyText();
+      lastFocus = document.activeElement;
+      setToggles(loadRecord() || { analytics: false, functional: false, marketing: false });
+      root.hidden = false;
+      banner.hidden = true;     /* one surface at a time */
+      scrim.hidden = false;
+      try { modal.focus(); } catch (e) {}
+    }
+    function closeModal() {
+      scrim.hidden = true;
+      if (loadRecord()) {
+        hideAll();              /* a choice already exists: fully dismiss */
+      } else {
+        showBanner();           /* first visit, no choice yet: fall back to the banner */
+      }
+      try { if (lastFocus && lastFocus.focus) lastFocus.focus(); } catch (e) {}
+    }
+
+    function accept() { saveRecord({ analytics: true,  functional: true,  marketing: true  }); hideAll(); }
+    function reject() { saveRecord({ analytics: false, functional: false, marketing: false }); hideAll(); }
+    function save()   { saveRecord(readToggles()); hideAll(); }
+
+    /* one delegated click handler for every button in the widget */
+    root.addEventListener("click", function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest("[data-cc-act]") : null;
+      if (!btn) return;
+      switch (btn.getAttribute("data-cc-act")) {
+        case "accept":    accept(); break;
+        case "reject":    reject(); break;
+        case "customize": openModal(); break;
+        case "save":      save(); break;
+        case "close":     closeModal(); break;
+      }
+    });
+    /* click on the dark backdrop (outside the card) closes the modal */
+    scrim.addEventListener("click", function (e) { if (e.target === scrim) closeModal(); });
+
+    /* keyboard: Esc closes the modal; Tab is trapped inside it */
+    document.addEventListener("keydown", function (e) {
+      if (scrim.hidden) return;
+      var key = e.key || e.keyCode;
+      if (key === "Escape" || key === "Esc" || key === 27) { e.preventDefault(); closeModal(); return; }
+      if (key === "Tab" || key === 9) {
+        var f = modal.querySelectorAll(
+          'button:not([disabled]), [href], input:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
+        );
+        f = Array.prototype.filter.call(f, function (el) {
+          return el.offsetWidth || el.offsetHeight || el.getClientRects().length;
+        });
+        if (!f.length) return;
+        var first = f[0], last = f[f.length - 1], a = document.activeElement;
+        if (e.shiftKey && (a === first || a === modal)) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+
+    /* footer "Cookie settings" link hook */
+    window.wogoOpenConsent = function () { openModal(); };
+
+    /* re-localize the (hidden) widget if the visitor flips EN/NL after we booted */
+    window.addEventListener("storage", function (e) { if (e.key === "wogoLang") applyText(); });
+
+    /* First-visit gate: show the banner only when no valid choice is stored. */
+    if (!loadRecord()) showBanner();
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+})();
+</script>
+<!-- ============================================================================
+     ▲▲▲  WOGO COOKIE CONSENT v1  —  END  (copy to here)  ▲▲▲
+     ============================================================================ -->
+
+
+<!-- ===== WOGO WHATSAPP FLOAT v1 — identical on every page; keep in sync ===== -->
+<a class="w-wa" href="https://wa.me/31202101168?text=Hi%20WOGO!%20I%20have%20a%20question" target="_blank" rel="noopener" aria-label="Chat with WOGO on WhatsApp">
+  <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16.02 3.2c-7.06 0-12.8 5.73-12.8 12.79 0 2.25.59 4.45 1.72 6.39L3.2 28.8l6.6-1.72a12.76 12.76 0 0 0 6.21 1.58h.01c7.05 0 12.79-5.74 12.79-12.79 0-3.42-1.33-6.63-3.75-9.05a12.7 12.7 0 0 0-9.04-3.62zm0 23.25h-.01a10.6 10.6 0 0 1-5.4-1.48l-.39-.23-4.02 1.05 1.07-3.92-.25-.4a10.6 10.6 0 0 1-1.62-5.65c0-5.87 4.78-10.65 10.66-10.65 2.85 0 5.52 1.11 7.53 3.12a10.57 10.57 0 0 1 3.12 7.54c0 5.87-4.78 10.65-10.66 10.65zm5.84-7.98c-.32-.16-1.9-.94-2.19-1.04-.29-.11-.5-.16-.72.16-.21.32-.82 1.04-1.01 1.25-.19.21-.37.24-.69.08-.32-.16-1.35-.5-2.57-1.59-.95-.85-1.59-1.9-1.78-2.22-.19-.32-.02-.49.14-.65.14-.14.32-.37.48-.56.16-.19.21-.32.32-.53.11-.21.05-.4-.03-.56-.08-.16-.72-1.74-.99-2.38-.26-.62-.53-.54-.72-.55-.19-.01-.4-.01-.61-.01-.21 0-.56.08-.85.4-.29.32-1.11 1.09-1.11 2.66 0 1.57 1.14 3.08 1.3 3.29.16.21 2.25 3.43 5.44 4.81.76.33 1.35.52 1.81.67.76.24 1.46.21 2.01.13.61-.09 1.9-.78 2.17-1.53.27-.75.27-1.39.19-1.53-.08-.13-.29-.21-.61-.37z"/></svg>
+</a>
+<style>
+.w-wa{position:fixed;right:18px;bottom:22px;z-index:65;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(37,211,102,.45),0 2px 6px rgba(0,0,0,.2);transition:transform .18s ease,box-shadow .18s ease;}
+.w-wa:hover{transform:scale(1.07);box-shadow:0 10px 26px rgba(37,211,102,.55),0 2px 6px rgba(0,0,0,.22);}
+.w-wa:focus-visible{outline:3px solid #128C3E;outline-offset:3px;}
+@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}}
+@media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
+</style>
+<!-- ===== /WOGO WHATSAPP FLOAT ===== -->
 </body>
 </html>
