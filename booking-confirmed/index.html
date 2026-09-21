@@ -934,6 +934,7 @@
   try { saved = localStorage.getItem('wogoLang'); } catch (e) {}
   var auto = (navigator.language || '').toLowerCase().indexOf('nl') === 0 || /\/(nl)(\/|$|\?)/.test(document.referrer || '');
   setLang(saved || (auto ? 'nl' : 'en'));
+  window.__wogoSetLang = setLang;  // lets the confirmation script switch to the customer's booked language
   // Reveal the body — the tiny anti-flicker script in <head> hides it for Dutch
   // visitors so they never see the English copy flash before translation.
   document.body.style.visibility = 'visible';
@@ -1693,6 +1694,9 @@
   function trackPurchase(b){ var run=function(c){ if(c&&c.marketing) firePixel(b); };
     if(window.wogoOnConsent) window.wogoOnConsent(run); else run(window.wogoConsent||{}); }
   function render(b){
+    // Show the page in the CUSTOMER's booked language (nl/en), overriding the
+    // browser default, so a Dutch booking always confirms in Dutch and vice versa.
+    if(b.locale && window.__wogoSetLang){ try{ window.__wogoSetLang(b.locale==='nl'?'nl':'en'); }catch(e){} }
     var L=LABELS[lang()];
     var nm=b.first_name?(', '+b.first_name):'';
     var t=$('conf-title'); if(t) t.textContent=(lang()==='nl'?'Je boeking is bevestigd'+nm+'! ':"You're booked"+nm+'! ")+'🍸';
