@@ -646,9 +646,10 @@
 </style>
 <section class="conf-sec"><div class="conf-wrap">
   <div id="conf-loading">
+    <div class="conf-emoji">🍸</div>
+    <h1 data-i18n="conf_loading_h">You're booked — thank you!</h1>
+    <p data-i18n="conf_loading_p">One moment while we pull up your booking details…</p>
     <div class="conf-spin" aria-hidden="true"></div>
-    <h1 data-i18n="conf_loading_h">Almost done — confirming your booking…</h1>
-    <p data-i18n="conf_loading_p">One moment while we finalise everything.</p>
   </div>
   <div id="conf-ok" hidden>
     <div class="conf-emoji">🍸</div>
@@ -766,8 +767,8 @@
      shared with the homepage and hubs (nav_*, foot_*, rc1_* and rc2_*
      cards) keep their exact NL text so the same words appear everywhere. ===== */
   var NL = {
-    conf_loading_h: "Bijna klaar — je boeking wordt bevestigd…",
-    conf_loading_p: "Een moment, we ronden alles af.",
+    conf_loading_h: "Je boeking is bevestigd — bedankt!",
+    conf_loading_p: "Een moment, we halen je gegevens op…",
     conf_ok_p: "Je tafel is gereserveerd. Hier zijn je gegevens:",
     conf_ok_email: "📬 Je bevestigingsmail — met je routekaart — is onderweg. Zie je hem niet binnen een paar minuten? Check je spam- of reclamemap.",
     conf_cta_home: "Terug naar home",
@@ -1694,7 +1695,7 @@
   function render(b){
     var L=LABELS[lang()];
     var nm=b.first_name?(', '+b.first_name):'';
-    var t=$('conf-title'); if(t) t.textContent=(lang()==='nl'?'Je bent geboekt'+nm+'! ':"You're booked"+nm+'! ")+'🍸';
+    var t=$('conf-title'); if(t) t.textContent=(lang()==='nl'?'Je boeking is bevestigd'+nm+'! ':"You're booked"+nm+'! ")+'🍸';
     var pw=b.party===1?L.g1:L.gN, card=$('conf-card');
     if(card) card.innerHTML = rowH(esc(L.exp),esc(b.route_name))+rowH(esc(L.date),esc(niceDate(b.date)))+rowH(esc(L.time),esc(b.slot))+rowH(esc(L.guests),esc(b.party+' '+pw))+rowH(esc(L.total),esc(money(b.amount_cents,b.currency)));
     show('conf-ok'); trackPurchase(b);
@@ -1707,6 +1708,9 @@
     .then(function(b){ if(b.status==='pending'&&tries<5){ tries++; setTimeout(poll,2000); return; } render(b); })
     .catch(function(){ show('conf-fallback'); }); }
   poll();
+  // Safety net: never leave the guest on the loading state — after 7s of no
+  // resolved booking, fall back to the confident "thank you, payment went through".
+  setTimeout(function(){ var l=$('conf-loading'); if(l && !l.hidden) show('conf-fallback'); }, 7000);
 })();
 </script>
 
