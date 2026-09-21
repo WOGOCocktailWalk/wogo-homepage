@@ -30,21 +30,21 @@
 <meta name="description" content="No guide, no group — just 3 reserved bars, 3 cocktails, and a digital route map in your inbox. Here's exactly how a WOGO cocktail walk works.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="WOGO Cocktail Walk">
-<meta property="og:title" content="How a WOGO Cocktail Walk Works — step by step">
+<meta property="og:title" content="How a WOGO Cocktail Walk Works · step by step">
 <meta property="og:description" content="No guide, no group — just 3 reserved bars, 3 cocktails, and a digital route map in your inbox. Here's exactly how a self-guided cocktail walk works.">
 <meta property="og:url" content="https://www.wogococktailwalk.com/how-it-works/">
 <meta property="og:image" content="https://static.wixstatic.com/media/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="How a WOGO Cocktail Walk Works — step by step">
+<meta name="twitter:title" content="How a WOGO Cocktail Walk Works · step by step">
 <meta name="twitter:description" content="No guide, no group — 3 reserved bars, 3 cocktails, and a digital route map in your inbox. From €29,95 per person.">
 <meta name="twitter:image" content="https://static.wixstatic.com/media/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg">
 <!-- PAGE-EDIT: structured data — content pages carry LIGHT Organization markup only.
      The FAQ page owns FAQPage markup; we deliberately do NOT duplicate it here
      (Google penalises duplicated FAQPage blocks across pages). -->
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Organization","name":"WOGO Cocktail Walk","url":"https://www.wogococktailwalk.com/","logo":"https://static.wixstatic.com/media/2a3b9e_5f773a87430442dd8c6848e71f5f12a1~mv2.png","email":"info@wogoamsterdam.com","telephone":"+31202101168","address":{"@type":"PostalAddress","streetAddress":"Oude-IJsselstraat 32-2","postalCode":"1078 CP","addressLocality":"Amsterdam","addressCountry":"NL"},"sameAs":["https://www.instagram.com/wogococktailwalk/","https://www.tiktok.com/@wogococktailwalk","https://www.facebook.com/wogoamsterdam/"]}
+{"@context":"https://schema.org","@type":"Organization","name":"WOGO Cocktail Walk","url":"https://www.wogococktailwalk.com/","logo":"https://www.wogococktailwalk.com/wogo-logo.png","email":"info@wogoamsterdam.com","telephone":"+31202101168","address":{"@type":"PostalAddress","addressLocality":"Amsterdam","addressCountry":"NL"},"sameAs":["https://www.instagram.com/wogococktailwalk/","https://www.tiktok.com/@wogococktailwalk","https://www.facebook.com/wogoamsterdam/"]}
 </script>
 <!-- Anti-flicker for Dutch visitors: the page is authored in English and translated by
      the script at the foot of the body, so briefly hide the body ONLY when Dutch is about
@@ -60,115 +60,481 @@
 }catch(e){}})();
 </script>
 <style>
+  /* Accessibility: skip-to-content link (shared, keep IDENTICAL across pages) */
+  .w-skip{position:fixed;top:8px;left:-9999px;z-index:100000;background:#3f2b21;color:#fffaf6;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:800;text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.28);}
+  .w-skip:focus{left:12px;}
+
   /* ===== WOGO SHARED VISUAL SYSTEM (copied from the homepage — keep in sync) ===== */
+  /* ===== WOGO BRAND TOKENS — mirrored from wogo-design-system/tokens.css (canonical).
+     Always reference var(--wogo-*) below; never hard-code new hexes.
+     bg=blush · surface=cream · text=espresso · headings=ink · muted=brown-soft ·
+     accent=salmon (spice, not base; text on salmon = espresso; on-dark text = blush). ===== */
+  :root {
+    --wogo-blush: #ffe5d9;        /* lightest — page background, soft fills   */
+    --wogo-brown-soft: #7e5541;   /* muted text, captions                     */
+    --wogo-brown: #643e2b;        /* secondary text, borders                  */
+    --wogo-espresso: #3f2b21;     /* primary text, dark surfaces, buttons     */
+    --wogo-ink: #201611;          /* headings, deepest contrast               */
+    --wogo-salmon: #ffaa81;       /* signature accent — warm CTAs             */
+    --wogo-cream: #fffaf6;        /* (derived) warm card surface              */
+    --wogo-surface-tint: #fbe9df; /* (derived) soft salmon-blush tint         */
+    --wogo-salmon-deep: #f2905c;  /* (derived) salmon hover / pressed         */
+    --wogo-line: rgba(63,43,33,0.14);
+    --wogo-line-soft: rgba(63,43,33,0.08);
+    --wogo-shadow: rgba(32,22,17,0.16);
+    --wogo-shadow-sm: 0 1px 2px var(--wogo-line-soft);
+    --wogo-shadow-md: 0 10px 28px var(--wogo-shadow);
+    /* V5 primary-CTA — warm salmon→coral, the single high-converting action colour */
+    --wogo-cta-bg:       linear-gradient(135deg, #ffaa81 0%, #f2905c 100%); /* salmon → salmon-deep */
+    --wogo-cta-bg-hover: linear-gradient(135deg, #f2905c 0%, #f2905c 100%); /* solid salmon-deep */
+    --wogo-cta-ink:      #3f2b21;  /* espresso text — AA on salmon-deep */
+    --wogo-cta-shadow:   0 8px 20px rgba(242,144,92,0.45);
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { background: #1a1410; overflow-x: hidden; }
-  body { background: #FAF6F2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #1a1410; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; overflow-x: hidden; scrollbar-width: none; -ms-overflow-style: none; }
+  html { background: var(--wogo-ink); overflow-x: hidden; }
+  body { background: var(--wogo-blush); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: var(--wogo-espresso); -webkit-font-smoothing: antialiased; scroll-behavior: smooth; overflow-x: hidden; scrollbar-width: none; -ms-overflow-style: none; }
   html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display: none; }
   img { max-width: 100%; display: block; }
-  a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid #E2641E; outline-offset: 2px; border-radius: 6px; }
+  a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid var(--wogo-salmon-deep); outline-offset: 2px; border-radius: 6px; }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; } }
   .w-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-  .w-hero { position: relative; width: 100%; min-height: 440px; overflow: hidden; background: #1a1410; color: #fff; }
-  /* Content-page hero: no photo/video — a quiet espresso gradient band instead
-     (fast, zero assets to swap when this template is copied). */
-  .w-hero-flat { min-height: 360px; background: linear-gradient(160deg, #1a1410 0%, #3d1d0e 55%, #5C2A14 100%); }
+  .w-hero { position: relative; width: 100%; min-height: 440px; overflow: hidden; background: var(--wogo-ink); color: var(--wogo-blush); }
+  /* Flat espresso-gradient hero variant — kept for template copies that have
+     no photo yet; THIS page now uses the V3 photo hero below instead. */
+  .w-hero-flat { min-height: 360px; background: linear-gradient(160deg, var(--wogo-ink) 0%, var(--wogo-espresso) 55%, var(--wogo-brown) 100%); }
+  /* Photo hero (V3): a real WOGO shot behind the copy, same language as the city hubs. */
+  .w-hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
   .w-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(26,20,16,0.40) 0%, rgba(26,20,16,0.72) 100%); z-index: 1; }
-  .w-lang { position: absolute; top: 12px; right: 14px; z-index: 5; display: flex; gap: 2px; background: rgba(0,0,0,0.4); border-radius: 999px; padding: 3px; }
-  .w-lang button { background: none; border: none; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; padding: 5px 11px; min-height: 36px; border-radius: 999px; cursor: pointer; opacity: 0.65; transition: opacity 0.2s, background 0.2s; }
-  .w-lang button.active { background: #E2641E; opacity: 1; }
+  /* ── Language dropdown: trigger pill + expandable menu (data-driven — see WOGO_LANGS in the foot script; scales beyond EN/NL) ── */
+  .w-lang { position: relative; display: inline-flex; }
+  .w-lang-btn { display: inline-flex; align-items: center; gap: 6px; background: rgba(32,22,17,0.65); border: none; color: var(--wogo-cream); font-family: inherit; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; padding: 8px 13px; min-height: 40px; border-radius: 999px; cursor: pointer; transition: background 0.2s; }
+  .w-lang-btn:hover { background: rgba(32,22,17,0.8); }
+  .w-lang-globe { width: 14px; height: 14px; flex: 0 0 auto; opacity: 0.9; }
+  .w-lang-caret { font-size: 8px; opacity: 0.85; transition: transform 0.2s; }
+  .w-lang.open .w-lang-caret { transform: rotate(180deg); }
+  .w-lang-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; margin: 0; padding: 6px; min-width: 164px; list-style: none; background: var(--wogo-cream); border-radius: 12px; box-shadow: 0 12px 30px rgba(26,20,16,0.18); opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s; }
+  .w-lang.open .w-lang-menu { opacity: 1; visibility: visible; transform: translateY(0); transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s; }
+  .w-lang-opt { display: flex; align-items: center; gap: 9px; color: var(--wogo-ink); font-size: 13px; font-weight: 700; padding: 11px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+  .w-lang-opt:hover { background: var(--wogo-blush); }
+  .w-lang-opt:focus { background: var(--wogo-blush); outline: 2px solid var(--wogo-salmon-deep); outline-offset: -2px; }
+  .w-lang-opt-code { min-width: 21px; font-size: 10px; font-weight: 800; letter-spacing: 0.06em; color: var(--wogo-brown-soft); }
+  .w-lang-opt[aria-selected="true"]::after { content: "✓"; margin-left: auto; padding-left: 12px; color: var(--wogo-salmon-deep); font-weight: 900; }
+  .w-nav-ov-lang { display: flex; padding: 16px 6px; border-bottom: 1px solid rgba(63,43,33,0.12); }
+  .w-nav-overlay .w-lang-menu { right: auto; left: 0; }
   .w-hero-content { position: relative; z-index: 2; min-height: 440px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 104px 24px 56px; max-width: 920px; margin: 0 auto; }
   .w-hero-flat .w-hero-content { min-height: 360px; padding: 118px 24px 50px; }
-  .w-hero-overline { font-size: 11.5px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #F5C9A8; margin-bottom: 16px; }
+  .w-hero-overline { font-size: 11.5px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--wogo-salmon); margin-bottom: 16px; }
   .w-hero h1 { font-size: clamp(28px, 4.6vw, 48px); font-weight: 900; line-height: 1.05; letter-spacing: -0.015em; margin-bottom: 14px; max-width: 20ch; text-shadow: 0 2px 16px rgba(0,0,0,0.45); }
   .w-hero p { font-size: clamp(14px, 1.3vw, 18px); font-weight: 500; line-height: 1.5; max-width: 560px; margin-bottom: 22px; opacity: 0.95; }
-  .w-hero-cta { display: inline-block; background: #E2641E; color: #fff; text-decoration: none; padding: 15px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(226,100,30,0.4); transition: transform 0.2s, background 0.2s; }
-  .w-hero-cta:active, .w-gift-btn:active, .w-group-btn:active, .w-final-btn:active { transform: scale(0.96); }
+  .w-hero-cta { display: inline-block; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 15px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform 0.2s, background 0.2s; }
+  .w-hero-cta:active, .w-final-btn:active { transform: scale(0.96); }
   .w-mail { color: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
-  .w-hero-cta:hover { background: #C8551A; color: #fff; transform: translateY(-2px); }
+  .w-hero-cta:hover { background: var(--wogo-cta-bg-hover); color: var(--wogo-cta-ink); transform: translateY(-2px); }
   .w-hero-trust { margin-top: 16px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.86); display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-  .w-hero-trust .w-star { color: #F5C9A8; }
-  .w-section { padding: 50px 0; }
-  .w-section.alt { background: #fff; }
-  .w-section.brown { background: #5C2A14; }
-  .w-section.peach { background: #F5C9A8; }
-  .w-section.dark { background: #1a1410; }
+  .w-hero-trust .w-star { color: var(--wogo-salmon); }
+  /* ===== WOGO V6 SECTION RHYTHM — identical on every page =====
+     Alternate light/dark so seams never vanish; espresso is the recurring
+     dark band. Marking a section `brown`/`dark` inverts its own text. */
+  .w-section        { padding: 50px 0; background: var(--wogo-blush); }   /* LIGHT · warm   */
+  .w-section.cream,
+  .w-section.alt    { background: var(--wogo-cream); }                    /* LIGHT · lightest */
+  .w-section.peach  { background: var(--wogo-surface-tint); }             /* LIGHT · salmon-tint */
+  .w-section.brown  { background: var(--wogo-espresso); }                 /* DARK  · primary band */
+  .w-section.dark   { background: var(--wogo-ink); }                      /* DARKEST · hero echo / final */
+  .w-section.brown, .w-section.dark { color: var(--wogo-blush); }
+  .w-section.brown h2, .w-section.dark h2,
+  .w-section.brown .w-head h2, .w-section.dark .w-head h2 { color: var(--wogo-cream); }
+  .w-section.brown .w-eyebrow, .w-section.dark .w-eyebrow,
+  .w-section.brown .w-head p,  .w-section.dark .w-head p  { color: rgba(255,229,217,0.72); }
+  .w-section.brown p,  .w-section.dark p  { color: rgba(255,229,217,0.88); }
+  .w-section.brown a:not(.w-btn):not([class*="btn"]),
+  .w-section.dark  a:not(.w-btn):not([class*="btn"]) { color: var(--wogo-salmon); }
   .w-pad { padding-left: 24px; padding-right: 24px; }
   .w-head { text-align: center; margin-bottom: 28px; }
   .w-head h2 { font-size: clamp(26px, 3.4vw, 38px); font-weight: 900; letter-spacing: -0.01em; text-transform: uppercase; margin-bottom: 6px; }
-  .w-head p { font-size: 14px; color: #5C2A14; font-weight: 600; }
-  .w-head .w-hint { font-size: 12px; color: #8a7066; margin-top: 6px; font-weight: 500; }
-  .w-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #5C2A14; margin-bottom: 10px; text-align: center; }
+  .w-head p { font-size: 14px; color: var(--wogo-brown); font-weight: 600; }
+  .w-head .w-hint { font-size: 12px; color: var(--wogo-brown-soft); margin-top: 6px; font-weight: 500; }
+  .w-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--wogo-brown); margin-bottom: 10px; text-align: center; }
 
   /* ===== CONTENT-PAGE EXTRAS (this template's own sections) ===== */
   /* Numbered step walkthrough */
   .w-steps-wrap { max-width: 760px; margin: 0 auto; }
-  .w-stepcard { display: flex; gap: 22px; padding: 26px 0; border-bottom: 1px solid rgba(92,42,20,0.14); }
+  .w-stepcard { display: flex; gap: 22px; padding: 26px 0; border-bottom: 1px solid var(--wogo-line); }
   .w-stepcard:last-child { border-bottom: none; }
-  .w-stepcard-num { flex: 0 0 56px; width: 56px; height: 56px; border-radius: 50%; background: #F5C9A8; color: #5C2A14; font-size: 24px; font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(92,42,20,0.14); }
+  .w-stepcard-num { flex: 0 0 56px; width: 56px; height: 56px; border-radius: 50%; background: var(--wogo-salmon); color: var(--wogo-espresso); font-size: 24px; font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px var(--wogo-shadow); }
   .w-stepcard-body { flex: 1 1 auto; }
-  .w-stepcard h3 { font-size: 17px; font-weight: 800; color: #1a1410; margin-bottom: 6px; display: flex; align-items: baseline; gap: 8px; }
+  .w-stepcard h3 { font-size: 17px; font-weight: 800; color: var(--wogo-ink); margin-bottom: 6px; display: flex; align-items: baseline; gap: 8px; }
   .w-stepcard-ico { font-size: 19px; line-height: 1; flex: 0 0 auto; }
-  .w-stepcard p { font-size: 14.5px; line-height: 1.65; font-weight: 500; color: #444; }
-  .w-stepcard p a { color: #5C2A14; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+  .w-stepcard p { font-size: 14.5px; line-height: 1.65; font-weight: 500; color: var(--wogo-espresso); }
+  .w-stepcard p a { color: var(--wogo-brown); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+  /* Phone-mockup swipeable 5-step carousel (how-it-works only). Native scroll-snap =
+     works with JS off (step 1 shown, horizontally swipeable); JS adds dots + auto-advance. */
+  .w-phone-wrap { max-width: 330px; margin: 0 auto; padding: 4px 8px 8px; }
+  .w-phone { position: relative; width: 100%; aspect-ratio: 300 / 620; background: var(--wogo-ink); border-radius: 46px; padding: 14px; box-shadow: 0 30px 60px rgba(32,22,17,0.34), inset 0 0 0 2px rgba(255,255,255,0.06); }
+  .w-phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 116px; height: 24px; background: var(--wogo-ink); border-radius: 0 0 16px 16px; z-index: 3; }
+  .w-phone-screen { position: relative; height: 100%; border-radius: 32px; overflow: hidden; background: var(--wogo-blush); }
+  .w-phone-track { display: flex; height: 100%; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .w-phone-track::-webkit-scrollbar { display: none; }
+  .w-phone-slide { flex: 0 0 100%; scroll-snap-align: center; height: 100%; overflow-y: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 14px; padding: 56px 26px 46px; }
+  .w-phone-num { width: 46px; height: 46px; border-radius: 50%; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); box-shadow: var(--wogo-cta-shadow); font-size: 20px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+  .w-phone-ico { font-size: 40px; line-height: 1; }
+  .w-phone-slide h3 { font-size: 17px; font-weight: 800; color: var(--wogo-ink); }
+  .w-phone-slide p { font-size: 13.5px; line-height: 1.6; font-weight: 500; color: var(--wogo-espresso); }
+  .w-phone-slide p a { color: var(--wogo-brown); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+  .w-phone-dots { position: absolute; bottom: 16px; left: 0; right: 0; z-index: 4; display: flex; gap: 7px; justify-content: center; }
+  .w-phone-dot { width: 8px; height: 8px; padding: 0; border: none; border-radius: 50%; background: rgba(63,43,33,0.26); cursor: pointer; transition: transform .2s, background .2s; }
+  .w-phone-dot.active { background: var(--wogo-salmon-deep); transform: scale(1.35); }
+  @media (max-width: 720px){ .w-phone-wrap { max-width: 300px; } .w-phone-slide p { font-size: 13px; } }
+
+  /* ===== HOW-IT-WORKS · compact two-column phone (V6) =====
+     ONE phone frame; each screen holds a small CSS/SVG animation of the step,
+     the short step text sits beside it (below on mobile). Transform/opacity
+     only, reduced-motion + no-JS safe. */
+  .hiw-layout { display:flex; align-items:center; gap:44px; max-width:960px; margin:0 auto; }
+  .hiw-phone-col { flex:0 0 300px; width:300px; }
+  .hiw-steps-col { flex:1 1 auto; list-style:none; margin:0; padding:0; }
+  .hiw-step { display:flex; gap:14px; align-items:flex-start; padding:16px 0 16px 18px;
+    border-left:3px solid transparent; opacity:.55; cursor:pointer;
+    transition:opacity .35s ease, border-color .35s ease; }
+  .hiw-step.active { opacity:1; border-left-color:var(--wogo-salmon-deep); }
+  .hiw-step-n { flex:0 0 30px; width:30px; height:30px; border-radius:50%;
+    background:rgba(255,229,217,0.14); color:var(--wogo-cream); font-weight:900; font-size:14px;
+    display:flex; align-items:center; justify-content:center; }
+  .hiw-step.active .hiw-step-n { background:var(--wogo-cta-bg); color:var(--wogo-cta-ink); box-shadow:var(--wogo-cta-shadow); }
+  .hiw-step h3 { font-size:16px; font-weight:800; color:var(--wogo-cream); margin-bottom:3px; }
+  .hiw-step p  { font-size:13.5px; line-height:1.5; color:rgba(255,229,217,0.85); font-weight:500; }
+
+  /* Each phone screen is a full-bleed light stage that holds one illustration */
+  .hiw-layout .w-phone-slide { padding:0; }
+  .hiw-anim { position:relative; width:100%; height:100%; background:var(--wogo-blush);
+    display:flex; align-items:center; justify-content:center; color:var(--wogo-espresso); overflow:hidden; }
+  /* ===== HOW-IT-WORKS · five crafted phone scenes =====
+     Each phone screen holds a small multi-element CSS/SVG illustration. Motion
+     is transform/opacity only and plays ONLY while the slide is active. Every
+     element's RESTING state (no animation) is the finished picture, so no-JS
+     and reduced-motion both show a complete, legible scene — the animation just
+     brings it to life on the way in. */
+
+  /* Each phone screen defaults to a centred stage; chat & mail top-align. */
+  .hiw-scene--chat, .hiw-scene--mail { align-items:stretch; justify-content:flex-start; }
+  /* Premium per-scene backdrops (the bar + cheers stages go warm-dark for depth). */
+  .hiw-anim.hiw-scene--chat, .hiw-anim.hiw-scene--mail { background:
+      radial-gradient(130% 60% at 50% 0%, var(--wogo-surface-tint), var(--wogo-blush) 62%); }
+  .hiw-anim.hiw-scene--bar { background:
+      radial-gradient(58% 34% at 50% 26%, rgba(255,170,129,.34), rgba(255,170,129,0) 72%),
+      radial-gradient(120% 80% at 50% 128%, rgba(63,43,33,.55), rgba(63,43,33,0) 70%),
+      linear-gradient(180deg, #241812 0%, #3a2720 60%, #4a3126 100%); }
+  .hiw-anim.hiw-scene--map { background: linear-gradient(180deg, var(--wogo-surface-tint), var(--wogo-blush)); }
+  .hiw-anim.hiw-scene--cheers { background:
+      radial-gradient(66% 52% at 50% 42%, rgba(255,170,129,.44), rgba(255,170,129,0) 72%),
+      linear-gradient(180deg, var(--wogo-blush) 0%, var(--wogo-surface-tint) 100%); }
+
+  /* Shared phone-UI chrome — a little app header sells the "real screen" feel */
+  .hiw-appbar { position:absolute; top:0; left:0; right:0; height:44px; z-index:6;
+    display:flex; align-items:center; gap:9px; padding:0 13px;
+    background:var(--wogo-cream); border-bottom:1px solid var(--wogo-line-soft); }
+  .hiw-appbar-back { color:var(--wogo-brown); font-size:21px; line-height:1; font-weight:700; }
+  .hiw-appbar-avatar { width:27px; height:27px; border-radius:50%; background:var(--wogo-cta-bg); color:var(--wogo-cta-ink);
+    display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; box-shadow:var(--wogo-shadow-sm); }
+  .hiw-appbar-name { display:flex; flex-direction:column; line-height:1.15; font-size:12.5px; font-weight:800; color:var(--wogo-ink); }
+  .hiw-appbar-name b { font-size:9.5px; font-weight:700; color:#3a9d6e; letter-spacing:.02em; }
+
+  /* Scene 1 · booking chat — timestamps, read ticks, a live typing bubble,
+     then a real booking-confirmed card. */
+  .hiw-chat { display:flex; flex-direction:column; gap:5px; width:100%; padding:54px 15px 16px; }
+  .hiw-cluster { display:flex; flex-direction:column; gap:2px; max-width:80%; }
+  .hiw-cluster--in  { align-self:flex-start; align-items:flex-start; }
+  .hiw-cluster--out { align-self:flex-end;   align-items:flex-end; }
+  .hiw-msg { padding:8px 11px; font-size:12px; font-weight:600; line-height:1.32; border-radius:15px; box-shadow:var(--wogo-shadow-sm); }
+  .hiw-msg--in  { background:var(--wogo-cream); color:var(--wogo-espresso); border-bottom-left-radius:5px; }
+  .hiw-msg--out { background:var(--wogo-cta-bg); color:var(--wogo-cta-ink); border-bottom-right-radius:5px; }
+  .hiw-time { font-size:9px; font-weight:700; color:var(--wogo-brown-soft); letter-spacing:.02em; padding:0 3px; }
+  .hiw-time .tick { font-style:normal; color:#2f9e6a; }
+  .hiw-daychip { display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:999px;
+    background:var(--wogo-surface-tint); color:var(--wogo-brown); font-size:10.5px; font-weight:800; letter-spacing:.03em; }
+  .hiw-daychip::before { content:""; width:7px; height:7px; border-radius:2px; background:var(--wogo-salmon-deep); }
+  .hiw-final { position:relative; align-self:flex-end; align-items:flex-end; display:flex; flex-direction:column; gap:2px; max-width:80%; }
+  .hiw-typing { position:absolute; right:0; top:0; display:flex; gap:4px; align-items:center;
+    padding:10px 12px; border-radius:15px 15px 5px 15px; background:var(--wogo-cta-bg); opacity:0; z-index:3; }
+  .hiw-typing i { width:6px; height:6px; border-radius:50%; background:var(--wogo-cta-ink); opacity:.55; }
+  .hiw-confirm { align-self:stretch; margin-top:9px; display:flex; align-items:center; gap:10px; padding:11px 12px;
+    border-radius:14px; background:var(--wogo-cream); box-shadow:var(--wogo-shadow-md); border:1px solid var(--wogo-line-soft); }
+  .hiw-confirm-check { flex:0 0 auto; width:30px; height:30px; border-radius:50%; background:#e6f5ec; color:#2f9e6a;
+    display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:900; box-shadow:inset 0 0 0 1.5px rgba(47,158,106,.4); }
+  .hiw-confirm-txt { display:flex; flex-direction:column; line-height:1.28; text-align:left; }
+  .hiw-confirm-txt b { font-size:12px; font-weight:800; color:var(--wogo-ink); }
+  .hiw-confirm-txt span { font-size:10.5px; font-weight:600; color:var(--wogo-brown); }
+
+  /* Scene 2 · the route lands — a notification drops in, then the email opens */
+  .hiw-mailwrap { width:100%; padding:54px 15px 16px; display:flex; flex-direction:column; gap:13px; }
+  .hiw-notif { display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border-radius:16px;
+    background:rgba(255,250,246,.94); box-shadow:var(--wogo-shadow-md); }
+  .hiw-notif-ico { flex:0 0 auto; width:30px; height:30px; border-radius:9px; background:var(--wogo-cta-bg); color:var(--wogo-cta-ink);
+    display:flex; align-items:center; justify-content:center; font-size:15px; }
+  .hiw-notif-txt { flex:1 1 auto; display:flex; flex-direction:column; line-height:1.28; text-align:left; }
+  .hiw-notif-txt b { font-size:11.5px; font-weight:800; color:var(--wogo-ink); }
+  .hiw-notif-txt span { font-size:11px; font-weight:600; color:var(--wogo-brown); }
+  .hiw-notif-time { font-size:9.5px; font-weight:700; color:var(--wogo-brown-soft); }
+  .hiw-mailcard { background:var(--wogo-cream); border-radius:16px; box-shadow:var(--wogo-shadow-md); overflow:hidden; }
+  .hiw-mailcard-h { padding:11px 14px; font-size:12px; font-weight:800; color:var(--wogo-ink);
+    background:var(--wogo-surface-tint); display:flex; align-items:center; gap:7px; }
+  .hiw-mailcard-h::before { content:"✉"; font-size:13px; }
+  .hiw-mailrows { list-style:none; margin:0; padding:5px 0; }
+  .hiw-mailrow { display:flex; align-items:center; gap:10px; padding:9px 14px; font-size:12px; font-weight:600; color:var(--wogo-espresso); text-align:left; }
+  .hiw-mailrow + .hiw-mailrow { border-top:1px solid var(--wogo-line-soft); }
+  .hiw-mailrow-n { flex:0 0 auto; width:20px; height:20px; border-radius:50%; background:var(--wogo-espresso); color:var(--wogo-cream);
+    display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:900; }
+  .hiw-mailrow-name { display:flex; flex-direction:column; line-height:1.25; }
+  .hiw-mailrow-name b { font-size:12px; font-weight:800; color:var(--wogo-ink); }
+  .hiw-mailrow-name em { font-size:9.5px; font-weight:700; font-style:normal; color:var(--wogo-brown-soft); letter-spacing:.02em; }
+  .hiw-mailrow-tick { margin-left:auto; color:#2f9e6a; font-size:13px; line-height:1; }
+  .hiw-mailbtn { margin:3px 14px 13px; padding:10px; text-align:center; border-radius:11px; background:var(--wogo-cta-bg);
+    color:var(--wogo-cta-ink); font-size:12px; font-weight:800; letter-spacing:.02em; box-shadow:var(--wogo-cta-shadow); }
+
+  /* Scene 3 · a real bar interior under warm pendant light: a back-bar shelf
+     of bottles, a bartender shaking behind the reflective counter, two guests
+     seen from behind in the foreground, and the finished cocktail landing on
+     the bar top. The cocktail itself is the same detailed inline SVG glass
+     (silhouette, layered liquid, meniscus, ice facets, rim specular,
+     condensation, citrus half-wheel) — only its container is resized to sit
+     on the counter as part of the wider scene. */
+  .hiw-barstage { position:relative; width:230px; max-width:100%; height:336px; margin:0 auto; }
+  .hiw-bokeh { position:absolute; border-radius:50%; z-index:1; }
+  .hiw-bokeh--1 { width:26px; height:26px; left:10px; top:34px; background:radial-gradient(circle,rgba(255,203,173,.85),rgba(255,203,173,0) 70%); }
+  .hiw-bokeh--2 { width:16px; height:16px; left:78px; top:14px; background:radial-gradient(circle,rgba(255,170,129,.8),rgba(255,170,129,0) 70%); }
+  .hiw-bokeh--3 { width:34px; height:34px; right:2px;  top:24px; background:radial-gradient(circle,rgba(255,190,150,.6),rgba(255,190,150,0) 70%); }
+  .hiw-bokeh--4 { width:13px; height:13px; right:64px; top:58px; background:radial-gradient(circle,rgba(255,222,202,.8),rgba(255,222,202,0) 70%); }
+  /* back-bar: a warm backlit glow strip behind a shelf of bottles */
+  .hiw-barglow { position:absolute; left:6px; right:6px; top:2px; height:92px; z-index:2; border-radius:12px;
+    background:radial-gradient(80% 100% at 50% 100%, rgba(255,178,140,.4), rgba(255,178,140,0) 75%); }
+  .hiw-backbar { position:absolute; left:0; right:0; top:8px; z-index:3; width:100%; height:92px; }
+  .hiw-backbar svg { width:100%; height:100%; overflow:visible; }
+  /* pendant lamps hanging over the bar */
+  .hiw-pendant { position:absolute; top:-6px; z-index:4; width:20px; height:46px; }
+  .hiw-pendant--1 { left:46px; }
+  .hiw-pendant--2 { right:46px; }
+  .hiw-pendant-cord { position:absolute; left:50%; top:0; width:1.5px; height:20px; background:rgba(255,229,217,.35); transform:translateX(-50%); }
+  .hiw-pendant-shade { position:absolute; left:50%; top:18px; width:20px; height:12px; border-radius:3px 3px 10px 10px;
+    background:linear-gradient(180deg,#3a2720,#201611); transform:translateX(-50%); box-shadow:0 6px 16px rgba(255,178,120,.5); }
+  .hiw-pendant-glow { position:absolute; left:50%; top:26px; width:64px; height:64px; margin-left:-32px; border-radius:50%; z-index:-1;
+    background:radial-gradient(circle,rgba(255,190,140,.5),rgba(255,190,140,0) 70%); }
+  /* the bartender, standing behind the counter, offset left of the glass so
+     the head and shoulders read clearly instead of hiding behind it */
+  .hiw-bartender-glow { position:absolute; left:-24px; top:64px; width:150px; height:150px; z-index:4; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,187,143,.32), rgba(255,187,143,0) 68%); }
+  .hiw-bartender { position:absolute; left:2px; top:78px; width:96px; height:160px; z-index:5; }
+  .hiw-bartender svg { width:100%; height:100%; overflow:visible; }
+  .barShaker { transform-box:fill-box; transform-origin:50% 0%; transform:rotate(4deg) translateY(14px); }
+  /* the counter itself: a reflective top edge + a solid front panel in the foreground */
+  .hiw-countertop { position:absolute; left:-4px; right:-4px; bottom:100px; height:11px; z-index:6; border-radius:4px;
+    background:linear-gradient(180deg,#6b4530,#33221a); box-shadow:0 -2px 10px rgba(0,0,0,.3); }
+  .hiw-countertop::before { content:""; position:absolute; left:0; right:0; top:1px; height:4px; border-radius:4px;
+    background:linear-gradient(90deg,rgba(255,203,173,0),rgba(255,203,173,.55),rgba(255,203,173,0)); }
+  .hiw-counterfront { position:absolute; left:-4px; right:-4px; bottom:0; height:100px; z-index:6;
+    background:linear-gradient(180deg,#3a2720 0%,#241812 100%); box-shadow:inset 0 10px 18px rgba(0,0,0,.28); }
+  .hiw-counterfront::before { content:""; position:absolute; left:16px; right:16px; top:12px; height:1px; background:rgba(255,203,173,.14); }
+  /* a soft glow under the finished drink once it lands on the counter */
+  .hiw-barglint { position:absolute; left:50%; bottom:104px; width:70px; height:70px; margin-left:-35px; z-index:6; border-radius:50%;
+    background:radial-gradient(circle,rgba(255,203,173,.55),rgba(255,203,173,0) 72%); opacity:.55; }
+  /* the served cocktail — same detailed SVG, resized to sit on the counter */
+  .hiw-barsvg { position:absolute; left:50%; bottom:100px; z-index:7; width:104px; height:187px; margin-left:-52px; }
+  .hiw-barsvg svg { width:100%; height:100%; overflow:visible; }
+  /* two guests at the counter, seen from behind — closest to camera */
+  .hiw-guest { position:absolute; bottom:-6px; width:74px; height:118px; z-index:8; transform-origin:50% 100%; }
+  .hiw-guest svg { width:100%; height:100%; overflow:visible; }
+  .hiw-guest--l { left:-14px; }
+  .hiw-guest--r { right:-14px; }
+  /* SVG transform hooks (fill-box keeps origins local to each shape) */
+  .barFill { transform-box:fill-box; transform-origin:50% 100%; }
+  .barIce, .barGarnish, .barStraw, .barBub { transform-box:fill-box; transform-origin:50% 50%; }
+
+  /* Scene 4 · the walking map — an SVG street grid with a smooth route path
+     drawn between 3 dimensional pins (stroke-dashoffset draw), plus HTML labels. */
+  .hiw-map { position:relative; width:224px; height:290px; background:var(--wogo-cream); border-radius:18px;
+    box-shadow:var(--wogo-shadow-md); overflow:hidden; border:1px solid var(--wogo-line-soft); }
+  .hiw-mapsvg { position:absolute; inset:0; width:100%; height:100%; }
+  .mapPin { transform-box:fill-box; transform-origin:50% 100%; }
+  .route1, .route2 { stroke-dasharray:1; stroke-dashoffset:0; }
+  .hiw-plabel { position:absolute; padding:3px 8px; border-radius:999px; background:var(--wogo-espresso); color:var(--wogo-cream);
+    font-size:9.5px; font-weight:800; letter-spacing:.02em; white-space:nowrap; z-index:4; box-shadow:var(--wogo-shadow-sm); }
+  .hiw-plabel::after { content:""; position:absolute; bottom:-3px; left:11px; width:6px; height:6px; background:inherit; transform:rotate(45deg); }
+  .hiw-plabel--1 { left:9%;  top:64%; } .hiw-plabel--2 { left:39%; top:5%; } .hiw-plabel--3 { right:4%; top:35%; }
+
+  /* Scene 5 · cheers — two REAL coupe glasses (inline SVG: bowl silhouette, stem,
+     foot, layered liquid, meniscus, rim specular, cherry on a pick) clink under
+     falling confetti. */
+  .hiw-cheers { position:relative; width:220px; height:230px; display:flex; align-items:flex-end; justify-content:center; padding-bottom:12px; }
+  .hiw-cglass { width:96px; height:152px; }
+  .hiw-cglass svg { width:100%; height:100%; overflow:visible; }
+  .hiw-cglass--l { transform-origin:bottom center; transform:rotate(13deg); margin-right:-16px; z-index:2; }
+  .hiw-cglass--r { transform-origin:bottom center; transform:rotate(-13deg); margin-left:-16px; z-index:2; }
+  .coupeFill { transform-box:fill-box; transform-origin:50% 100%; }
+  .coupeBub { transform-box:fill-box; transform-origin:50% 50%; }
+  .hiw-clink { position:absolute; top:40%; left:50%; width:18px; height:18px; margin:-9px 0 0 -9px;
+    background:
+      linear-gradient(var(--wogo-salmon-deep),var(--wogo-salmon-deep)) center/100% 3px no-repeat,
+      linear-gradient(var(--wogo-salmon-deep),var(--wogo-salmon-deep)) center/3px 100% no-repeat;
+    transform:rotate(45deg); opacity:.9; z-index:5; }
+  .hiw-confetti { position:absolute; top:0; width:8px; height:8px; border-radius:2px; z-index:1; }
+  .hiw-confetti--1{left:14%;background:var(--wogo-salmon);transform:translateY(46px) rotate(20deg)}
+  .hiw-confetti--2{left:28%;background:var(--wogo-salmon-deep);transform:translateY(120px) rotate(80deg)}
+  .hiw-confetti--3{left:42%;background:var(--wogo-brown);transform:translateY(72px) rotate(140deg)}
+  .hiw-confetti--4{left:58%;background:var(--wogo-salmon);transform:translateY(150px) rotate(40deg)}
+  .hiw-confetti--5{left:72%;background:var(--wogo-salmon-deep);transform:translateY(60px) rotate(200deg)}
+  .hiw-confetti--6{left:85%;background:var(--wogo-brown);transform:translateY(110px) rotate(260deg)}
+
+  /* Play each scene only while its slide is active (JS adds .is-active). Every
+     animation ends on the element's resting state, so it settles into the
+     finished picture and holds. */
+  /* Scene 1 · messages rise, a typing bubble pulses, the reply lands, booking confirms */
+  .w-phone-slide.is-active .hiw-c1 { animation:hiwRise .5s cubic-bezier(.22,1,.4,1) both; }
+  .w-phone-slide.is-active .hiw-c2 { animation:hiwRise .5s cubic-bezier(.22,1,.4,1) .35s both; }
+  .w-phone-slide.is-active .hiw-c3 { animation:hiwRise .5s cubic-bezier(.22,1,.4,1) .7s both; }
+  .w-phone-slide.is-active .hiw-typing { animation:hiwType 1.7s ease .95s both; }
+  .w-phone-slide.is-active .hiw-typing i { animation:hiwDot .9s ease-in-out infinite; }
+  .w-phone-slide.is-active .hiw-typing i:nth-child(2) { animation-delay:.15s; }
+  .w-phone-slide.is-active .hiw-typing i:nth-child(3) { animation-delay:.30s; }
+  .w-phone-slide.is-active .hiw-final .hiw-msg,
+  .w-phone-slide.is-active .hiw-final .hiw-time { animation:hiwRise .5s cubic-bezier(.22,1,.4,1) 2s both; }
+  .w-phone-slide.is-active .hiw-confirm { animation:hiwPop .55s cubic-bezier(.22,1.2,.5,1) 2.45s both; }
+  /* Scene 2 · notification drops, the email opens row by row, the button pops */
+  .w-phone-slide.is-active .hiw-notif { animation:hiwDrop .6s cubic-bezier(.22,1.2,.5,1) both; }
+  .w-phone-slide.is-active .hiw-mailcard { animation:hiwRise .5s cubic-bezier(.22,1,.4,1) .5s both; }
+  .w-phone-slide.is-active .hiw-mailrow { animation:hiwRise .45s ease both; }
+  .w-phone-slide.is-active .hiw-mailrow:nth-child(1) { animation-delay:.7s; }
+  .w-phone-slide.is-active .hiw-mailrow:nth-child(2) { animation-delay:.85s; }
+  .w-phone-slide.is-active .hiw-mailrow:nth-child(3) { animation-delay:1s; }
+  .w-phone-slide.is-active .hiw-mailbtn { animation:hiwPop .5s cubic-bezier(.22,1.2,.5,1) 1.25s both; }
+  /* Scene 3 · glass settles, liquid fills, ice drops, garnish lands, bubbles rise */
+  .w-phone-slide.is-active .hiw-barsvg { animation:hiwGlassIn .6s cubic-bezier(.22,1,.4,1) both; }
+  .w-phone-slide.is-active .barFill { animation:hiwFillBar 1.3s cubic-bezier(.5,0,.3,1) .35s both; }
+  .w-phone-slide.is-active .barMeniscus { animation:hiwFade .5s ease 1.35s both; }
+  .w-phone-slide.is-active .barIce--1 { animation:hiwDropIn .55s cubic-bezier(.22,1.3,.5,1) 1.4s both; }
+  .w-phone-slide.is-active .barIce--2 { animation:hiwDropIn .55s cubic-bezier(.22,1.3,.5,1) 1.6s both; }
+  .w-phone-slide.is-active .barStraw { animation:hiwDropIn .55s cubic-bezier(.22,1.3,.5,1) 1.75s both; }
+  .w-phone-slide.is-active .barGarnish { animation:hiwDropIn .6s cubic-bezier(.22,1.3,.5,1) 1.95s both; }
+  .w-phone-slide.is-active .barDrop { animation:hiwFade .5s ease both; }
+  .w-phone-slide.is-active .barDrop--1 { animation-delay:2.2s; }
+  .w-phone-slide.is-active .barDrop--2 { animation-delay:2.4s; }
+  .w-phone-slide.is-active .barDrop--3 { animation-delay:2.6s; }
+  .w-phone-slide.is-active .barBub { animation:hiwBarBub 2.2s ease-in infinite; }
+  .w-phone-slide.is-active .barBub--1 { animation-delay:1.2s; }
+  .w-phone-slide.is-active .barBub--2 { animation-delay:1.7s; }
+  .w-phone-slide.is-active .barBub--3 { animation-delay:2.2s; }
+  .w-phone-slide.is-active .barBub--4 { animation-delay:2.6s; }
+  .w-phone-slide.is-active .barShaker { animation:hiwShake 1.3s cubic-bezier(.4,0,.2,1) both; }
+  .w-phone-slide.is-active .hiw-barglint { animation:hiwGlow 1s ease-out 2.6s both; }
+  .w-phone-slide.is-active .hiw-guest { animation:hiwSway 3.6s ease-in-out infinite; }
+  .w-phone-slide.is-active .hiw-guest--r { animation-delay:.6s; }
+  /* Scene 4 · pins drop and the route draws leg by leg (SVG stroke-dashoffset) */
+  .w-phone-slide.is-active .mapPin--1 { animation:hiwDropIn .55s cubic-bezier(.22,1.3,.5,1) 0s both; }
+  .w-phone-slide.is-active .mapPin--2 { animation:hiwDropIn .55s cubic-bezier(.22,1.3,.5,1) 1s both; }
+  .w-phone-slide.is-active .mapPin--3 { animation:hiwDropIn .55s cubic-bezier(.22,1.3,.5,1) 2.1s both; }
+  .w-phone-slide.is-active .route1 { animation:hiwDraw 1s ease .45s both; }
+  .w-phone-slide.is-active .route2 { animation:hiwDraw 1s ease 1.5s both; }
+  .w-phone-slide.is-active .hiw-plabel--1 { animation:hiwFade .4s ease .3s both; }
+  .w-phone-slide.is-active .hiw-plabel--2 { animation:hiwFade .4s ease 1.3s both; }
+  .w-phone-slide.is-active .hiw-plabel--3 { animation:hiwFade .4s ease 2.4s both; }
+  /* Scene 5 · glasses fill, clink, spark pops, confetti falls */
+  .w-phone-slide.is-active .coupeFill { animation:hiwFillCoupe .9s cubic-bezier(.5,0,.3,1) .1s both; }
+  .w-phone-slide.is-active .hiw-cglass--l { animation:hiwClinkL 1s cubic-bezier(.3,1.4,.5,1) .9s both; }
+  .w-phone-slide.is-active .hiw-cglass--r { animation:hiwClinkR 1s cubic-bezier(.3,1.4,.5,1) .9s both; }
+  .w-phone-slide.is-active .hiw-clink { animation:hiwSpark 1.3s ease-out 1.35s both; }
+  .w-phone-slide.is-active .coupeBub { animation:hiwBarBub 2.4s ease-in infinite; }
+  .w-phone-slide.is-active .coupeBub--1 { animation-delay:1.6s; }
+  .w-phone-slide.is-active .coupeBub--2 { animation-delay:2s; }
+  .w-phone-slide.is-active .coupeBub--3 { animation-delay:2.4s; }
+  .w-phone-slide.is-active .hiw-confetti { animation:hiwConfetti 2.4s linear 1.3s infinite; }
+  .w-phone-slide.is-active .hiw-confetti--2{animation-delay:1.55s}.w-phone-slide.is-active .hiw-confetti--3{animation-delay:1.85s}
+  .w-phone-slide.is-active .hiw-confetti--4{animation-delay:1.4s}.w-phone-slide.is-active .hiw-confetti--5{animation-delay:2s}
+  .w-phone-slide.is-active .hiw-confetti--6{animation-delay:1.7s}
+
+  @keyframes hiwRise { 0%{opacity:0;transform:translateY(9px) scale(.96);} 100%{opacity:1;transform:none;} }
+  @keyframes hiwType { 0%{opacity:0;transform:translateY(6px);} 12%{opacity:1;transform:none;} 62%{opacity:1;} 80%,100%{opacity:0;} }
+  @keyframes hiwDot { 0%,80%,100%{transform:translateY(0);opacity:.5;} 40%{transform:translateY(-4px);opacity:1;} }
+  @keyframes hiwDrop { 0%{opacity:0;transform:translateY(-150%);} 100%{opacity:1;transform:none;} }
+  @keyframes hiwFade { 0%{opacity:0;} 100%{opacity:1;} }
+  @keyframes hiwPop { 0%{opacity:0;transform:translateY(8px) scale(.92);} 60%{opacity:1;} 100%{opacity:1;transform:none;} }
+  @keyframes hiwGlassIn { 0%{opacity:0;transform:translateY(14px) scale(.96);} 100%{opacity:1;transform:none;} }
+  @keyframes hiwFillBar { 0%{transform:scaleY(0);} 100%{transform:scaleY(1);} }
+  @keyframes hiwFillCoupe { 0%{transform:scaleY(0);} 100%{transform:scaleY(1);} }
+  @keyframes hiwDropIn { 0%{opacity:0;transform:translateY(-22px);} 60%{opacity:1;} 100%{opacity:1;transform:none;} }
+  @keyframes hiwBarBub { 0%{opacity:0;transform:translateY(0) scale(.5);} 20%{opacity:.85;} 100%{opacity:0;transform:translateY(-40px) scale(1);} }
+  @keyframes hiwDraw { from{stroke-dashoffset:1;} to{stroke-dashoffset:0;} }
+  @keyframes hiwClinkL { 0%{transform:rotate(2deg);} 50%{transform:rotate(20deg);} 68%{transform:rotate(9deg);} 84%{transform:rotate(15deg);} 100%{transform:rotate(13deg);} }
+  @keyframes hiwClinkR { 0%{transform:rotate(-2deg);} 50%{transform:rotate(-20deg);} 68%{transform:rotate(-9deg);} 84%{transform:rotate(-15deg);} 100%{transform:rotate(-13deg);} }
+  @keyframes hiwSpark { 0%,45%{opacity:0;transform:rotate(45deg) scale(0);} 60%{opacity:1;transform:rotate(45deg) scale(1.35);} 78%{opacity:1;transform:rotate(45deg) scale(1);} 100%{opacity:.9;transform:rotate(45deg) scale(1);} }
+  @keyframes hiwConfetti { 0%{opacity:0;transform:translateY(-14px) rotate(0);} 12%{opacity:1;} 100%{opacity:1;transform:translateY(210px) rotate(340deg);} }
+  @keyframes hiwShake {
+    0%{transform:rotate(-8deg) translateY(0);}
+    8%{transform:rotate(20deg) translateY(0);}
+    16%{transform:rotate(-16deg) translateY(0);}
+    24%{transform:rotate(18deg) translateY(0);}
+    32%{transform:rotate(-12deg) translateY(0);}
+    40%{transform:rotate(14deg) translateY(0);}
+    48%{transform:rotate(-6deg) translateY(0);}
+    58%{transform:rotate(0deg) translateY(0);}
+    100%{transform:rotate(4deg) translateY(14px);}
+  }
+  @keyframes hiwGlow { 0%{opacity:0;transform:scale(.5);} 55%{opacity:.85;transform:scale(1.2);} 100%{opacity:.55;transform:scale(1);} }
+  @keyframes hiwSway { 0%,100%{transform:rotate(-1.4deg);} 50%{transform:rotate(1.4deg);} }
+
+  /* mobile: text below the phone (all steps visible, active highlighted) */
+  @media (max-width:760px){
+    .hiw-layout { flex-direction:column; gap:22px; }
+    .hiw-phone-col { flex:0 0 auto; width:270px; max-width:82vw; }
+    .hiw-steps-col { width:100%; max-width:340px; }
+  }
+  /* resting / no-JS / reduced-motion: freeze every scene on its finished picture */
+  @media (prefers-reduced-motion: reduce){
+    .w-phone-slide.is-active * { animation:none !important; }
+  }
+
   /* Definition / SEO copy block (same pattern as the city-hub intro) */
   .w-intro-wrap { max-width: 740px; margin: 0 auto; text-align: center; }
-  .w-intro-wrap h2 { font-size: clamp(22px, 3vw, 32px); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; margin-bottom: 14px; color: #1a1410; }
-  .w-intro-wrap p { font-size: 14.5px; line-height: 1.7; font-weight: 500; color: #444; margin-bottom: 14px; }
+  .w-intro-wrap h2 { font-size: clamp(22px, 3vw, 32px); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; margin-bottom: 14px; color: var(--wogo-ink); }
+  .w-intro-wrap p { font-size: 14.5px; line-height: 1.7; font-weight: 500; color: var(--wogo-espresso); margin-bottom: 14px; }
   /* What's included / NOT included boxes */
   .w-boxes { max-width: 920px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .w-box { background: #fff; border-radius: 14px; padding: 26px 28px; box-shadow: 0 4px 14px rgba(92,42,20,0.10); }
-  .w-box h3 { font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #1a1410; margin-bottom: 14px; }
+  .w-box { background: var(--wogo-cream); border-radius: 14px; padding: 26px 28px; box-shadow: 0 4px 14px var(--wogo-shadow); border: 1px solid var(--wogo-line-soft); }
+  .w-box h3 { font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--wogo-ink); margin-bottom: 14px; }
   .w-box ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-  .w-box li { font-size: 14px; line-height: 1.55; font-weight: 500; color: #444; padding-left: 26px; position: relative; }
-  .w-box li::before { content: "✓"; position: absolute; left: 0; top: 0; font-weight: 900; color: #5C2A14; }
-  .w-box-not { background: #FAF6F2; border: 1.5px dashed rgba(92,42,20,0.35); box-shadow: none; }
-  .w-box-not li::before { content: "✕"; color: #8a7066; }
-  .w-box-note { font-size: 12.5px; font-weight: 600; color: #8a7066; margin-top: 14px; line-height: 1.5; }
+  .w-box li { font-size: 14px; line-height: 1.55; font-weight: 500; color: var(--wogo-espresso); padding-left: 26px; position: relative; }
+  .w-box li::before { content: "✓"; position: absolute; left: 0; top: 0; font-weight: 900; color: var(--wogo-salmon-deep); }
+  .w-box-not { background: var(--wogo-blush); border: 1.5px dashed var(--wogo-brown-soft); box-shadow: none; }
+  .w-box-not li::before { content: "✕"; color: var(--wogo-brown-soft); }
+  .w-box-note { font-size: 12.5px; font-weight: 600; color: var(--wogo-brown-soft); margin-top: 14px; line-height: 1.5; }
   /* "Good to know" mini-cards */
   .w-gtk { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-  .w-gtk-card { background: #FAF6F2; border-radius: 14px; padding: 24px 22px; }
+  .w-gtk-card { background: var(--wogo-surface-tint); border-radius: 14px; padding: 24px 22px; border: 1px solid var(--wogo-line-soft); }
   .w-gtk-ico { font-size: 26px; line-height: 1; margin-bottom: 10px; }
-  .w-gtk-card h3 { font-size: 14.5px; font-weight: 800; color: #1a1410; margin-bottom: 6px; }
-  .w-gtk-card p { font-size: 13.5px; line-height: 1.6; font-weight: 500; color: #444; }
+  .w-gtk-card h3 { font-size: 14.5px; font-weight: 800; color: var(--wogo-ink); margin-bottom: 6px; }
+  .w-gtk-card p { font-size: 13.5px; line-height: 1.6; font-weight: 500; color: var(--wogo-espresso); }
   /* City hub cards (soft CTA row) */
   .w-cityhub { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-  .w-cityhub-card { display: flex; flex-direction: column; background: #fff; border-radius: 14px; overflow: hidden; text-decoration: none; box-shadow: 0 4px 14px rgba(0,0,0,0.05); transition: transform 0.3s, box-shadow 0.3s; }
-  .w-cityhub-card:hover { transform: translateY(-4px); box-shadow: 0 14px 28px rgba(0,0,0,0.12); }
+  .w-cityhub-card { display: flex; flex-direction: column; background: var(--wogo-cream); border-radius: 14px; overflow: hidden; text-decoration: none; box-shadow: 0 4px 14px var(--wogo-shadow); border: 1px solid var(--wogo-line-soft); transition: transform 0.3s, box-shadow 0.3s; }
+  .w-cityhub-card:hover { transform: translateY(-4px); box-shadow: 0 14px 28px rgba(32,22,17,0.16); }
   .w-cityhub-card:hover .w-cityhub-img img { transform: scale(1.05); }
-  .w-cityhub-img { position: relative; aspect-ratio: 16/10; overflow: hidden; background: linear-gradient(135deg, #F5C9A8 0%, #5C2A14 100%); }
+  .w-cityhub-img { position: relative; aspect-ratio: 16/10; overflow: hidden; background: linear-gradient(135deg, var(--wogo-salmon) 0%, var(--wogo-brown) 100%); }
   .w-cityhub-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; color: transparent; font-size: 0; }
   .w-cityhub-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 4px; flex: 1 1 auto; }
-  .w-cityhub-name { font-size: 16px; font-weight: 900; color: #1a1410; text-transform: uppercase; letter-spacing: 0.02em; }
-  .w-cityhub-sub { font-size: 12px; font-weight: 600; color: #5C2A14; }
-  .w-cityhub-go { font-size: 12.5px; font-weight: 800; color: #C8551A; margin-top: 8px; }
+  .w-cityhub-name { font-size: 16px; font-weight: 900; color: var(--wogo-ink); text-transform: uppercase; letter-spacing: 0.02em; }
+  .w-cityhub-sub { font-size: 12px; font-weight: 600; color: var(--wogo-brown); }
+  .w-cityhub-go { font-size: 12.5px; font-weight: 800; color: var(--wogo-salmon-deep); margin-top: 8px; }
 
-  .w-gift-wrap { max-width: 920px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; }
-  .w-gift-text { flex: 1 1 340px; }
-  .w-gift-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #5C2A14; margin-bottom: 8px; }
-  .w-gift h2 { font-size: clamp(24px, 3vw, 34px); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; margin-bottom: 8px; color: #1a1410; }
-  .w-gift p { font-size: 14.5px; line-height: 1.55; color: #5C2A14; font-weight: 500; max-width: 480px; }
-  .w-gift-btn { flex: 0 0 auto; background: #5C2A14; color: #F5C9A8; text-decoration: none; padding: 16px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; transition: transform 0.2s, background 0.2s; }
-  .w-gift-btn:hover { background: #1a1410; transform: translateY(-2px); }
-  .w-group-wrap { max-width: 920px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; }
-  .w-group-text { flex: 1 1 340px; }
-  .w-group h2 { font-size: clamp(24px, 3vw, 34px); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; margin: 4px 0 8px; color: #1a1410; }
-  .w-group p { font-size: 14.5px; line-height: 1.55; color: #5C2A14; font-weight: 500; max-width: 480px; }
-  .w-group-btn { flex: 0 0 auto; background: #E2641E; color: #fff; text-decoration: none; padding: 16px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(226,100,30,0.35); transition: transform 0.2s, background 0.2s; }
-  .w-group-btn:hover { background: #C8551A; transform: translateY(-2px); }
   .w-faq-wrap { max-width: 740px; margin: 0 auto; }
-  .w-faq details { border-bottom: 1px solid rgba(92,42,20,0.15); }
-  .w-faq summary { padding: 16px 0; font-size: 15px; font-weight: 800; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; color: #1a1410; transition: color 0.2s; }
-  .w-faq summary:hover { color: #5C2A14; }
+  .w-faq details { border-bottom: 1px solid var(--wogo-line); }
+  .w-faq summary { padding: 16px 0; font-size: 15px; font-weight: 800; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; color: var(--wogo-ink); transition: color 0.2s; }
+  .w-faq summary:hover { color: var(--wogo-brown); }
   .w-faq summary::-webkit-details-marker { display: none; }
-  .w-faq summary::after { content: "+"; font-size: 24px; font-weight: 400; color: #5C2A14; line-height: 1; flex-shrink: 0; transition: transform 0.3s; }
+  .w-faq summary::after { content: "+"; font-size: 24px; font-weight: 400; color: var(--wogo-salmon-deep); line-height: 1; flex-shrink: 0; transition: transform 0.3s; }
   .w-faq details[open] summary::after { transform: rotate(45deg); }
-  .w-faq-body { padding: 0 0 18px; font-size: 14px; line-height: 1.65; font-weight: 500; color: #444; }
-  .w-final { text-align: center; color: #fff; }
+  .w-faq-body { padding: 0 0 18px; font-size: 14px; line-height: 1.65; font-weight: 500; color: var(--wogo-espresso); }
+  .w-final { text-align: center; color: var(--wogo-blush); }
   .w-final h2 { font-size: clamp(28px, 4vw, 44px); font-weight: 900; line-height: 1.06; margin-bottom: 12px; text-transform: uppercase; letter-spacing: -0.015em; }
-  .w-final p { font-size: 14.5px; font-weight: 500; color: #F5C9A8; margin-bottom: 24px; }
-  .w-final-btn { display: inline-block; background: #E2641E; color: #fff; text-decoration: none; padding: 16px 36px; border-radius: 999px; font-size: 15px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(226,100,30,0.4); transition: transform 0.2s, background 0.2s; }
-  .w-final-btn:hover { background: #C8551A; transform: translateY(-2px); }
+  .w-final p { font-size: 14.5px; font-weight: 500; color: var(--wogo-salmon); margin-bottom: 24px; }
+  .w-final-btn { display: inline-block; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 16px 36px; border-radius: 999px; font-size: 15px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform 0.2s, background 0.2s; }
+  .w-final-btn:hover { background: var(--wogo-cta-bg-hover); transform: translateY(-2px); }
   /* NOTE: no sticky mobile CTA on this page — it's an education page (SITE-PLAN),
      the soft city-card row at the bottom is the only conversion ask. */
 
@@ -180,75 +546,74 @@
   .w-nav.scrolled::before, .w-nav.menu-open::before { opacity: 0; }
   .w-nav.w-nav-embedded { position: absolute; }  /* inside the Wix iframe the host scrolls, so don't pin */
   .w-nav-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 14px; padding: 14px 24px; }
-  .w-nav-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #F5C9A8; text-decoration: none; transition: color 0.3s ease; text-shadow: 0 1px 10px rgba(0,0,0,0.45); }
+  .w-nav-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: var(--wogo-salmon); text-decoration: none; transition: color 0.3s ease; text-shadow: 0 1px 10px rgba(0,0,0,0.45); }
   .w-nav-logo { height: 34px; width: auto; display: block; flex: 0 0 auto; }
-  .w-nav.scrolled, .w-nav.menu-open { background: #FAF6F2; }
+  .w-nav.scrolled, .w-nav.menu-open { background: var(--wogo-cream); }
   .w-nav.scrolled { box-shadow: 0 2px 14px rgba(26,20,16,0.10); }
-  .w-nav.scrolled .w-nav-brand, .w-nav.menu-open .w-nav-brand { color: #5C2A14; text-shadow: none; }
+  .w-nav.scrolled .w-nav-brand, .w-nav.menu-open .w-nav-brand { color: var(--wogo-brown); text-shadow: none; }
   .w-nav-links { list-style: none; display: flex; align-items: center; gap: 2px; margin: 0 auto 0 22px; }
   .w-nav-links > li { position: relative; }
   .w-nav-links a, .w-nav-links button { font-family: inherit; }
   .w-nav-links a { display: inline-flex; align-items: center; font-size: 13.5px; font-weight: 700; letter-spacing: 0.02em; color: #fff; text-decoration: none; padding: 8px 12px; border-radius: 8px; transition: color 0.2s, background 0.2s; text-shadow: 0 1px 8px rgba(0,0,0,0.5); }
   .w-nav-links a:hover { background: rgba(255,255,255,0.14); }
-  .w-nav.scrolled .w-nav-links a { color: #1a1410; text-shadow: none; }
-  .w-nav.scrolled .w-nav-links a:hover { background: rgba(92,42,20,0.08); }
+  .w-nav.scrolled .w-nav-links a { color: var(--wogo-ink); text-shadow: none; }
+  .w-nav.scrolled .w-nav-links a:hover { background: var(--wogo-line-soft); }
   .w-nav-drop { display: flex; align-items: center; }
   .w-nav-caret { font-size: 10px; color: #fff; margin: 0 4px 0 -4px; transition: transform 0.2s, color 0.3s; pointer-events: none; text-shadow: 0 1px 8px rgba(0,0,0,0.5); }
   .w-nav.scrolled .w-nav-caret { text-shadow: none; }
-  .w-nav.scrolled .w-nav-caret { color: #1a1410; }
+  .w-nav.scrolled .w-nav-caret { color: var(--wogo-ink); }
   .w-nav-drop:hover .w-nav-caret, .w-nav-drop:focus-within .w-nav-caret { transform: rotate(180deg); }
-  .w-nav-menu { position: absolute; top: 100%; left: 0; margin: 0; padding: 8px; min-width: 190px; list-style: none; display: flex; flex-direction: column; gap: 2px; background: #fff; border-radius: 12px; box-shadow: 0 12px 30px rgba(26,20,16,0.18); opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s; }
+  .w-nav-menu { position: absolute; top: 100%; left: 0; margin: 0; padding: 8px; min-width: 190px; list-style: none; display: flex; flex-direction: column; gap: 2px; background: var(--wogo-cream); border-radius: 12px; box-shadow: 0 12px 30px rgba(26,20,16,0.18); opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s; }
   .w-nav-drop:hover .w-nav-menu, .w-nav-drop:focus-within .w-nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
-  .w-nav-menu a { color: #1a1410; font-weight: 700; padding: 10px 14px; border-radius: 8px; }
-  .w-nav-menu a:hover, .w-nav.scrolled .w-nav-menu a:hover { background: #F5C9A8; }
-  .w-nav-country { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #8a7066; padding: 10px 14px 4px; }
+  .w-nav-menu a { color: var(--wogo-ink); font-weight: 700; padding: 10px 14px; border-radius: 8px; }
+  .w-nav-menu a:hover, .w-nav.scrolled .w-nav-menu a:hover { background: var(--wogo-surface-tint); }
+  .w-nav-country { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--wogo-brown-soft); padding: 10px 14px 4px; }
   .w-nav-country + .w-nav-country, li.w-nav-country ~ li.w-nav-country { margin-top: 4px; }
-  .w-nav-ov-country { width: 100%; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #8a7066; margin: 6px 0 2px; }
+  .w-nav-ov-country { width: 100%; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--wogo-brown-soft); margin: 6px 0 2px; }
   .w-footer-routes { display: flex; flex-direction: column; gap: 10px; }
-  .w-footer-routes .w-footer-country { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,201,168,0.55); margin-top: 6px; }
+  .w-footer-routes .w-footer-country { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,170,129,0.72); margin-top: 6px; }
   .w-nav-right { display: flex; align-items: center; gap: 10px; }
-  .w-nav .w-lang { position: static; top: auto; right: auto; }  /* reuse hero pill styling, un-pin it */
-  .w-nav-cta { background: #E2641E; color: #fff; text-decoration: none; padding: 11px 20px; border-radius: 999px; font-size: 13px; font-weight: 800; letter-spacing: 0.03em; white-space: nowrap; box-shadow: 0 4px 14px rgba(226,100,30,0.40); transition: transform 0.2s, background 0.2s; }
-  .w-nav-cta:hover { background: #C8551A; color: #fff; transform: translateY(-2px); }
+  .w-nav-cta { background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 11px 20px; border-radius: 999px; font-size: 13px; font-weight: 800; letter-spacing: 0.03em; white-space: nowrap; box-shadow: var(--wogo-cta-shadow); min-height: 44px; display: inline-flex; align-items: center; justify-content: center; transition: transform 0.2s, background 0.2s; }
+  .w-nav-cta:hover { background: var(--wogo-cta-bg-hover); color: var(--wogo-cta-ink); transform: translateY(-2px); }
   .w-nav-cta:active { transform: scale(0.96); }
   .w-nav-burger { display: none; flex-direction: column; justify-content: center; gap: 5px; width: 44px; height: 44px; padding: 11px; background: none; border: none; cursor: pointer; }
   .w-nav-burger span { display: block; width: 100%; height: 2px; border-radius: 2px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.45); transition: transform 0.25s ease, opacity 0.2s ease, background 0.3s ease; }
-  .w-nav.scrolled .w-nav-burger span { background: #1a1410; box-shadow: none; }
-  .w-nav-burger.open span { background: #1a1410; }
+  .w-nav.scrolled .w-nav-burger span { background: var(--wogo-ink); box-shadow: none; }
+  .w-nav-burger.open span { background: var(--wogo-ink); }
   .w-nav-burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
   .w-nav-burger.open span:nth-child(2) { opacity: 0; }
   .w-nav-burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-  .w-nav-overlay { position: fixed; inset: 0; z-index: 49; display: none; flex-direction: column; padding: 86px 24px 40px; background: #FAF6F2; overflow-y: auto; }
+  .w-nav-overlay { position: fixed; inset: 0; z-index: 49; display: none; flex-direction: column; padding: 86px 24px 40px; background: var(--wogo-blush); overflow-y: auto; }
   .w-nav-overlay.open { display: flex; }
   .w-nav-overlay-links { list-style: none; display: flex; flex-direction: column; }
-  .w-nav-ov-link { display: block; font-size: 22px; font-weight: 800; color: #1a1410; text-decoration: none; padding: 15px 6px; border-bottom: 1px solid rgba(92,42,20,0.12); }
-  .w-nav-ov-link:hover { color: #C8551A; }
-  .w-nav-ov-cities { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 6px 16px; border-bottom: 1px solid rgba(92,42,20,0.12); }
-  .w-nav-ov-cities a { font-size: 14px; font-weight: 700; color: #5C2A14; text-decoration: none; background: #F5C9A8; padding: 11px 18px; border-radius: 999px; }
+  .w-nav-ov-link { display: block; font-size: 22px; font-weight: 800; color: var(--wogo-ink); text-decoration: none; padding: 15px 6px; border-bottom: 1px solid var(--wogo-line); }
+  .w-nav-ov-link:hover { color: var(--wogo-salmon-deep); }
+  .w-nav-ov-cities { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 6px 16px; border-bottom: 1px solid var(--wogo-line); }
+  .w-nav-ov-cities a { font-size: 14px; font-weight: 700; color: var(--wogo-espresso); text-decoration: none; background: var(--wogo-surface-tint); padding: 11px 18px; border-radius: 999px; }
   .w-nav-overlay .w-nav-cta { margin-top: 26px; text-align: center; font-size: 15px; padding: 16px 24px; }
 
   /* ===== SITE FOOTER styles (reusable — keep self-contained) ===== */
-  .w-footer { background: #5C2A14; color: #F5C9A8; padding: 56px 0 0; }
+  .w-footer { background: var(--wogo-espresso); color: var(--wogo-blush); padding: 56px 0 0; }
   .w-footer-inner { max-width: 1100px; margin: 0 auto; }
   .w-footer-top { display: flex; flex-wrap: wrap; gap: 40px; padding-bottom: 34px; }
   .w-footer-brand { flex: 1 1 260px; max-width: 340px; }
-  .w-footer-word { font-size: 26px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #F5C9A8; margin-bottom: 14px; }
-  .w-footer-tag { font-size: 15px; line-height: 1.55; font-weight: 500; color: rgba(245,201,168,0.82); }
+  .w-footer-word { font-size: 26px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: var(--wogo-salmon); margin-bottom: 14px; }
+  .w-footer-tag { font-size: 15px; line-height: 1.55; font-weight: 500; color: rgba(255,229,217,0.82); }
   .w-footer-cols { flex: 2 1 480px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
   .w-footer-col { display: flex; flex-direction: column; gap: 10px; }
-  .w-footer-col h3 { font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #fff; margin-bottom: 4px; }
-  .w-footer-col a, .w-footer-col span { font-size: 13.5px; font-weight: 500; line-height: 1.4; color: rgba(245,201,168,0.85); text-decoration: none; transition: color 0.2s; }
-  .w-footer-col a:hover { color: #fff; }
-  .w-footer-trust { border-top: 1px solid rgba(245,201,168,0.18); padding: 20px 16px; text-align: center; font-size: 13px; font-weight: 700; color: rgba(245,201,168,0.92); }
+  .w-footer-col h3 { font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--wogo-blush); margin-bottom: 4px; }
+  .w-footer-col a, .w-footer-col span { font-size: 13.5px; font-weight: 500; line-height: 1.4; color: rgba(255,229,217,0.85); text-decoration: none; transition: color 0.2s; }
+  .w-footer-col a:hover { color: var(--wogo-salmon); }
+  .w-footer-trust { border-top: 1px solid rgba(255,229,217,0.18); padding: 20px 16px; text-align: center; font-size: 13px; font-weight: 700; color: rgba(255,229,217,0.92); }
   .w-footer-socials { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; padding: 0 16px 22px; }
-  .w-footer-socials a { display: inline-flex; align-items: baseline; gap: 6px; font-size: 13px; font-weight: 700; color: #F5C9A8; text-decoration: none; border: 1.5px solid rgba(245,201,168,0.28); padding: 8px 16px; border-radius: 999px; transition: background 0.2s, color 0.2s, border-color 0.2s; }
-  .w-footer-socials a:hover { background: #F5C9A8; color: #5C2A14; border-color: #F5C9A8; }
+  .w-footer-socials a { display: inline-flex; align-items: baseline; gap: 6px; font-size: 13px; font-weight: 700; color: var(--wogo-salmon); text-decoration: none; border: 1.5px solid rgba(255,170,129,0.34); padding: 8px 16px; border-radius: 999px; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+  .w-footer-socials a:hover { background: var(--wogo-salmon); color: var(--wogo-espresso); border-color: var(--wogo-salmon); }
   .w-footer-socials a span { font-size: 12px; font-weight: 500; opacity: 0.72; }
   .w-footer-socials a:hover span { opacity: 1; }
-  .w-footer-legal { border-top: 1px solid rgba(245,201,168,0.18); padding: 18px 16px 26px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; font-size: 11.5px; color: rgba(245,201,168,0.66); }
+  .w-footer-legal { border-top: 1px solid rgba(255,229,217,0.18); padding: 18px 16px 26px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; font-size: 11.5px; color: rgba(255,229,217,0.66); }
   .w-footer-legal-links { display: flex; flex-wrap: wrap; gap: 4px 14px; }
-  .w-footer-legal-links a { color: rgba(245,201,168,0.66); text-decoration: none; }
-  .w-footer-legal-links a:hover { color: #fff; text-decoration: underline; }
+  .w-footer-legal-links a { color: rgba(255,229,217,0.66); text-decoration: none; }
+  .w-footer-legal-links a:hover { color: var(--wogo-salmon); text-decoration: underline; }
   /* nav: collapse to hamburger */
   @media (max-width: 900px) {
     .w-nav-links { display: none; }
@@ -259,10 +624,9 @@
   @media (max-width: 420px) {
     .w-nav-brand { font-size: 17px; letter-spacing: 0.14em; gap: 8px; }
     .w-nav-logo { height: 28px; }
-    .w-nav-cta { padding: 9px 13px; font-size: 11px; }
+    .w-nav-cta { padding: 0 14px; font-size: 11px; }
     .w-nav-inner { gap: 7px; padding: 11px 12px; }
-    .w-nav .w-lang { padding: 2px; }
-    .w-nav .w-lang button { padding: 7px 10px; font-size: 11px; }
+    .w-nav .w-lang-btn { padding: 7px 10px; min-height: 38px; }
   }
   /* footer: stack columns */
   @media (max-width: 720px) {
@@ -278,7 +642,7 @@
     .w-hero-flat { min-height: 340px; } .w-hero-flat .w-hero-content { min-height: 340px; padding: 104px 22px 44px; }
     .w-hero-overline { font-size: 10px; letter-spacing: 0.16em; margin-bottom: 14px; }
     .w-hero h1 { font-size: 25px; line-height: 1.14; margin-bottom: 14px; } .w-hero p { font-size: 13.5px; line-height: 1.55; margin-bottom: 20px; }
-    .w-hero-trust { font-size: 10.5px; gap: 6px 10px; margin-top: 16px; }
+    .w-hero-trust { font-size: 11.5px; gap: 6px 10px; margin-top: 16px; }
     .w-section { padding: 40px 0; } .w-pad { padding-left: 16px; padding-right: 16px; }
     .w-head { margin-bottom: 20px; }
     .w-stepcard { gap: 14px; padding: 20px 0; }
@@ -292,23 +656,90 @@
     .w-cityhub-name { font-size: 14px; }
     .w-cityhub-sub { font-size: 11px; }
     .w-cityhub-go { font-size: 11.5px; }
-    .w-gift-text { flex: 1 1 100%; }
-    .w-gift-btn { width: 100%; max-width: 320px; }
-    .w-gift-wrap { text-align: center; justify-content: center; } .w-gift p { margin: 0 auto; }
-    .w-group-text { flex: 1 1 100%; }
-    .w-group-btn { width: 100%; max-width: 320px; }
-    .w-group-wrap { text-align: center; justify-content: center; } .w-group p { margin: 0 auto; }
     .w-faq summary { padding: 14px 0; font-size: 14.5px; min-height: 52px; }
+  }
+
+  /* ============================================================
+     WOGO VISUAL PASS — motion layer (JS-gated, reduced-motion safe).
+     Hidden states apply ONLY when <html class="wg-js"> is set, so if
+     JS never runs everything stays visible. Transform/opacity only.
+     ============================================================ */
+
+  /* Hero subline — the dash-free punch under the h1 */
+  .w-hero-sub { font-size: clamp(15px,1.6vw,20px); font-weight: 800; letter-spacing: -0.005em; line-height: 1.25; margin: -4px 0 14px; color: var(--wogo-salmon); text-shadow: 0 2px 14px rgba(0,0,0,0.5); max-width: 22ch; }
+  @media (max-width:720px){ .w-hero-sub{ font-size:14.5px; margin:-2px 0 12px; } }
+
+  /* Slow Ken-Burns drift on the hero photo — GPU transform only, never reveals an edge */
+  .w-hero-video { animation: wgHeroPan 22s ease-in-out infinite alternate; will-change: transform; }
+  @keyframes wgHeroPan { from { transform: scale(1.06) translate3d(0,0,0); } to { transform: scale(1.12) translate3d(-1.5%, -1.2%, 0); } }
+
+  /* Richer directional espresso overlay — deepens legibility over the photo */
+  .w-hero-overlay {
+    background:
+      linear-gradient(180deg, rgba(26,20,16,0.30) 0%, rgba(26,20,16,0.20) 40%, rgba(26,20,16,0.78) 100%),
+      radial-gradient(120% 80% at 15% 90%, rgba(63,43,33,0.55) 0%, rgba(63,43,33,0) 60%);
+  }
+
+  /* CTA sheen — a single peach-white glint sweeps across on hover (transform-only) */
+  .w-hero-cta, .w-final-btn { position: relative; overflow: hidden; }
+  .w-hero-cta::after, .w-final-btn::after { content:""; position:absolute; top:0; left:-120%; width:60%; height:100%;
+    background: linear-gradient(115deg, transparent, rgba(255,255,255,0.35), transparent); transform: skewX(-18deg); transition: left .6s ease; }
+  .w-hero-cta:hover::after, .w-final-btn:hover::after { left: 140%; }
+  @media (hover: none){ .w-hero-cta::after, .w-final-btn::after { display:none; } }
+
+  /* Unified card micro-interactions: gentle hover lift + tap press */
+  .w-box, .w-gtk-card { transition: transform .3s cubic-bezier(.22,.61,.36,1), box-shadow .3s ease; }
+  .w-box:hover, .w-gtk-card:hover { transform: translateY(-3px); box-shadow: 0 12px 26px var(--wogo-shadow); }
+  @media (hover: none){ .w-box:hover, .w-gtk-card:hover { transform: none; } }
+  .w-cityhub-card:active, .w-gtk-card:active, .w-box:active { transform: scale(.99); }
+
+  /* Scroll-reveal: single element / section */
+  html.wg-js .wg-reveal { opacity: 0; transform: translateY(16px); transition: opacity .55s ease, transform .55s cubic-bezier(.22,.61,.36,1); will-change: opacity, transform; }
+  html.wg-js .wg-reveal.wg-in { opacity: 1; transform: none; }
+
+  /* Scroll-reveal: staggered children */
+  html.wg-js .wg-stagger > * { opacity: 0; transform: translateY(14px); transition: opacity .5s ease, transform .5s cubic-bezier(.22,.61,.36,1); will-change: opacity, transform; }
+  html.wg-js .wg-stagger.wg-in > * { opacity: 1; transform: none; }
+  html.wg-js .wg-stagger > *:nth-child(1) { transition-delay: 0ms; }
+  html.wg-js .wg-stagger > *:nth-child(2) { transition-delay: 70ms; }
+  html.wg-js .wg-stagger > *:nth-child(3) { transition-delay: 140ms; }
+  html.wg-js .wg-stagger > *:nth-child(4) { transition-delay: 210ms; }
+  html.wg-js .wg-stagger > *:nth-child(5) { transition-delay: 280ms; }
+  html.wg-js .wg-stagger > *:nth-child(6) { transition-delay: 350ms; }
+  html.wg-js .wg-stagger > *:nth-child(7) { transition-delay: 420ms; }
+  html.wg-js .wg-stagger > *:nth-child(n+8) { transition-delay: 490ms; }
+
+  /* Hero entrance — TRANSFORM ONLY (no opacity) so the LCP headline paints
+     immediately and is never delayed; it just drifts up into place.
+     (wg-hero-go is set on <html> by the motion JS.) */
+  html.wg-js .wg-hero-anim > * { transform: translateY(14px); transition: transform .6s cubic-bezier(.22,.61,.36,1); }
+  html.wg-js .wg-hero-anim > *:nth-child(2) { transition-delay: 60ms; }
+  html.wg-js .wg-hero-anim > *:nth-child(3) { transition-delay: 120ms; }
+  html.wg-js .wg-hero-anim > *:nth-child(4) { transition-delay: 180ms; }
+  html.wg-js .wg-hero-anim > *:nth-child(5) { transition-delay: 240ms; }
+  html.wg-js .wg-hero-anim > *:nth-child(n+6) { transition-delay: 300ms; }
+  html.wg-js.wg-hero-go .wg-hero-anim > * { transform: none; }
+
+  /* ── Reduced-motion safety net: never leave a gated element hidden ── */
+  @media (prefers-reduced-motion: reduce) {
+    .w-hero-video { animation: none; transform: none; }
+    html.wg-js .wg-reveal,
+    html.wg-js .wg-stagger > *,
+    html.wg-js .wg-hero-anim > * { opacity: 1 !important; transform: none !important; }
+    .w-hero-cta::after, .w-final-btn::after { display: none; }
   }
 </style>
 </head>
 <body>
+<a class="w-skip" href="#wMain">Skip to content</a>
 
-<!-- ===== WOGO SHARED NAV (keep IDENTICAL across pages — only relative link
-     prefixes change: this page is one folder deep, so logo src/home links get ../ .
-     Same-page anchors: #steps = this page's walkthrough, #cities = city-card row.
-     CTA honesty: the nav button leads to the city cards, so it says
-     "Pick your city", not "Book now". ===== -->
+<script>document.documentElement.classList.add('wg-js');</script>
+
+<!-- ===== WOGO SHARED NAV v4 (copied verbatim onto every page — keep IDENTICAL.
+     Internal links are BASE-relative: static hrefs carry this page's relative
+     prefix, the data-driven Routes menus are BASE-prefixed in JS (see the foot
+     script's var BASE), and only the funnel-aware CTA / on-page anchors differ
+     by page type) ===== -->
 <nav class="w-nav" id="wNav" aria-label="Primary">
   <div class="w-nav-inner">
     <!-- Logo → home page (on the homepage itself this scrolls to top instead). -->
@@ -321,20 +752,24 @@
       <li class="w-nav-drop">
         <a href="#cities" class="w-scroll" data-i18n="nav_routes" aria-haspopup="true">Routes</a>
         <span class="w-nav-caret" aria-hidden="true">▾</span>
-        <!-- Routes popover — populated from the WOGO_ROUTES data structure in JS so
-             new countries/cities are a one-line data edit. TODO: point to internal
-             /<city>/ hubs once all four are built. -->
+        <!-- Routes popover — populated from the WOGO_ROUTES data in JS (the four
+             internal city hubs, BASE-prefixed), so new countries/cities are a
+             one-line data edit. -->
         <ul class="w-nav-menu" id="wNavMenu"></ul>
       </li>
       <li><a href="#steps" class="w-scroll" data-i18n="nav_how" aria-current="page">How it works</a></li>
-      <li><a href="https://www.wogococktailwalk.com/groupbookings" target="_top" class="w-navlink" data-i18n="nav_groups">Groups</a></li>
-      <li><a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-navlink" data-i18n="nav_gift">Gift cards</a></li>
+      <li><a href="../groups/" class="w-navlink" data-i18n="nav_groups">Groups</a></li>
+      <li><a href="../gift-cards/" class="w-navlink" data-i18n="nav_gift">Gift cards</a></li>
     </ul>
 
-    <!-- Right cluster: EN/NL toggle + primary CTA + mobile burger -->
+    <!-- Right cluster: EN/NL toggle + primary CTA + mobile burger.
+         The nav CTA is funnel-aware in target AND label: where it only reaches a
+         route grid it says "View dates" / "Bekijk data" (homepage/hubs scroll to
+         the route list, content pages link {BASE}#cities); route pages scroll to
+         the real #book section and keep "Book now" / "Boek nu". -->
     <div class="w-nav-right">
-      <div class="w-lang" role="group" aria-label="Language"><button data-lang="en" class="active" aria-pressed="true">EN</button><button data-lang="nl" aria-pressed="false">NL</button></div>
-      <a href="#cities" class="w-nav-cta w-scroll" data-i18n="nav_cta">Pick your city</a>
+      <div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"></ul></div>
+      <a href="../#cities" class="w-nav-cta w-navlink" data-i18n="nav_cta">View dates</a>
       <button class="w-nav-burger" id="wNavBurger" aria-label="Open menu" aria-controls="wNavOverlay" aria-expanded="false"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -346,217 +781,471 @@
       <!-- City chips populated from WOGO_ROUTES (see JS) -->
       <li class="w-nav-ov-cities" id="wNavOvCities"></li>
       <li><a href="#steps" class="w-scroll w-nav-ov-link" data-i18n="nav_how">How it works</a></li>
-      <li><a href="https://www.wogococktailwalk.com/groupbookings" target="_top" class="w-navlink w-nav-ov-link" data-i18n="nav_groups">Groups</a></li>
-      <li><a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-navlink w-nav-ov-link" data-i18n="nav_gift">Gift cards</a></li>
+      <li><a href="../groups/" class="w-navlink w-nav-ov-link" data-i18n="nav_groups">Groups</a></li>
+      <li><a href="../gift-cards/" class="w-navlink w-nav-ov-link" data-i18n="nav_gift">Gift cards</a></li>
+      <li><a href="../about/" class="w-navlink w-nav-ov-link" data-i18n="nav_about">About</a></li>
+      <li><a href="../faq/" class="w-navlink w-nav-ov-link" data-i18n="foot_faq">FAQ</a></li>
+      <li><a href="../blog/" class="w-navlink w-nav-ov-link" data-i18n="foot_blog">Blog</a></li>
+      <li><a href="../contact/" class="w-navlink w-nav-ov-link" data-i18n="foot_contact">Contact</a></li>
+      <li class="w-nav-ov-lang"><div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"></ul></div></li>
     </ul>
-    <a href="#cities" class="w-nav-cta w-scroll" data-i18n="nav_cta">Pick your city</a>
+    <a href="../#cities" class="w-nav-cta w-navlink" data-i18n="nav_cta">View dates</a>
   </div>
 </nav>
-<!-- ===== /WOGO SHARED NAV ===== -->
+<!-- ===== /WOGO SHARED NAV v4 ===== -->
+<main id="wMain" tabindex="-1">
 
 <!-- ============================================================
      SECTION: HERO — PAGE-EDIT
-     Content pages use the flat espresso-gradient hero (no photo,
-     no video — nothing to swap when copying this template).
+     V3 photo hero: a real WOGO shot (this page's own OG image,
+     downloaded from the live Wix CDN into this folder) with the
+     Ken-Burns drift + entrance motion, same language as the hubs.
      Education page: the hero CTA only scrolls to the steps.
      ============================================================ -->
-<section class="w-hero w-hero-flat">
-  <div class="w-hero-content">
+<section class="w-hero">
+  <img class="w-hero-video" src="how-it-works-hero.jpg" alt="Two friends toasting signature cocktails at a bar on a WOGO cocktail walk" fetchpriority="high" decoding="async" width="1600" height="900">
+  <div class="w-hero-overlay"></div>
+  <div class="w-hero-content wg-hero-anim">
     <div class="w-hero-overline" data-i18n="hero_eyebrow">How it works</div>
     <h1 data-i18n="hero_h1">How a WOGO Cocktail Walk Works</h1>
-    <p data-i18n="hero_p">No guide, no group — just three reserved bars, three cocktails and a digital route map in your inbox. Here's the whole night, step by step. <strong>From €29,95 per person.</strong></p>
-    <a href="#steps" class="w-hero-cta w-scroll" data-i18n="hero_cta">Show me the 5 steps ↓</a>
-    <div class="w-hero-trust"><span data-i18n="t_google"><span class="w-star">★</span> 4.4 on Google</span><span>·</span><span data-i18n="t_trustpilot"><span class="w-star">★</span> 4.5 Trustpilot</span><span>·</span><span data-i18n="t_guests">80,000+ walks booked</span></div>
+    <p class="w-hero-sub" data-i18n="hero_sub">No guide. No group. All the planning done.</p>
+    <a href="#steps" class="w-hero-cta w-scroll" data-i18n="hero_cta">See the 5 steps ↓</a>
   </div>
 </section>
 
 <!-- ============================================================
-     SECTION: 5-STEP WALKTHROUGH (#steps) — PAGE-EDIT
-     The core of the page: numbered, illustrated steps — richer
-     than the homepage's 3-icon strip, but still scannable
-     (no walls of text; each step is 2–3 sentences max).
+     SECTION: STEPS (#steps) — PAGE-EDIT · V6 compact animated phone
+     ONE phone frame; each screen holds a small CSS/SVG animation of
+     the step, with the short step text beside it (below on mobile).
+     Auto-advance drives the phone screen AND the highlighted beside-
+     step together. The old definition / included / good-to-know
+     prose blocks are deleted — that keyword coverage now lives in the
+     blog (/blog/what-is-a-self-guided-cocktail-walk/).
      ============================================================ -->
-<section class="w-section w-pad" id="steps">
-  <div class="w-head">
+<section class="w-section brown w-pad" id="steps">
+  <div class="w-head wg-reveal">
     <div class="w-eyebrow" data-i18n="steps_eyebrow">Step by step</div>
-    <h2 data-i18n="steps_h2">Your night in five steps</h2>
-    <p data-i18n="steps_p">From booking to the last cocktail — this is how a self-guided cocktail walk works.</p>
+    <h2 data-i18n="steps_h2">How your night works, step by step</h2>
   </div>
-  <div class="w-steps-wrap">
 
-    <div class="w-stepcard">
-      <div class="w-stepcard-num" aria-hidden="true">1</div>
-      <div class="w-stepcard-body">
-        <h3><span class="w-stepcard-ico" aria-hidden="true">🗓️</span><span data-i18n="s1_h">Pick your city, route and date</span></h3>
-        <p data-i18n="s1_p">Book online in a couple of minutes. As soon as you book, we arrange your table at all three bars for that same day — the bar staff know WOGO guests are coming. Walks run from €29,95 per person; with 7 or more, <a href="../groups/">book as a group</a> and we can even personalise your route.</p>
+  <div class="hiw-layout wg-reveal">
+    <!-- PHONE — screens now hold animations, not prose -->
+    <div class="hiw-phone-col">
+      <div class="w-phone">
+        <span class="w-phone-notch" aria-hidden="true"></span>
+        <div class="w-phone-screen">
+          <div class="w-phone-track" id="wPhoneTrack" role="group"
+               aria-roledescription="carousel" aria-label="How a WOGO walk works, five steps">
+
+            <article class="w-phone-slide" aria-label="Step 1 of 5: pick your route and date">
+              <div class="hiw-anim hiw-scene--chat" aria-hidden="true">
+                <div class="hiw-appbar">
+                  <span class="hiw-appbar-back">&lsaquo;</span>
+                  <span class="hiw-appbar-avatar">W</span>
+                  <span class="hiw-appbar-name">The group chat<b>online</b></span>
+                </div>
+                <div class="hiw-chat">
+                  <div class="hiw-cluster hiw-cluster--in hiw-c1">
+                    <div class="hiw-msg hiw-msg--in">Which night are we going?</div>
+                    <span class="hiw-time">20:14</span>
+                  </div>
+                  <div class="hiw-cluster hiw-cluster--out hiw-c2">
+                    <div class="hiw-msg hiw-msg--out">Friday, the Rotterdam route</div>
+                    <span class="hiw-time">20:14 <i class="tick">&#10003;&#10003;</i></span>
+                  </div>
+                  <div class="hiw-cluster hiw-cluster--in hiw-c3">
+                    <div class="hiw-msg hiw-msg--in"><span class="hiw-daychip">FRI 12</span> 2 spots left</div>
+                    <span class="hiw-time">20:15</span>
+                  </div>
+                  <div class="hiw-final">
+                    <span class="hiw-typing"><i></i><i></i><i></i></span>
+                    <div class="hiw-msg hiw-msg--out">Booking now &#127864;</div>
+                    <span class="hiw-time">20:15 <i class="tick">&#10003;&#10003;</i></span>
+                  </div>
+                  <div class="hiw-confirm">
+                    <span class="hiw-confirm-check">&#10003;</span>
+                    <span class="hiw-confirm-txt"><b>Booking confirmed</b><span>Rotterdam &middot; Fri 12 &middot; 4 guests</span></span>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="w-phone-slide" aria-label="Step 2 of 5: your route arrives by email">
+              <div class="hiw-anim hiw-scene--mail" aria-hidden="true">
+                <div class="hiw-appbar">
+                  <span class="hiw-appbar-avatar">&#9993;</span>
+                  <span class="hiw-appbar-name">Inbox<b>1 new</b></span>
+                </div>
+                <div class="hiw-mailwrap">
+                  <div class="hiw-notif">
+                    <span class="hiw-notif-ico">&#9993;</span>
+                    <div class="hiw-notif-txt"><b>WOGO Cocktail Walk</b><span>Your Rotterdam route is ready</span></div>
+                    <span class="hiw-notif-time">now</span>
+                  </div>
+                  <div class="hiw-mailcard">
+                    <div class="hiw-mailcard-h">Your route &middot; Rotterdam</div>
+                    <ul class="hiw-mailrows">
+                      <li class="hiw-mailrow"><span class="hiw-mailrow-n">1</span><span class="hiw-mailrow-name"><b>First stop</b><em>Table reserved &middot; 20:00</em></span><span class="hiw-mailrow-tick">&#10003;</span></li>
+                      <li class="hiw-mailrow"><span class="hiw-mailrow-n">2</span><span class="hiw-mailrow-name"><b>Second stop</b><em>Table reserved &middot; 21:15</em></span><span class="hiw-mailrow-tick">&#10003;</span></li>
+                      <li class="hiw-mailrow"><span class="hiw-mailrow-n">3</span><span class="hiw-mailrow-name"><b>Third stop</b><em>Table reserved &middot; 22:30</em></span><span class="hiw-mailrow-tick">&#10003;</span></li>
+                    </ul>
+                    <div class="hiw-mailbtn">Open route map</div>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="w-phone-slide" aria-label="Step 3 of 5: three bars, a surprise">
+              <div class="hiw-anim hiw-scene--bar" aria-hidden="true">
+                <span class="hiw-bokeh hiw-bokeh--1"></span><span class="hiw-bokeh hiw-bokeh--2"></span>
+                <span class="hiw-bokeh hiw-bokeh--3"></span><span class="hiw-bokeh hiw-bokeh--4"></span>
+                <div class="hiw-barstage">
+                  <!-- back-bar: backlit glow + a shelf of bottles -->
+                  <span class="hiw-barglow"></span>
+                  <div class="hiw-backbar">
+                    <svg viewBox="0 0 230 92" aria-hidden="true">
+                      <defs>
+                        <linearGradient id="bottleAmber" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0" stop-color="#c98a4b"/><stop offset="1" stop-color="#7e5541"/>
+                        </linearGradient>
+                        <linearGradient id="bottleEspresso" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0" stop-color="#5a3a29"/><stop offset="1" stop-color="#241812"/>
+                        </linearGradient>
+                        <linearGradient id="bottleSalmon" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0" stop-color="#ffaa81"/><stop offset="1" stop-color="#c9714a"/>
+                        </linearGradient>
+                      </defs>
+                      <rect x="4" y="84" width="222" height="4" rx="2" fill="#2a1c15"/>
+                      <rect x="4" y="82" width="222" height="1.4" fill="#ffb98f" opacity=".3"/>
+                      <rect x="18"  y="40" width="14" height="44" rx="3" fill="url(#bottleEspresso)"/>
+                      <rect x="20"  y="30" width="10" height="12" rx="2" fill="url(#bottleEspresso)"/>
+                      <rect x="42"  y="26" width="15" height="58" rx="3" fill="url(#bottleAmber)"/>
+                      <rect x="44"  y="16" width="11" height="12" rx="2" fill="url(#bottleAmber)"/>
+                      <rect x="68"  y="48" width="13" height="36" rx="3" fill="url(#bottleSalmon)"/>
+                      <rect x="70"  y="38" width="9"  height="12" rx="2" fill="url(#bottleSalmon)"/>
+                      <rect x="100" y="20" width="16" height="64" rx="3" fill="url(#bottleEspresso)"/>
+                      <rect x="103" y="10" width="10" height="12" rx="2" fill="url(#bottleEspresso)"/>
+                      <rect x="128" y="44" width="13" height="40" rx="3" fill="url(#bottleAmber)"/>
+                      <rect x="130" y="34" width="9"  height="12" rx="2" fill="url(#bottleAmber)"/>
+                      <rect x="154" y="30" width="15" height="54" rx="3" fill="url(#bottleSalmon)"/>
+                      <rect x="156" y="20" width="11" height="12" rx="2" fill="url(#bottleSalmon)"/>
+                      <rect x="182" y="50" width="13" height="34" rx="3" fill="url(#bottleEspresso)"/>
+                      <rect x="184" y="40" width="9"  height="12" rx="2" fill="url(#bottleEspresso)"/>
+                      <g fill="#fff" opacity=".18">
+                        <rect x="20" y="42" width="2.4" height="40" rx="1.2"/>
+                        <rect x="44" y="28" width="2.6" height="54" rx="1.3"/>
+                        <rect x="70" y="50" width="2.2" height="32" rx="1.1"/>
+                        <rect x="102" y="22" width="2.8" height="60" rx="1.4"/>
+                        <rect x="130" y="46" width="2.2" height="36" rx="1.1"/>
+                        <rect x="156" y="32" width="2.6" height="50" rx="1.3"/>
+                        <rect x="184" y="52" width="2.2" height="30" rx="1.1"/>
+                      </g>
+                    </svg>
+                  </div>
+                  <!-- pendant lights over the bar -->
+                  <span class="hiw-pendant hiw-pendant--1"><span class="hiw-pendant-cord"></span><span class="hiw-pendant-glow"></span><span class="hiw-pendant-shade"></span></span>
+                  <span class="hiw-pendant hiw-pendant--2"><span class="hiw-pendant-cord"></span><span class="hiw-pendant-glow"></span><span class="hiw-pendant-shade"></span></span>
+                  <!-- the bartender, shaking behind the counter -->
+                  <span class="hiw-bartender-glow"></span>
+                  <div class="hiw-bartender">
+                    <svg viewBox="0 0 96 160" aria-hidden="true">
+                      <defs>
+                        <linearGradient id="barTendFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0" stop-color="#8f5f43"/><stop offset=".55" stop-color="#6b4530"/><stop offset="1" stop-color="#4a3126"/>
+                        </linearGradient>
+                      </defs>
+                      <!-- mirrored so the shaking arm reaches away from the glass, into open
+                           space, instead of being hidden behind it -->
+                      <g transform="translate(96,0) scale(-1,1)">
+                        <circle cx="48" cy="20" r="13" fill="url(#barTendFill)"/>
+                        <circle cx="48" cy="20" r="13" fill="none" stroke="#ffcaa9" stroke-opacity=".55" stroke-width="1.6"/>
+                        <rect x="42" y="30" width="12" height="8" fill="url(#barTendFill)"/>
+                        <path d="M48,36 C32,36 20,48 18,66 L15,160 L38,160 L40,100 C41,92 44,88 48,88 C52,88 55,92 56,100 L58,160 L81,160 L78,66 C76,48 64,36 48,36 Z" fill="url(#barTendFill)"/>
+                        <path d="M48,36 C32,36 20,48 18,66 L16,150 M78,66 C76,48 64,36 48,36" fill="none" stroke="#ffcaa9" stroke-opacity=".3" stroke-width="1.6" stroke-linecap="round"/>
+                        <g class="barShaker">
+                          <path d="M74,54 C80,48 84,40 86,30 C87,25 89,20 92,16" fill="none" stroke="url(#barTendFill)" stroke-width="12" stroke-linecap="round"/>
+                          <path d="M74,54 C80,48 84,40 86,30 C87,25 89,20 92,16" fill="none" stroke="#ffcaa9" stroke-opacity=".3" stroke-width="1.2" stroke-linecap="round"/>
+                          <g transform="translate(92 12) rotate(20)">
+                            <rect x="-8" y="-3" width="16" height="27" rx="4" fill="url(#barTendFill)"/>
+                            <rect x="-8" y="-3" width="16" height="27" rx="4" fill="none" stroke="#ffcaa9" stroke-opacity=".5" stroke-width="1.3"/>
+                            <ellipse cx="0" cy="-5" rx="8" ry="3" fill="#ffcaa9" fill-opacity=".55"/>
+                          </g>
+                        </g>
+                      </g>
+                    </svg>
+                  </div>
+                  <!-- the counter -->
+                  <span class="hiw-countertop"></span>
+                  <span class="hiw-counterfront"></span>
+                  <!-- the glow under the finished drink -->
+                  <span class="hiw-barglint"></span>
+                  <!-- the served cocktail: the same detailed glass, resized onto the counter -->
+                  <div class="hiw-barsvg">
+                    <svg viewBox="0 0 150 270" aria-hidden="true">
+                      <defs>
+                        <linearGradient id="barLiquid" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0" stop-color="#ffcaa9"/><stop offset=".4" stop-color="#ffaa81"/><stop offset="1" stop-color="#ee8850"/>
+                        </linearGradient>
+                        <radialGradient id="barCitrus" cx=".5" cy=".35" r=".75">
+                          <stop offset="0" stop-color="#ffe7d6"/><stop offset="1" stop-color="#ffb78f"/>
+                        </radialGradient>
+                        <radialGradient id="barShadow" cx=".5" cy=".5" r=".5">
+                          <stop offset="0" stop-color="#140c08" stop-opacity=".5"/><stop offset="1" stop-color="#140c08" stop-opacity="0"/>
+                        </radialGradient>
+                        <clipPath id="barInterior"><path d="M47,54 L47,236 Q47,244 55,244 L95,244 Q103,244 103,236 L103,54 Z"/></clipPath>
+                      </defs>
+                      <ellipse cx="75" cy="260" rx="46" ry="8" fill="url(#barShadow)"/>
+                      <path d="M44,46 L44,238 Q44,250 56,250 L94,250 Q106,250 106,238 L106,46 Z" fill="#fff7f1" opacity=".16"/>
+                      <g clip-path="url(#barInterior)">
+                        <rect class="barFill" x="47" y="70" width="56" height="174" fill="url(#barLiquid)"/>
+                        <circle class="barBub barBub--1" cx="60" cy="222" r="2.3" fill="#fff" opacity=".7"/>
+                        <circle class="barBub barBub--2" cx="88" cy="228" r="1.8" fill="#fff" opacity=".7"/>
+                        <circle class="barBub barBub--3" cx="72" cy="232" r="2.6" fill="#fff" opacity=".7"/>
+                        <circle class="barBub barBub--4" cx="80" cy="216" r="1.6" fill="#fff" opacity=".7"/>
+                      </g>
+                      <ellipse class="barMeniscus" cx="75" cy="70" rx="28" ry="4.6" fill="#ffe6d5"/>
+                      <ellipse class="barMeniscus" cx="75" cy="69" rx="20" ry="2.2" fill="#fff" opacity=".55"/>
+                      <g class="barIce barIce--1"><g transform="rotate(-12 66 128)">
+                        <rect x="52" y="114" width="27" height="27" rx="5" fill="#fff" opacity=".4"/>
+                        <rect x="52" y="114" width="27" height="27" rx="5" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1.3"/>
+                        <path d="M56,120 L74,120 M74,120 L74,136" stroke="#fff" stroke-opacity=".5" stroke-width="1" fill="none"/>
+                      </g></g>
+                      <g class="barIce barIce--2"><g transform="rotate(11 84 158)">
+                        <rect x="71" y="146" width="24" height="24" rx="5" fill="#fff" opacity=".38"/>
+                        <rect x="71" y="146" width="24" height="24" rx="5" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.2"/>
+                        <path d="M75,151 L90,151 M90,151 L90,165" stroke="#fff" stroke-opacity=".45" stroke-width="1" fill="none"/>
+                      </g></g>
+                      <rect x="52" y="66" width="5" height="150" rx="3" fill="#fff" opacity=".22"/>
+                      <path d="M44,46 L44,238 Q44,250 56,250 L94,250 Q106,250 106,238 L106,46" fill="none" stroke="#ffe6d5" stroke-opacity=".5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                      <ellipse cx="75" cy="46" rx="31" ry="6" fill="none" stroke="#ffe6d5" stroke-opacity=".32" stroke-width="2.6"/>
+                      <ellipse cx="75" cy="45" rx="31" ry="6" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1"/>
+                      <ellipse class="barDrop barDrop--1" cx="49" cy="150" rx="1.7" ry="3" fill="#fff" opacity=".55"/>
+                      <ellipse class="barDrop barDrop--2" cx="101" cy="176" rx="1.6" ry="2.8" fill="#fff" opacity=".55"/>
+                      <ellipse class="barDrop barDrop--3" cx="47" cy="202" rx="1.5" ry="2.6" fill="#fff" opacity=".55"/>
+                      <g class="barStraw"><g transform="rotate(13 92 64)">
+                        <rect x="90" y="26" width="5" height="76" rx="2.5" fill="#f2905c"/>
+                        <rect x="90" y="26" width="5" height="76" rx="2.5" fill="#fff" opacity=".3"/>
+                      </g></g>
+                      <g class="barGarnish"><g transform="translate(99 42) rotate(-22)">
+                        <path d="M-15,0 A15,15 0 0 1 15,0 Z" fill="url(#barCitrus)"/>
+                        <path d="M-15,0 A15,15 0 0 1 15,0" fill="none" stroke="#ef8850" stroke-width="3.4"/>
+                        <path d="M-15,2 A15,15 0 0 1 15,2" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1.2"/>
+                        <g stroke="#ffb78f" stroke-width="1">
+                          <line x1="0" y1="0" x2="0" y2="-13"/><line x1="0" y1="0" x2="-8" y2="-10"/>
+                          <line x1="0" y1="0" x2="8" y2="-10"/><line x1="0" y1="0" x2="-13" y2="-4"/><line x1="0" y1="0" x2="13" y2="-4"/>
+                        </g>
+                      </g></g>
+                    </svg>
+                  </div>
+                  <!-- two guests at the counter, seen from behind -->
+                  <div class="hiw-guest hiw-guest--l">
+                    <svg viewBox="0 0 74 118" aria-hidden="true">
+                      <path d="M37,0 C50,0 58,10 58,24 C58,34 54,40 48,44 C64,50 74,66 74,88 L74,118 L0,118 L0,88 C0,66 10,50 26,44 C20,40 16,34 16,24 C16,10 24,0 37,0 Z" fill="var(--wogo-espresso)" fill-opacity=".82" stroke="#ffb98f" stroke-opacity=".18" stroke-width="2"/>
+                    </svg>
+                  </div>
+                  <div class="hiw-guest hiw-guest--r">
+                    <svg viewBox="0 0 74 118" aria-hidden="true">
+                      <g transform="scale(-1,1) translate(-74,0)">
+                        <path d="M37,0 C50,0 58,10 58,24 C58,34 54,40 48,44 C64,50 74,66 74,88 L74,118 L0,118 L0,88 C0,66 10,50 26,44 C20,40 16,34 16,24 C16,10 24,0 37,0 Z" fill="var(--wogo-espresso)" fill-opacity=".82" stroke="#ffb98f" stroke-opacity=".18" stroke-width="2"/>
+                      </g>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="w-phone-slide" aria-label="Step 4 of 5: walk the route at your pace">
+              <div class="hiw-anim hiw-scene--map" aria-hidden="true">
+                <div class="hiw-map">
+                  <svg class="hiw-mapsvg" viewBox="0 0 224 290" aria-hidden="true">
+                    <defs>
+                      <radialGradient id="pinShadow" cx=".5" cy=".5" r=".5">
+                        <stop offset="0" stop-color="#3f2b21" stop-opacity=".3"/><stop offset="1" stop-color="#3f2b21" stop-opacity="0"/>
+                      </radialGradient>
+                      <linearGradient id="routeGrad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stop-color="#ffaa81"/><stop offset="1" stop-color="#f2905c"/>
+                      </linearGradient>
+                    </defs>
+                    <rect x="0" y="0" width="224" height="290" fill="#fffaf6"/>
+                    <rect x="120" y="152" width="82" height="72" rx="8" fill="#efe0d4"/>
+                    <circle cx="120" cy="92" r="16" fill="#f6e7dc"/>
+                    <path d="M-10,40 Q60,60 110,42 T240,56 L240,72 Q120,60 -10,60 Z" fill="#ecdccf" opacity=".8"/>
+                    <g stroke="#efe2d8" stroke-linecap="round" fill="none">
+                      <line x1="0" y1="120" x2="224" y2="120" stroke-width="10"/>
+                      <line x1="0" y1="200" x2="224" y2="200" stroke-width="7"/>
+                      <line x1="0" y1="255" x2="224" y2="255" stroke-width="5"/>
+                      <line x1="60" y1="0" x2="60" y2="290" stroke-width="9"/>
+                      <line x1="150" y1="0" x2="150" y2="290" stroke-width="6"/>
+                      <line x1="105" y1="0" x2="105" y2="290" stroke-width="4"/>
+                      <line x1="0" y1="4" x2="224" y2="120" stroke-width="4" opacity=".7"/>
+                    </g>
+                    <path class="route1" d="M58,232 C50,190 70,150 120,92" fill="none" stroke="#ffd3ba" stroke-width="9" stroke-linecap="round" pathLength="1"/>
+                    <path class="route2" d="M120,92 C150,100 168,120 182,150" fill="none" stroke="#ffd3ba" stroke-width="9" stroke-linecap="round" pathLength="1"/>
+                    <path class="route1" d="M58,232 C50,190 70,150 120,92" fill="none" stroke="url(#routeGrad)" stroke-width="4.5" stroke-linecap="round" pathLength="1"/>
+                    <path class="route2" d="M120,92 C150,100 168,120 182,150" fill="none" stroke="url(#routeGrad)" stroke-width="4.5" stroke-linecap="round" pathLength="1"/>
+                    <g transform="translate(58 232)"><g class="mapPin mapPin--1">
+                      <ellipse cx="0" cy="4" rx="10" ry="3" fill="url(#pinShadow)"/>
+                      <path d="M0,2 C-9,-6 -9,-20 0,-24 C9,-20 9,-6 0,2 Z" fill="url(#routeGrad)" stroke="#f2905c" stroke-width="1"/>
+                      <circle cx="0" cy="-14" r="6.5" fill="#fffaf6"/>
+                      <text x="0" y="-11" text-anchor="middle" font-size="9" font-weight="800" fill="#3f2b21" font-family="-apple-system,Helvetica,Arial,sans-serif">1</text>
+                    </g></g>
+                    <g transform="translate(120 92)"><g class="mapPin mapPin--2">
+                      <ellipse cx="0" cy="4" rx="10" ry="3" fill="url(#pinShadow)"/>
+                      <path d="M0,2 C-9,-6 -9,-20 0,-24 C9,-20 9,-6 0,2 Z" fill="url(#routeGrad)" stroke="#f2905c" stroke-width="1"/>
+                      <circle cx="0" cy="-14" r="6.5" fill="#fffaf6"/>
+                      <text x="0" y="-11" text-anchor="middle" font-size="9" font-weight="800" fill="#3f2b21" font-family="-apple-system,Helvetica,Arial,sans-serif">2</text>
+                    </g></g>
+                    <g transform="translate(182 150)"><g class="mapPin mapPin--3">
+                      <ellipse cx="0" cy="4" rx="10" ry="3" fill="url(#pinShadow)"/>
+                      <path d="M0,2 C-9,-6 -9,-20 0,-24 C9,-20 9,-6 0,2 Z" fill="url(#routeGrad)" stroke="#f2905c" stroke-width="1"/>
+                      <circle cx="0" cy="-14" r="6.5" fill="#fffaf6"/>
+                      <text x="0" y="-11" text-anchor="middle" font-size="9" font-weight="800" fill="#3f2b21" font-family="-apple-system,Helvetica,Arial,sans-serif">3</text>
+                    </g></g>
+                  </svg>
+                  <span class="hiw-plabel hiw-plabel--1">Start</span>
+                  <span class="hiw-plabel hiw-plabel--2">Stop 2</span>
+                  <span class="hiw-plabel hiw-plabel--3">Finish</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="w-phone-slide" aria-label="Step 5 of 5: a cocktail at each">
+              <div class="hiw-anim hiw-scene--cheers" aria-hidden="true">
+                <div class="hiw-cheers">
+                  <span class="hiw-confetti hiw-confetti--1"></span><span class="hiw-confetti hiw-confetti--2"></span>
+                  <span class="hiw-confetti hiw-confetti--3"></span><span class="hiw-confetti hiw-confetti--4"></span>
+                  <span class="hiw-confetti hiw-confetti--5"></span><span class="hiw-confetti hiw-confetti--6"></span>
+                  <div class="hiw-cglass hiw-cglass--l">
+                    <svg viewBox="0 0 100 152" aria-hidden="true">
+                      <defs>
+                        <linearGradient id="coupeLiqL" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0" stop-color="#ffcaa9"/><stop offset=".5" stop-color="#ffaa81"/><stop offset="1" stop-color="#f2905c"/>
+                        </linearGradient>
+                        <radialGradient id="coupeShadL" cx=".5" cy=".5" r=".5">
+                          <stop offset="0" stop-color="#3f2b21" stop-opacity=".38"/><stop offset="1" stop-color="#3f2b21" stop-opacity="0"/>
+                        </radialGradient>
+                        <clipPath id="coupeClipL"><path d="M17,43 Q18,62 50,80 Q82,62 83,43 Z"/></clipPath>
+                      </defs>
+                      <ellipse cx="50" cy="140" rx="24" ry="4" fill="url(#coupeShadL)"/>
+                      <rect x="47" y="80" width="6" height="52" rx="2" fill="#e8cbba"/>
+                      <rect x="47" y="80" width="2.4" height="52" rx="1.2" fill="#fff" opacity=".5"/>
+                      <ellipse cx="50" cy="134" rx="18" ry="4.5" fill="#e8cbba"/>
+                      <ellipse cx="50" cy="133" rx="18" ry="3.6" fill="none" stroke="#c9a894" stroke-width="1"/>
+                      <path d="M14,40 Q15,64 50,84 Q85,64 86,40" fill="#fff7f1" opacity=".2"/>
+                      <g clip-path="url(#coupeClipL)">
+                        <rect class="coupeFill" x="16" y="44" width="68" height="38" fill="url(#coupeLiqL)"/>
+                        <circle class="coupeBub coupeBub--1" cx="42" cy="70" r="1.8" fill="#fff" opacity=".7"/>
+                        <circle class="coupeBub coupeBub--2" cx="56" cy="74" r="1.5" fill="#fff" opacity=".7"/>
+                        <circle class="coupeBub coupeBub--3" cx="50" cy="66" r="2" fill="#fff" opacity=".7"/>
+                      </g>
+                      <ellipse cx="50" cy="44" rx="33" ry="4.6" fill="#ffe6d5"/>
+                      <ellipse cx="50" cy="43" rx="22" ry="2.2" fill="#fff" opacity=".5"/>
+                      <path d="M14,40 Q15,64 50,84 Q85,64 86,40" fill="none" stroke="#7e5541" stroke-opacity=".4" stroke-width="2.6" stroke-linecap="round"/>
+                      <ellipse cx="50" cy="40" rx="36" ry="7" fill="none" stroke="#7e5541" stroke-opacity=".45" stroke-width="2.4"/>
+                      <ellipse cx="50" cy="39" rx="36" ry="7" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1"/>
+                      <path d="M22,36 Q30,30 44,29" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"/>
+                      <g>
+                        <line x1="30" y1="26" x2="58" y2="45" stroke="#7e5541" stroke-width="1.6" stroke-linecap="round"/>
+                        <circle cx="30" cy="25" r="4" fill="#f2905c"/>
+                        <circle cx="36" cy="29" r="4" fill="#ef8850"/>
+                        <circle cx="28.5" cy="23.5" r="1.2" fill="#fff" opacity=".6"/>
+                      </g>
+                    </svg>
+                  </div>
+                  <div class="hiw-cglass hiw-cglass--r">
+                    <svg viewBox="0 0 100 152" aria-hidden="true">
+                      <defs>
+                        <linearGradient id="coupeLiqR" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0" stop-color="#ffcaa9"/><stop offset=".5" stop-color="#ffaa81"/><stop offset="1" stop-color="#f2905c"/>
+                        </linearGradient>
+                        <radialGradient id="coupeShadR" cx=".5" cy=".5" r=".5">
+                          <stop offset="0" stop-color="#3f2b21" stop-opacity=".38"/><stop offset="1" stop-color="#3f2b21" stop-opacity="0"/>
+                        </radialGradient>
+                        <clipPath id="coupeClipR"><path d="M17,43 Q18,62 50,80 Q82,62 83,43 Z"/></clipPath>
+                      </defs>
+                      <ellipse cx="50" cy="140" rx="24" ry="4" fill="url(#coupeShadR)"/>
+                      <rect x="47" y="80" width="6" height="52" rx="2" fill="#e8cbba"/>
+                      <rect x="47" y="80" width="2.4" height="52" rx="1.2" fill="#fff" opacity=".5"/>
+                      <ellipse cx="50" cy="134" rx="18" ry="4.5" fill="#e8cbba"/>
+                      <ellipse cx="50" cy="133" rx="18" ry="3.6" fill="none" stroke="#c9a894" stroke-width="1"/>
+                      <path d="M14,40 Q15,64 50,84 Q85,64 86,40" fill="#fff7f1" opacity=".2"/>
+                      <g clip-path="url(#coupeClipR)">
+                        <rect class="coupeFill" x="16" y="44" width="68" height="38" fill="url(#coupeLiqR)"/>
+                        <circle class="coupeBub coupeBub--1" cx="58" cy="70" r="1.8" fill="#fff" opacity=".7"/>
+                        <circle class="coupeBub coupeBub--2" cx="44" cy="74" r="1.5" fill="#fff" opacity=".7"/>
+                        <circle class="coupeBub coupeBub--3" cx="50" cy="66" r="2" fill="#fff" opacity=".7"/>
+                      </g>
+                      <ellipse cx="50" cy="44" rx="33" ry="4.6" fill="#ffe6d5"/>
+                      <ellipse cx="50" cy="43" rx="22" ry="2.2" fill="#fff" opacity=".5"/>
+                      <path d="M14,40 Q15,64 50,84 Q85,64 86,40" fill="none" stroke="#7e5541" stroke-opacity=".4" stroke-width="2.6" stroke-linecap="round"/>
+                      <ellipse cx="50" cy="40" rx="36" ry="7" fill="none" stroke="#7e5541" stroke-opacity=".45" stroke-width="2.4"/>
+                      <ellipse cx="50" cy="39" rx="36" ry="7" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1"/>
+                      <path d="M56,29 Q70,30 78,36" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"/>
+                      <g>
+                        <line x1="70" y1="26" x2="42" y2="45" stroke="#7e5541" stroke-width="1.6" stroke-linecap="round"/>
+                        <circle cx="70" cy="25" r="4" fill="#f2905c"/>
+                        <circle cx="64" cy="29" r="4" fill="#ef8850"/>
+                        <circle cx="71.5" cy="23.5" r="1.2" fill="#fff" opacity=".6"/>
+                      </g>
+                    </svg>
+                  </div>
+                  <span class="hiw-clink"></span>
+                </div>
+              </div>
+            </article>
+
+          </div>
+          <div class="w-phone-dots" id="wPhoneDots" aria-hidden="true"></div>
+        </div>
       </div>
     </div>
 
-    <div class="w-stepcard">
-      <div class="w-stepcard-num" aria-hidden="true">2</div>
-      <div class="w-stepcard-body">
-        <h3><span class="w-stepcard-ico" aria-hidden="true">📩</span><span data-i18n="s2_h">Get your map</span></h3>
-        <p data-i18n="s2_p">Your digital Cocktail Walk Map Guide lands in your inbox right after booking, with your route from bar 1 to bar 2 to bar 3. No app to install — it just works on your phone. (Can't find it? Check your spam folder first, then email us.)</p>
-      </div>
-    </div>
-
-    <div class="w-stepcard">
-      <div class="w-stepcard-num" aria-hidden="true">3</div>
-      <div class="w-stepcard-body">
-        <h3><span class="w-stepcard-ico" aria-hidden="true">🤫</span><span data-i18n="s3_h">The bars are a surprise</span></h3>
-        <p data-i18n="s3_p">Which three bars? That stays secret until you've booked — it's half the fun. We post sneak peeks on <a href="https://www.instagram.com/wogococktailwalk/" target="_blank" rel="noopener">Instagram</a>, and the full line-up is revealed in your map right after payment. Expect hand-picked spots you'd probably never have found on your own.</p>
-      </div>
-    </div>
-
-    <div class="w-stepcard">
-      <div class="w-stepcard-num" aria-hidden="true">4</div>
-      <div class="w-stepcard-body">
-        <h3><span class="w-stepcard-ico" aria-hidden="true">🚶</span><span data-i18n="s4_h">Walk it your way</span></h3>
-        <p data-i18n="s4_p">Only your start time at bar 1 is fixed — after that, the night is yours. Stay as long as you like at each stop; the bars are just 5–15 minutes' walk apart. You follow the route in order (bar 1 → 2 → 3), and most guests take 3–4 relaxed hours.</p>
-      </div>
-    </div>
-
-    <div class="w-stepcard">
-      <div class="w-stepcard-num" aria-hidden="true">5</div>
-      <div class="w-stepcard-body">
-        <h3><span class="w-stepcard-ico" aria-hidden="true">🍸</span><span data-i18n="s5_h">At each bar</span></h3>
-        <p data-i18n="s5_p">Walk in, show your booking and give your full name to the bartender — your table is waiting. At every bar you choose from a special WOGO menu: one of two signature cocktails, or the mocktail. Most bars also serve snacks if you get peckish.</p>
-      </div>
-    </div>
-
+    <!-- BESIDE-TEXT — desktop: right of phone; mobile: below. Click a step to jump. -->
+    <ol class="hiw-steps-col" id="hiwSteps">
+      <li class="hiw-step active" data-i="0"><span class="hiw-step-n">1</span>
+        <div><h3 data-i18n="s1_h">Pick your route &amp; date</h3><p data-i18n="s1_p">Book in two minutes. From €29,95 per person.</p></div></li>
+      <li class="hiw-step" data-i="1"><span class="hiw-step-n">2</span>
+        <div><h3 data-i18n="s2_h">Your map arrives</h3><p data-i18n="s2_p">Route straight to your inbox. No app to install.</p></div></li>
+      <li class="hiw-step" data-i="2"><span class="hiw-step-n">3</span>
+        <div><h3 data-i18n="s3_h">Three bars, a surprise</h3><p data-i18n="s3_p">Hand-picked hidden gems, revealed after you book.</p></div></li>
+      <li class="hiw-step" data-i="3"><span class="hiw-step-n">4</span>
+        <div><h3 data-i18n="s4_h">Walk it your pace</h3><p data-i18n="s4_p">5 to 15 minutes between stops. The night is yours.</p></div></li>
+      <li class="hiw-step" data-i="4"><span class="hiw-step-n">5</span>
+        <div><h3 data-i18n="s5_h">A cocktail at each</h3><p data-i18n="s5_p">Table waiting. Signature cocktail or mocktail, your pick.</p></div></li>
+    </ol>
   </div>
-</section>
 
-<!-- ============================================================
-     SECTION: DEFINITION — "What is a self-guided cocktail walk?"
-     PAGE-EDIT — the category-defining SEO block. Keywords woven in
-     naturally (EN: what is a cocktail walk / self-guided bar crawl /
-     how does a cocktail walk work; NL: hoe werkt een cocktail-
-     wandeling / zelfgeleide kroegentocht).
-     ============================================================ -->
-<section class="w-section alt w-pad">
-  <div class="w-intro-wrap">
-    <div class="w-eyebrow" data-i18n="def_eyebrow">The format, defined</div>
-    <h2 data-i18n="def_h2">What is a self-guided cocktail walk?</h2>
-    <p data-i18n="def_p1">A cocktail walk is a bar crawl, upgraded: instead of queueing at random bars, you follow a curated route past three hand-picked cocktail bars, with a table pre-arranged and a signature cocktail included at every stop. Self-guided means exactly that — no guide, no tour group, no name badges. Just you and your own people, a route map on your phone, and a city to wander through.</p>
-    <p data-i18n="def_p2">So how does a cocktail walk work in practice? You book, your tables are reserved, your route arrives by email, and you walk from bar 1 to bar 3 at your own pace. That's the whole idea — a self-guided bar crawl where all the planning is already done, and the only thing you can't skip is enjoying it.</p>
+  <div style="text-align:center;margin-top:30px;">
+    <a href="#cities" class="w-final-btn w-scroll" data-i18n="steps_cta">See the cities →</a>
   </div>
-</section>
-
-<!-- ============================================================
-     SECTION: WHAT'S INCLUDED / NOT INCLUDED — the honesty boxes.
-     The NOT-included box is a trust-builder, not a hedge: it
-     answers the exact doubts people book with. Never promise
-     free cancellation/rescheduling anywhere on this page.
-     ============================================================ -->
-<section class="w-section peach w-pad">
-  <div class="w-head"><h2 data-i18n="inc_h2">What's in your ticket</h2></div>
-  <div class="w-boxes">
-    <div class="w-box">
-      <h3 data-i18n="inc_h">✓ Included</h3>
-      <ul>
-        <li data-i18n="inc_1">3 hand-picked cocktail bars with your table reserved at each one</li>
-        <li data-i18n="inc_2">3 drinks — at every bar you pick one of two signature cocktails, or the mocktail</li>
-        <li data-i18n="inc_3">Your digital Cocktail Walk Map Guide, sent by email right after booking</li>
-        <li data-i18n="inc_4">A special WOGO menu at each bar — staff briefed and expecting you</li>
-      </ul>
-    </div>
-    <div class="w-box w-box-not">
-      <h3 data-i18n="ninc_h">✕ Not included (so no surprises)</h3>
-      <ul>
-        <li data-i18n="ninc_1">Transport between bars — it's a walk! Stops are 5–15 minutes apart on foot</li>
-        <li data-i18n="ninc_2">Food — most bars serve snacks you can order, but dinner isn't part of the ticket</li>
-        <li data-i18n="ninc_3">Extra drinks beyond your 3 — anything else you order, you settle with the bar</li>
-      </ul>
-      <p class="w-box-note" data-i18n="ninc_note">We'd rather tell you now than surprise you at the bar. One ticket = one person's full walk.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================
-     SECTION: GOOD TO KNOW — mocktail walk, fixed route order,
-     closed-bar fallback. Everything else lives at /faq/ —
-     link there rather than duplicating answers.
-     ============================================================ -->
-<section class="w-section alt w-pad">
-  <div class="w-head"><h2 data-i18n="gtk_h2">Good to know</h2></div>
-  <div class="w-gtk">
-    <div class="w-gtk-card">
-      <div class="w-gtk-ico" aria-hidden="true">🥂</div>
-      <h3 data-i18n="gtk1_h">Not drinking? Walk the Mocktail Walk</h3>
-      <p data-i18n="gtk1_p">Every route can be booked as a full Mocktail Walk — same bars, same reserved tables, an alcohol-free mocktail at every stop. Nobody has to sit the night out.</p>
-    </div>
-    <div class="w-gtk-card">
-      <div class="w-gtk-ico" aria-hidden="true">🧭</div>
-      <h3 data-i18n="gtk2_h">The route order is fixed</h3>
-      <p data-i18n="gtk2_p">Your bars are reserved in order, so the route always runs bar 1 → 2 → 3 and can't be shuffled. The exception: personalised routes for group bookings, which we plan around you.</p>
-    </div>
-    <div class="w-gtk-card">
-      <div class="w-gtk-ico" aria-hidden="true">🛟</div>
-      <h3 data-i18n="gtk3_h">A bar unexpectedly closed?</h3>
-      <p data-i18n="gtk3_p">It's rare, but it happens. Contact the team at <a href="mailto:info@wogoamsterdam.com" class="w-mail">info@wogoamsterdam.com</a> or +31 20 210 1168 and we'll sort an alternative bar for you.</p>
-    </div>
-  </div>
-  <div style="text-align:center;margin-top:26px;"><a href="../faq/" data-i18n="faq_more" style="display:inline-block;font-size:13px;font-weight:800;color:#5C2A14;text-decoration:underline;text-underline-offset:3px;">Everything else — see the full FAQ →</a></div>
 </section>
 
 <!-- ============================================================
      SECTION: CITY HUB CARDS (#cities) — the page's only (soft) CTA.
      Education page: no sticky CTA, no hard sell up top — just
      "pick your city" once the format is clear.
-     TODO: /utrecht/, /amsterdam/ and /groningen/ hubs are being
-     built per SITE-PLAN — links below assume those folders exist
-     before this page goes live (rotterdam/ already does).
      ============================================================ -->
-<section class="w-section" id="cities">
-  <div class="w-head w-pad"><h2 data-i18n="cities_h2">Sound like your kind of night?</h2><p data-i18n="cities_p">6 routes · 4 cities · from €29,95 per person</p></div>
-  <div class="w-cityhub w-pad">
+<section class="w-section cream" id="cities">
+  <div class="w-head w-pad wg-reveal"><h2 data-i18n="cities_h2">Sound like your kind of night?</h2><p data-i18n="cities_p">6 routes · 4 cities · from €29,95 per person</p></div>
+  <div class="w-cityhub w-pad wg-stagger">
     <a class="w-cityhub-card" href="../amsterdam/">
-      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="https://static.wixstatic.com/media/2a3b9e_99fbb075fa914c2fbb49e09e2301db3d~mv2.jpg/v1/fill/w_640,h_400,al_c,q_80,enc_auto/2a3b9e_99fbb075fa914c2fbb49e09e2301db3d~mv2.jpg" alt="Amsterdam cocktail walk"></div>
+      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="../amsterdam/amsterdam-hero.jpg" alt="Amsterdam cocktail walk"></div>
       <div class="w-cityhub-body"><div class="w-cityhub-name">Amsterdam</div><div class="w-cityhub-sub" data-i18n="chs_ams">Thu–Sat · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Pick this city →</div></div>
     </a>
     <a class="w-cityhub-card" href="../rotterdam/">
-      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="https://static.wixstatic.com/media/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg/v1/fill/w_640,h_400,al_c,q_80,enc_auto/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg" alt="Rotterdam cocktail walk"></div>
+      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="../rotterdam/hidden-gems/hidden-gems-hero.jpg" alt="Rotterdam cocktail walk"></div>
       <div class="w-cityhub-body"><div class="w-cityhub-name">Rotterdam</div><div class="w-cityhub-sub" data-i18n="chs_rot">3 routes · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Pick this city →</div></div>
     </a>
     <a class="w-cityhub-card" href="../utrecht/">
-      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="https://static.wixstatic.com/media/2a3b9e_db1e9b42b70544f18ae1d14b8a0c2ca1~mv2.jpg/v1/fill/w_640,h_400,al_c,q_80,enc_auto/2a3b9e_db1e9b42b70544f18ae1d14b8a0c2ca1~mv2.jpg" alt="Utrecht cocktail walk"></div>
+      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="../utrecht/utrecht-hero.jpg" alt="Utrecht cocktail walk"></div>
       <div class="w-cityhub-body"><div class="w-cityhub-name">Utrecht</div><div class="w-cityhub-sub" data-i18n="chs_utr">Daily · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Pick this city →</div></div>
     </a>
     <a class="w-cityhub-card" href="../groningen/">
-      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="https://static.wixstatic.com/media/2a3b9e_368e90d57d1c41c4a11817877c92deb4~mv2.png/v1/fill/w_640,h_400,al_c,q_80,enc_auto/2a3b9e_368e90d57d1c41c4a11817877c92deb4~mv2.png" alt="Groningen cocktail walk"></div>
+      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="../groningen/gin-walk-hero.jpg" alt="Groningen cocktail walk"></div>
       <div class="w-cityhub-body"><div class="w-cityhub-name">Groningen</div><div class="w-cityhub-sub" data-i18n="chs_gro">Wed–Sat · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Pick this city →</div></div>
     </a>
   </div>
-  <div class="w-pad" style="text-align:center;margin-top:18px;"><span data-i18n="route_reassure" style="display:inline-block;font-size:12.5px;font-weight:700;color:#5C2A14;letter-spacing:0.01em;">✓ Reservations &amp; route map included &nbsp;·&nbsp; ✓ Mocktail option on every route &nbsp;·&nbsp; ✓ Questions? <a class="w-mail" href="mailto:info@wogoamsterdam.com">Write us</a></span></div>
-</section>
-
-<!-- ============================================================
-     SECTION: GROUPS STRIP — shared copy; CTA → internal /groups/ page.
-     ============================================================ -->
-<section class="w-section w-pad w-group">
-  <div class="w-group-wrap">
-    <div class="w-group-text">
-      <div class="w-eyebrow" data-i18n="group_eyebrow" style="text-align:left;margin-bottom:6px;">For groups</div>
-      <h2 data-i18n="group_h2">Bachelorettes, birthdays &amp; team outings</h2>
-      <p data-i18n="group_p">We coordinate the bars, the timing and the tables — you bring the crew. Groups of 7 to 30, with personalised routes possible.</p>
-    </div>
-    <a href="../groups/" class="w-group-btn" data-i18n="group_btn">Plan your group walk →</a>
-  </div>
-</section>
-
-<!-- ============================================================
-     SECTION: GIFT-CARD STRIP — shared copy; CTA → internal /gift-cards/ page.
-     ============================================================ -->
-<section class="w-section peach w-pad">
-  <div class="w-gift-wrap">
-    <div class="w-gift-text">
-      <div class="w-gift-eyebrow" data-i18n="gift_eyebrow">The perfect gift</div>
-      <h2 data-i18n="gift_h2">WOGO Gift Cards</h2>
-      <p data-i18n="gift_p">Give a night they'll talk about. Any route, any city — delivered instantly by email.</p>
-    </div>
-    <a href="../gift-cards/" class="w-gift-btn" data-i18n="gift_btn">Buy a gift card →</a>
-  </div>
+  <div class="w-pad" style="text-align:center;margin-top:18px;"><span data-i18n="route_reassure" style="display:inline-block;font-size:12.5px;font-weight:700;color:var(--wogo-brown);letter-spacing:0.01em;">✓ Reservations &amp; route map included &nbsp;·&nbsp; ✓ Mocktail option on every route &nbsp;·&nbsp; ✓ Questions? <a class="w-mail" href="mailto:info@wogoamsterdam.com">Write us</a></span></div>
 </section>
 
 <!-- ============================================================
@@ -568,9 +1257,11 @@
   <a href="#cities" class="w-final-btn w-scroll" data-i18n="final_btn">Pick your city →</a>
 </section>
 
-<!-- ===== WOGO SHARED FOOTER (keep IDENTICAL across pages — only relative link
-     prefixes change; "How it works" points at this page's own #steps section,
-     and FAQ goes to ../faq/ because this page has no FAQ section of its own) ===== -->
+</main>
+<!-- ===== WOGO SHARED FOOTER v4 (copied verbatim onto every page — keep IDENTICAL.
+     Discover links point at the internal pages on every page (incl. the homepage);
+     the Routes column renders all six route pages from WOGO_ROUTES, BASE-prefixed;
+     legal links stay commented out until the privacy/cookie/terms pages ship) ===== -->
 <footer class="w-footer">
   <div class="w-footer-inner w-pad">
     <div class="w-footer-top">
@@ -582,22 +1273,23 @@
         <!-- Column 1: Routes -->
         <nav class="w-footer-col" aria-label="Routes">
           <h3 data-i18n="foot_c1_h">Routes</h3>
-          <!-- Links populated from WOGO_ROUTES (see JS) -->
+          <!-- Populated from WOGO_ROUTES (see JS): city sub-headings + every route page -->
           <div class="w-footer-routes" id="wFooterRoutes"></div>
         </nav>
         <!-- Column 2: Discover -->
         <nav class="w-footer-col" aria-label="Discover">
           <h3 data-i18n="foot_c2_h">Discover</h3>
-          <a href="#steps" class="w-scroll" data-i18n="foot_how">How it works</a>
-          <a href="https://www.wogococktailwalk.com/groupbookings" target="_top" class="w-navlink" data-i18n="foot_groups">Group bookings</a>
-          <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-navlink" data-i18n="foot_gift">Gift cards</a>
-          <a href="../faq/" data-i18n="foot_faq">FAQ</a>
+          <a href="../how-it-works/" class="w-navlink" data-i18n="foot_how">How it works</a>
+          <a href="../groups/" class="w-navlink" data-i18n="foot_groups">Group bookings</a>
+          <a href="../gift-cards/" class="w-navlink" data-i18n="foot_gift">Gift cards</a>
+          <a href="../faq/" class="w-navlink" data-i18n="foot_faq">FAQ</a>
+          <a href="../blog/" class="w-navlink" data-i18n="foot_blog">Blog</a>
+          <a href="../contact/" class="w-navlink" data-i18n="foot_contact">Contact</a>
         </nav>
         <!-- Column 3: WOGO -->
         <nav class="w-footer-col" aria-label="WOGO">
           <h3>WOGO</h3>
-          <!-- About / Work-with-us removed until real pages exist (dead # links cost trust).
-               Re-add with foot_about / foot_work NL keys when the pages are live. -->
+          <a href="../about/" class="w-navlink" data-i18n="foot_about">About WOGO</a>
           <a href="mailto:info@wogoamsterdam.com" data-i18n="foot_contact_link">Contact</a>
         </nav>
         <!-- Contact block -->
@@ -614,7 +1306,7 @@
     <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.5 / 5 · 80,000+ walks booked · Partner of Gemeente Rotterdam · 18+</div>
 
     <!-- Socials -->
-    <div class="w-footer-socials" aria-label="WOGO on social media">
+    <div class="w-footer-socials" role="group" aria-label="WOGO on social media">
       <a href="https://www.instagram.com/wogococktailwalk/" target="_blank" rel="noopener">Instagram <span>@wogococktailwalk</span></a>
       <a href="https://www.tiktok.com/@wogococktailwalk" target="_blank" rel="noopener">TikTok <span>@wogococktailwalk</span></a>
       <a href="https://www.facebook.com/wogoamsterdam" target="_blank" rel="noopener">Facebook <span>/wogoamsterdam</span></a>
@@ -622,19 +1314,20 @@
 
     <!-- Bottom legal bar -->
     <div class="w-footer-legal">
-      <span data-i18n="foot_copyright">© 2026 WOGO Amsterdam B.V. · KvK 92237347 · VAT NL865949323B01 · Oude-IJsselstraat 32-2, Amsterdam</span>
-      <!-- Legal links hidden until the GDPR-compliant Privacy/Cookie/Terms pages are
-           published — dead # links here are a trust/compliance smell. When live, re-add:
-           <span class="w-footer-legal-links">
-             <a href="..." data-i18n="foot_privacy">Privacy policy</a>
-             <a href="..." data-i18n="foot_cookie">Cookie policy</a>
-             <a href="..." data-i18n="foot_terms">Terms &amp; conditions</a>
-           </span>
-           plus foot_privacy/foot_cookie/foot_terms keys in the NL dictionary. -->
+      <span data-i18n="foot_copyright">© 2026 WOGO Amsterdam B.V. · KvK 92237347 · VAT NL865949323B01 · Amsterdam</span>
+      <span class="w-footer-legal-links">
+        <a href="../privacy/" data-i18n="foot_privacy">Privacy policy</a>
+        <a href="../cookies/" data-i18n="foot_cookie">Cookie policy</a>
+        <a href="../terms/" data-i18n="foot_terms">Terms &amp; conditions</a>
+        <a href="../disclaimer/" data-i18n="foot_disclaimer">Disclaimer</a>
+        <a href="../accessibility/" data-i18n="foot_accessibility">Accessibility</a>
+        <a href="../complaints/" data-i18n="foot_complaints">Complaints</a>
+        <a href="#" onclick="wogoOpenConsent();return false" data-i18n="foot_cookie_settings">Cookie settings</a>
+      </span>
     </div>
   </div>
 </footer>
-<!-- ===== /WOGO SHARED FOOTER ===== -->
+<!-- ===== /WOGO SHARED FOOTER v4 ===== -->
 
 <!-- NOTE: no sticky mobile CTA on this page (education page, per SITE-PLAN).
      When copying this template to a funnel page, bring the homepage's
@@ -658,104 +1351,80 @@
 
   /* ===== COMPLETE NL DICTIONARY — every data-i18n key on this page.
      PAGE-EDIT when copying: retranslate the page-specific entries.
-     Keys shared with the homepage (nav_*, foot_*, gift_*, group_*,
-     route_reassure, trust items) keep the homepage's exact NL text. ===== */
+     Keys shared with the homepage (nav_*, foot_*, route_reassure, trust
+     items) keep the homepage's exact NL text. ===== */
   var NL = {
     /* --- hero --- */
     hero_eyebrow: "Hoe het werkt",
     hero_h1: "Zo werkt een WOGO Cocktail Walk",
-    hero_p: "Geen gids, geen groep — gewoon drie gereserveerde bars, drie cocktails en een digitale routekaart in je inbox. Hier is de hele avond, stap voor stap. <strong>Vanaf €29,95 per persoon.</strong>",
-    hero_cta: "Laat me de 5 stappen zien ↓",
-    t_google: "<span class=\"w-star\">★</span> 4.4 op Google",
-    t_trustpilot: "<span class=\"w-star\">★</span> 4,5 Trustpilot",
-    t_guests: "80.000+ walks geboekt",
-    /* --- steps --- */
+    hero_sub: "Geen gids. Geen groep. Alles al voor je geregeld.",
+    hero_cta: "Bekijk de 5 stappen ↓",
+    /* --- steps (V6 compact animated phone; short labels only) --- */
     steps_eyebrow: "Stap voor stap",
-    steps_h2: "Jouw avond in vijf stappen",
-    steps_p: "Van boeken tot de laatste cocktail — zo werkt een zelfgeleide cocktailwandeling.",
-    s1_h: "Kies je stad, route en datum",
-    s1_p: "Boek online in een paar minuten. Zodra je boekt, regelen wij nog dezelfde dag je tafel bij alle drie de bars — het barpersoneel weet dat er WOGO-gasten komen. Walks zijn er vanaf €29,95 per persoon; met 7 of meer <a href=\"../groups/\">boek je als groep</a> en kunnen we je route zelfs personaliseren.",
-    s2_h: "Ontvang je routekaart",
-    s2_p: "Je digitale Cocktail Walk Map Guide valt direct na het boeken in je inbox, met je route van bar 1 naar bar 2 naar bar 3. Geen app nodig — hij werkt gewoon op je telefoon. (Niets ontvangen? Check eerst je spamfolder en mail ons daarna.)",
-    s3_h: "De bars blijven een verrassing",
-    s3_p: "Welke drie bars? Dat blijft geheim tot je geboekt hebt — dat is de halve lol. Op <a href=\"https://www.instagram.com/wogococktailwalk/\" target=\"_blank\" rel=\"noopener\">Instagram</a> geven we sneak peeks, en de volledige line-up staat direct na betaling in je routekaart. Reken op zorgvuldig gekozen plekken die je zelf waarschijnlijk nooit had gevonden.",
-    s4_h: "Loop hem op jouw manier",
-    s4_p: "Alleen je starttijd bij bar 1 staat vast — daarna is de avond van jou. Blijf zo lang hangen als je wilt bij elke stop; de bars liggen maar 5–15 minuten lopen van elkaar. Je volgt de route op volgorde (bar 1 → 2 → 3) en de meeste gasten doen er relaxed 3–4 uur over.",
-    s5_h: "Bij elke bar",
-    s5_p: "Loop naar binnen, laat je boeking zien en geef je volledige naam aan de bartender — je tafel staat klaar. Bij elke bar kies je van een speciaal WOGO-menu: één van twee signature cocktails, of de mocktail. De meeste bars serveren ook snacks als je trek krijgt.",
-    /* --- definition / SEO block --- */
-    def_eyebrow: "Het format, uitgelegd",
-    def_h2: "Wat is een zelfgeleide cocktailwandeling?",
-    def_p1: "Een cocktailwandeling is een kroegentocht, maar dan beter: in plaats van aanschuiven bij willekeurige bars volg je een uitgestippelde route langs drie zorgvuldig gekozen cocktailbars, met bij elke stop een gereserveerde tafel en een signature cocktail inbegrepen. Zelfgeleid betekent precies dat — geen gids, geen tourgroep, geen naambadges. Gewoon jij en je eigen mensen, een routekaart op je telefoon en een stad om doorheen te dwalen.",
-    def_p2: "Hoe werkt een cocktailwandeling in de praktijk? Je boekt, je tafels worden gereserveerd, je route komt per e-mail binnen en je loopt in je eigen tempo van bar 1 naar bar 3. Dat is het hele idee — een zelfgeleide kroegentocht waarbij al het regelwerk al gedaan is, en het enige wat je niet kunt overslaan is ervan genieten.",
-    /* --- included / not included --- */
-    inc_h2: "Wat zit er in je ticket",
-    inc_h: "✓ Inbegrepen",
-    inc_1: "3 zorgvuldig gekozen cocktailbars met bij elk een gereserveerde tafel",
-    inc_2: "3 drankjes — bij elke bar kies je één van twee signature cocktails, of de mocktail",
-    inc_3: "Je digitale Cocktail Walk Map Guide, direct na het boeken per e-mail",
-    inc_4: "Een speciaal WOGO-menu bij elke bar — het personeel weet dat je komt",
-    ninc_h: "✕ Niet inbegrepen (dus geen verrassingen)",
-    ninc_1: "Vervoer tussen de bars — het is een wandeling! De stops liggen 5–15 minuten lopen van elkaar",
-    ninc_2: "Eten — de meeste bars serveren snacks die je kunt bestellen, maar diner zit niet bij het ticket",
-    ninc_3: "Extra drankjes naast je 3 — alles wat je verder bestelt, reken je af met de bar",
-    ninc_note: "We vertellen het je liever nu dan dat het je aan de bar verrast. Eén ticket = één persoon, één volledige walk.",
-    /* --- good to know --- */
-    gtk_h2: "Goed om te weten",
-    gtk1_h: "Drink je niet? Loop de Mocktail Walk",
-    gtk1_p: "Elke route kun je boeken als volledige Mocktail Walk — dezelfde bars, dezelfde gereserveerde tafels, bij elke stop een alcoholvrije mocktail. Niemand hoeft de avond over te slaan.",
-    gtk2_h: "De routevolgorde staat vast",
-    gtk2_p: "Je bars zijn op volgorde gereserveerd, dus de route loopt altijd van bar 1 → 2 → 3 en kan niet worden omgegooid. De uitzondering: gepersonaliseerde routes voor groepsboekingen, die plannen we om jullie heen.",
-    gtk3_h: "Een bar onverwacht dicht?",
-    gtk3_p: "Het is zeldzaam, maar het gebeurt. Neem contact op met het team via <a href=\"mailto:info@wogoamsterdam.com\" class=\"w-mail\">info@wogoamsterdam.com</a> of +31 20 210 1168 en we regelen een alternatieve bar voor je.",
-    faq_more: "Alle andere vragen — bekijk de volledige FAQ →",
+    steps_h2: "Zo werkt jouw avond, stap voor stap",
+    s1_h: "Kies je route &amp; datum", s1_p: "Boek in twee minuten. Vanaf €29,95 per persoon.",
+    s2_h: "Je routekaart komt binnen", s2_p: "Route direct in je inbox. Geen app nodig.",
+    s3_h: "Drie bars, een verrassing", s3_p: "Met zorg uitgekozen verborgen parels, onthuld na je boeking.",
+    s4_h: "Loop op jouw tempo", s4_p: "5 tot 15 minuten tussen de stops. De avond is van jou.",
+    s5_h: "Bij elke bar een cocktail", s5_p: "Tafel klaar. Signature cocktail of mocktail, jij kiest.",
+    steps_cta: "Bekijk de steden →",
     /* --- city cards (soft CTA) --- */
-    cities_h2: "Klinkt als jouw soort avond?",
+    cities_h2: "Klinkt dit als jouw soort avond?",
     cities_p: "6 routes · 4 steden · vanaf €29,95 per persoon",
     chs_ams: "do–za · vanaf €29,95",
     chs_rot: "3 routes · vanaf €29,95",
     chs_utr: "Dagelijks · vanaf €29,95",
     chs_gro: "wo–za · vanaf €29,95",
     explore: "Kies deze stad →",
-    route_reassure: "✓ Reserveringen &amp; routekaart inbegrepen &nbsp;·&nbsp; ✓ Mocktail-optie op elke route &nbsp;·&nbsp; ✓ Vragen? <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">Stuur ons een berichtje</a>",
-    /* --- groups & gift cards --- */
-    group_eyebrow: "Voor groepen", group_h2: "Vrijgezellenfeesten, verjaardagen &amp; teamuitjes",
-    group_p: "Wij regelen de bars, de tijden en de tafels — jullie nemen het gezelschap mee. Groepen van 7 tot 30, gepersonaliseerde routes mogelijk.",
-    group_btn: "Plan jullie groepswandeling →",
-    gift_eyebrow: "Het perfecte cadeau", gift_h2: "WOGO Cadeaubonnen",
-    gift_p: "Geef een avond waar ze weken over napraten. Elke route, elke stad — direct per e-mail geleverd.",
-    gift_btn: "Koop een cadeaubon →",
+    route_reassure: "✓ Reserveringen &amp; routekaart inbegrepen &nbsp;·&nbsp; ✓ Mocktail-optie op elke route &nbsp;·&nbsp; ✓ Vragen? <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">Stuur ons een bericht</a>",
     /* --- final CTA --- */
-    final_h2: "Nu weet je hoe het werkt", final_p: "De enige stap die nog rest, is de eerste.", final_btn: "Kies je stad →",
+    final_h2: "Nu weet je hoe het werkt", final_p: "Alleen de eerste stap moet je nog zetten.", final_btn: "Kies je stad →",
     /* --- nav --- */
-    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_cta: "Kies je stad",
+    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_about: "Over WOGO", nav_cta: "Bekijk data",
     /* --- footer --- */
     foot_tag: "Drie bars die je nooit zelf had gevonden. Eén avond die je altijd bijblijft.",
     foot_c1_h: "Routes", foot_c2_h: "Ontdek",
-    foot_how: "Hoe het werkt", foot_groups: "Groepsboekingen", foot_gift: "Cadeaukaarten", foot_faq: "FAQ",
+    foot_how: "Hoe het werkt", foot_groups: "Groepsboekingen", foot_gift: "Cadeaukaarten", foot_blog: "Blog", foot_contact: "Contact", foot_faq: "FAQ",
+    foot_about: "Over WOGO",
     foot_contact_link: "Contact",
     foot_hours: "Maandag – vrijdag, 10:00 – 18:00",
     foot_trust: "★ 4.4 op Google · Trustpilot 4,5 / 5 · 80.000+ walks geboekt · Partner van Gemeente Rotterdam · 18+",
-    foot_copyright: "© 2026 WOGO Amsterdam B.V. · KvK 92237347 · BTW NL865949323B01 · Oude-IJsselstraat 32-2, Amsterdam"
+    /* legal-link keys pre-stubbed: uncomment the footer legal links (see the
+       bottom legal bar comment) when the privacy/cookie/terms pages ship */
+    foot_privacy: "Privacybeleid", foot_cookie: "Cookiebeleid", foot_terms: "Algemene voorwaarden",
+    foot_disclaimer: "Disclaimer", foot_accessibility: "Toegankelijkheid", foot_complaints: "Klachten", foot_cookie_settings: "Cookie-instellingen",
+    foot_copyright: "© 2026 WOGO Amsterdam B.V. · KvK 92237347 · BTW NL865949323B01 · Amsterdam"
   };
 
-  /* ===== Routes data (expansion-ready — keep in sync with the homepage) =====
-     Single source of truth for the Routes menus. Adding a country or city later is
-     a one-line data edit here — the desktop dropdown, mobile menu and footer all
-     render from this. Country grouping headers appear automatically once there is
-     more than one country. TODO: point city URLs at the internal /<city>/ hubs
-     once all four exist (Wix URLs kept for now so no link 404s mid-migration). */
-  var WOGO_ROUTES = {
-    countries: [
-      { code: 'nl', name: { en: 'Netherlands', nl: 'Nederland' }, cities: [
-        { name: 'Amsterdam', url: 'https://www.wogococktailwalk.com/amsterdam-cocktailwalk-route1' },
-        { name: 'Rotterdam', url: '../rotterdam/' },
-        { name: 'Utrecht',   url: 'https://www.wogococktailwalk.com/utrecht' },
-        { name: 'Groningen', url: 'https://www.wogococktailwalk.com/groningen-cocktail-walk' }
-      ] }
-      /* Future: { code:'uk', name:{en:'United Kingdom', nl:'Verenigd Koninkrijk'}, cities:[ {name:'London', url:'../london/'} ] } */
-    ]
-  };
+  /* ===== SHARED NAV/FOOTER v4 wiring =====
+     BASE — this page's relative prefix back to the repo root: '' at the root,
+     '../' one folder deep, '../../' two folders deep. Every internal URL in
+     WOGO_ROUTES below is written from the repo root and BASE-prefixed at
+     render time, so the routes data + render code stay byte-identical on
+     every page — only this one line changes per folder depth. */
+  var BASE = '../';
+  /* ===== Routes data v4 — single source of truth: the desktop Routes dropdown,
+     the mobile overlay city chips AND the footer Routes column all render from
+     this. Cities link to the internal city hubs; the nested routes arrays feed
+     the footer's per-city route lists. Adding a country, city or route later is
+     a one-line data edit here — country grouping headers appear automatically
+     once there is more than one country. */
+  var WOGO_ROUTES = { countries: [ { code:'nl', name:{en:'Netherlands',nl:'Nederland'}, cities: [
+    { name:'Rotterdam', hub:'rotterdam/', routes:[
+        {name:'Rotterdam Route 1', url:'rotterdam/witte-de-with/'},
+        {name:'Rotterdam Route 2', url:'rotterdam/hidden-gems/'},
+        {name:'Rotterdam Premium', url:'rotterdam/premium-gin-walk/'} ] },
+    { name:'Utrecht',   hub:'utrecht/',   routes:[ {name:'Utrecht',           url:'utrecht/'} ] },
+    { name:'Amsterdam', hub:'amsterdam/', routes:[ {name:'Amsterdam Route 1', url:'amsterdam/'} ] },
+    { name:'Groningen', hub:'groningen/', routes:[ {name:'Groningen',         url:'groningen/'} ] },
+    { name:'Delft',     hub:'delft/',     routes:[ {name:'Delft',             url:'delft/'} ] }
+  ] },
+  /* United Kingdom: London is a working PLACEHOLDER example (noindex). The
+     country heading appears automatically now there is more than one country.
+     Replace the London routes below with the real ones at launch. */
+  { code:'gb', name:{en:'United Kingdom',nl:'Verenigd Koninkrijk'}, cities: [
+    { name:'London', hub:'london/', routes:[ {name:'London Soho', url:'london/soho/'} ] }
+  ] } ] };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function renderRoutes(lang) {
     var countries = WOGO_ROUTES.countries;
@@ -772,10 +1441,17 @@
         footHTML += '<span class="w-footer-country">' + cname + '</span>';
       }
       c.cities.forEach(function (city) {
-        var link = '<a href="' + esc(city.url) + '" target="_top" class="w-navlink">' + esc(city.name) + '</a>';
-        navHTML += '<li>' + link + '</li>';
-        ovHTML += link;
-        footHTML += link;
+        // Nav dropdown + mobile overlay chips: one link per CITY -> its internal hub.
+        var hubLink = '<a href="' + esc(BASE + city.hub) + '" class="w-navlink">' + esc(city.name) + '</a>';
+        navHTML += '<li>' + hubLink + '</li>';
+        ovHTML += hubLink;
+        // FOOTER: flat list of the exact route-card names (no per-city sub-heading —
+        // the names already carry the city, so it reads Rotterdam Route 1 · Rotterdam
+        // Route 2 · Rotterdam Premium · Utrecht · Amsterdam Route 1 · Groningen).
+        // The country heading still appears above when there is more than one country.
+        (city.routes || []).forEach(function (r) {
+          footHTML += '<a href="' + esc(BASE + r.url) + '" class="w-navlink">' + esc(r.name) + '</a>';
+        });
       });
     });
     if (navMenu) navMenu.innerHTML = navHTML;
@@ -796,7 +1472,7 @@
       var k = el.getAttribute('data-i18n');
       if (dict[k] != null) el.innerHTML = dict[k];
     });
-    document.querySelectorAll('.w-citycard-btn, .w-gift-btn, .w-navlink').forEach(function (a) {
+    document.querySelectorAll('.w-citycard-btn, .w-navlink').forEach(function (a) {
       if (!a.getAttribute('data-href')) a.setAttribute('data-href', a.getAttribute('href') || '');
       var base = a.getAttribute('data-href');
       var url = base;
@@ -806,12 +1482,12 @@
         url = url.replace('wogococktailwalk.com/', 'wogococktailwalk.com/' + lang + '/');
       }
       if (window.__wogoCarry) {
-        try { var u = new URL(url); Object.keys(window.__wogoCarry).forEach(function (k) { u.searchParams.set(k, window.__wogoCarry[k]); }); url = u.toString(); } catch (e) {}
+        try { var u = new URL(url, window.location.href); Object.keys(window.__wogoCarry).forEach(function (k) { u.searchParams.set(k, window.__wogoCarry[k]); }); url = u.toString(); } catch (e) {}
       }
       a.href = url;
     });
     document.documentElement.lang = lang;
-    document.querySelectorAll('.w-lang button').forEach(function (b) { var on = b.getAttribute('data-lang') === lang; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+    document.querySelectorAll('.w-lang').forEach(function (w) { var c = w.querySelector('.w-lang-code'); if (c) c.textContent = lang.toUpperCase(); var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-label', 'Change language (' + lang.toUpperCase() + ')'); w.querySelectorAll('.w-lang-opt').forEach(function (o) { o.setAttribute('aria-selected', o.getAttribute('data-lang') === lang ? 'true' : 'false'); }); });
     try { localStorage.setItem('wogoLang', lang); } catch (e) {}
   }
   var saved = null;
@@ -821,7 +1497,74 @@
   // Reveal the body — the tiny anti-flicker script in <head> hides it for Dutch
   // visitors so they never see the English copy flash before translation.
   document.body.style.visibility = 'visible';
-  document.querySelectorAll('.w-lang button').forEach(function (b) { b.addEventListener('click', function () { setLang(b.getAttribute('data-lang')); }); });
+  // ===== Language dropdown (shared switcher UI) =====
+  // WOGO_LANGS drives the menu in the nav AND the mobile overlay. To add a language
+  // later (e.g. French): 1) build its full override dictionary and register it in
+  // DICTS above (fr: FR), then 2) enable ONE line here — the dropdown renders itself.
+  var WOGO_LANGS = [
+    { code: 'en', label: 'English' },
+    { code: 'nl', label: 'Nederlands' }
+    // ,{ code: 'fr', label: 'Français' }  // example — enable only once a full FR dictionary exists in DICTS
+  ];
+  (function () {
+    var switchers = Array.prototype.slice.call(document.querySelectorAll('.w-lang'));
+    function closeAll(except) {
+      switchers.forEach(function (w) {
+        if (w === except) return;
+        w.classList.remove('open');
+        var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-expanded', 'false');
+      });
+    }
+    switchers.forEach(function (w) {
+      var btn = w.querySelector('.w-lang-btn'), menu = w.querySelector('.w-lang-menu');
+      if (!btn || !menu) return;
+      var current = document.documentElement.lang || 'en';
+      menu.innerHTML = '';
+      WOGO_LANGS.forEach(function (l) {
+        var li = document.createElement('li');
+        li.className = 'w-lang-opt';
+        li.setAttribute('role', 'option');
+        li.setAttribute('tabindex', '-1');
+        li.setAttribute('data-lang', l.code);
+        li.setAttribute('aria-selected', l.code === current ? 'true' : 'false');
+        li.innerHTML = '<span class="w-lang-opt-code" aria-hidden="true">' + l.code.toUpperCase() + '</span>' + l.label;
+        menu.appendChild(li);
+      });
+      var opts = Array.prototype.slice.call(menu.children);
+      function open(focusOpt) {
+        closeAll(w);
+        w.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+        var target = menu.querySelector('[aria-selected="true"]') || opts[0];
+        if (focusOpt && target) target.focus();
+      }
+      function close(refocus) {
+        w.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+        if (refocus) btn.focus();
+      }
+      btn.addEventListener('click', function () { if (w.classList.contains('open')) { close(false); } else { open(false); } });
+      btn.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); open(true); }
+        else if (e.key === 'Escape') { close(false); }
+      });
+      opts.forEach(function (o, i) {
+        o.addEventListener('click', function () { setLang(o.getAttribute('data-lang')); close(true); });
+        o.addEventListener('keydown', function (e) {
+          if (e.key === 'ArrowDown') { e.preventDefault(); (opts[i + 1] || opts[0]).focus(); }
+          else if (e.key === 'ArrowUp') { e.preventDefault(); (opts[i - 1] || opts[opts.length - 1]).focus(); }
+          else if (e.key === 'Home') { e.preventDefault(); opts[0].focus(); }
+          else if (e.key === 'End') { e.preventDefault(); opts[opts.length - 1].focus(); }
+          else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setLang(o.getAttribute('data-lang')); close(true); }
+          else if (e.key === 'Escape') { e.preventDefault(); close(true); }
+          else if (e.key === 'Tab') { close(false); }
+        });
+      });
+    });
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest || !e.target.closest('.w-lang')) closeAll(null);
+    });
+  })();
 
   /* ===== Smooth-scroll anchors (embedded-in-Wix fallback kept so this page keeps
      working if it's ever iframed like the homepage) ===== */
@@ -872,10 +1615,6 @@
       wogoTrack('city_hub', href);
     } else if (el.classList.contains('w-scroll')) {
       wogoTrack('choose_route');
-    } else if (el.classList.contains('w-gift-btn')) {
-      wogoTrack('giftcard');
-    } else if (el.classList.contains('w-group-btn')) {
-      wogoTrack('group');
     }
   }, true);
 
@@ -944,5 +1683,554 @@
 })();
 </script>
 
+<script>
+/* Phone-mockup step carousel (how-it-works only). No-JS: native scroll-snap still
+   shows step 1 and swipes. Reduced-motion: no auto-advance, instant jumps. */
+(function(){
+  var track = document.getElementById('wPhoneTrack');
+  var dots  = document.getElementById('wPhoneDots');
+  if(!track || !dots) return;
+  var n = track.children.length, cur = 0, timer = null, raf = null;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  for(var i=0;i<n;i++){ (function(i){
+    var b = document.createElement('button');
+    b.className = 'w-phone-dot' + (i===0 ? ' active' : '');
+    b.setAttribute('aria-label', 'Go to step ' + (i+1));
+    b.addEventListener('click', function(){ go(i, true); });
+    dots.appendChild(b);
+  })(i); }
+  dots.removeAttribute('aria-hidden');
+
+  /* V6: the phone screen, the highlighted beside-step AND the playing
+     animation all advance together (setActive is the single source of truth). */
+  var hiwSteps = document.querySelectorAll('#hiwSteps .hiw-step');
+  var hiwSlides = track.children;
+  function setActive(i){ cur = i;
+    for(var k=0;k<dots.children.length;k++) dots.children[k].classList.toggle('active', k===i);
+    for(var s=0;s<hiwSteps.length;s++) hiwSteps[s].classList.toggle('active', s===i);
+    for(var m=0;m<hiwSlides.length;m++) hiwSlides[m].classList.toggle('is-active', m===i); }
+  function go(i, user){ i = (i % n + n) % n;
+    track.scrollTo({ left: i * track.clientWidth, behavior: reduce ? 'auto' : 'smooth' });
+    setActive(i); if(user) restart(); }
+  /* let a beside-step jump the phone */
+  hiwSteps.forEach(function(li){ li.addEventListener('click', function(){ go(+li.getAttribute('data-i'), true); }); });
+  setActive(0);  /* ensure slide 0 gets .is-active on load */
+
+  track.addEventListener('scroll', function(){ if(raf) return;
+    raf = requestAnimationFrame(function(){ raf = null;
+      var i = Math.round(track.scrollLeft / track.clientWidth);
+      if(i !== cur) setActive(i); }); }, { passive:true });
+
+  function start(){ if(!reduce) timer = setInterval(function(){ go(cur+1, false); }, 4500); }
+  function stop(){ if(timer){ clearInterval(timer); timer = null; } }
+  function restart(){ stop(); start(); }
+  ['mouseenter','touchstart','focusin'].forEach(function(e){ track.addEventListener(e, stop, {passive:true}); });
+  ['mouseleave','touchend','focusout'].forEach(function(e){ track.addEventListener(e, restart, {passive:true}); });
+  start();
+})();
+</script>
+
+<script>
+/* WOGO VISUAL PASS — scroll-reveal + hero entrance. Outside all fenced blocks.
+   Everything is fully visible if this never runs (hidden states need .wg-js,
+   the reveal only ADDS a class). */
+(function () {
+  var root = document.documentElement;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Hero entrance: flip on next frame so the transition plays once. */
+  requestAnimationFrame(function () { root.classList.add('wg-hero-go'); });
+
+  var targets = document.querySelectorAll('.wg-reveal, .wg-stagger, .wg-routeline');
+
+  /* No IntersectionObserver, or user prefers reduced motion → show everything now. */
+  if (reduce || !('IntersectionObserver' in window)) {
+    for (var i = 0; i < targets.length; i++) targets[i].classList.add('wg-in');
+    return;
+  }
+
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add('wg-in'); io.unobserve(e.target); }
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
+
+  for (var j = 0; j < targets.length; j++) io.observe(targets[j]);
+})();
+</script>
+
+<!-- ============================================================================
+     ▼▼▼  WOGO COOKIE CONSENT v1  —  BEGIN  (copy from here)  ▼▼▼
+     Self-contained: CSS + HTML + JS, no library, no external requests, no images.
+     Paste IDENTICALLY on every page just before 
+</body>. Any edit here must be
+     re-applied identically to every page.
+     ============================================================================ -->
+<style>
+  /* Uses the shared WOGO brand tokens when present; falls back to the same hexes
+     so the block is safe even where tokens are not defined. */
+  .wogo-consent, .wogo-consent *{box-sizing:border-box}
+  .wogo-consent [hidden]{display:none !important}
+
+  /* ---- bottom banner ---- */
+  .wogo-cc-banner{
+    position:fixed; left:0; right:0; bottom:0; z-index:2147483000;
+    background:var(--wogo-cream,#fffaf6);
+    color:var(--wogo-espresso,#3f2b21);
+    border-top:1px solid var(--wogo-salmon,#ffaa81);
+    box-shadow:0 -10px 30px rgba(32,22,17,.16);
+    padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));
+    display:flex; flex-direction:column; gap:14px;
+  }
+  .wogo-cc-banner-text{max-width:64ch}
+  .wogo-cc-h{margin:0 0 4px; font-size:1.05rem; line-height:1.3; color:var(--wogo-ink,#201611); font-weight:800}
+  .wogo-cc-p{margin:0; font-size:.9rem; line-height:1.5; color:var(--wogo-brown-soft,#7e5541)}
+  .wogo-cc-p a{color:var(--wogo-brown,#643e2b); text-decoration:underline}
+  .wogo-cc-banner-actions{display:flex; flex-wrap:wrap; gap:10px}
+
+  /* ---- buttons: Reject / Customize are equal-prominence outlines,
+          Accept is the salmon primary. Reject is as easy as Accept (one click). ---- */
+  .wogo-cc-btn{
+    -webkit-appearance:none; appearance:none; cursor:pointer;
+    font:inherit; font-weight:700; font-size:.9rem;
+    border-radius:999px; padding:12px 20px; line-height:1;
+    transition:transform .15s ease, background-color .15s ease, box-shadow .15s ease;
+    flex:1 1 auto; min-width:132px;
+  }
+  .wogo-cc-btn:active{transform:translateY(1px)}
+  .wogo-cc-btn-ghost{
+    background:transparent; color:var(--wogo-espresso,#3f2b21);
+    border:1.5px solid var(--wogo-brown,#643e2b);
+  }
+  .wogo-cc-btn-ghost:hover{background:rgba(63,43,33,.06)}
+  .wogo-cc-btn-primary{
+    background:var(--wogo-cta-bg,linear-gradient(135deg,#ffaa81 0%,#f2905c 100%));
+    color:var(--wogo-cta-ink,#3f2b21); border:1.5px solid transparent;
+    box-shadow:0 8px 20px rgba(242,144,92,.45);
+  }
+  .wogo-cc-btn-primary:hover{box-shadow:0 10px 24px rgba(242,144,92,.55)}
+
+  /* ---- preferences modal ---- */
+  .wogo-cc-scrim{
+    position:fixed; inset:0; z-index:2147483600;
+    background:rgba(32,22,17,.55);
+    display:flex; align-items:flex-end; justify-content:center;
+    padding:0; overflow-y:auto;
+  }
+  .wogo-cc-modal{
+    position:relative; width:100%; max-width:560px;
+    background:var(--wogo-cream,#fffaf6); color:var(--wogo-espresso,#3f2b21);
+    border-radius:20px 20px 0 0;
+    padding:26px 22px calc(24px + env(safe-area-inset-bottom,0px));
+    box-shadow:0 -14px 44px rgba(32,22,17,.30);
+    max-height:92vh; overflow-y:auto;
+  }
+  .wogo-cc-close{
+    position:absolute; top:12px; right:12px; width:38px; height:38px;
+    border:0; border-radius:50%; cursor:pointer; font-size:1.4rem; line-height:1;
+    background:rgba(63,43,33,.08); color:var(--wogo-espresso,#3f2b21);
+  }
+  .wogo-cc-close:hover{background:rgba(63,43,33,.16)}
+  .wogo-cc-modal .wogo-cc-h{font-size:1.25rem}
+  .wogo-cc-modal .wogo-cc-p{margin:0 0 18px}
+  .wogo-cc-cats{list-style:none; margin:0 0 20px; padding:0; display:flex; flex-direction:column; gap:12px}
+  .wogo-cc-cat{
+    border:1px solid rgba(63,43,33,.14); border-radius:14px;
+    padding:14px 16px; background:var(--wogo-blush,#ffe5d9);
+  }
+  .wogo-cc-cat-head{display:flex; align-items:center; justify-content:space-between; gap:12px}
+  .wogo-cc-cat-title{font-weight:800; color:var(--wogo-ink,#201611); font-size:.98rem}
+  .wogo-cc-cat-desc{margin:6px 0 0; font-size:.85rem; line-height:1.5; color:var(--wogo-brown-soft,#7e5541)}
+  .wogo-cc-always{font-size:.78rem; font-weight:700; color:var(--wogo-brown,#643e2b); white-space:nowrap}
+
+  /* ---- toggle switch ---- */
+  .wogo-cc-switch{position:relative; display:inline-flex; align-items:center; flex:0 0 auto}
+  .wogo-cc-switch input{position:absolute; opacity:0; width:52px; height:30px; margin:0; cursor:pointer}
+  .wogo-cc-slider{
+    width:52px; height:30px; border-radius:999px; background:#c9b7ad;
+    position:relative; transition:background-color .18s ease; flex:0 0 auto;
+  }
+  .wogo-cc-slider::after{
+    content:""; position:absolute; top:3px; left:3px; width:24px; height:24px;
+    border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.3);
+    transition:transform .18s ease;
+  }
+  .wogo-cc-switch input:checked + .wogo-cc-slider{background:var(--wogo-salmon-deep,#f2905c)}
+  .wogo-cc-switch input:checked + .wogo-cc-slider::after{transform:translateX(22px)}
+  .wogo-cc-switch input:disabled + .wogo-cc-slider{opacity:.6; cursor:not-allowed}
+  .wogo-cc-switch input:focus-visible + .wogo-cc-slider{outline:3px solid var(--wogo-salmon-deep,#f2905c); outline-offset:2px}
+  .wogo-cc-modal-actions{display:flex; flex-wrap:wrap; gap:10px}
+
+  /* ---- visible focus everywhere (independent of page styles) ---- */
+  .wogo-consent :focus-visible{outline:3px solid var(--wogo-salmon-deep,#f2905c); outline-offset:2px; border-radius:8px}
+
+  /* ---- entrance motion, reduced-motion safe (transform/opacity only) ---- */
+  @media (prefers-reduced-motion:no-preference){
+    .wogo-cc-banner{animation:wogoCcUp .28s ease both}
+    .wogo-cc-modal{animation:wogoCcUp .28s ease both}
+    .wogo-cc-scrim{animation:wogoCcFade .2s ease both}
+    @keyframes wogoCcUp{from{transform:translateY(16px); opacity:0} to{transform:translateY(0); opacity:1}}
+    @keyframes wogoCcFade{from{opacity:0} to{opacity:1}}
+  }
+
+  /* ---- desktop: banner becomes a row, modal becomes a centered card ---- */
+  @media (min-width:720px){
+    .wogo-cc-banner{
+      flex-direction:row; align-items:center; justify-content:space-between;
+      gap:24px; padding:20px 28px;
+    }
+    .wogo-cc-banner-actions{flex-wrap:nowrap; flex:0 0 auto}
+    .wogo-cc-btn{flex:0 0 auto}
+    .wogo-cc-scrim{align-items:center; padding:24px}
+    .wogo-cc-modal{border-radius:20px}
+  }
+</style>
+
+<!-- The whole widget is hidden by default (the [hidden] attribute). JS reveals it
+     ONLY on a first visit with no stored choice. With JavaScript disabled it stays
+     hidden and — because no tracker loads without consent — nothing is tracked.
+     No pre-ticked boxes: optional toggles start OFF. -->
+<div id="wogo-consent" class="wogo-consent" hidden>
+
+  <!-- Banner -->
+  <div class="wogo-cc-banner" id="wogoCcBanner" role="region" aria-label="Cookie consent" tabindex="-1" hidden>
+    <div class="wogo-cc-banner-text">
+      <h2 class="wogo-cc-h" data-cc="banner_title">We value your privacy</h2>
+      <p class="wogo-cc-p" data-cc="banner_body">We use cookies to keep the site working and, only if you agree, to understand our audience and improve our ads. You choose what to allow.</p>
+    </div>
+    <div class="wogo-cc-banner-actions">
+      <button type="button" class="wogo-cc-btn wogo-cc-btn-ghost" data-cc-act="reject" data-cc="btn_reject">Reject all</button>
+      <button type="button" class="wogo-cc-btn wogo-cc-btn-ghost" data-cc-act="customize" data-cc="btn_customize">Customize</button>
+      <button type="button" class="wogo-cc-btn wogo-cc-btn-primary" data-cc-act="accept" data-cc="btn_accept">Accept all</button>
+    </div>
+  </div>
+
+  <!-- Preferences modal -->
+  <div class="wogo-cc-scrim" id="wogoCcScrim" hidden>
+    <div class="wogo-cc-modal" id="wogoCcModal" role="dialog" aria-modal="true"
+         aria-labelledby="wogoCcModalTitle" aria-describedby="wogoCcModalIntro" tabindex="-1">
+      <button type="button" class="wogo-cc-close" data-cc-act="close" aria-label="Close" data-cc-aria="close_label">&times;</button>
+      <h2 class="wogo-cc-h" id="wogoCcModalTitle" data-cc="modal_title">Cookie preferences</h2>
+      <p class="wogo-cc-p" id="wogoCcModalIntro" data-cc="modal_intro">Choose which cookies WOGO may use. You can change this anytime via "Cookie settings" in the footer.</p>
+
+      <ul class="wogo-cc-cats">
+        <!-- Necessary — always on, cannot be switched off -->
+        <li class="wogo-cc-cat">
+          <div class="wogo-cc-cat-head">
+            <span class="wogo-cc-cat-title" data-cc="cat_necessary_h">Necessary</span>
+            <label class="wogo-cc-switch">
+              <input type="checkbox" checked disabled aria-disabled="true" tabindex="-1">
+              <span class="wogo-cc-slider" aria-hidden="true"></span>
+              <span class="wogo-cc-always" data-cc="always_on">Always on</span>
+            </label>
+          </div>
+          <p class="wogo-cc-cat-desc" data-cc="cat_necessary_d">Required for the site to work: security, language choice and remembering this cookie preference. No tracking.</p>
+        </li>
+
+        <!-- Analytics -->
+        <li class="wogo-cc-cat">
+          <div class="wogo-cc-cat-head">
+            <span class="wogo-cc-cat-title" id="wogoCcAnalyticsL" data-cc="cat_analytics_h">Analytics</span>
+            <label class="wogo-cc-switch">
+              <input type="checkbox" data-cc-input="analytics" aria-labelledby="wogoCcAnalyticsL">
+              <span class="wogo-cc-slider" aria-hidden="true"></span>
+            </label>
+          </div>
+          <p class="wogo-cc-cat-desc" data-cc="cat_analytics_d">Anonymous statistics about how the site is used, so we can make it better.</p>
+        </li>
+
+        <!-- Functional -->
+        <li class="wogo-cc-cat">
+          <div class="wogo-cc-cat-head">
+            <span class="wogo-cc-cat-title" id="wogoCcFunctionalL" data-cc="cat_functional_h">Functional</span>
+            <label class="wogo-cc-switch">
+              <input type="checkbox" data-cc-input="functional" aria-labelledby="wogoCcFunctionalL">
+              <span class="wogo-cc-slider" aria-hidden="true"></span>
+            </label>
+          </div>
+          <p class="wogo-cc-cat-desc" data-cc="cat_functional_d">Extra conveniences like embedded maps, videos or chat, if we add them.</p>
+        </li>
+
+        <!-- Marketing -->
+        <li class="wogo-cc-cat">
+          <div class="wogo-cc-cat-head">
+            <span class="wogo-cc-cat-title" id="wogoCcMarketingL" data-cc="cat_marketing_h">Marketing</span>
+            <label class="wogo-cc-switch">
+              <input type="checkbox" data-cc-input="marketing" aria-labelledby="wogoCcMarketingL">
+              <span class="wogo-cc-slider" aria-hidden="true"></span>
+            </label>
+          </div>
+          <p class="wogo-cc-cat-desc" data-cc="cat_marketing_d">Lets us measure our ads (Meta Pixel) so we show them to the right people and waste less budget.</p>
+        </li>
+      </ul>
+
+      <div class="wogo-cc-modal-actions">
+        <button type="button" class="wogo-cc-btn wogo-cc-btn-ghost" data-cc-act="reject" data-cc="btn_reject">Reject all</button>
+        <button type="button" class="wogo-cc-btn wogo-cc-btn-ghost" data-cc-act="accept" data-cc="btn_accept">Accept all</button>
+        <button type="button" class="wogo-cc-btn wogo-cc-btn-primary" data-cc-act="save" data-cc="btn_save">Save my choices</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* WOGO COOKIE CONSENT v1 — vanilla, no dependencies.
+   Exposes: window.wogoConsent, window.wogoOnConsent(fn), window.wogoOpenConsent().
+   Stores the choice + ISO timestamp under localStorage["wogoConsent.v1"]. */
+(function () {
+  "use strict";
+  var VERSION   = 1;
+  var STORE_KEY = "wogoConsent.v1";     /* bump ONLY if categories change (re-prompts everyone) */
+  var CATS      = ["analytics", "functional", "marketing"];
+
+  /* ---------- text: English default + full natural Dutch ---------- */
+  var I18N = {
+    en: {
+      banner_title: "We value your privacy",
+      banner_body:  "We use cookies to keep the site working and, only if you agree, to understand our audience and improve our ads. You choose what to allow.",
+      btn_reject:   "Reject all",
+      btn_accept:   "Accept all",
+      btn_customize:"Customize",
+      btn_save:     "Save my choices",
+      modal_title:  "Cookie preferences",
+      modal_intro:  "Choose which cookies WOGO may use. You can change this anytime via “Cookie settings” in the footer.",
+      close_label:  "Close cookie preferences",
+      always_on:    "Always on",
+      cat_necessary_h: "Necessary",
+      cat_necessary_d: "Required for the site to work: security, language choice and remembering this cookie preference. No tracking.",
+      cat_analytics_h: "Analytics",
+      cat_analytics_d: "Anonymous statistics about how the site is used, so we can make it better.",
+      cat_functional_h: "Functional",
+      cat_functional_d: "Extra conveniences like embedded maps, videos or chat, if we add them.",
+      cat_marketing_h: "Marketing",
+      cat_marketing_d: "Lets us measure our ads (Meta Pixel) so we show them to the right people and waste less budget."
+    },
+    nl: {
+      banner_title: "Jouw privacy telt",
+      banner_body:  "We gebruiken cookies om de site te laten werken en, alleen als je dat goedvindt, om ons publiek te begrijpen en onze advertenties te verbeteren. Jij kiest wat je toestaat.",
+      btn_reject:   "Alles weigeren",
+      btn_accept:   "Alles accepteren",
+      btn_customize:"Zelf instellen",
+      btn_save:     "Mijn keuze opslaan",
+      modal_title:  "Cookievoorkeuren",
+      modal_intro:  "Kies welke cookies WOGO mag gebruiken. Je past dit altijd aan via “Cookie-instellingen” in de footer.",
+      close_label:  "Cookievoorkeuren sluiten",
+      always_on:    "Altijd aan",
+      cat_necessary_h: "Noodzakelijk",
+      cat_necessary_d: "Nodig om de site te laten werken: beveiliging, taalkeuze en het onthouden van deze cookievoorkeur. Geen tracking.",
+      cat_analytics_h: "Analytics",
+      cat_analytics_d: "Anonieme statistieken over hoe de site gebruikt wordt, zodat we hem kunnen verbeteren.",
+      cat_functional_h: "Functioneel",
+      cat_functional_d: "Extra gemak zoals ingesloten kaarten, video’s of chat, mocht dat er komen.",
+      cat_marketing_h: "Marketing",
+      cat_marketing_d: "Hiermee meten we onze advertenties (Meta Pixel), zodat we ze aan de juiste mensen tonen en minder budget verspillen."
+    }
+  };
+
+  /* Detect the visitor's language the same way the site's foot script does:
+     saved wogoLang first, then <html lang>, then browser language. */
+  function readLang() {
+    try { var s = localStorage.getItem("wogoLang"); if (s === "nl" || s === "en") return s; } catch (e) {}
+    var h = (document.documentElement.lang || "").toLowerCase(); if (h.indexOf("nl") === 0) return "nl";
+    var n = (navigator.language || "").toLowerCase(); if (n.indexOf("nl") === 0) return "nl";
+    return "en";
+  }
+
+  /* ---------- stored choice (proof of consent) ---------- */
+  function loadRecord() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return null;
+      var o = JSON.parse(raw);
+      if (!o || o.v !== VERSION) return null;   /* old/absent version => ask again */
+      return o;
+    } catch (e) { return null; }
+  }
+
+  function publish(consent) {
+    window.wogoConsent = {
+      analytics:  !!consent.analytics,
+      functional: !!consent.functional,
+      marketing:  !!consent.marketing
+    };
+    var detail = window.wogoConsent;
+    try {
+      window.dispatchEvent(new CustomEvent("wogoconsentchange", { detail: detail }));
+    } catch (e) {
+      try { var ev = document.createEvent("CustomEvent");
+        ev.initCustomEvent("wogoconsentchange", false, false, detail);
+        window.dispatchEvent(ev); } catch (e2) {}
+    }
+  }
+
+  function saveRecord(consent) {
+    var rec = {
+      v: VERSION,
+      analytics:  !!consent.analytics,
+      functional: !!consent.functional,
+      marketing:  !!consent.marketing,
+      ts: new Date().toISOString(),   /* proof: exactly when consent was given */
+      lang: readLang()
+    };
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(rec)); } catch (e) {}
+    publish(rec);
+    return rec;
+  }
+
+  /* Seed window.wogoConsent immediately so gating code can read it right away.
+     Before any choice, everything optional is FALSE (nothing may fire). */
+  var initial = loadRecord() || { analytics: false, functional: false, marketing: false };
+  window.wogoConsent = {
+    analytics: !!initial.analytics, functional: !!initial.functional, marketing: !!initial.marketing
+  };
+
+  /* Subscribe helper: run now with the current value, then on every change. */
+  window.wogoOnConsent = function (fn) {
+    if (typeof fn !== "function") return;
+    try { fn(window.wogoConsent); } catch (e) {}
+    window.addEventListener("wogoconsentchange", function (e) {
+      try { fn(e.detail || window.wogoConsent); } catch (err) {}
+    });
+  };
+
+  /* ---------- UI ---------- */
+  function boot() {
+    var root   = document.getElementById("wogo-consent");
+    if (!root) return;
+    var banner = document.getElementById("wogoCcBanner");
+    var scrim  = document.getElementById("wogoCcScrim");
+    var modal  = document.getElementById("wogoCcModal");
+    if (!banner || !scrim || !modal) return;
+
+    var lastFocus = null;
+
+    function applyText() {
+      var dict = I18N[readLang()] || I18N.en;
+      root.querySelectorAll("[data-cc]").forEach(function (el) {
+        var k = el.getAttribute("data-cc");
+        if (dict[k] != null) el.textContent = dict[k];   /* textContent = no HTML injection */
+      });
+      root.querySelectorAll("[data-cc-aria]").forEach(function (el) {
+        var k = el.getAttribute("data-cc-aria");
+        if (dict[k] != null) el.setAttribute("aria-label", dict[k]);
+      });
+    }
+
+    function setToggles(consent) {
+      CATS.forEach(function (c) {
+        var input = modal.querySelector('[data-cc-input="' + c + '"]');
+        if (input) input.checked = !!consent[c];
+      });
+    }
+    function readToggles() {
+      var out = {};
+      CATS.forEach(function (c) {
+        var input = modal.querySelector('[data-cc-input="' + c + '"]');
+        out[c] = !!(input && input.checked);
+      });
+      return out;
+    }
+
+    function showBanner() {
+      applyText();
+      root.hidden = false;
+      scrim.hidden = true;
+      banner.hidden = false;
+      try { banner.focus(); } catch (e) {}
+    }
+    function hideAll() {
+      root.hidden = true;
+      scrim.hidden = true;
+      banner.hidden = true;
+    }
+    function openModal() {
+      applyText();
+      lastFocus = document.activeElement;
+      setToggles(loadRecord() || { analytics: false, functional: false, marketing: false });
+      root.hidden = false;
+      banner.hidden = true;     /* one surface at a time */
+      scrim.hidden = false;
+      try { modal.focus(); } catch (e) {}
+    }
+    function closeModal() {
+      scrim.hidden = true;
+      if (loadRecord()) {
+        hideAll();              /* a choice already exists: fully dismiss */
+      } else {
+        showBanner();           /* first visit, no choice yet: fall back to the banner */
+      }
+      try { if (lastFocus && lastFocus.focus) lastFocus.focus(); } catch (e) {}
+    }
+
+    function accept() { saveRecord({ analytics: true,  functional: true,  marketing: true  }); hideAll(); }
+    function reject() { saveRecord({ analytics: false, functional: false, marketing: false }); hideAll(); }
+    function save()   { saveRecord(readToggles()); hideAll(); }
+
+    /* one delegated click handler for every button in the widget */
+    root.addEventListener("click", function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest("[data-cc-act]") : null;
+      if (!btn) return;
+      switch (btn.getAttribute("data-cc-act")) {
+        case "accept":    accept(); break;
+        case "reject":    reject(); break;
+        case "customize": openModal(); break;
+        case "save":      save(); break;
+        case "close":     closeModal(); break;
+      }
+    });
+    /* click on the dark backdrop (outside the card) closes the modal */
+    scrim.addEventListener("click", function (e) { if (e.target === scrim) closeModal(); });
+
+    /* keyboard: Esc closes the modal; Tab is trapped inside it */
+    document.addEventListener("keydown", function (e) {
+      if (scrim.hidden) return;
+      var key = e.key || e.keyCode;
+      if (key === "Escape" || key === "Esc" || key === 27) { e.preventDefault(); closeModal(); return; }
+      if (key === "Tab" || key === 9) {
+        var f = modal.querySelectorAll(
+          'button:not([disabled]), [href], input:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
+        );
+        f = Array.prototype.filter.call(f, function (el) {
+          return el.offsetWidth || el.offsetHeight || el.getClientRects().length;
+        });
+        if (!f.length) return;
+        var first = f[0], last = f[f.length - 1], a = document.activeElement;
+        if (e.shiftKey && (a === first || a === modal)) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+
+    /* footer "Cookie settings" link hook */
+    window.wogoOpenConsent = function () { openModal(); };
+
+    /* re-localize the (hidden) widget if the visitor flips EN/NL after we booted */
+    window.addEventListener("storage", function (e) { if (e.key === "wogoLang") applyText(); });
+
+    /* First-visit gate: show the banner only when no valid choice is stored. */
+    if (!loadRecord()) showBanner();
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+})();
+</script>
+<!-- ============================================================================
+     ▲▲▲  WOGO COOKIE CONSENT v1  —  END  (copy to here)  ▲▲▲
+     ============================================================================ -->
+
+
+<!-- ===== WOGO WHATSAPP FLOAT v1 — identical on every page; keep in sync ===== -->
+<a class="w-wa" href="https://wa.me/31202101168?text=Hi%20WOGO!%20I%20have%20a%20question" target="_blank" rel="noopener" aria-label="Chat with WOGO on WhatsApp">
+  <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16.02 3.2c-7.06 0-12.8 5.73-12.8 12.79 0 2.25.59 4.45 1.72 6.39L3.2 28.8l6.6-1.72a12.76 12.76 0 0 0 6.21 1.58h.01c7.05 0 12.79-5.74 12.79-12.79 0-3.42-1.33-6.63-3.75-9.05a12.7 12.7 0 0 0-9.04-3.62zm0 23.25h-.01a10.6 10.6 0 0 1-5.4-1.48l-.39-.23-4.02 1.05 1.07-3.92-.25-.4a10.6 10.6 0 0 1-1.62-5.65c0-5.87 4.78-10.65 10.66-10.65 2.85 0 5.52 1.11 7.53 3.12a10.57 10.57 0 0 1 3.12 7.54c0 5.87-4.78 10.65-10.66 10.65zm5.84-7.98c-.32-.16-1.9-.94-2.19-1.04-.29-.11-.5-.16-.72.16-.21.32-.82 1.04-1.01 1.25-.19.21-.37.24-.69.08-.32-.16-1.35-.5-2.57-1.59-.95-.85-1.59-1.9-1.78-2.22-.19-.32-.02-.49.14-.65.14-.14.32-.37.48-.56.16-.19.21-.32.32-.53.11-.21.05-.4-.03-.56-.08-.16-.72-1.74-.99-2.38-.26-.62-.53-.54-.72-.55-.19-.01-.4-.01-.61-.01-.21 0-.56.08-.85.4-.29.32-1.11 1.09-1.11 2.66 0 1.57 1.14 3.08 1.3 3.29.16.21 2.25 3.43 5.44 4.81.76.33 1.35.52 1.81.67.76.24 1.46.21 2.01.13.61-.09 1.9-.78 2.17-1.53.27-.75.27-1.39.19-1.53-.08-.13-.29-.21-.61-.37z"/></svg>
+</a>
+<style>
+.w-wa{position:fixed;right:18px;bottom:22px;z-index:65;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(37,211,102,.45),0 2px 6px rgba(0,0,0,.2);transition:transform .18s ease,box-shadow .18s ease;}
+.w-wa:hover{transform:scale(1.07);box-shadow:0 10px 26px rgba(37,211,102,.55),0 2px 6px rgba(0,0,0,.22);}
+.w-wa:focus-visible{outline:3px solid #128C3E;outline-offset:3px;}
+@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}}
+@media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
+</style>
+<!-- ===== /WOGO WHATSAPP FLOAT ===== -->
 </body>
 </html>

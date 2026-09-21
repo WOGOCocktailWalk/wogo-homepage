@@ -7,13 +7,13 @@
        1. Copy this folder → /<city>/ and open index.html.
        2. Replace every "CITY-EDIT" block below: <title>, meta description,
           canonical, og:*, schema (TouristAttraction name/areaServed +
-          BreadcrumbList), hero copy, route cards, intro copy, review,
-          cross-city link, FAQ intro, final CTA.
+          BreadcrumbList), hero copy, route cards.
+          V7 CLEAN structure — lean hero → route cards → FAQ link line →
+          footer. NO how-it-works / groups / gift-card / cross-city strips
+          on city hubs (owner feedback round 7): visitors must reach the
+          booking flow fast.
        3. Swap rotterdam-hero.jpg for a real photo of that city (download from
           Wix media, save in the city folder — self-hosted, never hotlinked).
-       4. ⚠️ REMOVE the "Partner of Gemeente Rotterdam" trust item (t_partner)
-          from the hero trust row AND the NL dictionary — it is ROTTERDAM-ONLY.
-          (The shared footer trust line keeps it site-wide, that's fine.)
        5. Update the NL dictionary at the foot of the page — every data-i18n
           key on the page must have a natural-Dutch entry (run the key-sync
           check before shipping).
@@ -25,28 +25,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- CITY-EDIT: title + description + canonical -->
-<title>Cocktail Walk Rotterdam | Self-Guided Bar Crawl — 3 Bars, 1 Night | WOGO</title>
+<title>Cocktail Walk Rotterdam | 3 Bars, 1 Night | WOGO</title>
 <meta name="robots" content="noindex"> <!-- REMOVE at cutover -->
 <link rel="canonical" href="https://www.wogococktailwalk.com/rotterdam/">
 <meta name="description" content="Rotterdam's self-guided cocktail walk: 3 hand-picked bars, 3 cocktails, tables reserved. 3 routes from €29,95pp. Partner of Gemeente Rotterdam. Pick your route.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="WOGO Cocktail Walk">
-<meta property="og:title" content="Rotterdam Cocktail Walk — 3 bars, 3 cocktails, 1 night">
+<meta property="og:title" content="Rotterdam Cocktail Walk · 3 bars, 3 cocktails, 1 night">
 <meta property="og:description" content="Rotterdam's self-guided cocktail walk: 3 hand-picked bars, 3 cocktails, tables reserved. 3 routes from €29,95 per person. Partner of Gemeente Rotterdam.">
 <meta property="og:url" content="https://www.wogococktailwalk.com/rotterdam/">
-<!-- og:image must be an absolute URL; the Wix CDN copy of the same hero photo
-     works today. Point it at https://www.wogococktailwalk.com/rotterdam/rotterdam-hero.jpg at cutover. -->
-<meta property="og:image" content="https://static.wixstatic.com/media/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg">
+<!-- og:image must be an absolute URL — points at this page's self-hosted hero
+     on the production domain (update only if the domain ever changes). -->
+<meta property="og:image" content="https://www.wogococktailwalk.com/rotterdam/rotterdam-hero.jpg">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Rotterdam Cocktail Walk — 3 bars, 3 cocktails, 1 night">
+<meta name="twitter:title" content="Rotterdam Cocktail Walk · 3 bars, 3 cocktails, 1 night">
 <meta name="twitter:description" content="3 hand-picked Rotterdam bars, 3 cocktails, tables reserved. 3 routes from €29,95 per person.">
-<meta name="twitter:image" content="https://static.wixstatic.com/media/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg">
+<meta name="twitter:image" content="https://www.wogococktailwalk.com/rotterdam/rotterdam-hero.jpg">
 <!-- CITY-EDIT: structured data — city hubs use TouristAttraction (areaServed = this city)
      + BreadcrumbList (Home > City). Never LocalBusiness (WOGO isn't a fixed venue). -->
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"TouristAttraction","name":"WOGO Cocktail Walk Rotterdam","description":"Self-guided cocktail walk through Rotterdam: three hand-picked cocktail bars, three signature cocktails or mocktails, tables reserved. Three routes from €29,95 per person.","url":"https://www.wogococktailwalk.com/rotterdam/","image":"https://static.wixstatic.com/media/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg","telephone":"+31202101168","priceRange":"€€","areaServed":"Rotterdam","sameAs":["https://www.instagram.com/wogococktailwalk/","https://www.tiktok.com/@wogococktailwalk","https://www.facebook.com/wogoamsterdam/"]}
+{"@context":"https://schema.org","@type":"TouristAttraction","name":"WOGO Cocktail Walk Rotterdam","description":"Self-guided cocktail walk through Rotterdam: three hand-picked cocktail bars, three signature cocktails or mocktails, tables reserved. Three routes from €29,95 per person.","url":"https://www.wogococktailwalk.com/rotterdam/","image":"https://www.wogococktailwalk.com/rotterdam/rotterdam-hero.jpg","telephone":"+31202101168","priceRange":"€€","areaServed":"Rotterdam","sameAs":["https://www.instagram.com/wogococktailwalk/","https://www.tiktok.com/@wogococktailwalk","https://www.facebook.com/wogoamsterdam/"]}
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.wogococktailwalk.com/"},{"@type":"ListItem","position":2,"name":"Rotterdam","item":"https://www.wogococktailwalk.com/rotterdam/"}]}
@@ -67,191 +67,180 @@
 }catch(e){}})();
 </script>
 <style>
+  /* Accessibility: skip-to-content link (shared, keep IDENTICAL across pages) */
+  .w-skip{position:fixed;top:8px;left:-9999px;z-index:100000;background:#3f2b21;color:#fffaf6;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:800;text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.28);}
+  .w-skip:focus{left:12px;}
+
+  /* ===== V5 primary-CTA token — the single high-converting action colour.
+     Warm salmon→coral gradient, espresso ink (AA), on-brand (BRAND.md lists
+     salmon for warm CTAs). Page CSS, outside the shared nav/footer fences. ===== */
+  :root{
+    --wogo-cta-bg:       linear-gradient(135deg, #ffaa81 0%, #f2905c 100%);
+    --wogo-cta-bg-hover: linear-gradient(135deg, #f2905c 0%, #f2905c 100%);
+    --wogo-cta-ink:      #3f2b21;
+    --wogo-cta-shadow:   0 8px 20px rgba(242,144,92,0.45);
+  }
   /* ===== WOGO SHARED VISUAL SYSTEM (copied from the homepage — keep in sync) ===== */
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { background: #1a1410; overflow-x: hidden; }
-  body { background: #FAF6F2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #1a1410; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; overflow-x: hidden; scrollbar-width: none; -ms-overflow-style: none; }
+  html { background: #201611; overflow-x: hidden; }
+  body { background: #ffe5d9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #201611; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; overflow-x: hidden; scrollbar-width: none; -ms-overflow-style: none; }
   html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display: none; }
   img { max-width: 100%; display: block; }
-  a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid #E2641E; outline-offset: 2px; border-radius: 6px; }
+  a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid #3f2b21; outline-offset: 2px; border-radius: 6px; }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; } }
   .w-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-  .w-hero { position: relative; width: 100%; min-height: 440px; overflow: hidden; background: #1a1410; color: #fff; }
+  .w-hero { position: relative; width: 100%; min-height: 440px; overflow: hidden; background: #201611; color: #fff; }
   .w-hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
   .w-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(26,20,16,0.40) 0%, rgba(26,20,16,0.72) 100%); z-index: 1; }
-  .w-lang { position: absolute; top: 12px; right: 14px; z-index: 5; display: flex; gap: 2px; background: rgba(0,0,0,0.4); border-radius: 999px; padding: 3px; }
-  .w-lang button { background: none; border: none; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; padding: 5px 11px; min-height: 36px; border-radius: 999px; cursor: pointer; opacity: 0.65; transition: opacity 0.2s, background 0.2s; }
-  .w-lang button.active { background: #E2641E; opacity: 1; }
+  /* ── Language dropdown: trigger pill + expandable menu (data-driven — see WOGO_LANGS in the foot script; scales beyond EN/NL) ── */
+  .w-lang { position: relative; display: inline-flex; }
+  .w-lang-btn { display: inline-flex; align-items: center; gap: 6px; background: rgba(32,22,17,0.65); border: none; color: var(--wogo-cream); font-family: inherit; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; padding: 8px 13px; min-height: 40px; border-radius: 999px; cursor: pointer; transition: background 0.2s; }
+  .w-lang-btn:hover { background: rgba(32,22,17,0.8); }
+  .w-lang-globe { width: 14px; height: 14px; flex: 0 0 auto; opacity: 0.9; }
+  .w-lang-caret { font-size: 8px; opacity: 0.85; transition: transform 0.2s; }
+  .w-lang.open .w-lang-caret { transform: rotate(180deg); }
+  .w-lang-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; margin: 0; padding: 6px; min-width: 164px; list-style: none; background: var(--wogo-cream); border-radius: 12px; box-shadow: 0 12px 30px rgba(26,20,16,0.18); opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s; }
+  .w-lang.open .w-lang-menu { opacity: 1; visibility: visible; transform: translateY(0); transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s; }
+  .w-lang-opt { display: flex; align-items: center; gap: 9px; color: var(--wogo-ink); font-size: 13px; font-weight: 700; padding: 11px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+  .w-lang-opt:hover { background: var(--wogo-blush); }
+  .w-lang-opt:focus { background: var(--wogo-blush); outline: 2px solid var(--wogo-salmon-deep); outline-offset: -2px; }
+  .w-lang-opt-code { min-width: 21px; font-size: 10px; font-weight: 800; letter-spacing: 0.06em; color: var(--wogo-brown-soft); }
+  .w-lang-opt[aria-selected="true"]::after { content: "✓"; margin-left: auto; padding-left: 12px; color: var(--wogo-salmon-deep); font-weight: 900; }
+  .w-nav-ov-lang { display: flex; padding: 16px 6px; border-bottom: 1px solid rgba(63,43,33,0.12); }
+  .w-nav-overlay .w-lang-menu { right: auto; left: 0; }
   .w-hero-content { position: relative; z-index: 2; min-height: 440px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 104px 24px 56px; max-width: 920px; margin: 0 auto; }
-  .w-hero-brand { font-size: clamp(18px, 2.6vw, 26px); font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #F5C9A8; line-height: 1; margin-bottom: 8px; }
+  .w-hero-brand { font-size: clamp(18px, 2.6vw, 26px); font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #ffe5d9; line-height: 1; margin-bottom: 8px; }
   .w-hero-cities { font-size: 10.5px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(245,201,168,0.78); margin-bottom: 18px; }
   .w-hero h1 { font-size: clamp(28px, 4.6vw, 52px); font-weight: 900; line-height: 1.05; letter-spacing: -0.015em; margin-bottom: 14px; max-width: 18ch; text-shadow: 0 2px 16px rgba(0,0,0,0.45); }
   .w-hero p { font-size: clamp(14px, 1.3vw, 18px); font-weight: 500; line-height: 1.5; max-width: 540px; margin-bottom: 22px; opacity: 0.95; }
-  .w-hero-cta { display: inline-block; background: #E2641E; color: #fff; text-decoration: none; padding: 15px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(226,100,30,0.4); transition: transform 0.2s, background 0.2s; }
-  .w-hero-cta:active, .w-citycard-btn:active, .w-gift-btn:active, .w-group-btn:active, .w-final-btn:active, .w-sticky-cta-btn:active { transform: scale(0.96); }
+  .w-hero-cta { display: inline-block; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 15px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform 0.2s, background 0.2s; }
+  .w-hero-cta:active, .w-citycard-btn:active, .w-sticky-cta-btn:active { transform: scale(0.96); }
   .w-mail { color: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
-  .w-hero-cta:hover { background: #C8551A; color: #fff; transform: translateY(-2px); }
+  .w-hero-cta:hover { background: var(--wogo-cta-bg-hover); color: var(--wogo-cta-ink); transform: translateY(-2px); }
   .w-hero-trust { margin-top: 16px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.86); display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-  .w-hero-trust .w-star { color: #F5C9A8; }
+  .w-hero-trust .w-star { color: #ffaa81; }
   .w-section { padding: 50px 0; }
-  .w-section.alt { background: #fff; }
-  .w-section.brown { background: #5C2A14; }
-  .w-section.peach { background: #F5C9A8; }
-  .w-section.dark { background: #1a1410; }
+  .w-section.alt { background: #fffaf6; }
+  .w-section.brown { background: #3f2b21; }
+  .w-section.peach { background: #fbe9df; }
+  .w-section.dark { background: #201611; }
+  /* V7 CLEAN rhythm: hero (dark photo) → routes (light peach body) →
+     FAQ link (dark) → footer (espresso). No cross-sell strips on city hubs. */
   .w-pad { padding-left: 24px; padding-right: 24px; }
   .w-head { text-align: center; margin-bottom: 28px; }
   .w-head h2 { font-size: clamp(26px, 3.4vw, 38px); font-weight: 900; letter-spacing: -0.01em; text-transform: uppercase; margin-bottom: 6px; }
-  .w-head p { font-size: 14px; color: #5C2A14; font-weight: 600; }
-  .w-head .w-hint { font-size: 12px; color: #8a7066; margin-top: 6px; font-weight: 500; }
-  .w-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #5C2A14; margin-bottom: 10px; text-align: center; }
+  .w-head p { font-size: 14px; color: #3f2b21; font-weight: 600; }
+  .w-head .w-hint { font-size: 12px; color: #7e5541; margin-top: 6px; font-weight: 500; }
+  .w-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #3f2b21; margin-bottom: 10px; text-align: center; }
   .w-scroller-wrap { position: relative; }
   .w-scroller { display: flex; justify-content: safe center; gap: 16px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 4px 24px 18px; }
   .w-scroller::-webkit-scrollbar { display: none; }
-  .w-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: #5C2A14; color: #F5C9A8; border: none; cursor: pointer; font-size: 24px; line-height: 1; display: flex; align-items: center; justify-content: center; z-index: 6; box-shadow: 0 4px 14px rgba(0,0,0,0.22); transition: background 0.2s, transform 0.15s; }
-  .w-arrow:hover { background: #1a1410; }
+  .w-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: #3f2b21; color: #ffe5d9; border: none; cursor: pointer; font-size: 24px; line-height: 1; display: flex; align-items: center; justify-content: center; z-index: 6; box-shadow: 0 4px 14px rgba(0,0,0,0.22); transition: background 0.2s, transform 0.15s; }
+  .w-arrow:hover { background: #201611; }
   .w-arrow:active { transform: translateY(-50%) scale(0.92); }
   .w-arrow-left { left: -4px; }
   .w-arrow-right { right: -4px; }
-  .w-citycard { flex: 0 0 290px; scroll-snap-align: start; display: flex; flex-direction: column; background: #fff; border-radius: 14px; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 14px rgba(0,0,0,0.05); }
+  .w-citycard { flex: 0 0 290px; scroll-snap-align: start; display: flex; flex-direction: column; background: #fffaf6; border-radius: 14px; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 14px rgba(0,0,0,0.05); }
   .w-citycard:hover { transform: translateY(-4px); box-shadow: 0 14px 28px rgba(0,0,0,0.12); }
   .w-citycard:hover .w-citycard-img-inner { transform: scale(1.05); }
-  .w-citycard-img { position: relative; aspect-ratio: 16/10; overflow: hidden; background: linear-gradient(135deg, #F5C9A8 0%, #5C2A14 100%); }
+  .w-citycard-img { position: relative; aspect-ratio: 16/10; overflow: hidden; background: linear-gradient(135deg, #ffe5d9 0%, #3f2b21 100%); }
   .w-citycard-img-inner { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; color: transparent; font-size: 0; }
-  .w-citycard-badge { position: absolute; bottom: 12px; left: 12px; background: #F5C9A8; color: #1a1410; padding: 5px 11px; border-radius: 999px; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; z-index: 2; }
-  .w-citycard-flag { position: absolute; top: 10px; right: 10px; background: #5C2A14; color: #F5C9A8; font-size: 9.5px; font-weight: 800; letter-spacing: 0.06em; padding: 5px 9px; border-radius: 999px; text-transform: uppercase; z-index: 3; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+  .w-citycard-badge { position: absolute; bottom: 12px; left: 12px; background: #ffe5d9; color: #201611; padding: 5px 11px; border-radius: 999px; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; z-index: 2; }
+  .w-citycard-flag { position: absolute; top: 10px; right: 10px; background: #3f2b21; color: #ffe5d9; font-size: 9.5px; font-weight: 800; letter-spacing: 0.06em; padding: 5px 9px; border-radius: 999px; text-transform: uppercase; z-index: 3; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+  /* Colour-code the route badge by TYPE so New / Premium / Best seller read at a glance. */
+  .w-citycard-flag[data-i18n="flag_new"]     { background:#2f7d55; color:#eafff2; }
+  .w-citycard-flag[data-i18n="flag_premium"] { background:linear-gradient(135deg,#e6c778,#b8863b); color:#2a1c14; }
+  .w-citycard-flag[data-i18n="flag_best"]    { background:#ffaa81; color:#3f2b21; }
+  .w-citycard-flag[data-i18n="flag_gin"]     { background:#1e3a5f; color:#eef4ff; }
+  .w-citycard-flag[data-i18n="flag_soon"]    { background:#7c6455; color:#fff; }
   .w-citycard-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.35) 100%); z-index: 1; }
   .w-citycard-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 5px; flex: 1 1 auto; }
-  .w-citycard-route { font-size: 15px; font-weight: 800; color: #1a1410; line-height: 1.25; overflow-wrap: break-word; word-break: normal; hyphens: none; }
+  .w-citycard-route { font-size: 15px; font-weight: 800; color: #201611; line-height: 1.25; overflow-wrap: break-word; word-break: normal; hyphens: none; }
   .w-citycard-rows { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
-  .w-citycard-row { font-size: 12px; color: #5C2A14; font-weight: 600; line-height: 1.35; overflow-wrap: break-word; word-break: normal; hyphens: none; }
-  .w-citycard-price { font-size: 19px; font-weight: 900; color: #1a1410; margin-top: auto; padding-top: 12px; }
-  .w-citycard-price small { font-size: 11.5px; font-weight: 600; color: #5C2A14; }
-  .w-citycard-urgency { font-size: 11px; font-weight: 800; color: #C8551A; margin-top: 6px; letter-spacing: 0.02em; }
+  .w-citycard-row { font-size: 12px; color: #3f2b21; font-weight: 600; line-height: 1.35; overflow-wrap: break-word; word-break: normal; hyphens: none; }
+  .w-citycard-price { font-size: 19px; font-weight: 900; color: #201611; margin-top: auto; padding-top: 12px; }
+  .w-citycard-price small { font-size: 11.5px; font-weight: 600; color: #3f2b21; }
+  .w-citycard-urgency { font-size: 11px; font-weight: 800; color: #3f2b21; margin-top: 6px; letter-spacing: 0.02em; }
   .w-citycard-actions { display: flex; gap: 6px; margin-top: 10px; }
   .w-citycard-btn { flex: 1 1 0; text-align: center; text-decoration: none; padding: 10px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; transition: background 0.2s, color 0.2s; white-space: nowrap; }
-  .w-citycard-btn-primary { background: #E2641E; color: #fff; box-shadow: 0 2px 8px rgba(226,100,30,0.35); }
-  .w-citycard-btn-primary:hover { background: #C8551A; }
-  .w-citycard-btn-secondary { background: transparent; color: #5C2A14; border: 1.5px solid #5C2A14; padding: 8.5px 8px; }
-  .w-citycard-btn-secondary:hover { background: #5C2A14; color: #F5C9A8; }
-  .w-howstrip { display: flex; align-items: stretch; justify-content: center; gap: 10px; max-width: 920px; margin: 0 auto; }
-  .w-hs-item { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 4px 10px; }
-  .w-hs-ico { font-size: 26px; line-height: 1; }
-  .w-hs-tx { font-size: 13.5px; font-weight: 700; line-height: 1.35; color: #F5C9A8; max-width: 15ch; }
-  .w-how .w-head h2 { color: #fff; }
-  .w-how .w-eyebrow { color: rgba(245,201,168,0.7); }
-  .w-review { flex: 0 0 320px; scroll-snap-align: start; background: #fff; border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 12px rgba(92,42,20,0.10); }
-  .w-review-stars { color: #5C2A14; font-size: 14px; letter-spacing: 2px; }
-  .w-review-quote { font-size: 13.5px; line-height: 1.6; font-weight: 500; flex: 1 1 auto; color: #1a1410; }
-  .w-review-foot { padding-top: 10px; border-top: 1px solid rgba(92,42,20,0.15); font-size: 12px; }
-  .w-review-name { font-weight: 800; color: #1a1410; }
-  .w-review-meta { color: #5C2A14; margin-top: 2px; font-weight: 600; }
-  .w-reviews-head h2 { color: #1a1410; }
-  .w-reviews-head p { color: #5C2A14; font-weight: 700; }
-  /* City-hub extra: a single spotlight review, centred (no scroller needed for one card) */
-  .w-review-solo { max-width: 560px; margin: 0 auto; flex: 1 1 auto; }
-  .w-gift-wrap { max-width: 920px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; }
-  .w-gift-text { flex: 1 1 340px; }
-  .w-gift-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #5C2A14; margin-bottom: 8px; }
-  .w-gift h2 { font-size: clamp(24px, 3vw, 34px); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; margin-bottom: 8px; color: #1a1410; }
-  .w-gift p { font-size: 14.5px; line-height: 1.55; color: #5C2A14; font-weight: 500; max-width: 480px; }
-  .w-gift-btn { flex: 0 0 auto; background: #5C2A14; color: #F5C9A8; text-decoration: none; padding: 16px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; transition: transform 0.2s, background 0.2s; }
-  .w-gift-btn:hover { background: #1a1410; transform: translateY(-2px); }
-  .w-group-wrap { max-width: 920px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; }
-  .w-group-text { flex: 1 1 340px; }
-  .w-group h2 { font-size: clamp(24px, 3vw, 34px); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; margin: 4px 0 8px; color: #1a1410; }
-  .w-group p { font-size: 14.5px; line-height: 1.55; color: #5C2A14; font-weight: 500; max-width: 480px; }
-  .w-group-btn { flex: 0 0 auto; background: #E2641E; color: #fff; text-decoration: none; padding: 16px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(226,100,30,0.35); transition: transform 0.2s, background 0.2s; }
-  .w-group-btn:hover { background: #C8551A; transform: translateY(-2px); }
-  /* City-hub extra: intro / SEO copy block */
-  .w-intro-wrap { max-width: 740px; margin: 0 auto; text-align: center; }
-  .w-intro-wrap h2 { font-size: clamp(22px, 3vw, 32px); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; margin-bottom: 14px; color: #1a1410; }
-  .w-intro-wrap p { font-size: 14.5px; line-height: 1.7; font-weight: 500; color: #444; margin-bottom: 14px; }
-  /* City-hub extra: cross-city strip (brown band) */
-  .w-xcity { text-align: center; color: #fff; }
-  .w-xcity h2 { font-size: clamp(22px, 3vw, 32px); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; margin-bottom: 8px; color: #fff; }
-  .w-xcity p { font-size: 14px; font-weight: 500; line-height: 1.55; color: rgba(245,201,168,0.85); max-width: 480px; margin: 0 auto 20px; }
-  .w-xcity-btn { display: inline-block; background: #F5C9A8; color: #5C2A14; text-decoration: none; padding: 14px 30px; border-radius: 999px; font-size: 13.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; transition: transform 0.2s, background 0.2s; }
-  .w-xcity-btn:hover { background: #fff; transform: translateY(-2px); }
-  .w-faq-wrap { max-width: 740px; margin: 0 auto; }
-  .w-faq details { border-bottom: 1px solid rgba(92,42,20,0.15); }
-  .w-faq summary { padding: 16px 0; font-size: 15px; font-weight: 800; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; color: #1a1410; transition: color 0.2s; }
-  .w-faq summary:hover { color: #5C2A14; }
-  .w-faq summary::-webkit-details-marker { display: none; }
-  .w-faq summary::after { content: "+"; font-size: 24px; font-weight: 400; color: #5C2A14; line-height: 1; flex-shrink: 0; transition: transform 0.3s; }
-  .w-faq details[open] summary::after { transform: rotate(45deg); }
-  .w-faq-body { padding: 0 0 18px; font-size: 14px; line-height: 1.65; font-weight: 500; color: #444; }
-  .w-final { text-align: center; color: #fff; }
-  .w-final h2 { font-size: clamp(28px, 4vw, 44px); font-weight: 900; line-height: 1.06; margin-bottom: 12px; text-transform: uppercase; letter-spacing: -0.015em; }
-  .w-final p { font-size: 14.5px; font-weight: 500; color: #F5C9A8; margin-bottom: 24px; }
-  .w-final-btn { display: inline-block; background: #E2641E; color: #fff; text-decoration: none; padding: 16px 36px; border-radius: 999px; font-size: 15px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(226,100,30,0.4); transition: transform 0.2s, background 0.2s; }
-  .w-final-btn:hover { background: #C8551A; transform: translateY(-2px); }
+  .w-citycard-btn-primary { background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); box-shadow: var(--wogo-cta-shadow); }
+  .w-citycard-btn-primary:hover { background: var(--wogo-cta-bg-hover); }
+  .w-citycard-btn-secondary { background: transparent; color: #3f2b21; border: 1.5px solid #3f2b21; padding: 8.5px 8px; }
+  .w-citycard-btn-secondary:hover { background: #3f2b21; color: #ffe5d9; }
+  /* NOTE: reviews now live ONLY on the homepage (V3). The city-hub spotlight
+     review section + its .w-review* CSS were removed here — trust-number rows
+     (★4.4 · Trustpilot) stay in the hero and near the routes. */
+  /* V7 CLEAN: how-it-works / groups / gift-card / cross-city strips + short
+     FAQ accordion + final CTA were removed from city hubs (owner feedback
+     round 7) — their .w-how*/.w-hs*/.w-gift*/.w-group*/.w-xcity*/.w-faq*/
+     .w-final* CSS went with them. Only the one-line FAQ link band remains. */
   /* Sticky mobile bottom CTA (standalone mode only — JS never shows it when embedded) */
-  .w-sticky-cta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(250,246,242,0.96); box-shadow: 0 -4px 18px rgba(26,20,16,0.18); transform: translateY(120%); transition: transform 0.25s; display: none; }
+  .w-sticky-cta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(255,229,217,0.96); box-shadow: 0 -4px 18px rgba(26,20,16,0.18); transform: translateY(120%); transition: transform 0.25s; display: none; }
   .w-sticky-cta.show { transform: translateY(0); }
-  .w-sticky-cta-btn { display: block; text-align: center; background: #E2641E; color: #fff; text-decoration: none; padding: 14px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(226,100,30,0.4); }
+  .w-nav.menu-open ~ .w-sticky-cta { display: none; }
+  .w-sticky-cta-btn { display: block; text-align: center; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 14px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); }
   @media (max-width: 720px) { .w-sticky-cta { display: block; } }
 
   /* ===== SITE NAV styles (reusable — keep self-contained) ===== */
   html { scroll-padding-top: 76px; }           /* so anchor jumps clear the fixed nav */
-  #routes, #how, #faq { scroll-margin-top: 76px; }
+  #routes { scroll-margin-top: 76px; }
   .w-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; transition: background 0.3s ease, box-shadow 0.3s ease; }
   .w-nav::before { content: ""; position: absolute; inset: 0 0 -22px 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(26,20,16,0.62) 0%, rgba(26,20,16,0.34) 55%, rgba(26,20,16,0) 100%); opacity: 1; transition: opacity 0.3s ease; }
   .w-nav.scrolled::before, .w-nav.menu-open::before { opacity: 0; }
   .w-nav.w-nav-embedded { position: absolute; }  /* inside the Wix iframe the host scrolls, so don't pin */
   .w-nav-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 14px; padding: 14px 24px; }
-  .w-nav-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #F5C9A8; text-decoration: none; transition: color 0.3s ease; text-shadow: 0 1px 10px rgba(0,0,0,0.45); }
+  .w-nav-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #ffe5d9; text-decoration: none; transition: color 0.3s ease; text-shadow: 0 1px 10px rgba(0,0,0,0.45); }
   .w-nav-logo { height: 34px; width: auto; display: block; flex: 0 0 auto; }
-  .w-nav.scrolled, .w-nav.menu-open { background: #FAF6F2; }
+  .w-nav.scrolled, .w-nav.menu-open { background: #fffaf6; }
   .w-nav.scrolled { box-shadow: 0 2px 14px rgba(26,20,16,0.10); }
-  .w-nav.scrolled .w-nav-brand, .w-nav.menu-open .w-nav-brand { color: #5C2A14; text-shadow: none; }
+  .w-nav.scrolled .w-nav-brand, .w-nav.menu-open .w-nav-brand { color: #3f2b21; text-shadow: none; }
   .w-nav-links { list-style: none; display: flex; align-items: center; gap: 2px; margin: 0 auto 0 22px; }
   .w-nav-links > li { position: relative; }
   .w-nav-links a, .w-nav-links button { font-family: inherit; }
   .w-nav-links a { display: inline-flex; align-items: center; font-size: 13.5px; font-weight: 700; letter-spacing: 0.02em; color: #fff; text-decoration: none; padding: 8px 12px; border-radius: 8px; transition: color 0.2s, background 0.2s; text-shadow: 0 1px 8px rgba(0,0,0,0.5); }
   .w-nav-links a:hover { background: rgba(255,255,255,0.14); }
-  .w-nav.scrolled .w-nav-links a { color: #1a1410; text-shadow: none; }
+  .w-nav.scrolled .w-nav-links a { color: #201611; text-shadow: none; }
   .w-nav.scrolled .w-nav-links a:hover { background: rgba(92,42,20,0.08); }
   .w-nav-drop { display: flex; align-items: center; }
   .w-nav-caret { font-size: 10px; color: #fff; margin: 0 4px 0 -4px; transition: transform 0.2s, color 0.3s; pointer-events: none; text-shadow: 0 1px 8px rgba(0,0,0,0.5); }
   .w-nav.scrolled .w-nav-caret { text-shadow: none; }
-  .w-nav.scrolled .w-nav-caret { color: #1a1410; }
+  .w-nav.scrolled .w-nav-caret { color: #201611; }
   .w-nav-drop:hover .w-nav-caret, .w-nav-drop:focus-within .w-nav-caret { transform: rotate(180deg); }
-  .w-nav-menu { position: absolute; top: 100%; left: 0; margin: 0; padding: 8px; min-width: 190px; list-style: none; display: flex; flex-direction: column; gap: 2px; background: #fff; border-radius: 12px; box-shadow: 0 12px 30px rgba(26,20,16,0.18); opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s; }
+  .w-nav-menu { position: absolute; top: 100%; left: 0; margin: 0; padding: 8px; min-width: 190px; list-style: none; display: flex; flex-direction: column; gap: 2px; background: #fffaf6; border-radius: 12px; box-shadow: 0 12px 30px rgba(26,20,16,0.18); opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s; }
   .w-nav-drop:hover .w-nav-menu, .w-nav-drop:focus-within .w-nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
-  .w-nav-menu a { color: #1a1410; font-weight: 700; padding: 10px 14px; border-radius: 8px; }
-  .w-nav-menu a:hover, .w-nav.scrolled .w-nav-menu a:hover { background: #F5C9A8; }
-  .w-nav-country { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #8a7066; padding: 10px 14px 4px; }
+  .w-nav-menu a { color: #201611; font-weight: 700; padding: 10px 14px; border-radius: 8px; }
+  .w-nav-menu a:hover, .w-nav.scrolled .w-nav-menu a:hover { background: #ffe5d9; }
+  .w-nav-country { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #7e5541; padding: 10px 14px 4px; }
   .w-nav-country + .w-nav-country, li.w-nav-country ~ li.w-nav-country { margin-top: 4px; }
-  .w-nav-ov-country { width: 100%; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #8a7066; margin: 6px 0 2px; }
+  .w-nav-ov-country { width: 100%; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #7e5541; margin: 6px 0 2px; }
   .w-footer-routes { display: flex; flex-direction: column; gap: 10px; }
   .w-footer-routes .w-footer-country { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,201,168,0.55); margin-top: 6px; }
   .w-nav-right { display: flex; align-items: center; gap: 10px; }
-  .w-nav .w-lang { position: static; top: auto; right: auto; }  /* reuse hero pill styling, un-pin it */
-  .w-nav-cta { background: #E2641E; color: #fff; text-decoration: none; padding: 11px 20px; border-radius: 999px; font-size: 13px; font-weight: 800; letter-spacing: 0.03em; white-space: nowrap; box-shadow: 0 4px 14px rgba(226,100,30,0.40); transition: transform 0.2s, background 0.2s; }
-  .w-nav-cta:hover { background: #C8551A; color: #fff; transform: translateY(-2px); }
+  .w-nav-cta { background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 11px 20px; border-radius: 999px; font-size: 13px; font-weight: 800; letter-spacing: 0.03em; white-space: nowrap; box-shadow: var(--wogo-cta-shadow); min-height: 44px; display: inline-flex; align-items: center; justify-content: center; transition: transform 0.2s, background 0.2s; }
+  .w-nav-cta:hover { background: var(--wogo-cta-bg-hover); color: var(--wogo-cta-ink); transform: translateY(-2px); }
   .w-nav-cta:active { transform: scale(0.96); }
   .w-nav-burger { display: none; flex-direction: column; justify-content: center; gap: 5px; width: 44px; height: 44px; padding: 11px; background: none; border: none; cursor: pointer; }
   .w-nav-burger span { display: block; width: 100%; height: 2px; border-radius: 2px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.45); transition: transform 0.25s ease, opacity 0.2s ease, background 0.3s ease; }
-  .w-nav.scrolled .w-nav-burger span { background: #1a1410; box-shadow: none; }
-  .w-nav-burger.open span { background: #1a1410; }
+  .w-nav.scrolled .w-nav-burger span { background: #201611; box-shadow: none; }
+  .w-nav-burger.open span { background: #201611; }
   .w-nav-burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
   .w-nav-burger.open span:nth-child(2) { opacity: 0; }
   .w-nav-burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-  .w-nav-overlay { position: fixed; inset: 0; z-index: 49; display: none; flex-direction: column; padding: 86px 24px 40px; background: #FAF6F2; overflow-y: auto; }
+  .w-nav-overlay { position: fixed; inset: 0; z-index: 49; display: none; flex-direction: column; padding: 86px 24px 40px; background: #ffe5d9; overflow-y: auto; }
   .w-nav-overlay.open { display: flex; }
   .w-nav-overlay-links { list-style: none; display: flex; flex-direction: column; }
-  .w-nav-ov-link { display: block; font-size: 22px; font-weight: 800; color: #1a1410; text-decoration: none; padding: 15px 6px; border-bottom: 1px solid rgba(92,42,20,0.12); }
-  .w-nav-ov-link:hover { color: #C8551A; }
+  .w-nav-ov-link { display: block; font-size: 22px; font-weight: 800; color: #201611; text-decoration: none; padding: 15px 6px; border-bottom: 1px solid rgba(92,42,20,0.12); }
+  .w-nav-ov-link:hover { color: #f2905c; }
   .w-nav-ov-cities { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 6px 16px; border-bottom: 1px solid rgba(92,42,20,0.12); }
-  .w-nav-ov-cities a { font-size: 14px; font-weight: 700; color: #5C2A14; text-decoration: none; background: #F5C9A8; padding: 11px 18px; border-radius: 999px; }
+  .w-nav-ov-cities a { font-size: 14px; font-weight: 700; color: #3f2b21; text-decoration: none; background: #ffe5d9; padding: 11px 18px; border-radius: 999px; }
   .w-nav-overlay .w-nav-cta { margin-top: 26px; text-align: center; font-size: 15px; padding: 16px 24px; }
 
   /* ===== SITE FOOTER styles (reusable — keep self-contained) ===== */
-  .w-footer { background: #5C2A14; color: #F5C9A8; padding: 56px 0 0; }
+  .w-footer { background: #3f2b21; color: #ffe5d9; padding: 56px 0 0; }
   .w-footer-inner { max-width: 1100px; margin: 0 auto; }
   .w-footer-top { display: flex; flex-wrap: wrap; gap: 40px; padding-bottom: 34px; }
   .w-footer-brand { flex: 1 1 260px; max-width: 340px; }
-  .w-footer-word { font-size: 26px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #F5C9A8; margin-bottom: 14px; }
+  .w-footer-word { font-size: 26px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #ffe5d9; margin-bottom: 14px; }
   .w-footer-tag { font-size: 15px; line-height: 1.55; font-weight: 500; color: rgba(245,201,168,0.82); }
   .w-footer-cols { flex: 2 1 480px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
   .w-footer-col { display: flex; flex-direction: column; gap: 10px; }
@@ -260,8 +249,8 @@
   .w-footer-col a:hover { color: #fff; }
   .w-footer-trust { border-top: 1px solid rgba(245,201,168,0.18); padding: 20px 16px; text-align: center; font-size: 13px; font-weight: 700; color: rgba(245,201,168,0.92); }
   .w-footer-socials { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; padding: 0 16px 22px; }
-  .w-footer-socials a { display: inline-flex; align-items: baseline; gap: 6px; font-size: 13px; font-weight: 700; color: #F5C9A8; text-decoration: none; border: 1.5px solid rgba(245,201,168,0.28); padding: 8px 16px; border-radius: 999px; transition: background 0.2s, color 0.2s, border-color 0.2s; }
-  .w-footer-socials a:hover { background: #F5C9A8; color: #5C2A14; border-color: #F5C9A8; }
+  .w-footer-socials a { display: inline-flex; align-items: baseline; gap: 6px; font-size: 13px; font-weight: 700; color: #ffe5d9; text-decoration: none; border: 1.5px solid rgba(245,201,168,0.28); padding: 8px 16px; border-radius: 999px; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+  .w-footer-socials a:hover { background: #ffe5d9; color: #3f2b21; border-color: #ffe5d9; }
   .w-footer-socials a span { font-size: 12px; font-weight: 500; opacity: 0.72; }
   .w-footer-socials a:hover span { opacity: 1; }
   .w-footer-legal { border-top: 1px solid rgba(245,201,168,0.18); padding: 18px 16px 26px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; font-size: 11.5px; color: rgba(245,201,168,0.66); }
@@ -278,10 +267,9 @@
   @media (max-width: 420px) {
     .w-nav-brand { font-size: 17px; letter-spacing: 0.14em; gap: 8px; }
     .w-nav-logo { height: 28px; }
-    .w-nav-cta { padding: 9px 13px; font-size: 11px; }
+    .w-nav-cta { padding: 0 14px; font-size: 11px; }
     .w-nav-inner { gap: 7px; padding: 11px 12px; }
-    .w-nav .w-lang { padding: 2px; }
-    .w-nav .w-lang button { padding: 7px 10px; font-size: 11px; }
+    .w-nav .w-lang-btn { padding: 7px 10px; min-height: 38px; }
   }
   /* footer: stack columns */
   @media (max-width: 720px) {
@@ -297,7 +285,7 @@
     .w-hero-brand { font-size: 17px; letter-spacing: 0.20em; margin-bottom: 6px; }
     .w-hero-cities { font-size: 9.5px; letter-spacing: 0.18em; margin-bottom: 14px; }
     .w-hero h1 { font-size: 25px; line-height: 1.14; margin-bottom: 14px; } .w-hero p { font-size: 13.5px; line-height: 1.55; margin-bottom: 20px; }
-    .w-hero-trust { font-size: 10.5px; gap: 6px 10px; margin-top: 16px; }
+    .w-hero-trust { font-size: 11.5px; gap: 6px 10px; margin-top: 16px; }
     .w-hero-trust .w-trust-hide-m { display: none; }  /* mobile fits 3 trust items: gemeente partnership + both star ratings */
     .w-section { padding: 40px 0; } .w-pad { padding-left: 16px; padding-right: 16px; }
     .w-head { margin-bottom: 20px; }
@@ -311,27 +299,90 @@
     .w-citycard-price { font-size: 17px; padding-top: 9px; }
     .w-citycard-btn { font-size: 11px; padding: 13px 8px; letter-spacing: 0.02em; }
     .w-arrow { display: none; }
-    .w-gift-text { flex: 1 1 100%; }
-    .w-gift-btn { width: 100%; max-width: 320px; }
-    .w-review { flex: 0 0 82%; max-width: 300px; }
-    .w-review-solo { flex: 1 1 auto; max-width: 560px; }   /* the solo spotlight review keeps full width */
-    .w-gift-wrap { text-align: center; justify-content: center; } .w-gift p { margin: 0 auto; }
-    .w-group-text { flex: 1 1 100%; }
-    .w-group-btn { width: 100%; max-width: 320px; }
-    .w-group-wrap { text-align: center; justify-content: center; } .w-group p { margin: 0 auto; }
-    .w-faq summary { padding: 14px 0; font-size: 14.5px; }
     .w-citycard-actions { flex-direction: column; gap: 8px; }
     .w-citycard-btn-primary { width: 100%; min-height: 50px; padding: 15px 10px; font-size: 13px; }
-    .w-citycard-btn-secondary { width: 100%; background: transparent; border: 1.5px solid #5C2A14; color: #5C2A14; text-decoration: none; min-height: 46px; padding: 12px 10px; font-size: 12.5px; }
-    /* comfortable thumb tap targets */
-    .w-faq summary { min-height: 52px; }
+    .w-citycard-btn-secondary { width: 100%; background: transparent; border: 1.5px solid #3f2b21; color: #3f2b21; text-decoration: none; min-height: 46px; padding: 12px 10px; font-size: 12.5px; }
+  }
+
+  /* ============================================================
+     WOGO V3 VISUAL PASS — hero enrichment + motion layer.
+     All transform/opacity only, JS-gated, reduced-motion safe.
+     Sits OUTSIDE the shared nav/footer fences (page-scoped).
+     ============================================================ */
+
+  /* Hero subline — the dash-free punch under the SEO h1 (§1a) */
+  .w-hero-sub { font-size: clamp(15px,1.6vw,20px); font-weight: 800; letter-spacing: -0.005em; line-height: 1.25; margin: -4px 0 14px; color: #ffaa81; text-shadow: 0 2px 14px rgba(0,0,0,0.5); max-width: 22ch; }
+  @media (max-width:720px){ .w-hero-sub{ font-size:14.5px; margin:-2px 0 12px; } }
+
+  /* Slow Ken-Burns drift on the hero photo — GPU transform only, never reveals an edge */
+  .w-hero-video { animation: wgHeroPan 22s ease-in-out infinite alternate; will-change: transform; }
+  @keyframes wgHeroPan { from { transform: scale(1.06) translate3d(0,0,0); } to { transform: scale(1.12) translate3d(-1.5%, -1.2%, 0); } }
+
+  /* Richer directional espresso overlay — anchors text bottom-left, deepens legibility */
+  .w-hero-overlay {
+    background:
+      linear-gradient(180deg, rgba(26,20,16,0.30) 0%, rgba(26,20,16,0.20) 40%, rgba(26,20,16,0.78) 100%),
+      radial-gradient(120% 80% at 15% 90%, rgba(92,42,20,0.55) 0%, rgba(92,42,20,0) 60%);
+  }
+
+  /* Scroll-reveal: single element / section */
+  html.wg-js .wg-reveal { opacity: 0; transform: translateY(16px); transition: opacity .55s ease, transform .55s cubic-bezier(.22,.61,.36,1); will-change: opacity, transform; }
+  html.wg-js .wg-reveal.wg-in { opacity: 1; transform: none; }
+
+  /* Scroll-reveal: staggered children */
+  html.wg-js .wg-stagger > * { opacity: 0; transform: translateY(14px); transition: opacity .5s ease, transform .5s cubic-bezier(.22,.61,.36,1); will-change: opacity, transform; }
+  html.wg-js .wg-stagger.wg-in > * { opacity: 1; transform: none; }
+  html.wg-js .wg-stagger > *:nth-child(1) { transition-delay: 0ms; }
+  html.wg-js .wg-stagger > *:nth-child(2) { transition-delay: 70ms; }
+  html.wg-js .wg-stagger > *:nth-child(3) { transition-delay: 140ms; }
+  html.wg-js .wg-stagger > *:nth-child(4) { transition-delay: 210ms; }
+  html.wg-js .wg-stagger > *:nth-child(5) { transition-delay: 280ms; }
+  html.wg-js .wg-stagger > *:nth-child(6) { transition-delay: 350ms; }
+  html.wg-js .wg-stagger > *:nth-child(7) { transition-delay: 420ms; }
+  html.wg-js .wg-stagger > *:nth-child(n+8) { transition-delay: 490ms; }
+
+  /* Hero entrance — TRANSFORM ONLY (no opacity) so the LCP headline paints
+     immediately and is never delayed; it just drifts up into place.
+     (wg-hero-go is set on <html> by the motion JS.) */
+  html.wg-js .wg-hero-anim > * { transform: translateY(14px); transition: transform .6s cubic-bezier(.22,.61,.36,1); }
+  html.wg-js .wg-hero-anim > *:nth-child(2) { transition-delay: 60ms; }
+  html.wg-js .wg-hero-anim > *:nth-child(3) { transition-delay: 120ms; }
+  html.wg-js .wg-hero-anim > *:nth-child(4) { transition-delay: 180ms; }
+  html.wg-js .wg-hero-anim > *:nth-child(5) { transition-delay: 240ms; }
+  html.wg-js .wg-hero-anim > *:nth-child(n+6) { transition-delay: 300ms; }
+  html.wg-js.wg-hero-go .wg-hero-anim > * { transform: none; }
+
+  /* Premium micro-interactions — unified tap-press + CTA sheen (transform-only) */
+  .w-citycard { transition: transform .3s cubic-bezier(.22,.61,.36,1), box-shadow .3s ease, background .2s; }
+  .w-citycard:active { transform: scale(.99); }
+  .w-hero-cta { position: relative; overflow: hidden; }
+  .w-hero-cta::after { content:""; position:absolute; top:0; left:-120%; width:60%; height:100%;
+    background: linear-gradient(115deg, transparent, rgba(255,255,255,0.35), transparent); transform: skewX(-18deg); transition: left .6s ease; }
+  .w-hero-cta:hover::after { left: 140%; }
+  @media (hover: none){ .w-hero-cta::after { display:none; } }
+
+  /* ── Reduced-motion safety net: never leave a gated element hidden ── */
+  @media (prefers-reduced-motion: reduce) {
+    .w-hero-video { animation: none; transform: none; }
+    html.wg-js .wg-reveal,
+    html.wg-js .wg-stagger > *,
+    html.wg-js .wg-hero-anim > * { opacity: 1 !important; transform: none !important; }
+    .w-hero-cta::after { display: none; }
   }
 </style>
 </head>
 <body>
+<a class="w-skip" href="#wMain">Skip to content</a>
 
-<!-- ===== WOGO SHARED NAV (keep IDENTICAL across pages — only relative link
-     prefixes change: this page is one folder deep, so logo src/home links get ../ ) ===== -->
+<!-- Motion gate: hidden reveal states apply ONLY when this class is present, so
+     with JS off everything stays visible. Set before first paint. -->
+<script>document.documentElement.classList.add('wg-js');</script>
+
+<!-- ===== WOGO SHARED NAV v4 (copied verbatim onto every page — keep IDENTICAL.
+     Internal links are BASE-relative: static hrefs carry this page's relative
+     prefix, the data-driven Routes menus are BASE-prefixed in JS (see the foot
+     script's var BASE), and only the funnel-aware CTA / on-page anchors differ
+     by page type) ===== -->
 <nav class="w-nav" id="wNav" aria-label="Primary">
   <div class="w-nav-inner">
     <!-- Logo → home page (on the homepage itself this scrolls to top instead). -->
@@ -344,21 +395,23 @@
       <li class="w-nav-drop">
         <a href="#routes" class="w-scroll" data-i18n="nav_routes" aria-haspopup="true">Routes</a>
         <span class="w-nav-caret" aria-hidden="true">▾</span>
-        <!-- Routes popover — populated from the WOGO_ROUTES data structure in JS so
-             new countries/cities are a one-line data edit. TODO: point to internal
-             /<city>/ hubs once all four are built (Utrecht + Rotterdam first). -->
+        <!-- Routes popover — populated from the WOGO_ROUTES data in JS (the four
+             internal city hubs, BASE-prefixed), so new countries/cities are a
+             one-line data edit. -->
         <ul class="w-nav-menu" id="wNavMenu"></ul>
       </li>
-      <li><a href="#how" class="w-scroll" data-i18n="nav_how">How it works</a></li>
-      <li><a href="https://www.wogococktailwalk.com/groupbookings" target="_top" class="w-navlink" data-i18n="nav_groups">Groups</a></li>
-      <li><a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-navlink" data-i18n="nav_gift">Gift cards</a></li>
+      <li><a href="../how-it-works/" class="w-navlink" data-i18n="nav_how">How it works</a></li>
+      <li><a href="../groups/" class="w-navlink" data-i18n="nav_groups">Groups</a></li>
+      <li><a href="../gift-cards/" class="w-navlink" data-i18n="nav_gift">Gift cards</a></li>
     </ul>
 
     <!-- Right cluster: EN/NL toggle + primary CTA + mobile burger.
-         CTA honesty: this button only scrolls to the route cards, so it says
-         "View dates", not "Book now" (SITE-PLAN nav fix #1). -->
+         The nav CTA is funnel-aware in target AND label: where it only reaches a
+         route grid it says "View dates" / "Bekijk data" (homepage/hubs scroll to
+         the route list, content pages link {BASE}#cities); route pages scroll to
+         the real #book section and keep "Book now" / "Boek nu". -->
     <div class="w-nav-right">
-      <div class="w-lang" role="group" aria-label="Language"><button data-lang="en" class="active" aria-pressed="true">EN</button><button data-lang="nl" aria-pressed="false">NL</button></div>
+      <div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"></ul></div>
       <a href="#routes" class="w-nav-cta w-scroll" data-i18n="nav_cta">View dates</a>
       <button class="w-nav-burger" id="wNavBurger" aria-label="Open menu" aria-controls="wNavOverlay" aria-expanded="false"><span></span><span></span><span></span></button>
     </div>
@@ -370,47 +423,35 @@
       <li><a href="#routes" class="w-scroll w-nav-ov-link" data-i18n="nav_routes">Routes</a></li>
       <!-- City chips populated from WOGO_ROUTES (see JS) -->
       <li class="w-nav-ov-cities" id="wNavOvCities"></li>
-      <li><a href="#how" class="w-scroll w-nav-ov-link" data-i18n="nav_how">How it works</a></li>
-      <li><a href="https://www.wogococktailwalk.com/groupbookings" target="_top" class="w-navlink w-nav-ov-link" data-i18n="nav_groups">Groups</a></li>
-      <li><a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-navlink w-nav-ov-link" data-i18n="nav_gift">Gift cards</a></li>
+      <li><a href="../how-it-works/" class="w-navlink w-nav-ov-link" data-i18n="nav_how">How it works</a></li>
+      <li><a href="../groups/" class="w-navlink w-nav-ov-link" data-i18n="nav_groups">Groups</a></li>
+      <li><a href="../gift-cards/" class="w-navlink w-nav-ov-link" data-i18n="nav_gift">Gift cards</a></li>
+      <li><a href="../about/" class="w-navlink w-nav-ov-link" data-i18n="nav_about">About</a></li>
+      <li><a href="../faq/" class="w-navlink w-nav-ov-link" data-i18n="foot_faq">FAQ</a></li>
+      <li><a href="../blog/" class="w-navlink w-nav-ov-link" data-i18n="foot_blog">Blog</a></li>
+      <li><a href="../contact/" class="w-navlink w-nav-ov-link" data-i18n="foot_contact">Contact</a></li>
+      <li class="w-nav-ov-lang"><div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"></ul></div></li>
     </ul>
     <a href="#routes" class="w-nav-cta w-scroll" data-i18n="nav_cta">View dates</a>
   </div>
 </nav>
-<!-- ===== /WOGO SHARED NAV ===== -->
+<!-- ===== /WOGO SHARED NAV v4 ===== -->
+<main id="wMain" tabindex="-1">
 
 <!-- ============================================================
      SECTION: HERO — CITY-EDIT
      Static self-hosted photo (no autoplay video on city hubs).
      H1 matches the running Meta-ad message for this city.
-     ⚠️ "Partner of Gemeente Rotterdam" (t_partner) is ROTTERDAM-ONLY —
-        delete that trust item when copying this template to another city.
+     Lean per V5/V7: eyebrow + H1 + one subline + one CTA, nothing else.
      ============================================================ -->
 <section class="w-hero">
   <img class="w-hero-video" src="rotterdam-hero.jpg" alt="Cocktails at a Rotterdam bar on the WOGO cocktail walk" fetchpriority="high" decoding="async" width="1600" height="900">
   <div class="w-hero-overlay"></div>
-  <div class="w-hero-content">
-    <div class="w-hero-brand" data-i18n="hero_brand">The Cocktail Walk</div>
-    <div class="w-hero-cities">Rotterdam · Witte de With → Erasmus Bridge</div>
-    <h1 data-i18n="hero_h1">Rotterdam Cocktail Walk — 3 Bars, 3 Cocktails, 1 Night</h1>
-    <p data-i18n="hero_p">Three hand-picked Rotterdam bars, three signature cocktails, tables reserved — just show up. <strong>3 routes from €29,95 per person.</strong></p>
-    <div class="w-hero-trust" style="margin-top:0;margin-bottom:18px;"><span data-i18n="t_partner">Partner of Gemeente Rotterdam</span><span>·</span><span data-i18n="t_google"><span class="w-star">★</span> 4.4 on Google</span><span>·</span><span data-i18n="t_trustpilot"><span class="w-star">★</span> 4.5 Trustpilot</span><span class="w-trust-hide-m">·</span><span class="w-trust-hide-m" data-i18n="t_guests">80,000+ walks booked</span></div>
+  <div class="w-hero-content wg-hero-anim">
+    <div class="w-hero-cities">Rotterdam · City Centre</div>
+    <h1 data-i18n="hero_h1">Rotterdam Cocktail Walk</h1>
+    <p class="w-hero-sub" data-i18n="hero_sub">Three bars. Three cocktails. One unforgettable night.</p>
     <a href="#routes" class="w-hero-cta w-scroll" data-i18n="hero_cta">View dates →</a>
-  </div>
-</section>
-
-<!-- ============================================================
-     SECTION: HOW IT WORKS — mini 3-step strip.
-     Shared across city hubs: hs_1 / hs_2 / hs_3 reuse the homepage
-     keys VERBATIM (EN and NL) — do not reword per city.
-     ============================================================ -->
-<section class="w-section brown w-pad w-how" id="how" style="padding:38px 0;">
-  <div class="w-eyebrow" data-i18n="how_eyebrow" style="text-align:center;">How it works</div>
-  <h2 class="w-sr-only" data-i18n="how_h2">In three steps to an unforgettable night out</h2>
-  <div class="w-howstrip" style="margin-top:18px;">
-    <div class="w-hs-item"><div class="w-hs-ico">🗺️</div><div class="w-hs-tx" data-i18n="hs_1">Pick your route &amp; date</div></div>
-    <div class="w-hs-item"><div class="w-hs-ico">🍸</div><div class="w-hs-tx" data-i18n="hs_2">We pick your three bars</div></div>
-    <div class="w-hs-item"><div class="w-hs-ico">🚶</div><div class="w-hs-tx" data-i18n="hs_3">Walk the city, your pace</div></div>
   </div>
 </section>
 
@@ -424,122 +465,37 @@
      confirms real neighbourhood names before cutover (Decision #2).
      ============================================================ -->
 <section class="w-section" id="routes">
-  <div class="w-head w-pad"><h2 data-i18n="routes_h2">Choose your Rotterdam route</h2><p data-i18n="routes_p">3 routes · from €29,95 per person</p></div>
-  <!-- Trust reminder at the moment of decision — reuses the hero trust keys, so keep the
-       innerHTML of each span IDENTICAL to its hero twin (the EN dictionary is harvested
-       from the DOM and shared keys must match). -->
-  <p class="w-pad" style="text-align:center;font-size:12.5px;font-weight:700;color:#5C2A14;margin:-12px 0 16px;"><span data-i18n="t_google"><span class="w-star">★</span> 4.4 on Google</span> · <span data-i18n="t_trustpilot"><span class="w-star">★</span> 4.5 Trustpilot</span> · <span data-i18n="t_guests">80,000+ walks booked</span></p>
+  <div class="w-head w-pad wg-reveal"><h2 data-i18n="routes_h2">Choose your Rotterdam route</h2><p data-i18n="routes_p">3 routes · from €29,95 per person</p></div>
   <div class="w-scroller-wrap">
     <button class="w-arrow w-arrow-left" data-target="routesScroller" aria-label="Scroll left">&#8249;</button>
     <button class="w-arrow w-arrow-right" data-target="routesScroller" aria-label="Scroll right">&#8250;</button>
-    <div class="w-scroller" id="routesScroller">
-      <!-- Route 1 — City Centre (Witte de With). TODO verify operating days in Wix
-           Bookings before cutover: rebuild homepage says Fri–Sat, live Wix page said Thu–Sat. -->
-      <div class="w-citycard"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="https://static.wixstatic.com/media/2a3b9e_5ca0ba8576bc419e86fa570f7579b353~mv2.jpg/v1/fill/w_640,h_400,al_c,q_80,enc_auto/2a3b9e_5ca0ba8576bc419e86fa570f7579b353~mv2.jpg" alt="Rotterdam Route 1 — Witte de With and city centre"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">Route 1</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="rc1_route">Witte de With → City Centre</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="rc1_theme">★ Theme: Local favourites</div><div class="w-citycard-row" data-i18n="rc1_loc">📍 Starts in the Witte de Withstraat</div><div class="w-citycard-row" data-i18n="rc1_day">📅 Fri–Sat · start 5pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-price">€29,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="https://www.wogococktailwalk.com/booking-calendar/wogo-rotterdam-cocktail-walk" target="_top" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book Now</a><a href="witte-de-with/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
-      <!-- Route 2 — Hidden Gems (best seller) -->
-      <div class="w-citycard"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="https://static.wixstatic.com/media/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg/v1/fill/w_640,h_400,al_c,q_80,enc_auto/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg" alt="Rotterdam Route 2 — hidden gem cocktail bars"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">Route 2</div><div class="w-citycard-flag" data-i18n="flag_best">Best seller</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="rc2_route">Hidden Gems — City Centre</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="rc2_theme">★ Theme: Hidden gems</div><div class="w-citycard-row" data-i18n="rc2_loc">📍 Three brand-new city-centre bars</div><div class="w-citycard-row" data-i18n="rc2_day">📅 Thu–Sat · start 6–8.30pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-price">€29,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-urgency" data-i18n="rc2_urgency">🔥 Our most-booked route</div><div class="w-citycard-actions"><a href="https://www.wogococktailwalk.com/booking-calendar/rotterdam-cocktail-walk-route-2" target="_top" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book Now</a><a href="hidden-gems/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
-      <!-- Route 3 — Premium Bobby's Gin Walk (€34,95) -->
-      <div class="w-citycard"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="https://static.wixstatic.com/media/2a3b9e_629b4c93af4b42f6871a91550c515888~mv2.jpg/v1/fill/w_640,h_400,al_c,q_80,enc_auto/2a3b9e_629b4c93af4b42f6871a91550c515888~mv2.jpg" alt="Rotterdam Premium Gin Walk — skybar view of the Erasmus Bridge"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">Premium</div><div class="w-citycard-flag" data-i18n="flag_new">New</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="rc3_route">Premium — Bobby's Gin Walk</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="rc3_theme">★ Theme: High-end bars</div><div class="w-citycard-row" data-i18n="rc3_loc">📍 Skybar views of the Erasmus Bridge</div><div class="w-citycard-row" data-i18n="rc3_day">📅 Tue–Sat · start 5–8.30pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-price">€34,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="https://www.wogococktailwalk.com/booking-calendar/rotterdam-premium-cocktail-walk" target="_top" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book Now</a><a href="premium-gin-walk/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
+    <div class="w-scroller wg-stagger" id="routesScroller">
+      <!-- Rotterdam Route 1 — City Centre (Witte de With) — Thu–Sat, owner-confirmed 2026-07-06 -->
+      <div class="w-citycard"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="../rotterdam/witte-de-with/witte-de-with-hero.jpg" alt="Rotterdam Route 1 — Witte de With and city centre"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">Route 1</div><div class="w-citycard-flag" data-i18n="flag_localfav">Local favourite</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="rc1_route">Rotterdam Route 1 · City Centre</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="rc1_theme">★ Theme: Local favourites</div><div class="w-citycard-row" data-i18n="rc1_loc">📍 Starts in the Witte de Withstraat</div><div class="w-citycard-row" data-i18n="rc1_day">📅 Thu–Sat · start 5pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-price">€29,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="witte-de-with/book/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book Now</a><a href="witte-de-with/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
+      <!-- Rotterdam Route 2 — Hidden Gems (best seller) -->
+      <div class="w-citycard"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="../rotterdam/hidden-gems/hidden-gems-hero.jpg" alt="Rotterdam Route 2 — hidden gem cocktail bars"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">Route 2</div><div class="w-citycard-flag" data-i18n="flag_best">Best seller</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="rc2_route">Rotterdam Route 2 · City Centre</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="rc2_theme">★ Theme: Hidden gems</div><div class="w-citycard-row" data-i18n="rc2_loc">📍 Three brand-new city-centre bars</div><div class="w-citycard-row" data-i18n="rc2_day">📅 Thu–Sat · start 6–8.30pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-price">€29,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-urgency" data-i18n="rc2_urgency">🔥 Our most-booked route</div><div class="w-citycard-actions"><a href="hidden-gems/book/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book Now</a><a href="hidden-gems/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
+      <!-- Rotterdam Premium — Bobby's Gin Walk (€34,95) -->
+      <div class="w-citycard"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="../rotterdam/premium-gin-walk/premium-gin-walk-hero.jpg" alt="Rotterdam Premium — skybar view of the Erasmus Bridge"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">Premium</div><div class="w-citycard-flag" data-i18n="flag_premium">Premium</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="rc3_route">Rotterdam Premium · Bobby's Gin Walk</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="rc3_theme">★ Theme: High-end bars</div><div class="w-citycard-row" data-i18n="rc3_loc">📍 Skybar views of the Erasmus Bridge</div><div class="w-citycard-row" data-i18n="rc3_day">📅 Tue–Sat · start 5–8.30pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-price">€34,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="premium-gin-walk/book/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book Now</a><a href="premium-gin-walk/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
     </div>
   </div>
-  <div class="w-pad" style="text-align:center;margin-top:18px;"><span data-i18n="route_reassure" style="display:inline-block;font-size:12.5px;font-weight:700;color:#5C2A14;letter-spacing:0.01em;">✓ Reservations &amp; route map included &nbsp;·&nbsp; ✓ Mocktail option on every route &nbsp;·&nbsp; ✓ Questions? <a class="w-mail" href="mailto:info@wogoamsterdam.com">Write us</a></span></div>
+  <div class="w-pad" style="text-align:center;margin-top:18px;"><span data-i18n="route_reassure" style="display:inline-block;font-size:12.5px;font-weight:700;color:#3f2b21;letter-spacing:0.01em;">✓ Reservations &amp; route map included &nbsp;·&nbsp; ✓ Mocktail option on every route &nbsp;·&nbsp; ✓ Questions? <a class="w-mail" href="mailto:info@wogoamsterdam.com">Write us</a></span></div>
 </section>
 
 <!-- ============================================================
-     SECTION: CITY INTRO — CITY-EDIT — short SEO copy block.
-     Works the organic keywords in naturally (EN: cocktail walk
-     rotterdam / bar crawl rotterdam / best cocktail bars rotterdam;
-     NL: cocktailwandeling / kroegentocht / leuke bars rotterdam).
+     SECTION: FAQ LINK — V7 CLEAN: one line only, no accordion here;
+     all Q&A lives at /faq/. Dark band keeps the light→dark rhythm
+     between the light route cards and the espresso footer.
+     Cream link on #201611 — WCAG AAA contrast.
      ============================================================ -->
-<section class="w-section alt w-pad">
-  <div class="w-intro-wrap">
-    <div class="w-eyebrow" data-i18n="intro_eyebrow">Cocktail walk Rotterdam</div>
-    <h2 data-i18n="intro_h2">A bar crawl, upgraded</h2>
-    <p data-i18n="intro_p1">WOGO's cocktail walk through Rotterdam is a bar crawl, upgraded: three of the best cocktail bars in Rotterdam, hand-picked by us, with a table reserved and a signature cocktail waiting at each one. No guide, no group of strangers — you get a digital route map and walk the city at your own pace.</p>
-    <p data-i18n="intro_p2">Routes start in the Witte de Withstraat — the heart of Rotterdam's bar scene — or near the Erasmus Bridge for the premium gin walk. The bars are 5–15 minutes apart on foot, every route has a mocktail option, and the exact bar line-up stays a surprise until you've booked.</p>
-  </div>
+<section class="w-section dark w-pad wg-reveal" style="padding:28px 0;text-align:center;">
+  <a href="../faq/" data-i18n="faq_more" style="display:inline-block;font-size:13.5px;font-weight:800;color:#ffe5d9;text-decoration:underline;text-underline-offset:3px;">Questions? See the full FAQ →</a>
 </section>
 
-<!-- ============================================================
-     SECTION: SPOTLIGHT REVIEW — CITY-EDIT — one review FROM THIS CITY.
-     Rotterdam: the Klup Google review ("WOGO and GO!", 7 stars).
-     ============================================================ -->
-<section class="w-section peach w-reviews">
-  <div class="w-head w-pad w-reviews-head"><h2 data-i18n="rev_h2">What guests say about Rotterdam</h2></div>
-  <div class="w-pad" style="display:flex;justify-content:center;">
-    <div class="w-review w-review-solo"><div class="w-review-stars" role="img" aria-label="Rated 5 out of 5">★ ★ ★ ★ ★</div><div class="w-review-quote" data-i18n="r1q">"Super easy — walked in, the reservation was 'WOGO and GO!' The middle bar was great with delicious affordable Thai dishes. Booking Route 2 right away. TOP. 7 stars."</div><div class="w-review-foot"><div class="w-review-name" data-i18n="r1n">Klup outing — group of 6</div><div class="w-review-meta" data-i18n="r1m">Rotterdam · Google review</div></div></div>
-  </div>
-  <div class="w-pad" style="text-align:center;margin-top:18px;"><a href="https://www.google.com/maps/search/WOGO+Cocktail+Walk" target="_blank" rel="noopener" data-i18n="rev_tp" style="display:inline-block;font-size:12.5px;font-weight:800;color:#5C2A14;text-decoration:underline;text-underline-offset:3px;">Read all our reviews on Google →</a></div>
-</section>
-
-<!-- ============================================================
-     SECTION: CROSS-CITY LINK — CITY-EDIT.
-     Rotterdam ↔ Utrecht cross-link concentrates authority between
-     the two ad cities (SITE-PLAN). On the Utrecht copy, flip this
-     to point back here (../rotterdam/).
-     ============================================================ -->
-<section class="w-section brown w-pad w-xcity">
-  <h2 data-i18n="xcity_h2">Also walking in Utrecht?</h2>
-  <p data-i18n="xcity_p">Our Utrecht route runs daily through the city centre — same formula, different hidden gems.</p>
-  <a href="../utrecht/" class="w-xcity-btn" data-i18n="xcity_btn">Explore Utrecht →</a>
-</section>
-
-<!-- ============================================================
-     SECTION: GROUPS STRIP — shared copy; CTA → internal /groups/ page.
-     ============================================================ -->
-<section class="w-section w-pad w-group">
-  <div class="w-group-wrap">
-    <div class="w-group-text">
-      <div class="w-eyebrow" data-i18n="group_eyebrow" style="text-align:left;margin-bottom:6px;">For groups</div>
-      <h2 data-i18n="group_h2">Bachelorettes, birthdays &amp; team outings</h2>
-      <p data-i18n="group_p">We coordinate the bars, the timing and the tables in Rotterdam — you bring the crew. Groups of 7 to 30.</p>
-    </div>
-    <a href="../groups/" class="w-group-btn" data-i18n="group_btn">Plan your group walk →</a>
-  </div>
-  <div style="text-align:center;margin-top:18px;"><a href="#routes" class="w-scroll" data-i18n="group_solo" style="color:#5C2A14;font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px;">→ Up to 6 people? Book from €29,95 per person</a></div>
-</section>
-
-<!-- ============================================================
-     SECTION: GIFT-CARD STRIP — shared copy; CTA → internal /gift-cards/ page.
-     ============================================================ -->
-<section class="w-section peach w-pad">
-  <div class="w-gift-wrap">
-    <div class="w-gift-text">
-      <div class="w-gift-eyebrow" data-i18n="gift_eyebrow">The perfect gift</div>
-      <h2 data-i18n="gift_h2">WOGO Gift Cards</h2>
-      <p data-i18n="gift_p">Give a night they'll talk about. Any route, any city — delivered instantly by email.</p>
-    </div>
-    <a href="../gift-cards/" class="w-gift-btn" data-i18n="gift_btn">Buy a gift card →</a>
-  </div>
-</section>
-
-<!-- ============================================================
-     SECTION: SHORT FAQ (#faq) — 3 items only; the full FAQ lives at /faq/.
-     Q&A copy reuses the homepage q2/a2, q6/a6, q7/a7 keys VERBATIM.
-     ⚠️ Never promise free cancellation or free rescheduling —
-        ceiling wording: "get in touch and we'll see what's possible".
-     ============================================================ -->
-<section class="w-section alt w-pad w-faq" id="faq">
-  <div class="w-head"><h2 data-i18n="faq_h2">Good to know</h2></div>
-  <div class="w-faq-wrap">
-    <details><summary data-i18n="q2">Is there a guide or is it really self-guided?</summary><div class="w-faq-body" data-i18n="a2">Truly self-guided. There's no guide and no group. You receive your route in your inbox right after booking, then walk it at your own pace. Most guests finish in 3–4 hours.</div></details>
-    <details><summary data-i18n="q6">Can I reschedule if my plans change?</summary><div class="w-faq-body" data-i18n="a6">Get in touch at info@wogoamsterdam.com — we'll see what's possible.</div></details>
-    <details><summary data-i18n="q7">Do I need to be 18?</summary><div class="w-faq-body" data-i18n="a7">Yes — Dutch law requires all guests to be 18+ to drink alcohol. Bring ID, just in case. Under-18s are welcome on the mocktail version when accompanied by an adult — contact us to arrange.</div></details>
-  </div>
-  <div style="text-align:center;margin-top:22px;"><a href="../faq/" data-i18n="faq_more" style="display:inline-block;font-size:13px;font-weight:800;color:#5C2A14;text-decoration:underline;text-underline-offset:3px;">See the full FAQ →</a></div>
-</section>
-
-<!-- ============================================================
-     SECTION: FINAL CTA — CITY-EDIT (city name in the headline).
-     ============================================================ -->
-<section class="w-section dark w-pad w-final">
-  <h2 data-i18n="final_h2">Ready to walk Rotterdam?</h2>
-  <p data-i18n="final_p">The city's waiting.</p>
-  <a href="#routes" class="w-final-btn w-scroll" data-i18n="final_btn">Pick your route →</a>
-</section>
-
-<!-- ===== WOGO SHARED FOOTER (keep IDENTICAL across pages — only relative link
-     prefixes change; anchor links point at this page's own #how/#faq sections) ===== -->
+</main>
+<!-- ===== WOGO SHARED FOOTER v4 (copied verbatim onto every page — keep IDENTICAL.
+     Discover links point at the internal pages on every page (incl. the homepage);
+     the Routes column renders all six route pages from WOGO_ROUTES, BASE-prefixed;
+     legal links stay commented out until the privacy/cookie/terms pages ship) ===== -->
 <footer class="w-footer">
   <div class="w-footer-inner w-pad">
     <div class="w-footer-top">
@@ -551,22 +507,23 @@
         <!-- Column 1: Routes -->
         <nav class="w-footer-col" aria-label="Routes">
           <h3 data-i18n="foot_c1_h">Routes</h3>
-          <!-- Links populated from WOGO_ROUTES (see JS) -->
+          <!-- Populated from WOGO_ROUTES (see JS): city sub-headings + every route page -->
           <div class="w-footer-routes" id="wFooterRoutes"></div>
         </nav>
         <!-- Column 2: Discover -->
         <nav class="w-footer-col" aria-label="Discover">
           <h3 data-i18n="foot_c2_h">Discover</h3>
-          <a href="#how" class="w-scroll" data-i18n="foot_how">How it works</a>
-          <a href="https://www.wogococktailwalk.com/groupbookings" target="_top" class="w-navlink" data-i18n="foot_groups">Group bookings</a>
-          <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-navlink" data-i18n="foot_gift">Gift cards</a>
-          <a href="#faq" class="w-scroll" data-i18n="foot_faq">FAQ</a>
+          <a href="../how-it-works/" class="w-navlink" data-i18n="foot_how">How it works</a>
+          <a href="../groups/" class="w-navlink" data-i18n="foot_groups">Group bookings</a>
+          <a href="../gift-cards/" class="w-navlink" data-i18n="foot_gift">Gift cards</a>
+          <a href="../faq/" class="w-navlink" data-i18n="foot_faq">FAQ</a>
+          <a href="../blog/" class="w-navlink" data-i18n="foot_blog">Blog</a>
+          <a href="../contact/" class="w-navlink" data-i18n="foot_contact">Contact</a>
         </nav>
         <!-- Column 3: WOGO -->
         <nav class="w-footer-col" aria-label="WOGO">
           <h3>WOGO</h3>
-          <!-- About / Work-with-us removed until real pages exist (dead # links cost trust).
-               Re-add with foot_about / foot_work NL keys when the pages are live. -->
+          <a href="../about/" class="w-navlink" data-i18n="foot_about">About WOGO</a>
           <a href="mailto:info@wogoamsterdam.com" data-i18n="foot_contact_link">Contact</a>
         </nav>
         <!-- Contact block -->
@@ -583,7 +540,7 @@
     <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.5 / 5 · 80,000+ walks booked · Partner of Gemeente Rotterdam · 18+</div>
 
     <!-- Socials -->
-    <div class="w-footer-socials" aria-label="WOGO on social media">
+    <div class="w-footer-socials" role="group" aria-label="WOGO on social media">
       <a href="https://www.instagram.com/wogococktailwalk/" target="_blank" rel="noopener">Instagram <span>@wogococktailwalk</span></a>
       <a href="https://www.tiktok.com/@wogococktailwalk" target="_blank" rel="noopener">TikTok <span>@wogococktailwalk</span></a>
       <a href="https://www.facebook.com/wogoamsterdam" target="_blank" rel="noopener">Facebook <span>/wogoamsterdam</span></a>
@@ -591,19 +548,20 @@
 
     <!-- Bottom legal bar -->
     <div class="w-footer-legal">
-      <span data-i18n="foot_copyright">© 2026 WOGO Amsterdam B.V. · KvK 92237347 · VAT NL865949323B01 · Oude-IJsselstraat 32-2, Amsterdam</span>
-      <!-- Legal links hidden until the GDPR-compliant Privacy/Cookie/Terms pages are
-           published — dead # links here are a trust/compliance smell. When live, re-add:
-           <span class="w-footer-legal-links">
-             <a href="..." data-i18n="foot_privacy">Privacy policy</a>
-             <a href="..." data-i18n="foot_cookie">Cookie policy</a>
-             <a href="..." data-i18n="foot_terms">Terms &amp; conditions</a>
-           </span>
-           plus foot_privacy/foot_cookie/foot_terms keys in the NL dictionary. -->
+      <span data-i18n="foot_copyright">© 2026 WOGO Amsterdam B.V. · KvK 92237347 · VAT NL865949323B01 · Amsterdam</span>
+      <span class="w-footer-legal-links">
+        <a href="../privacy/" data-i18n="foot_privacy">Privacy policy</a>
+        <a href="../cookies/" data-i18n="foot_cookie">Cookie policy</a>
+        <a href="../terms/" data-i18n="foot_terms">Terms &amp; conditions</a>
+        <a href="../disclaimer/" data-i18n="foot_disclaimer">Disclaimer</a>
+        <a href="../accessibility/" data-i18n="foot_accessibility">Accessibility</a>
+        <a href="../complaints/" data-i18n="foot_complaints">Complaints</a>
+        <a href="#" onclick="wogoOpenConsent();return false" data-i18n="foot_cookie_settings">Cookie settings</a>
+      </span>
     </div>
   </div>
 </footer>
-<!-- ===== /WOGO SHARED FOOTER ===== -->
+<!-- ===== /WOGO SHARED FOOTER v4 ===== -->
 
 <!-- Sticky mobile bottom CTA — standalone mode only; scrolls to the route cards,
      so per the CTA-honesty rule it says "View dates", not "Book". -->
@@ -626,92 +584,77 @@
   })();
 
   /* ===== COMPLETE NL DICTIONARY — every data-i18n key on this page.
-     CITY-EDIT when copying: retranslate the city-specific entries and
-     ⚠️ delete t_partner (Rotterdam-only). Keys shared with the homepage
-     (hs_*, q/a FAQ items, nav_*, foot_*) keep the homepage's exact NL text. ===== */
+     CITY-EDIT when copying: retranslate the city-specific entries.
+     Keys shared with the homepage (nav_*, foot_*) keep the homepage's
+     exact NL text. ===== */
   var NL = {
-    /* --- hero --- */
-    hero_brand: "De Cocktail Walk",
-    hero_h1: "Rotterdam Cocktail Walk — 3 bars, 3 cocktails, 1 avond",
-    hero_p: "Drie zorgvuldig gekozen Rotterdamse bars, drie signature cocktails, tafels gereserveerd — kom gewoon opdagen. <strong>3 routes vanaf €29,95 per persoon.</strong>",
+    /* --- hero (lean: eyebrow + H1 + subline + one CTA; hero_brand / hero_p /
+       hero trust strip removed in V5) --- */
+    hero_h1: "Rotterdam Cocktail Walk",
+    hero_sub: "Drie bars. Drie cocktails. Eén onvergetelijke avond.",
     hero_cta: "Bekijk data →",
-    t_partner: "Partner van Gemeente Rotterdam",
-    t_google: "<span class=\"w-star\">★</span> 4.4 op Google",
-    t_trustpilot: "<span class=\"w-star\">★</span> 4,5 Trustpilot",
-    t_guests: "80.000+ walks geboekt",
-    /* --- how it works (homepage keys, verbatim) --- */
-    how_eyebrow: "Hoe het werkt", how_h2: "In drie stappen naar een onvergetelijke avond uit",
-    hs_1: "Kies je route &amp; datum", hs_2: "Wij kiezen jouw drie bars", hs_3: "Loop de stad, jouw tempo",
     /* --- routes --- */
     routes_h2: "Kies je Rotterdam-route",
     routes_p: "3 routes · vanaf €29,95 per persoon",
-    route_reassure: "✓ Reserveringen &amp; routekaart inbegrepen &nbsp;·&nbsp; ✓ Mocktail-optie op elke route &nbsp;·&nbsp; ✓ Vragen? <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">Stuur ons een berichtje</a>",
+    route_reassure: "✓ Reserveringen &amp; routekaart inbegrepen &nbsp;·&nbsp; ✓ Mocktail-optie op elke route &nbsp;·&nbsp; ✓ Vragen? <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">Stuur ons een bericht</a>",
     per_person: "per persoon", book: "Boek nu", info: "Bekijk route",
     time34: "🕐 3–4 uur",
-    flag_new: "Nieuw", flag_best: "Bestseller",
-    rc1_route: "Witte de With → Centrum", rc1_theme: "★ Thema: Lokale favorieten", rc1_loc: "📍 Start in de Witte de Withstraat", rc1_day: "📅 vr–za · start 17.00",
-    rc2_route: "Verborgen parels — Centrum", rc2_theme: "★ Thema: Verborgen parels", rc2_loc: "📍 Drie gloednieuwe bars in het centrum", rc2_day: "📅 do–za · start 18.00–20.30", rc2_urgency: "🔥 Onze meest geboekte route",
-    rc3_route: "Premium — Bobby's Gin Walk", rc3_theme: "★ Thema: High-end bars", rc3_loc: "📍 Skybar met uitzicht op de Erasmusbrug", rc3_day: "📅 di–za · start 17.00–20.30",
-    /* --- city intro (SEO copy) --- */
-    intro_eyebrow: "Cocktailwandeling Rotterdam",
-    intro_h2: "Een kroegentocht, maar dan beter",
-    intro_p1: "De WOGO-cocktailwandeling door Rotterdam is een kroegentocht, maar dan beter: drie van de leukste cocktailbars van Rotterdam, door ons uitgekozen, met bij elke bar een gereserveerde tafel en een signature cocktail die voor je klaarstaat. Geen gids, geen groep vreemden — je krijgt een digitale routekaart en loopt de stad in je eigen tempo.",
-    intro_p2: "De routes starten in de Witte de Withstraat — hét barhart van Rotterdam — of bij de Erasmusbrug voor de premium gin walk. De bars liggen 5–15 minuten lopen van elkaar, elke route heeft een mocktail-optie en welke bars het worden blijft een verrassing tot na het boeken.",
-    /* --- spotlight review --- */
-    rev_h2: "Wat gasten zeggen over Rotterdam",
-    r1q: "“Super makkelijk — naar binnen gelopen, de reservering stond op 'WOGO and GO!' De middelste bar was top, met heerlijke betaalbare Thaise gerechten. Ik boek meteen Route 2. TOP. 7 sterren.”",
-    r1n: "Klup-uitje — groep van 6", r1m: "Rotterdam · Google review",
-    rev_tp: "Lees al onze reviews op Google →",
-    /* --- cross-city link --- */
-    xcity_h2: "Ook wandelen in Utrecht?",
-    xcity_p: "Onze Utrecht-route loopt dagelijks door het centrum — dezelfde formule, andere verborgen parels.",
-    xcity_btn: "Ontdek Utrecht →",
-    /* --- groups & gift cards --- */
-    group_eyebrow: "Voor groepen", group_h2: "Vrijgezellenfeesten, verjaardagen &amp; teamuitjes",
-    group_p: "Wij regelen de bars, de tijden en de tafels in Rotterdam — jullie nemen het gezelschap mee. Groepen van 7 tot 30.",
-    group_btn: "Plan jullie groepswandeling →",
-    group_solo: "→ Met max. 6 personen? Boek vanaf €29,95 per persoon",
-    gift_eyebrow: "Het perfecte cadeau", gift_h2: "WOGO Cadeaubonnen",
-    gift_p: "Geef een avond waar ze weken over napraten. Elke route, elke stad — direct per e-mail geleverd.",
-    gift_btn: "Koop een cadeaubon →",
-    /* --- FAQ (homepage keys, verbatim) --- */
-    faq_h2: "Goed om te weten",
-    q2: "Is er een gids of is het echt zelfgeleid?", a2: "Echt zelfgeleid. Geen gids, geen groep. Je ontvangt je route direct na het boeken in je inbox en loopt hem in je eigen tempo. De meeste gasten doen er 3–4 uur over.",
-    q6: "Kan ik verzetten als mijn plannen wijzigen?", a6: "Neem contact op via info@wogoamsterdam.com — dan kijken we wat mogelijk is.",
-    q7: "Moet ik 18 zijn?", a7: "Ja — volgens de Nederlandse wet moeten alle gasten 18+ zijn om alcohol te drinken. Neem voor de zekerheid je ID mee. Onder de 18 ben je welkom op de mocktail-versie onder begeleiding van een volwassene — neem contact op om dit te regelen.",
-    faq_more: "Bekijk de volledige FAQ →",
-    /* --- final CTA --- */
-    final_h2: "Klaar om Rotterdam te ontdekken?", final_p: "De stad wacht.", final_btn: "Kies je route →",
+    flag_new: "Nieuw", flag_premium: "Premium", flag_best: "Bestseller", flag_localfav: "Lokale favoriet",
+    rc1_route: "Rotterdam Route 1 · Centrum", rc1_theme: "★ Thema: Lokale favorieten", rc1_loc: "📍 Start in de Witte de Withstraat", rc1_day: "📅 do–za · start 17.00",
+    rc2_route: "Rotterdam Route 2 · Centrum", rc2_theme: "★ Thema: Verborgen parels", rc2_loc: "📍 Drie gloednieuwe bars in het centrum", rc2_day: "📅 do–za · start 18.00–20.30", rc2_urgency: "🔥 Onze meest geboekte route",
+    rc3_route: "Rotterdam Premium · Bobby's Gin Walk", rc3_theme: "★ Thema: High-end bars", rc3_loc: "📍 Skybar met uitzicht op de Erasmusbrug", rc3_day: "📅 di–za · start 17.00–20.30",
+    /* --- spotlight review REMOVED in V3 (reviews live on the homepage only);
+       how-it-works / cross-city / groups / gift-card strips + FAQ accordion +
+       final CTA REMOVED in V7 (clean city hub) — keys deleted with them --- */
+    /* --- FAQ link line (the full FAQ lives at /faq/) --- */
+    faq_more: "Vragen? Bekijk de volledige FAQ →",
     /* --- nav --- */
-    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_cta: "Bekijk data",
+    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_about: "Over WOGO", nav_cta: "Bekijk data",
     sticky_cta: "Bekijk data · vanaf €29,95",
     /* --- footer --- */
     foot_tag: "Drie bars die je nooit zelf had gevonden. Eén avond die je altijd bijblijft.",
     foot_c1_h: "Routes", foot_c2_h: "Ontdek",
-    foot_how: "Hoe het werkt", foot_groups: "Groepsboekingen", foot_gift: "Cadeaukaarten", foot_faq: "FAQ",
+    foot_how: "Hoe het werkt", foot_groups: "Groepsboekingen", foot_gift: "Cadeaukaarten", foot_contact: "Contact", foot_blog: "Blog", foot_faq: "FAQ",
+    foot_about: "Over WOGO",
     foot_contact_link: "Contact",
     foot_hours: "Maandag – vrijdag, 10:00 – 18:00",
     foot_trust: "★ 4.4 op Google · Trustpilot 4,5 / 5 · 80.000+ walks geboekt · Partner van Gemeente Rotterdam · 18+",
-    foot_copyright: "© 2026 WOGO Amsterdam B.V. · KvK 92237347 · BTW NL865949323B01 · Oude-IJsselstraat 32-2, Amsterdam"
+    /* legal-link keys pre-stubbed: uncomment the footer legal links (see the
+       bottom legal bar comment) when the privacy/cookie/terms pages ship */
+    foot_privacy: "Privacybeleid", foot_cookie: "Cookiebeleid", foot_terms: "Algemene voorwaarden",
+    foot_disclaimer: "Disclaimer", foot_accessibility: "Toegankelijkheid", foot_complaints: "Klachten", foot_cookie_settings: "Cookie-instellingen",
+    foot_copyright: "© 2026 WOGO Amsterdam B.V. · KvK 92237347 · BTW NL865949323B01 · Amsterdam"
   };
 
-  /* ===== Routes data (expansion-ready — keep in sync with the homepage) =====
-     Single source of truth for the Routes menus. Adding a country or city later is
-     a one-line data edit here — the desktop dropdown, mobile menu and footer all
-     render from this. Country grouping headers appear automatically once there is
-     more than one country. TODO: point city URLs at the internal /<city>/ hubs
-     once all four exist (Wix URLs kept for now so no link 404s mid-migration). */
-  var WOGO_ROUTES = {
-    countries: [
-      { code: 'nl', name: { en: 'Netherlands', nl: 'Nederland' }, cities: [
-        { name: 'Amsterdam', url: 'https://www.wogococktailwalk.com/amsterdam-cocktailwalk-route1' },
-        { name: 'Rotterdam', url: '../rotterdam/' },
-        { name: 'Utrecht',   url: 'https://www.wogococktailwalk.com/utrecht' },
-        { name: 'Groningen', url: 'https://www.wogococktailwalk.com/groningen-cocktail-walk' }
-      ] }
-      /* Future: { code:'uk', name:{en:'United Kingdom', nl:'Verenigd Koninkrijk'}, cities:[ {name:'London', url:'../london/'} ] } */
-    ]
-  };
+  /* ===== SHARED NAV/FOOTER v4 wiring =====
+     BASE — this page's relative prefix back to the repo root: '' at the root,
+     '../' one folder deep, '../../' two folders deep. Every internal URL in
+     WOGO_ROUTES below is written from the repo root and BASE-prefixed at
+     render time, so the routes data + render code stay byte-identical on
+     every page — only this one line changes per folder depth. */
+  var BASE = '../';
+  /* ===== Routes data v4 — single source of truth: the desktop Routes dropdown,
+     the mobile overlay city chips AND the footer Routes column all render from
+     this. Cities link to the internal city hubs; the nested routes arrays feed
+     the footer's per-city route lists. Adding a country, city or route later is
+     a one-line data edit here — country grouping headers appear automatically
+     once there is more than one country. */
+  var WOGO_ROUTES = { countries: [ { code:'nl', name:{en:'Netherlands',nl:'Nederland'}, cities: [
+    { name:'Rotterdam', hub:'rotterdam/', routes:[
+        {name:'Rotterdam Route 1', url:'rotterdam/witte-de-with/'},
+        {name:'Rotterdam Route 2', url:'rotterdam/hidden-gems/'},
+        {name:'Rotterdam Premium', url:'rotterdam/premium-gin-walk/'} ] },
+    { name:'Utrecht',   hub:'utrecht/',   routes:[ {name:'Utrecht',           url:'utrecht/'} ] },
+    { name:'Amsterdam', hub:'amsterdam/', routes:[ {name:'Amsterdam Route 1', url:'amsterdam/'} ] },
+    { name:'Groningen', hub:'groningen/', routes:[ {name:'Groningen',         url:'groningen/'} ] },
+    { name:'Delft',     hub:'delft/',     routes:[ {name:'Delft',             url:'delft/'} ] }
+  ] },
+  /* United Kingdom: London is a working PLACEHOLDER example (noindex). The
+     country heading appears automatically now there is more than one country.
+     Replace the London routes below with the real ones at launch. */
+  { code:'gb', name:{en:'United Kingdom',nl:'Verenigd Koninkrijk'}, cities: [
+    { name:'London', hub:'london/', routes:[ {name:'London Soho', url:'london/soho/'} ] }
+  ] } ] };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function renderRoutes(lang) {
     var countries = WOGO_ROUTES.countries;
@@ -728,10 +671,17 @@
         footHTML += '<span class="w-footer-country">' + cname + '</span>';
       }
       c.cities.forEach(function (city) {
-        var link = '<a href="' + esc(city.url) + '" target="_top" class="w-navlink">' + esc(city.name) + '</a>';
-        navHTML += '<li>' + link + '</li>';
-        ovHTML += link;
-        footHTML += link;
+        // Nav dropdown + mobile overlay chips: one link per CITY -> its internal hub.
+        var hubLink = '<a href="' + esc(BASE + city.hub) + '" class="w-navlink">' + esc(city.name) + '</a>';
+        navHTML += '<li>' + hubLink + '</li>';
+        ovHTML += hubLink;
+        // FOOTER: flat list of the exact route-card names (no per-city sub-heading —
+        // the names already carry the city, so it reads Rotterdam Route 1 · Rotterdam
+        // Route 2 · Rotterdam Premium · Utrecht · Amsterdam Route 1 · Groningen).
+        // The country heading still appears above when there is more than one country.
+        (city.routes || []).forEach(function (r) {
+          footHTML += '<a href="' + esc(BASE + r.url) + '" class="w-navlink">' + esc(r.name) + '</a>';
+        });
       });
     });
     if (navMenu) navMenu.innerHTML = navHTML;
@@ -752,7 +702,7 @@
       var k = el.getAttribute('data-i18n');
       if (dict[k] != null) el.innerHTML = dict[k];
     });
-    document.querySelectorAll('.w-citycard-btn, .w-gift-btn, .w-navlink').forEach(function (a) {
+    document.querySelectorAll('.w-citycard-btn, .w-navlink').forEach(function (a) {
       if (!a.getAttribute('data-href')) a.setAttribute('data-href', a.getAttribute('href') || '');
       var base = a.getAttribute('data-href');
       var url = base;
@@ -762,12 +712,12 @@
         url = url.replace('wogococktailwalk.com/', 'wogococktailwalk.com/' + lang + '/');
       }
       if (window.__wogoCarry) {
-        try { var u = new URL(url); Object.keys(window.__wogoCarry).forEach(function (k) { u.searchParams.set(k, window.__wogoCarry[k]); }); url = u.toString(); } catch (e) {}
+        try { var u = new URL(url, window.location.href); Object.keys(window.__wogoCarry).forEach(function (k) { u.searchParams.set(k, window.__wogoCarry[k]); }); url = u.toString(); } catch (e) {}
       }
       a.href = url;
     });
     document.documentElement.lang = lang;
-    document.querySelectorAll('.w-lang button').forEach(function (b) { var on = b.getAttribute('data-lang') === lang; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+    document.querySelectorAll('.w-lang').forEach(function (w) { var c = w.querySelector('.w-lang-code'); if (c) c.textContent = lang.toUpperCase(); var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-label', 'Change language (' + lang.toUpperCase() + ')'); w.querySelectorAll('.w-lang-opt').forEach(function (o) { o.setAttribute('aria-selected', o.getAttribute('data-lang') === lang ? 'true' : 'false'); }); });
     try { localStorage.setItem('wogoLang', lang); } catch (e) {}
   }
   var saved = null;
@@ -777,7 +727,74 @@
   // Reveal the body — the tiny anti-flicker script in <head> hides it for Dutch
   // visitors so they never see the English copy flash before translation.
   document.body.style.visibility = 'visible';
-  document.querySelectorAll('.w-lang button').forEach(function (b) { b.addEventListener('click', function () { setLang(b.getAttribute('data-lang')); }); });
+  // ===== Language dropdown (shared switcher UI) =====
+  // WOGO_LANGS drives the menu in the nav AND the mobile overlay. To add a language
+  // later (e.g. French): 1) build its full override dictionary and register it in
+  // DICTS above (fr: FR), then 2) enable ONE line here — the dropdown renders itself.
+  var WOGO_LANGS = [
+    { code: 'en', label: 'English' },
+    { code: 'nl', label: 'Nederlands' }
+    // ,{ code: 'fr', label: 'Français' }  // example — enable only once a full FR dictionary exists in DICTS
+  ];
+  (function () {
+    var switchers = Array.prototype.slice.call(document.querySelectorAll('.w-lang'));
+    function closeAll(except) {
+      switchers.forEach(function (w) {
+        if (w === except) return;
+        w.classList.remove('open');
+        var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-expanded', 'false');
+      });
+    }
+    switchers.forEach(function (w) {
+      var btn = w.querySelector('.w-lang-btn'), menu = w.querySelector('.w-lang-menu');
+      if (!btn || !menu) return;
+      var current = document.documentElement.lang || 'en';
+      menu.innerHTML = '';
+      WOGO_LANGS.forEach(function (l) {
+        var li = document.createElement('li');
+        li.className = 'w-lang-opt';
+        li.setAttribute('role', 'option');
+        li.setAttribute('tabindex', '-1');
+        li.setAttribute('data-lang', l.code);
+        li.setAttribute('aria-selected', l.code === current ? 'true' : 'false');
+        li.innerHTML = '<span class="w-lang-opt-code" aria-hidden="true">' + l.code.toUpperCase() + '</span>' + l.label;
+        menu.appendChild(li);
+      });
+      var opts = Array.prototype.slice.call(menu.children);
+      function open(focusOpt) {
+        closeAll(w);
+        w.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+        var target = menu.querySelector('[aria-selected="true"]') || opts[0];
+        if (focusOpt && target) target.focus();
+      }
+      function close(refocus) {
+        w.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+        if (refocus) btn.focus();
+      }
+      btn.addEventListener('click', function () { if (w.classList.contains('open')) { close(false); } else { open(false); } });
+      btn.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); open(true); }
+        else if (e.key === 'Escape') { close(false); }
+      });
+      opts.forEach(function (o, i) {
+        o.addEventListener('click', function () { setLang(o.getAttribute('data-lang')); close(true); });
+        o.addEventListener('keydown', function (e) {
+          if (e.key === 'ArrowDown') { e.preventDefault(); (opts[i + 1] || opts[0]).focus(); }
+          else if (e.key === 'ArrowUp') { e.preventDefault(); (opts[i - 1] || opts[opts.length - 1]).focus(); }
+          else if (e.key === 'Home') { e.preventDefault(); opts[0].focus(); }
+          else if (e.key === 'End') { e.preventDefault(); opts[opts.length - 1].focus(); }
+          else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setLang(o.getAttribute('data-lang')); close(true); }
+          else if (e.key === 'Escape') { e.preventDefault(); close(true); }
+          else if (e.key === 'Tab') { close(false); }
+        });
+      });
+    });
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest || !e.target.closest('.w-lang')) closeAll(null);
+    });
+  })();
 
   /* ===== Smooth-scroll anchors (embedded-in-Wix fallback kept so this page keeps
      working if it's ever iframed like the homepage) ===== */
@@ -803,15 +820,6 @@
   });
   document.querySelectorAll('.w-citycard-img-inner').forEach(function (im) { im.onerror = function () { this.style.display = 'none'; }; });
 
-  /* ===== FAQ accordion (one open at a time) ===== */
-  var faqItems = document.querySelectorAll('.w-faq details');
-  faqItems.forEach(function (d) {
-    d.addEventListener('toggle', function () {
-      if (d.open) { faqItems.forEach(function (o) { if (o !== d) o.open = false; }); }
-      reportHeight();
-    });
-  });
-
   /* ===== Card scroller arrows ===== */
   document.querySelectorAll('.w-arrow').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -830,21 +838,25 @@
     try { window.parent.postMessage(msg, '*'); } catch (e) {}
     try { if (window.top && window.top !== window.parent) window.top.postMessage(msg, '*'); } catch (e2) {}
   }
+  // Route label for GA, derived from a "…/book/" href (own-route CTAs link to a bare
+  // "book/" with no route segment, so fall back to the current page path in that case) —
+  // replaces the old /booking-calendar/ split now that CTAs point at internal book/ pages.
+  function wogoRouteLabel(href) {
+    var clean = (href || '').replace(/^(\.\.\/)+/, '').replace(/\/?book\/?$/, '');
+    if (!clean) clean = location.pathname.replace(/^\/+/, '').replace(/\/?book\/?$/, '');
+    return clean.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean).join('-');
+  }
   document.addEventListener('click', function (e) {
     var el = e.target && e.target.closest ? e.target.closest('a, button') : null;
     if (!el) return;
     // Strip query/hash so GA labels group cleanly by route, not per ad click-id.
     var href = (el.getAttribute('href') || '').split('?')[0].split('#')[0];
     if (el.classList.contains('w-citycard-btn-primary')) {
-      wogoTrack('book_now', href.split('/booking-calendar/')[1] || '');
+      wogoTrack('book_now', wogoRouteLabel(href));
     } else if (el.classList.contains('w-citycard-btn-secondary')) {
       wogoTrack('info', href);
     } else if (el.classList.contains('w-scroll')) {
       wogoTrack('choose_route');
-    } else if (el.classList.contains('w-gift-btn')) {
-      wogoTrack('giftcard');
-    } else if (el.classList.contains('w-group-btn')) {
-      wogoTrack('group');
     }
   }, true);
 
@@ -870,6 +882,8 @@
         var r = wRoutesSec.getBoundingClientRect();
         if (r.top < window.innerHeight && r.bottom > 0) show = false;
       }
+      var wf = document.querySelector('.w-final, .w-footer');
+      if (show && wf) { var wfr = wf.getBoundingClientRect(); if (wfr.top < window.innerHeight) show = false; }
       wSticky.classList.toggle('show', show);
     };
     window.addEventListener('scroll', stickyState, { passive: true });
@@ -932,5 +946,506 @@
 })();
 </script>
 
+<script>
+/* WOGO V3 VISUAL PASS — scroll-reveal + hero entrance. Outside all fenced blocks.
+   Everything is fully visible if this never runs (hidden states need .wg-js,
+   the reveal only ADDS a class). Transform/opacity only, 60fps-safe. */
+(function () {
+  var root = document.documentElement;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Hero entrance: flip on next frame so the transform transition plays once. */
+  requestAnimationFrame(function () { root.classList.add('wg-hero-go'); });
+
+  var targets = document.querySelectorAll('.wg-reveal, .wg-stagger');
+
+  /* No IntersectionObserver, or user prefers reduced motion → show everything now. */
+  if (reduce || !('IntersectionObserver' in window)) {
+    for (var i = 0; i < targets.length; i++) targets[i].classList.add('wg-in');
+    return;
+  }
+
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add('wg-in'); io.unobserve(e.target); }
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
+
+  for (var j = 0; j < targets.length; j++) io.observe(targets[j]);
+})();
+</script>
+
+<!-- ============================================================================
+     ▼▼▼  WOGO COOKIE CONSENT v1  —  BEGIN  (copy from here)  ▼▼▼
+     Self-contained: CSS + HTML + JS, no library, no external requests, no images.
+     Paste IDENTICALLY on every page just before 
+</body>. Any edit here must be
+     re-applied identically to every page.
+     ============================================================================ -->
+<style>
+  /* Uses the shared WOGO brand tokens when present; falls back to the same hexes
+     so the block is safe even where tokens are not defined. */
+  .wogo-consent, .wogo-consent *{box-sizing:border-box}
+  .wogo-consent [hidden]{display:none !important}
+
+  /* ---- bottom banner ---- */
+  .wogo-cc-banner{
+    position:fixed; left:0; right:0; bottom:0; z-index:2147483000;
+    background:var(--wogo-cream,#fffaf6);
+    color:var(--wogo-espresso,#3f2b21);
+    border-top:1px solid var(--wogo-salmon,#ffaa81);
+    box-shadow:0 -10px 30px rgba(32,22,17,.16);
+    padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));
+    display:flex; flex-direction:column; gap:14px;
+  }
+  .wogo-cc-banner-text{max-width:64ch}
+  .wogo-cc-h{margin:0 0 4px; font-size:1.05rem; line-height:1.3; color:var(--wogo-ink,#201611); font-weight:800}
+  .wogo-cc-p{margin:0; font-size:.9rem; line-height:1.5; color:var(--wogo-brown-soft,#7e5541)}
+  .wogo-cc-p a{color:var(--wogo-brown,#643e2b); text-decoration:underline}
+  .wogo-cc-banner-actions{display:flex; flex-wrap:wrap; gap:10px}
+
+  /* ---- buttons: Reject / Customize are equal-prominence outlines,
+          Accept is the salmon primary. Reject is as easy as Accept (one click). ---- */
+  .wogo-cc-btn{
+    -webkit-appearance:none; appearance:none; cursor:pointer;
+    font:inherit; font-weight:700; font-size:.9rem;
+    border-radius:999px; padding:12px 20px; line-height:1;
+    transition:transform .15s ease, background-color .15s ease, box-shadow .15s ease;
+    flex:1 1 auto; min-width:132px;
+  }
+  .wogo-cc-btn:active{transform:translateY(1px)}
+  .wogo-cc-btn-ghost{
+    background:transparent; color:var(--wogo-espresso,#3f2b21);
+    border:1.5px solid var(--wogo-brown,#643e2b);
+  }
+  .wogo-cc-btn-ghost:hover{background:rgba(63,43,33,.06)}
+  .wogo-cc-btn-primary{
+    background:var(--wogo-cta-bg,linear-gradient(135deg,#ffaa81 0%,#f2905c 100%));
+    color:var(--wogo-cta-ink,#3f2b21); border:1.5px solid transparent;
+    box-shadow:0 8px 20px rgba(242,144,92,.45);
+  }
+  .wogo-cc-btn-primary:hover{box-shadow:0 10px 24px rgba(242,144,92,.55)}
+
+  /* ---- preferences modal ---- */
+  .wogo-cc-scrim{
+    position:fixed; inset:0; z-index:2147483600;
+    background:rgba(32,22,17,.55);
+    display:flex; align-items:flex-end; justify-content:center;
+    padding:0; overflow-y:auto;
+  }
+  .wogo-cc-modal{
+    position:relative; width:100%; max-width:560px;
+    background:var(--wogo-cream,#fffaf6); color:var(--wogo-espresso,#3f2b21);
+    border-radius:20px 20px 0 0;
+    padding:26px 22px calc(24px + env(safe-area-inset-bottom,0px));
+    box-shadow:0 -14px 44px rgba(32,22,17,.30);
+    max-height:92vh; overflow-y:auto;
+  }
+  .wogo-cc-close{
+    position:absolute; top:12px; right:12px; width:38px; height:38px;
+    border:0; border-radius:50%; cursor:pointer; font-size:1.4rem; line-height:1;
+    background:rgba(63,43,33,.08); color:var(--wogo-espresso,#3f2b21);
+  }
+  .wogo-cc-close:hover{background:rgba(63,43,33,.16)}
+  .wogo-cc-modal .wogo-cc-h{font-size:1.25rem}
+  .wogo-cc-modal .wogo-cc-p{margin:0 0 18px}
+  .wogo-cc-cats{list-style:none; margin:0 0 20px; padding:0; display:flex; flex-direction:column; gap:12px}
+  .wogo-cc-cat{
+    border:1px solid rgba(63,43,33,.14); border-radius:14px;
+    padding:14px 16px; background:var(--wogo-blush,#ffe5d9);
+  }
+  .wogo-cc-cat-head{display:flex; align-items:center; justify-content:space-between; gap:12px}
+  .wogo-cc-cat-title{font-weight:800; color:var(--wogo-ink,#201611); font-size:.98rem}
+  .wogo-cc-cat-desc{margin:6px 0 0; font-size:.85rem; line-height:1.5; color:var(--wogo-brown-soft,#7e5541)}
+  .wogo-cc-always{font-size:.78rem; font-weight:700; color:var(--wogo-brown,#643e2b); white-space:nowrap}
+
+  /* ---- toggle switch ---- */
+  .wogo-cc-switch{position:relative; display:inline-flex; align-items:center; flex:0 0 auto}
+  .wogo-cc-switch input{position:absolute; opacity:0; width:52px; height:30px; margin:0; cursor:pointer}
+  .wogo-cc-slider{
+    width:52px; height:30px; border-radius:999px; background:#c9b7ad;
+    position:relative; transition:background-color .18s ease; flex:0 0 auto;
+  }
+  .wogo-cc-slider::after{
+    content:""; position:absolute; top:3px; left:3px; width:24px; height:24px;
+    border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.3);
+    transition:transform .18s ease;
+  }
+  .wogo-cc-switch input:checked + .wogo-cc-slider{background:var(--wogo-salmon-deep,#f2905c)}
+  .wogo-cc-switch input:checked + .wogo-cc-slider::after{transform:translateX(22px)}
+  .wogo-cc-switch input:disabled + .wogo-cc-slider{opacity:.6; cursor:not-allowed}
+  .wogo-cc-switch input:focus-visible + .wogo-cc-slider{outline:3px solid var(--wogo-salmon-deep,#f2905c); outline-offset:2px}
+  .wogo-cc-modal-actions{display:flex; flex-wrap:wrap; gap:10px}
+
+  /* ---- visible focus everywhere (independent of page styles) ---- */
+  .wogo-consent :focus-visible{outline:3px solid var(--wogo-salmon-deep,#f2905c); outline-offset:2px; border-radius:8px}
+
+  /* ---- entrance motion, reduced-motion safe (transform/opacity only) ---- */
+  @media (prefers-reduced-motion:no-preference){
+    .wogo-cc-banner{animation:wogoCcUp .28s ease both}
+    .wogo-cc-modal{animation:wogoCcUp .28s ease both}
+    .wogo-cc-scrim{animation:wogoCcFade .2s ease both}
+    @keyframes wogoCcUp{from{transform:translateY(16px); opacity:0} to{transform:translateY(0); opacity:1}}
+    @keyframes wogoCcFade{from{opacity:0} to{opacity:1}}
+  }
+
+  /* ---- desktop: banner becomes a row, modal becomes a centered card ---- */
+  @media (min-width:720px){
+    .wogo-cc-banner{
+      flex-direction:row; align-items:center; justify-content:space-between;
+      gap:24px; padding:20px 28px;
+    }
+    .wogo-cc-banner-actions{flex-wrap:nowrap; flex:0 0 auto}
+    .wogo-cc-btn{flex:0 0 auto}
+    .wogo-cc-scrim{align-items:center; padding:24px}
+    .wogo-cc-modal{border-radius:20px}
+  }
+</style>
+
+<!-- The whole widget is hidden by default (the [hidden] attribute). JS reveals it
+     ONLY on a first visit with no stored choice. With JavaScript disabled it stays
+     hidden and — because no tracker loads without consent — nothing is tracked.
+     No pre-ticked boxes: optional toggles start OFF. -->
+<div id="wogo-consent" class="wogo-consent" hidden>
+
+  <!-- Banner -->
+  <div class="wogo-cc-banner" id="wogoCcBanner" role="region" aria-label="Cookie consent" tabindex="-1" hidden>
+    <div class="wogo-cc-banner-text">
+      <h2 class="wogo-cc-h" data-cc="banner_title">We value your privacy</h2>
+      <p class="wogo-cc-p" data-cc="banner_body">We use cookies to keep the site working and, only if you agree, to understand our audience and improve our ads. You choose what to allow.</p>
+    </div>
+    <div class="wogo-cc-banner-actions">
+      <button type="button" class="wogo-cc-btn wogo-cc-btn-ghost" data-cc-act="reject" data-cc="btn_reject">Reject all</button>
+      <button type="button" class="wogo-cc-btn wogo-cc-btn-ghost" data-cc-act="customize" data-cc="btn_customize">Customize</button>
+      <button type="button" class="wogo-cc-btn wogo-cc-btn-primary" data-cc-act="accept" data-cc="btn_accept">Accept all</button>
+    </div>
+  </div>
+
+  <!-- Preferences modal -->
+  <div class="wogo-cc-scrim" id="wogoCcScrim" hidden>
+    <div class="wogo-cc-modal" id="wogoCcModal" role="dialog" aria-modal="true"
+         aria-labelledby="wogoCcModalTitle" aria-describedby="wogoCcModalIntro" tabindex="-1">
+      <button type="button" class="wogo-cc-close" data-cc-act="close" aria-label="Close" data-cc-aria="close_label">&times;</button>
+      <h2 class="wogo-cc-h" id="wogoCcModalTitle" data-cc="modal_title">Cookie preferences</h2>
+      <p class="wogo-cc-p" id="wogoCcModalIntro" data-cc="modal_intro">Choose which cookies WOGO may use. You can change this anytime via "Cookie settings" in the footer.</p>
+
+      <ul class="wogo-cc-cats">
+        <!-- Necessary — always on, cannot be switched off -->
+        <li class="wogo-cc-cat">
+          <div class="wogo-cc-cat-head">
+            <span class="wogo-cc-cat-title" data-cc="cat_necessary_h">Necessary</span>
+            <label class="wogo-cc-switch">
+              <input type="checkbox" checked disabled aria-disabled="true" tabindex="-1">
+              <span class="wogo-cc-slider" aria-hidden="true"></span>
+              <span class="wogo-cc-always" data-cc="always_on">Always on</span>
+            </label>
+          </div>
+          <p class="wogo-cc-cat-desc" data-cc="cat_necessary_d">Required for the site to work: security, language choice and remembering this cookie preference. No tracking.</p>
+        </li>
+
+        <!-- Analytics -->
+        <li class="wogo-cc-cat">
+          <div class="wogo-cc-cat-head">
+            <span class="wogo-cc-cat-title" id="wogoCcAnalyticsL" data-cc="cat_analytics_h">Analytics</span>
+            <label class="wogo-cc-switch">
+              <input type="checkbox" data-cc-input="analytics" aria-labelledby="wogoCcAnalyticsL">
+              <span class="wogo-cc-slider" aria-hidden="true"></span>
+            </label>
+          </div>
+          <p class="wogo-cc-cat-desc" data-cc="cat_analytics_d">Anonymous statistics about how the site is used, so we can make it better.</p>
+        </li>
+
+        <!-- Functional -->
+        <li class="wogo-cc-cat">
+          <div class="wogo-cc-cat-head">
+            <span class="wogo-cc-cat-title" id="wogoCcFunctionalL" data-cc="cat_functional_h">Functional</span>
+            <label class="wogo-cc-switch">
+              <input type="checkbox" data-cc-input="functional" aria-labelledby="wogoCcFunctionalL">
+              <span class="wogo-cc-slider" aria-hidden="true"></span>
+            </label>
+          </div>
+          <p class="wogo-cc-cat-desc" data-cc="cat_functional_d">Extra conveniences like embedded maps, videos or chat, if we add them.</p>
+        </li>
+
+        <!-- Marketing -->
+        <li class="wogo-cc-cat">
+          <div class="wogo-cc-cat-head">
+            <span class="wogo-cc-cat-title" id="wogoCcMarketingL" data-cc="cat_marketing_h">Marketing</span>
+            <label class="wogo-cc-switch">
+              <input type="checkbox" data-cc-input="marketing" aria-labelledby="wogoCcMarketingL">
+              <span class="wogo-cc-slider" aria-hidden="true"></span>
+            </label>
+          </div>
+          <p class="wogo-cc-cat-desc" data-cc="cat_marketing_d">Lets us measure our ads (Meta Pixel) so we show them to the right people and waste less budget.</p>
+        </li>
+      </ul>
+
+      <div class="wogo-cc-modal-actions">
+        <button type="button" class="wogo-cc-btn wogo-cc-btn-ghost" data-cc-act="reject" data-cc="btn_reject">Reject all</button>
+        <button type="button" class="wogo-cc-btn wogo-cc-btn-ghost" data-cc-act="accept" data-cc="btn_accept">Accept all</button>
+        <button type="button" class="wogo-cc-btn wogo-cc-btn-primary" data-cc-act="save" data-cc="btn_save">Save my choices</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* WOGO COOKIE CONSENT v1 — vanilla, no dependencies.
+   Exposes: window.wogoConsent, window.wogoOnConsent(fn), window.wogoOpenConsent().
+   Stores the choice + ISO timestamp under localStorage["wogoConsent.v1"]. */
+(function () {
+  "use strict";
+  var VERSION   = 1;
+  var STORE_KEY = "wogoConsent.v1";     /* bump ONLY if categories change (re-prompts everyone) */
+  var CATS      = ["analytics", "functional", "marketing"];
+
+  /* ---------- text: English default + full natural Dutch ---------- */
+  var I18N = {
+    en: {
+      banner_title: "We value your privacy",
+      banner_body:  "We use cookies to keep the site working and, only if you agree, to understand our audience and improve our ads. You choose what to allow.",
+      btn_reject:   "Reject all",
+      btn_accept:   "Accept all",
+      btn_customize:"Customize",
+      btn_save:     "Save my choices",
+      modal_title:  "Cookie preferences",
+      modal_intro:  "Choose which cookies WOGO may use. You can change this anytime via “Cookie settings” in the footer.",
+      close_label:  "Close cookie preferences",
+      always_on:    "Always on",
+      cat_necessary_h: "Necessary",
+      cat_necessary_d: "Required for the site to work: security, language choice and remembering this cookie preference. No tracking.",
+      cat_analytics_h: "Analytics",
+      cat_analytics_d: "Anonymous statistics about how the site is used, so we can make it better.",
+      cat_functional_h: "Functional",
+      cat_functional_d: "Extra conveniences like embedded maps, videos or chat, if we add them.",
+      cat_marketing_h: "Marketing",
+      cat_marketing_d: "Lets us measure our ads (Meta Pixel) so we show them to the right people and waste less budget."
+    },
+    nl: {
+      banner_title: "Jouw privacy telt",
+      banner_body:  "We gebruiken cookies om de site te laten werken en, alleen als je dat goedvindt, om ons publiek te begrijpen en onze advertenties te verbeteren. Jij kiest wat je toestaat.",
+      btn_reject:   "Alles weigeren",
+      btn_accept:   "Alles accepteren",
+      btn_customize:"Zelf instellen",
+      btn_save:     "Mijn keuze opslaan",
+      modal_title:  "Cookievoorkeuren",
+      modal_intro:  "Kies welke cookies WOGO mag gebruiken. Je past dit altijd aan via “Cookie-instellingen” in de footer.",
+      close_label:  "Cookievoorkeuren sluiten",
+      always_on:    "Altijd aan",
+      cat_necessary_h: "Noodzakelijk",
+      cat_necessary_d: "Nodig om de site te laten werken: beveiliging, taalkeuze en het onthouden van deze cookievoorkeur. Geen tracking.",
+      cat_analytics_h: "Analytics",
+      cat_analytics_d: "Anonieme statistieken over hoe de site gebruikt wordt, zodat we hem kunnen verbeteren.",
+      cat_functional_h: "Functioneel",
+      cat_functional_d: "Extra gemak zoals ingesloten kaarten, video’s of chat, mocht dat er komen.",
+      cat_marketing_h: "Marketing",
+      cat_marketing_d: "Hiermee meten we onze advertenties (Meta Pixel), zodat we ze aan de juiste mensen tonen en minder budget verspillen."
+    }
+  };
+
+  /* Detect the visitor's language the same way the site's foot script does:
+     saved wogoLang first, then <html lang>, then browser language. */
+  function readLang() {
+    try { var s = localStorage.getItem("wogoLang"); if (s === "nl" || s === "en") return s; } catch (e) {}
+    var h = (document.documentElement.lang || "").toLowerCase(); if (h.indexOf("nl") === 0) return "nl";
+    var n = (navigator.language || "").toLowerCase(); if (n.indexOf("nl") === 0) return "nl";
+    return "en";
+  }
+
+  /* ---------- stored choice (proof of consent) ---------- */
+  function loadRecord() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return null;
+      var o = JSON.parse(raw);
+      if (!o || o.v !== VERSION) return null;   /* old/absent version => ask again */
+      return o;
+    } catch (e) { return null; }
+  }
+
+  function publish(consent) {
+    window.wogoConsent = {
+      analytics:  !!consent.analytics,
+      functional: !!consent.functional,
+      marketing:  !!consent.marketing
+    };
+    var detail = window.wogoConsent;
+    try {
+      window.dispatchEvent(new CustomEvent("wogoconsentchange", { detail: detail }));
+    } catch (e) {
+      try { var ev = document.createEvent("CustomEvent");
+        ev.initCustomEvent("wogoconsentchange", false, false, detail);
+        window.dispatchEvent(ev); } catch (e2) {}
+    }
+  }
+
+  function saveRecord(consent) {
+    var rec = {
+      v: VERSION,
+      analytics:  !!consent.analytics,
+      functional: !!consent.functional,
+      marketing:  !!consent.marketing,
+      ts: new Date().toISOString(),   /* proof: exactly when consent was given */
+      lang: readLang()
+    };
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(rec)); } catch (e) {}
+    publish(rec);
+    return rec;
+  }
+
+  /* Seed window.wogoConsent immediately so gating code can read it right away.
+     Before any choice, everything optional is FALSE (nothing may fire). */
+  var initial = loadRecord() || { analytics: false, functional: false, marketing: false };
+  window.wogoConsent = {
+    analytics: !!initial.analytics, functional: !!initial.functional, marketing: !!initial.marketing
+  };
+
+  /* Subscribe helper: run now with the current value, then on every change. */
+  window.wogoOnConsent = function (fn) {
+    if (typeof fn !== "function") return;
+    try { fn(window.wogoConsent); } catch (e) {}
+    window.addEventListener("wogoconsentchange", function (e) {
+      try { fn(e.detail || window.wogoConsent); } catch (err) {}
+    });
+  };
+
+  /* ---------- UI ---------- */
+  function boot() {
+    var root   = document.getElementById("wogo-consent");
+    if (!root) return;
+    var banner = document.getElementById("wogoCcBanner");
+    var scrim  = document.getElementById("wogoCcScrim");
+    var modal  = document.getElementById("wogoCcModal");
+    if (!banner || !scrim || !modal) return;
+
+    var lastFocus = null;
+
+    function applyText() {
+      var dict = I18N[readLang()] || I18N.en;
+      root.querySelectorAll("[data-cc]").forEach(function (el) {
+        var k = el.getAttribute("data-cc");
+        if (dict[k] != null) el.textContent = dict[k];   /* textContent = no HTML injection */
+      });
+      root.querySelectorAll("[data-cc-aria]").forEach(function (el) {
+        var k = el.getAttribute("data-cc-aria");
+        if (dict[k] != null) el.setAttribute("aria-label", dict[k]);
+      });
+    }
+
+    function setToggles(consent) {
+      CATS.forEach(function (c) {
+        var input = modal.querySelector('[data-cc-input="' + c + '"]');
+        if (input) input.checked = !!consent[c];
+      });
+    }
+    function readToggles() {
+      var out = {};
+      CATS.forEach(function (c) {
+        var input = modal.querySelector('[data-cc-input="' + c + '"]');
+        out[c] = !!(input && input.checked);
+      });
+      return out;
+    }
+
+    function showBanner() {
+      applyText();
+      root.hidden = false;
+      scrim.hidden = true;
+      banner.hidden = false;
+      try { banner.focus(); } catch (e) {}
+    }
+    function hideAll() {
+      root.hidden = true;
+      scrim.hidden = true;
+      banner.hidden = true;
+    }
+    function openModal() {
+      applyText();
+      lastFocus = document.activeElement;
+      setToggles(loadRecord() || { analytics: false, functional: false, marketing: false });
+      root.hidden = false;
+      banner.hidden = true;     /* one surface at a time */
+      scrim.hidden = false;
+      try { modal.focus(); } catch (e) {}
+    }
+    function closeModal() {
+      scrim.hidden = true;
+      if (loadRecord()) {
+        hideAll();              /* a choice already exists: fully dismiss */
+      } else {
+        showBanner();           /* first visit, no choice yet: fall back to the banner */
+      }
+      try { if (lastFocus && lastFocus.focus) lastFocus.focus(); } catch (e) {}
+    }
+
+    function accept() { saveRecord({ analytics: true,  functional: true,  marketing: true  }); hideAll(); }
+    function reject() { saveRecord({ analytics: false, functional: false, marketing: false }); hideAll(); }
+    function save()   { saveRecord(readToggles()); hideAll(); }
+
+    /* one delegated click handler for every button in the widget */
+    root.addEventListener("click", function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest("[data-cc-act]") : null;
+      if (!btn) return;
+      switch (btn.getAttribute("data-cc-act")) {
+        case "accept":    accept(); break;
+        case "reject":    reject(); break;
+        case "customize": openModal(); break;
+        case "save":      save(); break;
+        case "close":     closeModal(); break;
+      }
+    });
+    /* click on the dark backdrop (outside the card) closes the modal */
+    scrim.addEventListener("click", function (e) { if (e.target === scrim) closeModal(); });
+
+    /* keyboard: Esc closes the modal; Tab is trapped inside it */
+    document.addEventListener("keydown", function (e) {
+      if (scrim.hidden) return;
+      var key = e.key || e.keyCode;
+      if (key === "Escape" || key === "Esc" || key === 27) { e.preventDefault(); closeModal(); return; }
+      if (key === "Tab" || key === 9) {
+        var f = modal.querySelectorAll(
+          'button:not([disabled]), [href], input:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
+        );
+        f = Array.prototype.filter.call(f, function (el) {
+          return el.offsetWidth || el.offsetHeight || el.getClientRects().length;
+        });
+        if (!f.length) return;
+        var first = f[0], last = f[f.length - 1], a = document.activeElement;
+        if (e.shiftKey && (a === first || a === modal)) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+
+    /* footer "Cookie settings" link hook */
+    window.wogoOpenConsent = function () { openModal(); };
+
+    /* re-localize the (hidden) widget if the visitor flips EN/NL after we booted */
+    window.addEventListener("storage", function (e) { if (e.key === "wogoLang") applyText(); });
+
+    /* First-visit gate: show the banner only when no valid choice is stored. */
+    if (!loadRecord()) showBanner();
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+})();
+</script>
+<!-- ============================================================================
+     ▲▲▲  WOGO COOKIE CONSENT v1  —  END  (copy to here)  ▲▲▲
+     ============================================================================ -->
+
+
+<!-- ===== WOGO WHATSAPP FLOAT v1 — identical on every page; keep in sync ===== -->
+<a class="w-wa" href="https://wa.me/31202101168?text=Hi%20WOGO!%20I%20have%20a%20question" target="_blank" rel="noopener" aria-label="Chat with WOGO on WhatsApp">
+  <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16.02 3.2c-7.06 0-12.8 5.73-12.8 12.79 0 2.25.59 4.45 1.72 6.39L3.2 28.8l6.6-1.72a12.76 12.76 0 0 0 6.21 1.58h.01c7.05 0 12.79-5.74 12.79-12.79 0-3.42-1.33-6.63-3.75-9.05a12.7 12.7 0 0 0-9.04-3.62zm0 23.25h-.01a10.6 10.6 0 0 1-5.4-1.48l-.39-.23-4.02 1.05 1.07-3.92-.25-.4a10.6 10.6 0 0 1-1.62-5.65c0-5.87 4.78-10.65 10.66-10.65 2.85 0 5.52 1.11 7.53 3.12a10.57 10.57 0 0 1 3.12 7.54c0 5.87-4.78 10.65-10.66 10.65zm5.84-7.98c-.32-.16-1.9-.94-2.19-1.04-.29-.11-.5-.16-.72.16-.21.32-.82 1.04-1.01 1.25-.19.21-.37.24-.69.08-.32-.16-1.35-.5-2.57-1.59-.95-.85-1.59-1.9-1.78-2.22-.19-.32-.02-.49.14-.65.14-.14.32-.37.48-.56.16-.19.21-.32.32-.53.11-.21.05-.4-.03-.56-.08-.16-.72-1.74-.99-2.38-.26-.62-.53-.54-.72-.55-.19-.01-.4-.01-.61-.01-.21 0-.56.08-.85.4-.29.32-1.11 1.09-1.11 2.66 0 1.57 1.14 3.08 1.3 3.29.16.21 2.25 3.43 5.44 4.81.76.33 1.35.52 1.81.67.76.24 1.46.21 2.01.13.61-.09 1.9-.78 2.17-1.53.27-.75.27-1.39.19-1.53-.08-.13-.29-.21-.61-.37z"/></svg>
+</a>
+<style>
+.w-wa{position:fixed;right:18px;bottom:22px;z-index:65;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(37,211,102,.45),0 2px 6px rgba(0,0,0,.2);transition:transform .18s ease,box-shadow .18s ease;}
+.w-wa:hover{transform:scale(1.07);box-shadow:0 10px 26px rgba(37,211,102,.55),0 2px 6px rgba(0,0,0,.22);}
+.w-wa:focus-visible{outline:3px solid #128C3E;outline-offset:3px;}
+@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}}
+@media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
+</style>
+<!-- ===== /WOGO WHATSAPP FLOAT ===== -->
 </body>
 </html>
