@@ -1,0 +1,23 @@
+-- migrations/0012_map_url_nl.sql
+-- Per-language route maps (2026-08) — the owner makes SEPARATE English and
+-- Dutch map PDFs per route (e.g. "Utrecht Cocktail Walk ENG (mail).pdf" and
+-- an NL one), and the guest confirmation email must link the map in the
+-- guest's own language.
+--
+-- Additive + backward-compatible:
+--   * `map_url` (migrations/0001) KEEPS its meaning as the EN/default map —
+--     nothing existing is renamed or moved.
+--   * `map_url_nl` is the Dutch map, nullable. Consumed ONLY by
+--     src/emails.js:renderGuestConfirmation — an NL booking
+--     (bookings.locale = 'nl') gets map_url_nl, falling back to map_url when
+--     the Dutch one isn't set; EN/other bookings always get map_url. When
+--     neither is set the map section is omitted from the email, exactly as
+--     before this migration.
+--
+-- Editable per route via the admin dashboard's Route manager (both map
+-- fields sit side by side on the add/edit-route form).
+--
+-- NOT applied to remote D1 by tooling — the operator applies this by hand
+-- (wrangler d1 migrations apply wogo-bookings --remote) and redeploys.
+
+ALTER TABLE routes ADD COLUMN map_url_nl TEXT;

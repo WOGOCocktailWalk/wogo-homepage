@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WOGO Guest Calendar — Preview</title>
+
+<!-- The REAL shipping widget stylesheet (relative path works over file://). -->
+<link rel="stylesheet" href="../widget/wogo-calendar.css">
+
+<style>
+  /* ── Preview page chrome only (NOT part of the widget) ─────────────────────
+     Rebuilds just enough of the WOGO section rhythm so the calendar can be
+     judged in context: an espresso hero band over a blush booking section. */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #FAF6F2; color: #1a1410;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.5;
+  }
+  .pv-note {
+    background: #201611; color: #ffe5d9; font-size: 12px; font-weight: 700;
+    text-align: center; padding: 9px 16px; letter-spacing: 0.02em;
+  }
+  .pv-note b { color: #ffaa81; }
+
+  /* mini-hero (espresso band) */
+  .pv-hero {
+    background: #201611; color: #fff; text-align: center;
+    padding: 40px 24px 34px;
+  }
+  .pv-eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
+    color: #ffe5d9; margin-bottom: 10px;
+  }
+  .pv-hero h1 {
+    font-size: clamp(26px, 4vw, 40px); font-weight: 900; line-height: 1.06;
+    letter-spacing: -0.015em; text-transform: uppercase; margin-bottom: 10px;
+  }
+  .pv-hero p { font-size: 14.5px; font-weight: 500; color: #ffe5d9; max-width: 460px; margin: 0 auto; }
+
+  /* fake route-page Book button (preview only) — demonstrates the widget's
+     automatic CTA re-aim: it ships pointing at the old Wix URL and the
+     widget rewrites it to smooth-scroll to the calendar below. */
+  .pv-book-btn {
+    display: inline-block; margin-top: 18px; background: #ffaa81; color: #201611;
+    text-decoration: none; padding: 15px 34px; border-radius: 999px;
+    font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+    transition: transform 0.2s;
+  }
+  .pv-book-btn:hover { transform: translateY(-2px); }
+  .pv-book-btn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+
+  /* filler band (preview only) so the Book-button scroll is visible */
+  .pv-filler { background: #FAF6F2; padding: 46px 24px; text-align: center; }
+  .pv-filler h2 {
+    font-size: 12px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase;
+    color: #7e5541; margin-bottom: 14px;
+  }
+  .pv-filler ul {
+    list-style: none; max-width: 420px; margin: 0 auto; display: grid; gap: 8px;
+    font-size: 14px; font-weight: 600; color: #3f2b21;
+  }
+
+  /* booking section (blush) */
+  .pv-book { background: #ffe5d9; padding: 44px 20px 60px; }
+  .pv-book-head { text-align: center; margin-bottom: 26px; }
+  .pv-book-head .pv-eyebrow { color: #3f2b21; }
+  .pv-book-head h2 {
+    font-size: clamp(22px, 3vw, 30px); font-weight: 900; text-transform: uppercase;
+    letter-spacing: -0.01em; color: #201611;
+  }
+
+  /* preview control bar */
+  .pv-controls {
+    max-width: 480px; margin: 0 auto 22px; background: #fffaf6;
+    border: 1px dashed rgba(63,43,33,0.28); border-radius: 14px; padding: 14px 16px;
+    display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center;
+    font-size: 12.5px; color: #3f2b21;
+  }
+  .pv-controls strong { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #7e5541; width: 100%; }
+  .pv-controls label { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; cursor: pointer; }
+  .pv-controls select {
+    font: inherit; font-weight: 700; padding: 6px 10px; border-radius: 8px;
+    border: 1.5px solid rgba(63,43,33,0.2); background: #fff; color: #3f2b21;
+  }
+  .pv-controls select:focus-visible, .pv-controls input:focus-visible { outline: 3px solid #ffaa81; outline-offset: 2px; }
+
+  /* fake Stripe hand-off overlay (preview only) */
+  .pv-stripe {
+    position: fixed; inset: 0; z-index: 999; display: none;
+    align-items: center; justify-content: center; padding: 24px;
+    background: rgba(32,22,17,0.6);
+  }
+  .pv-stripe.show { display: flex; }
+  .pv-stripe-card {
+    background: #fff; border-radius: 18px; padding: 30px 28px; max-width: 380px; width: 100%;
+    text-align: center; box-shadow: 0 30px 70px rgba(0,0,0,0.4);
+  }
+  .pv-stripe-card .pv-lock { font-size: 34px; }
+  .pv-stripe-card h3 { font-size: 18px; font-weight: 900; margin: 12px 0 6px; color: #201611; }
+  .pv-stripe-card p { font-size: 13.5px; color: #3f2b21; margin-bottom: 6px; }
+  .pv-stripe-sum {
+    background: #ffe5d9; border-radius: 12px; padding: 12px 14px; margin: 14px 0 18px;
+    font-size: 13.5px; font-weight: 700; color: #3f2b21; text-align: left; line-height: 1.6;
+  }
+  .pv-stripe-card button {
+    font: inherit; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em;
+    border: none; cursor: pointer; padding: 12px 22px; border-radius: 999px;
+    background: #3f2b21; color: #ffe5d9; font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<div class="pv-note">Preview — <b>mock data, no real payment.</b> This drives the real <b>wogo-calendar.js / .css</b> with an injected fake API. Tap <b>Book your walk</b> below to feel the full journey: it auto-scrolls you to the calendar, then day → time → <b>"Tickets include" reassurance strip</b> → guests → checkout.</div>
+
+<header class="pv-hero">
+  <div class="pv-eyebrow">Rotterdam · Hidden Gems</div>
+  <h1>Rotterdam Route 2</h1>
+  <p>Three brand-new hidden-gem bars, three signature cocktails, tables reserved at every stop.</p>
+  <!-- Ships aimed at the old Wix calendar, exactly like the real route-page
+       buttons. The widget's retargetCtas() rewrites it on load — click it to
+       feel the real journey: tap Book → you're AT the calendar. -->
+  <a href="https://www.wogococktailwalk.com/booking-calendar/rotterdam-cocktail-walk-route-2" target="_top" class="pv-book-btn">Book your walk → €29,95</a>
+</header>
+
+<section class="pv-filler" aria-label="Route details (preview filler)">
+  <h2>What's included</h2>
+  <ul>
+    <li>3 signature cocktails or mocktails</li>
+    <li>3 tables reserved under your name</li>
+    <li>Self-guided · 3–4 hours · start when you like</li>
+  </ul>
+</section>
+
+<section class="pv-book">
+  <div class="pv-book-head">
+    <div class="pv-eyebrow">Reserve your table</div>
+    <h2>Book your walk</h2>
+  </div>
+
+  <!-- Preview-only controls to exercise every state -->
+  <div class="pv-controls" role="group" aria-label="Preview controls">
+    <strong>Preview controls (not part of the widget)</strong>
+    <label>Scenario
+      <select id="pv-scenario">
+        <option value="live">Live availability</option>
+        <option value="slow">Slow network (loading)</option>
+        <option value="error">Server error</option>
+      </select>
+    </label>
+    <label>Language
+      <select id="pv-lang">
+        <option value="en">EN</option>
+        <option value="nl">NL</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="pv-race"> Last-seat race on next booking</label>
+  </div>
+
+  <!-- The real widget mount point -->
+  <div class="wogo-calendar" data-route="rotterdam-hidden-gems" data-lang="en"></div>
+</section>
+
+<!-- Fake Stripe hand-off (shown by the mock so the redirect is visible) -->
+<div class="pv-stripe" id="pv-stripe" role="dialog" aria-modal="true" aria-label="Redirecting to payment">
+  <div class="pv-stripe-card">
+    <div class="pv-lock" aria-hidden="true">🔒</div>
+    <h3>Redirecting to secure checkout</h3>
+    <p>In production this is Stripe (iDEAL · card · Apple Pay · Klarna).</p>
+    <div class="pv-stripe-sum" id="pv-stripe-sum"></div>
+    <button type="button" onclick="document.getElementById('pv-stripe').classList.remove('show')">Close preview</button>
+  </div>
+</div>
+
+<!-- The REAL shipping widget script. WOGO_API is "" inside it, so its own
+     auto-init stays dormant; we mount it explicitly with a mock fetch below. -->
+<script src="../widget/wogo-calendar.js"></script>
+
+<script>
+/* ============================================================================
+   MOCK API LAYER (preview only) — returns realistic fixtures matching the
+   Guest API contract in SPEC.md §5. Fixtures include: a fully sold-out day,
+   a closed (override) day, and an almost-full slot.
+   ========================================================================== */
+(function () {
+  "use strict";
+
+  const CAPACITY = 10, MAX_PARTY = 6, PRICE = 2995;
+  const OPEN_WEEKDAYS = [4, 5, 6]; // Thu, Fri, Sat
+  const TIMES = ["17:30", "18:00", "18:30", "19:00", "19:30", "20:00"];
+
+  const pad = (n) => String(n).padStart(2, "0");
+  const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const isoWeekday = (d) => ((d.getDay() + 6) % 7) + 1;
+  const hash = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; };
+
+  // Assign roles to the open dates across the 90-day horizon so the demo always
+  // has exactly one sold-out day, one closed day, and one almost-full day —
+  // anchored to the soonest open dates so they're visible in the first month.
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const horizon = new Date(today); horizon.setDate(horizon.getDate() + 90);
+  const openDates = [];
+  for (let d = new Date(today); d <= horizon; d.setDate(d.getDate() + 1)) {
+    if (OPEN_WEEKDAYS.includes(isoWeekday(d))) openDates.push(ymd(d));
+  }
+  const role = {};
+  openDates.forEach((ds, i) => { role[ds] = "normal"; });
+  if (openDates[0]) role[openDates[0]] = "almost";   // soonest open day → almost-full + a sold-out slot
+  if (openDates[1]) role[openDates[1]] = "soldout";  // whole day sold out
+  if (openDates[2]) role[openDates[2]] = "closed";   // owner closed this date
+
+  // Deterministic seats_left for a "normal" slot (varied but stable).
+  function normalSeats(ds, time) {
+    const spreads = [10, 8, 7, 6, 9, 5, 4, 10, 6];
+    return spreads[hash(ds + time) % spreads.length];
+  }
+
+  function slotsFor(ds) {
+    const r = role[ds] || "closed";
+    if (r === "closed" || r === undefined) return { closed: true, slots: [] };
+    return {
+      closed: false,
+      slots: TIMES.map((time, idx) => {
+        let seats;
+        if (r === "soldout") seats = 0;
+        else if (r === "almost") {
+          if (idx === 1) seats = 2;          // ← the almost-full slot
+          else if (idx === 3) seats = 0;      // ← a single sold-out slot on an open day
+          else seats = normalSeats(ds, time);
+        } else seats = normalSeats(ds, time);
+        return { slot: time, capacity: CAPACITY, seats_left: seats };
+      }),
+    };
+  }
+
+  function availabilityFor(monthStr) {
+    const [y, m] = monthStr.split("-").map(Number);
+    const last = new Date(y, m, 0).getDate();
+    const days = {};
+    for (let d = 1; d <= last; d++) {
+      const date = new Date(y, m - 1, d);
+      if (date < today || date > horizon) continue;
+      const ds = ymd(date);
+      if (!OPEN_WEEKDAYS.includes(isoWeekday(date))) { days[ds] = "closed"; continue; }
+      const r = role[ds];
+      if (r === "closed") days[ds] = "closed";
+      else if (r === "soldout") days[ds] = "soldout";
+      else days[ds] = "open";
+    }
+    return { month: monthStr, days };
+  }
+
+  // ---- state driven by the preview controls --------------------------------
+  const opts = { scenario: "live", race: false };
+
+  const jsonRes = (status, data) => ({ ok: status >= 200 && status < 300, status, json: async () => data });
+  const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  async function mockFetch(url, init) {
+    const wait = opts.scenario === "slow" ? 1200 : 120;
+    await delay(wait);
+    const u = new URL(url, "http://mock");
+    const path = u.pathname;
+
+    if (opts.scenario === "error" && path === "/api/availability") {
+      return jsonRes(500, { error: "server_error", message: "mock error" });
+    }
+
+    if (path === "/api/routes") {
+      return jsonRes(200, {
+        routes: [{
+          id: "rotterdam-hidden-gems", name: "Rotterdam Route 2 · Hidden Gems",
+          city: "Rotterdam", price_cents: PRICE, max_party: MAX_PARTY, map_url: null,
+        }],
+      });
+    }
+    if (path === "/api/availability") {
+      return jsonRes(200, availabilityFor(u.searchParams.get("month")));
+    }
+    if (path === "/api/slots") {
+      const s = slotsFor(u.searchParams.get("date"));
+      return jsonRes(200, { route_id: "rotterdam-hidden-gems", date: u.searchParams.get("date"), closed: s.closed, slots: s.slots });
+    }
+    if (path === "/api/book" && init && init.method === "POST") {
+      const body = JSON.parse(init.body);
+      if (opts.race) { // simulate someone grabbing the last seat
+        opts.race = false;
+        document.getElementById("pv-race").checked = false;
+        return jsonRes(409, { error: "sold_out", seats_left: 1 });
+      }
+      // show the fake Stripe hand-off, then resolve with a no-op checkout_url
+      const euro = new Intl.NumberFormat(body.locale === "nl" ? "nl-NL" : "en-IE",
+        { style: "currency", currency: "EUR" }).format(PRICE * body.party / 100);
+      document.getElementById("pv-stripe-sum").innerHTML =
+        `Rotterdam Route 2 · Hidden Gems<br>${body.date} at ${body.slot}<br>${body.party} × ${new Intl.NumberFormat(body.locale === "nl" ? "nl-NL" : "en-IE", { style: "currency", currency: "EUR" }).format(PRICE / 100)} = <b>${euro}</b><br>${body.name} · ${body.email}`;
+      document.getElementById("pv-stripe").classList.add("show");
+      return jsonRes(200, { booking_id: "b_preview_" + Date.now(), checkout_url: "#stripe-preview" });
+    }
+    return jsonRes(404, { error: "not_found" });
+  }
+
+  // ---- mount the REAL widget with the mock fetch injected ------------------
+  const node = document.querySelector(".wogo-calendar");
+  function remount() {
+    node.removeAttribute("data-wc-ready");
+    node.setAttribute("data-lang", document.getElementById("pv-lang").value);
+    window.WogoCalendar.mount(node, { api: "", fetchImpl: mockFetch });
+  }
+
+  document.getElementById("pv-scenario").addEventListener("change", (e) => { opts.scenario = e.target.value; remount(); });
+  document.getElementById("pv-lang").addEventListener("change", remount);
+  document.getElementById("pv-race").addEventListener("change", (e) => { opts.race = e.target.checked; });
+
+  remount();
+
+  // Demonstrate the widget's automatic CTA re-aim with the REAL function:
+  // in production autoInit() calls this the moment WOGO_API is set. Here the
+  // hero's "Book your walk" link (aimed at the old Wix calendar, like the
+  // real route pages) gets rewritten to smooth-scroll to the calendar below.
+  window.WogoCalendar.retargetCtas(node);
+})();
+</script>
+</body>
+</html>

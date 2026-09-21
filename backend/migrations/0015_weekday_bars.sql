@@ -1,0 +1,32 @@
+-- migrations/0015_weekday_bars.sql
+-- Per-weekday bar sets (owner requirement, 2026-08): a route can run a
+-- DIFFERENT, RECURRING ordered list of bars on different weekdays — e.g.
+-- Thursday's route visits Bar A -> Bar B, Friday's visits Bar A -> Bar C —
+-- as a standing rule that repeats every week, distinct from the existing
+-- one-off PER-DATE 'alternate_bars' date_override (migrations/0001), which
+-- still applies to one specific date only and keeps outranking everything
+-- here (see src/logic.js:computeBarArrivals, unchanged by this migration).
+--
+-- Design: routes_bars gets one new nullable column. NULL (the existing,
+-- default state for every row written before this migration) means "the
+-- DEFAULT set" — used on any weekday that has no rows of its own. A row
+-- with weekday = 1..7 (ISO Mon=1..Sun=7) belongs to ONLY that weekday's set.
+--
+-- Resolution for a given (route, date) — src/db.js:listBarsForDate:
+--   * if any routes_bars rows exist for (route_id, weekday = that date's ISO
+--     weekday) -> return those, ordered by ord (that weekday's own set,
+--     ord numbering independent of every other set).
+--   * else -> return the rows with weekday IS NULL, ordered by ord (the
+--     default set — today's behaviour, unchanged).
+-- src/db.js:listBars (returns ALL rows for a route, any weekday) is
+-- UNCHANGED and keeps serving the admin bar-list editor's full picture.
+--
+-- No existing data changes meaning: every routes_bars row ever written has
+-- weekday = NULL, so listBarsForDate always falls through to exactly what
+-- listBars already returned — a route that has never used this feature
+-- behaves byte-for-byte as before.
+--
+-- NOT applied to remote D1 by tooling — the operator applies this by hand
+-- (wrangler d1 migrations apply wogo-bookings --remote) and redeploys.
+
+ALTER TABLE routes_bars ADD COLUMN weekday INTEGER;

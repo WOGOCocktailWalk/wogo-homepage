@@ -1,0 +1,38 @@
+-- migrations/0003_slot_capacity.sql
+-- Per-timeslot capacity (owner requirement, 2026-07-23): capacity must be
+-- editable PER TIMESLOT, not just per route — e.g. Rotterdam Route 2 defaults
+-- to 10 seats/departure, but its 20:00 slot only ever has 6 (a bar is busy
+-- at that hour); and a specific date's 20:00 departure might need to drop to
+-- 4, or close, without touching any other slot or any other date.
+--
+-- Design: two new levels of override, layered on top of the two that already
+-- existed (route.capacity, and date_overrides 'capacity_override' which
+-- applies one number to every slot on one date). Full precedence, highest to
+-- lowest specificity (implemented in src/logic.js:buildSlotsForDate and
+-- mirrored — for the no-overbooking guarantee — in src/db.js's atomic
+-- createHold guard):
+--
+--   1. date_overrides (route, date, action='slot_capacity_override')
+--      payload = JSON object { "HH:MM": capacity, ... } — ONE row per
+--      (route, date) holds ALL that date's per-slot overrides (same
+--      INSERT-OR-REPLACE-the-whole-row semantics as every other action in
+--      this table — the admin UI submits the complete map, it does not
+--      merge server-side). A capacity of 0 makes that slot show "0 seats
+--      left" (soldout) while remaining listed; to hide the slot from the
+--      list entirely, use the existing 'remove_slot' action instead.
+--   2. date_overrides (route, date, action='capacity_override')  — EXISTING,
+--      unchanged: one capacity number applied to every slot on that date.
+--   3. routes.slot_capacity                                       — NEW
+--      column below: JSON object { "HH:MM": capacity, ... } giving this
+--      route's per-slot DEFAULT capacity, independent of date. A slot with
+--      no entry in the map falls through to...
+--   4. routes.capacity                                            — EXISTING,
+--      unchanged: the route-wide default capacity.
+--
+-- No existing data changes meaning: slot_capacity defaults to '{}' (every
+-- slot falls through to routes.capacity — today's behaviour, byte-for-byte
+-- unchanged), and 'slot_capacity_override' is simply a new value the
+-- existing free-text date_overrides.action column can hold — the table's
+-- shape doesn't change, so date_overrides needs no ALTER.
+
+ALTER TABLE routes ADD COLUMN slot_capacity TEXT NOT NULL DEFAULT '{}';

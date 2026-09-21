@@ -1,0 +1,41 @@
+name = "wogo-booking-backend"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+# No compatibility_flags needed — the Worker uses only Web-standard APIs
+# (fetch, Web Crypto, URL, Response) and D1's native binding. No Node-only
+# APIs anywhere in src/, so no nodejs_compat flag required. This keeps the
+# code portable (see PORTABILITY.md).
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wogo-bookings"
+database_id = "e0d64847-0183-4ec3-8401-fe6e3a02f475"
+
+# Daily D1 -> R2 export (src/backup.js, owner audit item #4). INERT until you:
+#   1. wrangler r2 bucket create wogo-backups
+#   2. uncomment this block
+#   3. wrangler deploy
+# Until then env.BACKUP_BUCKET is undefined and the daily cron's export step
+# is a harmless no-op — see SETUP.md "Backups & disaster recovery" for the
+# full walkthrough and the restore command.
+# [[r2_buckets]]
+# binding = "BACKUP_BUCKET"
+# bucket_name = "wogo-backups"
+
+[triggers]
+# Two schedules, both handled by the single scheduled() entry point in
+# src/index.js (see runScheduled() there for exactly what each fires):
+#   */5 * * * *  — hold-expiry sweep, security-table pruning, failed-email
+#                  retry drain, health check. Correctness does NOT depend on
+#                  this cadence (see SPEC.md §7.2) — it's a latency choice.
+#   0 3 * * *    — once/day: GDPR retention, R2 backup export, long-retention
+#                  audit/error/email-log pruning.
+crons = ["*/5 * * * *", "0 3 * * *"]
+
+[vars]
+ENVIRONMENT = "production"
+# Optional (production hardening, SETUP.md §14): the Worker's own public base
+# URL, once it has one — enables healthcheck.js's self-fetch layer. Unset is
+# the safe default; the health check then only runs its in-process checks
+# (D1 reachable, required secrets present).
+# HEALTH_CHECK_BASE_URL = "https://api.wogococktailwalk.com"

@@ -1,0 +1,4077 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>WOGO Admin — preview</title>
+<style>/* ==========================================================================
+   WOGO Admin — dashboard styles
+   Warm, premium, data-dense. Matches the live site palette exactly
+   (tokens verified against index.html :root). Light/warm surface only.
+   No external fonts, no CDNs — self-contained.
+   ========================================================================== */
+
+:root {
+  /* Brand palette (verbatim from the live site) */
+  --blush: #ffe5d9;
+  --brown-soft: #7e5541;
+  --brown: #643e2b;
+  --espresso: #3f2b21;
+  --ink: #201611;
+  --salmon: #ffaa81;
+  --salmon-deep: #f2905c;
+  --cream: #fffaf6;
+  --surface-tint: #fbe9df;
+
+  /* Primary action — the single high-converting salmon gradient */
+  --cta-bg: linear-gradient(135deg, #ffaa81 0%, #f2905c 100%);
+  --cta-bg-hover: linear-gradient(135deg, #f2905c 0%, #f2905c 100%);
+  --cta-ink: #3f2b21;
+  --cta-shadow: 0 8px 20px rgba(242, 144, 92, 0.45);
+
+  /* Derived UI surfaces */
+  --page-bg: #f4e6dc;
+  --panel: var(--cream);
+  --panel-2: #fdf4ee;
+  --line: rgba(63, 43, 33, 0.12);
+  --line-strong: rgba(63, 43, 33, 0.22);
+  --muted: #8a6a58;
+
+  /* Status colours (on-brand, no true red per brand rules) */
+  --ok: #3f7d5a;          /* confirmed — deep sage green */
+  --ok-bg: #e4f0e7;
+  --hold: #b07a2e;        /* hold — amber */
+  --hold-bg: #f7ecd8;
+  --cancel: #9a5a4a;      /* cancelled/expired — muted terracotta-brown, NOT signal red */
+  --cancel-bg: #f1e2dc;
+  --conflict: #8a3f6b;    /* conflict — plum, needs owner attention */
+  --conflict-bg: #f0e2ec;
+
+  /* Categorical palette for charts / city dots (4 cities, distinguishable, premium) */
+  --cat-1: #f2905c;  /* coral salmon */
+  --cat-2: #c99a3f;  /* warm amber */
+  --cat-3: #7e5541;  /* brown */
+  --cat-4: #5f7d8c;  /* dusty slate-blue (cool contrast) */
+  --cat-5: #8a6d9a;  /* muted plum (fallback for extra routes) */
+  --cat-6: #6f8a5f;  /* sage (fallback) */
+
+  --r-lg: 18px;
+  --r-md: 13px;
+  --r-sm: 9px;
+  --pill: 999px;
+  --shadow-card: 0 1px 2px rgba(32, 22, 17, 0.05), 0 8px 24px rgba(32, 22, 17, 0.06);
+  --shadow-pop: 0 12px 40px rgba(32, 22, 17, 0.18);
+  --sidebar-w: 236px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --speed: 160ms;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--espresso);
+  background: var(--page-bg);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button { font-family: inherit; }
+
+/* Focus — visible salmon ring everywhere (a11y) */
+:focus-visible {
+  outline: 3px solid var(--salmon-deep);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ==========================================================================
+   LOGIN SCREEN
+   ========================================================================== */
+.login-wrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(1200px 600px at 15% -10%, var(--surface-tint) 0%, transparent 55%),
+    radial-gradient(900px 500px at 110% 110%, var(--blush) 0%, transparent 50%),
+    var(--page-bg);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-pop);
+  padding: 34px 30px 30px;
+  text-align: left;
+}
+
+.login-mark {
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  font-size: 20px;
+  color: var(--espresso);
+  margin-bottom: 4px;
+}
+.login-mark span { color: var(--salmon-deep); }
+
+.login-sub {
+  color: var(--muted);
+  font-size: 13.5px;
+  margin: 0 0 24px;
+}
+
+.field { margin-bottom: 16px; }
+.field label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--brown);
+  margin-bottom: 6px;
+  letter-spacing: 0.01em;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="tel"],
+input[type="date"],
+input[type="number"],
+input[type="time"],
+select,
+textarea {
+  width: 100%;
+  padding: 11px 13px;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--espresso);
+  background: var(--panel-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  transition: border-color var(--speed), box-shadow var(--speed);
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--salmon-deep);
+  box-shadow: 0 0 0 3px rgba(242, 144, 92, 0.18);
+  outline: none;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  font-size: 14.5px;
+  font-weight: 700;
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform var(--speed), box-shadow var(--speed), background var(--speed), border-color var(--speed);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn:active { transform: translateY(1px); }
+
+.btn-primary {
+  background: var(--cta-bg);
+  color: var(--cta-ink);
+  box-shadow: var(--cta-shadow);
+}
+.btn-primary:hover { background: var(--cta-bg-hover); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--brown);
+  border-color: var(--line-strong);
+}
+.btn-ghost:hover { background: var(--panel-2); border-color: var(--brown-soft); }
+
+.btn-quiet {
+  background: var(--panel-2);
+  color: var(--brown);
+  border-color: var(--line);
+}
+.btn-quiet:hover { background: var(--surface-tint); }
+
+.btn-danger {
+  background: transparent;
+  color: var(--cancel);
+  border-color: rgba(154, 90, 74, 0.4);
+}
+.btn-danger:hover { background: var(--cancel-bg); }
+
+.btn-block { width: 100%; }
+.btn-sm { padding: 7px 12px; font-size: 13px; }
+
+.login-error {
+  color: var(--cancel);
+  background: var(--cancel-bg);
+  border: 1px solid rgba(154, 90, 74, 0.3);
+  border-radius: var(--r-sm);
+  padding: 9px 12px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+}
+.login-error.show { display: block; }
+
+/* ==========================================================================
+   APP SHELL
+   ========================================================================== */
+.app { display: none; min-height: 100vh; }
+.app.show { display: grid; grid-template-columns: var(--sidebar-w) 1fr; }
+
+.sidebar {
+  background:
+    linear-gradient(180deg, var(--espresso) 0%, var(--ink) 100%);
+  color: var(--cream);
+  display: flex;
+  flex-direction: column;
+  padding: 22px 16px 18px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-weight: 800;
+  letter-spacing: 0.26em;
+  font-size: 18px;
+  padding: 4px 8px 20px;
+  color: #fff;
+}
+.brand span { color: var(--salmon); }
+.brand small {
+  display: block;
+  font-size: 9.5px;
+  letter-spacing: 0.24em;
+  color: rgba(255, 245, 238, 0.55);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.nav { display: flex; flex-direction: column; gap: 3px; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  color: rgba(255, 245, 238, 0.72);
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: background var(--speed), color var(--speed);
+}
+.nav-item:hover { background: rgba(255, 170, 129, 0.12); color: #fff; }
+.nav-item.active {
+  background: rgba(255, 170, 129, 0.16);
+  color: #fff;
+  box-shadow: inset 3px 0 0 var(--salmon);
+}
+.nav-item .ico { width: 18px; height: 18px; flex: 0 0 18px; opacity: 0.9; }
+
+.nav-spacer { flex: 1; }
+
+.sidebar-foot {
+  border-top: 1px solid rgba(255, 245, 238, 0.12);
+  padding-top: 14px;
+  margin-top: 10px;
+}
+.sidebar-foot .who {
+  font-size: 12px;
+  color: rgba(255, 245, 238, 0.55);
+  padding: 0 12px 10px;
+}
+
+/* Main column */
+.main { min-width: 0; display: flex; flex-direction: column; }
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(246, 233, 220, 0.86);
+  backdrop-filter: saturate(1.4) blur(8px);
+  border-bottom: 1px solid var(--line);
+  padding: 16px 26px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.topbar h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.topbar .sub {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 2px;
+}
+.topbar .grow { flex: 1; }
+
+.mobile-menu-btn {
+  display: none;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.content { padding: 22px 26px 60px; }
+
+/* ==========================================================================
+   STAT ROW
+   ========================================================================== */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 15px 16px;
+  box-shadow: var(--shadow-card);
+}
+.stat .k {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 700;
+}
+.stat .v {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-top: 4px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.stat .d { font-size: 12px; color: var(--brown-soft); margin-top: 2px; }
+
+/* ==========================================================================
+   FILTER BAR
+   ========================================================================== */
+.filters {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-card);
+}
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+  align-items: flex-end;
+}
+.filter-group { display: flex; flex-direction: column; gap: 6px; }
+.filter-group > label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--muted);
+}
+.filter-group select,
+.filter-group input {
+  min-width: 130px;
+}
+.filter-group.search input { min-width: 200px; }
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--pill);
+  border: 1.5px solid var(--line-strong);
+  background: var(--panel-2);
+  color: var(--brown);
+  cursor: pointer;
+  transition: all var(--speed);
+  white-space: nowrap;
+}
+.chip:hover { border-color: var(--brown-soft); }
+.chip .dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  flex: 0 0 9px;
+}
+.chip.active {
+  background: var(--espresso);
+  color: var(--cream);
+  border-color: var(--espresso);
+}
+.chip.active .dot { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35); }
+
+.filter-actions {
+  display: flex;
+  gap: 9px;
+  margin-left: auto;
+  align-items: flex-end;
+}
+
+/* Toggle (list / calendar) */
+.seg {
+  display: inline-flex;
+  background: var(--panel-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--pill);
+  padding: 3px;
+}
+.seg button {
+  border: none;
+  background: transparent;
+  padding: 7px 15px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brown);
+  border-radius: var(--pill);
+  cursor: pointer;
+  transition: all var(--speed);
+}
+.seg button.active {
+  background: var(--espresso);
+  color: var(--cream);
+}
+
+/* ==========================================================================
+   TABLE
+   ========================================================================== */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.card-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.card-head .grow { flex: 1; }
+.count-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brown);
+  background: var(--surface-tint);
+  padding: 3px 10px;
+  border-radius: var(--pill);
+}
+
+.table-scroll { overflow-x: auto; }
+table.data {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+table.data th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-weight: 700;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+}
+table.data td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+table.data tbody tr { cursor: pointer; transition: background var(--speed); }
+table.data tbody tr:hover { background: var(--panel-2); }
+table.data tbody tr:last-child td { border-bottom: none; }
+.td-name { font-weight: 700; color: var(--ink); }
+.td-sub { color: var(--muted); font-size: 12px; }
+.num { font-variant-numeric: tabular-nums; }
+
+.route-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+  color: var(--brown);
+}
+.route-tag .dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 9px; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--pill);
+  text-transform: capitalize;
+}
+.badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.badge.confirmed { color: var(--ok); background: var(--ok-bg); }
+.badge.hold { color: var(--hold); background: var(--hold-bg); }
+.badge.cancelled, .badge.expired { color: var(--cancel); background: var(--cancel-bg); }
+.badge.confirmed_conflict { color: var(--conflict); background: var(--conflict-bg); }
+
+.empty {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+.empty .big { font-size: 34px; margin-bottom: 8px; }
+
+/* pagination */
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 18px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--brown);
+}
+.pager .grow { flex: 1; }
+
+/* ==========================================================================
+   CALENDAR (bookings month view)
+   ========================================================================== */
+.cal-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.cal-head h2 { margin: 0; font-size: 16px; font-weight: 800; color: var(--ink); min-width: 190px; }
+.cal-nav { display: inline-flex; gap: 6px; }
+.icon-btn {
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-2);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  color: var(--brown);
+  font-size: 15px;
+  transition: all var(--speed);
+}
+.icon-btn:hover { background: var(--surface-tint); border-color: var(--brown-soft); }
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--line);
+  padding: 1px;
+}
+.cal-dow {
+  background: var(--panel);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  padding: 8px 0;
+}
+.cal-cell {
+  background: var(--panel);
+  min-height: 96px;
+  padding: 7px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  transition: background var(--speed);
+  position: relative;
+}
+.cal-cell:hover { background: var(--panel-2); }
+.cal-cell.blank { background: var(--page-bg); cursor: default; }
+.cal-cell.today .cal-date {
+  background: var(--espresso);
+  color: var(--cream);
+  border-radius: var(--pill);
+  width: 24px; height: 24px;
+  display: grid; place-items: center;
+}
+.cal-date { font-size: 12.5px; font-weight: 700; color: var(--brown); }
+.cal-cell.other .cal-date { color: var(--line-strong); }
+.cal-guests {
+  margin-top: auto;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.cal-bars { display: flex; flex-wrap: wrap; gap: 3px; }
+.cal-bars .cb {
+  height: 6px; border-radius: 3px; flex: 1 1 auto; min-width: 8px;
+}
+.cal-cell.closed-day::after {
+  content: "closed";
+  position: absolute; top: 7px; right: 8px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.04em;
+  color: var(--cancel); text-transform: uppercase;
+}
+
+/* ==========================================================================
+   PARTICIPANTS PER HOUR
+   ========================================================================== */
+.pph-wrap { display: grid; grid-template-columns: 1fr; gap: 18px; }
+.hour-row {
+  display: grid;
+  grid-template-columns: 62px 1fr 74px;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 0;
+}
+.hour-row + .hour-row { border-top: 1px solid var(--line); }
+.hour-time {
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.hour-bar-track {
+  height: 30px;
+  background: var(--panel-2);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  display: flex;
+}
+.hour-seg {
+  height: 100%;
+  min-width: 2px;
+  transition: width 400ms cubic-bezier(.2,.7,.2,1);
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.hour-count {
+  text-align: right;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.hour-count small { display: block; font-weight: 600; font-size: 11px; color: var(--muted); }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 4px 2px 14px;
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--brown);
+}
+.legend-item .sw { width: 12px; height: 12px; border-radius: 3px; }
+
+.capacity-hint {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 2px 2px 12px;
+}
+
+/* Per-date capacity list (participants-per-hour, single route selected).
+   Each departure shows its EFFECTIVE seats for this date, a fill meter,
+   an override badge, and taps open an inline seat editor (migrations/0003). */
+.cap-list { display: grid; gap: 8px; padding: 14px 18px 6px; }
+.cap-row {
+  display: grid;
+  grid-template-columns: 58px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 11px 14px;
+  cursor: pointer;
+  transition: background var(--speed), border-color var(--speed);
+}
+.cap-row:hover { background: var(--surface-tint); border-color: var(--brown-soft); }
+.cap-row.closed { opacity: 0.72; }
+.cap-time { font-weight: 800; font-size: 14px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.cap-meter-wrap { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.cap-meter { height: 12px; border-radius: var(--pill); background: rgba(63, 43, 33, 0.08); overflow: hidden; }
+.cap-fill { height: 100%; border-radius: var(--pill); transition: width 400ms cubic-bezier(.2,.7,.2,1); }
+.cap-fill.low  { background: var(--ok); }
+.cap-fill.mid  { background: var(--hold); }
+.cap-fill.full { background: var(--cancel); }
+.cap-labels { display: flex; gap: 10px; align-items: baseline; font-size: 12.5px; }
+.cap-count { font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.cap-left { color: var(--muted); font-weight: 600; }
+.cap-right { display: flex; align-items: center; gap: 9px; }
+.cap-badges { display: flex; gap: 6px; align-items: center; }
+.cap-tag {
+  font-size: 10.5px; font-weight: 800; letter-spacing: 0.03em;
+  padding: 2px 8px; border-radius: var(--pill); text-transform: uppercase; white-space: nowrap;
+}
+.cap-tag.override { background: var(--surface-tint); color: var(--salmon-deep); border: 1px solid var(--salmon-deep); }
+.cap-tag.datecap  { background: var(--hold-bg); color: var(--hold); }
+.cap-tag.routedef { background: var(--panel); color: var(--muted); border: 1px solid var(--line); }
+.cap-tag.closed   { background: var(--cancel-bg); color: var(--cancel); }
+.cap-edit-hint { color: var(--muted); font-size: 15px; line-height: 1; }
+
+.cap-editor {
+  background: var(--panel);
+  border: 1px solid var(--salmon-deep);
+  border-radius: var(--r-md);
+  padding: 14px;
+  margin: -2px 0 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 14px;
+  align-items: flex-end;
+  box-shadow: var(--shadow-card);
+}
+.cap-editor-field { display: flex; flex-direction: column; gap: 5px; }
+.cap-editor-field span {
+  font-size: 11px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.cap-editor-field input { width: 88px; }
+.cap-editor .capacity-hint { flex-basis: 100%; padding: 0; margin: 0; }
+
+/* ==========================================================================
+   ROUTE MANAGER
+   ========================================================================== */
+.route-list { display: grid; gap: 12px; }
+.route-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.route-card.inactive { opacity: 0.62; }
+.rc-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  cursor: pointer;
+}
+.rc-title { font-weight: 800; font-size: 15.5px; color: var(--ink); }
+.rc-meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.rc-badges { display: flex; gap: 7px; flex-wrap: wrap; }
+.mini-badge {
+  font-size: 11px; font-weight: 700;
+  padding: 3px 9px; border-radius: var(--pill);
+  background: var(--surface-tint); color: var(--brown);
+}
+.mini-badge.off { background: var(--cancel-bg); color: var(--cancel); }
+.mini-badge.on { background: var(--ok-bg); color: var(--ok); }
+.rc-chevron { margin-left: auto; color: var(--muted); transition: transform var(--speed); font-size: 18px; }
+.route-card.open .rc-chevron { transform: rotate(90deg); }
+
+.rc-body { display: none; padding: 4px 18px 20px; border-top: 1px solid var(--line); }
+.route-card.open .rc-body { display: block; }
+
+.rc-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 14px 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+.rc-tab {
+  border: none; background: transparent;
+  padding: 9px 14px;
+  font-size: 13px; font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.rc-tab.active { color: var(--ink); border-bottom-color: var(--salmon-deep); }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px 16px;
+}
+.form-grid .field { margin-bottom: 0; }
+.form-grid .field.wide { grid-column: 1 / -1; }
+
+.dow-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.dow {
+  width: 40px; height: 38px;
+  display: grid; place-items: center;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--panel-2);
+  font-size: 12.5px; font-weight: 700;
+  color: var(--brown);
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--speed);
+}
+.dow.on { background: var(--espresso); color: var(--cream); border-color: var(--espresso); }
+
+.slot-chips { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+.slot-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 8px 6px 12px;
+  border-radius: var(--pill);
+  background: var(--surface-tint);
+  border: 1px solid var(--line);
+  font-size: 13px; font-weight: 700;
+  color: var(--brown);
+  font-variant-numeric: tabular-nums;
+}
+.slot-chip button {
+  border: none; background: rgba(63,43,33,0.1);
+  width: 18px; height: 18px; border-radius: 50%;
+  cursor: pointer; color: var(--brown);
+  font-size: 12px; line-height: 1;
+  display: grid; place-items: center;
+}
+.slot-chip button:hover { background: var(--cancel-bg); color: var(--cancel); }
+
+/* Per-slot seat-count override input, inline on each time chip (migrations/0003) */
+.slot-chip input[type="number"] {
+  width: 46px;
+  padding: 3px 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--brown);
+  background: var(--cream);
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  font-variant-numeric: tabular-nums;
+}
+.slot-chip input[type="number"]::placeholder { color: var(--muted); font-weight: 600; }
+.slot-chip.has-override {
+  background: var(--surface-tint);
+  border-color: var(--salmon-deep);
+}
+.slot-chip.has-override input[type="number"] {
+  border-color: var(--salmon-deep);
+  color: var(--espresso);
+}
+
+.switch {
+  display: inline-flex; align-items: center; gap: 10px;
+  cursor: pointer; font-weight: 700; font-size: 13.5px; color: var(--brown);
+}
+.switch input { display: none; }
+.switch .track {
+  width: 44px; height: 26px; border-radius: var(--pill);
+  background: var(--line-strong); position: relative;
+  transition: background var(--speed);
+}
+.switch .track::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  transition: transform var(--speed);
+}
+.switch input:checked + .track { background: var(--ok); }
+.switch input:checked + .track::after { transform: translateX(18px); }
+
+/* Bars sub-panel */
+.bar-list { display: grid; gap: 8px; }
+.bar-item {
+  display: grid;
+  grid-template-columns: 30px 1.4fr 1.6fr 90px auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+.bar-ord {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--espresso); color: var(--cream);
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 800;
+}
+.bar-item input { min-width: 0; }
+.bar-offset { display: flex; align-items: center; gap: 5px; }
+.bar-offset span { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+/* Date overrides */
+.ov-list { display: grid; gap: 8px; margin-top: 4px; }
+.ov-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 13px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  font-size: 13.5px;
+}
+.ov-item .ov-date { font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ov-item .ov-action {
+  font-size: 11.5px; font-weight: 700; padding: 3px 9px;
+  border-radius: var(--pill); background: var(--surface-tint); color: var(--brown);
+  text-transform: capitalize;
+}
+.ov-item .ov-action.closed { background: var(--cancel-bg); color: var(--cancel); }
+.ov-item .ov-payload { color: var(--muted); font-size: 12.5px; }
+.ov-item .grow { flex: 1; }
+
+.subhead {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em;
+  font-weight: 800; color: var(--brown-soft);
+  margin: 20px 0 10px;
+}
+.rc-actions {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line);
+}
+.rc-actions .grow { flex: 1; }
+
+.inline-form {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;
+  padding: 14px; background: var(--panel-2);
+  border: 1px dashed var(--line-strong); border-radius: var(--r-md);
+  margin-top: 12px;
+}
+.inline-form .field { margin: 0; }
+.inline-form .field label { font-size: 11px; }
+
+/* ==========================================================================
+   DRAWER (booking detail)
+   ========================================================================== */
+.scrim {
+  position: fixed; inset: 0;
+  background: rgba(32, 22, 17, 0.44);
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--speed);
+  z-index: 90;
+}
+.scrim.show { opacity: 1; pointer-events: auto; }
+
+.drawer {
+  position: fixed; top: 0; right: 0; height: 100vh;
+  width: min(420px, 92vw);
+  background: var(--panel);
+  box-shadow: var(--shadow-pop);
+  transform: translateX(100%);
+  transition: transform 220ms cubic-bezier(.2,.7,.2,1);
+  z-index: 100;
+  display: flex; flex-direction: column;
+}
+.drawer.show { transform: translateX(0); }
+.drawer-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 18px 20px; border-bottom: 1px solid var(--line);
+}
+.drawer-head h2 { margin: 0; font-size: 16px; font-weight: 800; color: var(--ink); }
+.drawer-body { padding: 18px 20px; overflow-y: auto; flex: 1; }
+.drawer-foot {
+  padding: 14px 20px; border-top: 1px solid var(--line);
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+.kv { display: grid; grid-template-columns: 120px 1fr; gap: 6px 12px; }
+.kv dt { color: var(--muted); font-size: 12.5px; font-weight: 600; }
+.kv dd { margin: 0; font-weight: 600; color: var(--espresso); font-size: 13.5px; word-break: break-word; }
+.kv dd.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+
+/* ==========================================================================
+   TOAST
+   ========================================================================== */
+.toast-wrap {
+  position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+  z-index: 200; display: flex; flex-direction: column; gap: 8px; align-items: center;
+}
+.toast {
+  background: var(--espresso); color: var(--cream);
+  padding: 11px 18px; border-radius: var(--pill);
+  font-size: 13.5px; font-weight: 600;
+  box-shadow: var(--shadow-pop);
+  animation: toast-in 220ms cubic-bezier(.2,.7,.2,1);
+}
+.toast.ok { background: var(--ok); }
+.toast.err { background: var(--cancel); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* skeleton loading */
+.skeleton {
+  background: linear-gradient(90deg, var(--panel-2) 25%, var(--surface-tint) 50%, var(--panel-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s infinite;
+  border-radius: var(--r-sm);
+}
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.sk-row { height: 44px; margin: 8px 14px; }
+
+/* ==========================================================================
+   WEEK TIME-GRID (bookings week view)
+   ========================================================================== */
+.wk-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.wk-title { margin: 0; font-size: 17px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.wk-layout { display: grid; grid-template-columns: 234px minmax(0, 1fr); gap: 16px; align-items: start; }
+.wk-side { display: grid; gap: 12px; position: sticky; top: 86px; }
+
+.side-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.side-head { display: flex; align-items: center; gap: 8px; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+.side-title {
+  font-size: 12px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--brown-soft);
+}
+.icon-btn.mini { width: 26px; height: 26px; font-size: 13px; }
+
+/* mini month picker */
+.mini-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 10px 12px 12px; }
+.mc-dow { text-align: center; font-size: 10px; font-weight: 700; color: var(--muted); padding: 2px 0 4px; text-transform: uppercase; }
+.mc-day {
+  border: none; background: transparent; font: inherit;
+  font-size: 12px; font-weight: 600; color: var(--brown);
+  width: 100%; aspect-ratio: 1; display: grid; place-items: center;
+  border-radius: 50%; cursor: pointer; padding: 0;
+  font-variant-numeric: tabular-nums;
+  transition: background var(--speed);
+}
+.mc-day:hover { background: var(--surface-tint); }
+.mc-day.blank { cursor: default; }
+.mc-day.blank:hover { background: transparent; }
+.mc-day.sel { background: var(--surface-tint); color: var(--espresso); font-weight: 800; }
+.mc-day.today { box-shadow: inset 0 0 0 1.5px var(--salmon-deep); }
+
+/* route filter (colour key + checkboxes) */
+.rf-list { display: grid; padding: 8px 8px 10px; }
+.rf-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 8px; border-radius: var(--r-sm);
+  font-size: 13px; font-weight: 600; color: var(--brown);
+  cursor: pointer; transition: background var(--speed);
+}
+.rf-item:hover { background: var(--panel-2); }
+.rf-item .sw { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 11px; }
+.rf-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rf-city { margin-left: auto; font-size: 11px; color: var(--muted); font-weight: 600; }
+.rf-all { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--brown); cursor: pointer; }
+.rf-item input[type="checkbox"], .rf-all input[type="checkbox"] {
+  accent-color: var(--salmon-deep);
+  width: 15px; height: 15px; margin: 0; cursor: pointer;
+}
+
+/* upcoming departures */
+.up-list { display: grid; gap: 4px; padding: 8px 8px 10px; }
+.up-item {
+  display: flex; align-items: center; gap: 8px;
+  border: none; background: transparent; font: inherit; text-align: left;
+  padding: 7px 8px; border-radius: var(--r-sm); cursor: pointer;
+  color: var(--brown); font-size: 12.5px; font-weight: 600;
+  transition: background var(--speed);
+}
+.up-item:hover { background: var(--panel-2); }
+.up-when { flex: 0 0 68px; font-weight: 800; color: var(--ink); font-size: 12px; font-variant-numeric: tabular-nums; }
+.up-item .dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; }
+.up-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+
+/* the grid itself */
+.wk-scroll { overflow-x: auto; }
+.wk-grid { display: grid; grid-template-columns: 52px repeat(7, minmax(96px, 1fr)); min-width: 780px; }
+.wk-corner { border-bottom: 1px solid var(--line-strong); }
+.wk-day {
+  display: flex; align-items: baseline; gap: 6px; justify-content: center;
+  padding: 10px 6px;
+  border-bottom: 1px solid var(--line-strong);
+  border-left: 1px solid var(--line);
+}
+.wk-dow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.wk-dnum { font-size: 15px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.wk-day.today .wk-dnum {
+  background: var(--espresso); color: var(--cream);
+  border-radius: var(--pill); min-width: 26px; height: 26px;
+  display: inline-grid; place-items: center; padding: 0 5px;
+}
+.wk-time {
+  font-size: 10.5px; font-weight: 700; color: var(--muted);
+  text-align: right; padding: 3px 8px 0 0; min-height: 26px;
+  font-variant-numeric: tabular-nums;
+}
+.wk-cell {
+  border-left: 1px solid var(--line);
+  min-height: 26px; padding: 2px 3px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.wk-time.hr, .wk-cell.hr { border-top: 1px solid var(--line); }
+
+/* departure block */
+.wk-dep {
+  display: block; width: 100%; text-align: left;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--cat-3);
+  background: var(--panel-2);
+  border-radius: 8px; padding: 5px 7px;
+  cursor: pointer; font: inherit; color: inherit;
+  transition: box-shadow var(--speed), background var(--speed);
+}
+.wk-dep:hover { background: var(--surface-tint); box-shadow: var(--shadow-card); }
+.wk-dep.ghost { opacity: 0.6; background: var(--panel); border-style: dashed; border-left-style: solid; }
+.wk-dep-top { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.wk-dep .dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; }
+.wk-dep-name {
+  font-size: 12px; font-weight: 700; color: var(--ink);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+}
+.wk-dep-sub { font-size: 10.5px; color: var(--muted); font-weight: 600; margin-top: 1px; font-variant-numeric: tabular-nums; }
+.wk-pill {
+  font-size: 10.5px; font-weight: 800; padding: 1px 7px;
+  border-radius: var(--pill); white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.wk-pill.open  { background: var(--ok-bg); color: var(--ok); }
+.wk-pill.amber { background: var(--hold-bg); color: var(--hold); }
+.wk-pill.full  { background: var(--cancel-bg); color: var(--cancel); }
+.wk-key { display: flex; gap: 16px; flex-wrap: wrap; padding: 10px 16px 12px; border-top: 1px solid var(--line); font-size: 12px; }
+.sw.cap-open  { background: var(--ok); }
+.sw.cap-amber { background: var(--hold); }
+.sw.cap-full  { background: var(--cancel); }
+
+/* departure drawer */
+.dep-summary { padding: 4px 0 14px; border-bottom: 1px solid var(--line); margin-bottom: 6px; }
+.dep-guests { display: grid; gap: 8px; }
+.dep-guest {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; text-align: left; font: inherit; color: inherit;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: var(--r-md); padding: 10px 12px; cursor: pointer;
+  transition: background var(--speed), border-color var(--speed);
+}
+.dep-guest:hover { background: var(--surface-tint); border-color: var(--brown-soft); }
+.dep-guest-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* ==========================================================================
+   CUSTOMERS (CRM)
+   ========================================================================== */
+.disc-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11.5px; font-weight: 700;
+  color: var(--salmon-deep); background: var(--surface-tint);
+  border: 1px solid var(--salmon-deep);
+  padding: 3px 9px; border-radius: var(--pill); white-space: nowrap;
+}
+.disc-tag b { color: var(--espresso); font-weight: 800; }
+
+.badge-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.tag-mini {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.03em;
+  padding: 1px 7px; border-radius: var(--pill); white-space: nowrap;
+  text-transform: uppercase;
+}
+.tag-mini.src { background: var(--panel-2); color: var(--brown); border: 1px solid var(--line-strong); }
+.tag-mini.pay { background: var(--surface-tint); color: var(--brown); }
+.tag-mini.disc { background: var(--surface-tint); color: var(--salmon-deep); border: 1px solid var(--salmon-deep); text-transform: none; }
+
+.form-error {
+  display: none;
+  color: var(--cancel); background: var(--cancel-bg);
+  border: 1px solid rgba(154, 90, 74, 0.3);
+  border-radius: var(--r-sm); padding: 9px 12px;
+  font-size: 13px; font-weight: 600; margin-bottom: 14px;
+}
+.form-error.show { display: block; }
+
+.cust-edit {
+  display: none; margin: 16px 0 4px; padding: 14px;
+  background: var(--panel-2);
+  border: 1px solid var(--salmon-deep);
+  border-radius: var(--r-md);
+}
+.cust-edit.show { display: block; }
+
+.cust-bk {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: var(--r-md); padding: 10px 12px; margin-bottom: 8px;
+}
+.cust-bk-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.cust-bk-tags { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 900px) {
+  .app.show { grid-template-columns: 1fr; }
+  .sidebar {
+    position: fixed; left: 0; top: 0; z-index: 120;
+    width: 260px; height: 100vh;
+    transform: translateX(-100%);
+    transition: transform 220ms cubic-bezier(.2,.7,.2,1);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .mobile-menu-btn { display: inline-flex; }
+  .content { padding: 16px 14px 60px; }
+  .topbar { padding: 12px 14px; }
+  .filter-actions { margin-left: 0; width: 100%; }
+  .bar-item { grid-template-columns: 26px 1fr; grid-auto-flow: row; }
+  .kv { grid-template-columns: 100px 1fr; }
+  .cap-row { grid-template-columns: 46px 1fr; }
+  .cap-right { grid-column: 1 / -1; justify-content: space-between; }
+}
+
+@media (max-width: 1080px) {
+  .wk-layout { grid-template-columns: 1fr; }
+  .wk-side { position: static; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+</style>
+</head>
+<body>
+<!-- WOGO Admin — SPA shell. Served by the Worker at /admin.
+     admin.css + admin.js are inlined at build time (see build.mjs). -->
+<div id="wogo-admin">
+
+  <!-- ================= LOGIN ================= -->
+  <section class="login-wrap" id="login-view">
+    <form class="login-card" id="login-form" autocomplete="off">
+      <div class="login-mark">WO<span>G</span>O</div>
+      <p class="login-sub">Booking control room · owner access</p>
+      <div class="login-error" id="login-error" role="alert" aria-live="assertive"></div>
+      <div class="field">
+        <label for="admin-token">Admin token</label>
+        <input type="password" id="admin-token" name="token" autocomplete="current-password"
+               placeholder="Paste your admin token" required />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="login-btn">Sign in</button>
+      <p class="login-sub" style="margin-top:16px;margin-bottom:0;font-size:12px;">
+        Your token is the long random secret stored in your Cloudflare account. It never leaves this device.
+      </p>
+    </form>
+  </section>
+
+  <!-- ================= APP ================= -->
+  <div class="app" id="app-view">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
+      <div class="brand">WO<span>G</span>O<small>ADMIN</small></div>
+      <nav class="nav" id="nav">
+        <button class="nav-item" data-view="bookings">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Bookings
+        </button>
+        <button class="nav-item" data-view="customers">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+          Customers
+        </button>
+        <button class="nav-item" data-view="hours">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 20h18M7 20V10M12 20V4M17 20v-7"/></svg>
+          Per hour
+        </button>
+        <button class="nav-item" data-view="routes">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 20l-5-2V4l5 2 6-2 5 2v14l-5-2-6 2z"/><path d="M9 6v14M15 4v14"/></svg>
+          Routes
+        </button>
+        <button class="nav-item" data-view="export">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+          Export
+        </button>
+      </nav>
+      <div class="nav-spacer"></div>
+      <div class="sidebar-foot">
+        <div class="who" id="who">Signed in</div>
+        <button class="nav-item" id="logout-btn">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/></svg>
+          Sign out
+        </button>
+      </div>
+    </aside>
+    <div class="scrim" id="sidebar-scrim"></div>
+
+    <!-- Main -->
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-btn" id="menu-btn" aria-label="Open menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div>
+          <h1 id="page-title">Bookings</h1>
+          <div class="sub" id="page-sub"></div>
+        </div>
+        <div class="grow"></div>
+        <div id="topbar-actions"></div>
+      </header>
+      <div class="content" id="view" aria-live="polite"></div>
+    </main>
+  </div>
+
+  <!-- Drawer + scrim -->
+  <div class="scrim" id="drawer-scrim"></div>
+  <aside class="drawer" id="drawer" aria-label="Booking detail" aria-hidden="true">
+    <div class="drawer-head">
+      <h2 id="drawer-title">Booking</h2>
+      <div class="grow"></div>
+      <button class="icon-btn" id="drawer-close" aria-label="Close">✕</button>
+    </div>
+    <div class="drawer-body" id="drawer-body"></div>
+    <div class="drawer-foot" id="drawer-foot"></div>
+  </aside>
+
+  <div class="toast-wrap" id="toasts" aria-live="polite"></div>
+</div>
+
+<script>/* ==========================================================================
+   WOGO Admin — PREVIEW MOCK LAYER  (loaded ONLY inside preview/admin.html)
+   Intercepts window.fetch for /admin/* so the whole dashboard is explorable
+   from a file:// with realistic data — 4 cities, a busy week, every state.
+   Never shipped to the Worker.
+   ========================================================================== */
+(function () {
+  "use strict";
+
+  /* ---- date helpers (relative to real today so the preview stays "current") */
+  function dstr(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  const TODAY = new Date(); TODAY.setHours(0, 0, 0, 0);
+  const day = (off) => dstr(new Date(TODAY.getTime() + off * 864e5));
+  // ISO weekday (Mon=1..Sun=7) of a 'YYYY-MM-DD' string — mirrors
+  // src/logic.js:isoWeekday, used by the weekday-capacity/weekday-bars demo
+  // guards below.
+  function isoWeekdayOf(dateStr) {
+    const d = new Date(dateStr + "T00:00:00Z");
+    const w = d.getUTCDay();
+    return w === 0 ? 7 : w;
+  }
+
+  /* ---- routes: 6 real WOGO routes across 4 cities ---- */
+  const routes = [
+    { id: "amsterdam", name: "WOGO Cocktail Walk Amsterdam", city: "Amsterdam", price_cents: 2995, capacity: 10, max_party: 6, open_days: "[4,5,6]", slots: '["17:30","18:00","18:30","19:00","19:30","20:00"]', map_url: null, active: 1, created_at: "2024-11-01" },
+    // slots is OBJECT-shaped here on purpose — demonstrates "different start
+    // times per weekday" (SPEC): weekdays get the usual evening-only
+    // schedule, Sat/Sun add two earlier afternoon departures. open_days
+    // ([1..7]) matches every key below that has >=1 time, same invariant
+    // the server enforces (admin_api.js:parseSlotsField).
+    // weekday_capacity (migrations/0014) demonstrates the per-weekday
+    // capacity feature on a route that's ALSO in "Different times per day"
+    // mode (its slots are object-shaped, above) — that's the only mode the
+    // admin editor's seats-per-weekday control lives in, so this route
+    // shows a value the owner can actually see and edit, not a hidden one.
+    // Saturdays (weekday 6) cap at 6 seats/departure; every other open day
+    // keeps the normal 10.
+    { id: "utrecht", name: "WOGO Cocktail Walk Utrecht", city: "Utrecht", price_cents: 2995, capacity: 10, max_party: 6, open_days: "[1,2,3,4,5,6,7]", slots: '{"1":["17:30","18:30","19:30"],"2":["17:30","18:30","19:30"],"3":["17:30","18:30","19:30"],"4":["17:30","18:30","19:30"],"5":["17:30","18:30","19:30"],"6":["13:00","14:00","17:30","18:30","19:30"],"7":["13:00","14:00","17:30","18:30","19:30"]}', weekday_capacity: '{"6":6}', map_url: "https://www.wogococktailwalk.com/maps/utrecht-en.pdf", map_url_nl: "https://www.wogococktailwalk.com/maps/utrecht-nl.pdf", active: 1, created_at: "2024-11-01" },
+    { id: "groningen", name: "WOGO Cocktail Walk Groningen", city: "Groningen", price_cents: 2995, capacity: 10, max_party: 6, open_days: "[3,4,5,6]", slots: '["17:00","17:30","18:00","18:30","19:00","19:30"]', map_url: null, active: 1, created_at: "2024-11-01" },
+    { id: "rotterdam-witte-de-with", name: "Rotterdam Route 1 · Witte de With", city: "Rotterdam", price_cents: 2995, capacity: 10, max_party: 6, open_days: "[4,5,6]", slots: '["17:00","18:00"]', map_url: null, active: 1, created_at: "2024-11-01" },
+    // slot_capacity demonstrates the per-timeslot capacity feature (migrations/0003):
+    // this route defaults to 10 seats/departure, but its 20:00 slot only ever has 6
+    // (the last bar on this route gets busy at that hour) — every other slot is
+    // untouched. See also the 'slot_capacity_override' date override below, which
+    // caps 20:00 further still for one specific Saturday.
+    { id: "rotterdam-hidden-gems", name: "Rotterdam Route 2 · Hidden Gems (best seller)", city: "Rotterdam", price_cents: 2995, capacity: 10, max_party: 6, open_days: "[4,5,6]", slots: '["18:00","18:30","19:00","19:30","20:00"]', slot_capacity: '{"20:00":6}', map_url: "https://maps.wogo/rtm-hidden", active: 1, created_at: "2024-11-01" },
+    { id: "rotterdam-premium-gin", name: "Rotterdam Premium · High-end Bars", city: "Rotterdam", price_cents: 3495, capacity: 8, max_party: 6, open_days: "[2,3,4,5,6]", slots: '["18:00","19:00","20:00"]', map_url: null, active: 0, created_at: "2025-02-01" }
+  ];
+
+  const bars = {
+    amsterdam: [
+      { id: 1, route_id: "amsterdam", ord: 1, bar_name: "Van de Werf (NDSM wharf)", bar_email: "hi@vandewerf.nl", minutes_offset: 0 },
+      { id: 2, route_id: "amsterdam", ord: 2, bar_name: "Pllek", bar_email: "reserve@pllek.nl", minutes_offset: 75 },
+      { id: 3, route_id: "amsterdam", ord: 3, bar_name: "Bar 3 (TBD — set real name/email)", bar_email: "bookings@wogoamsterdam.com", minutes_offset: 150 }
+    ],
+    // weekday demonstrates the per-weekday bar-set feature (migrations/0015):
+    // the DEFAULT set (weekday: null) runs every open day except Saturday,
+    // which has its own recurring set below — a standing rule, distinct from
+    // the one-off per-date "Alt bars" override demoed on rotterdam-hidden-gems.
+    utrecht: [
+      { id: 4, route_id: "utrecht", ord: 1, bar_name: "Café Olivier", bar_email: "info@caféolivier.nl", minutes_offset: 0, weekday: null },
+      { id: 5, route_id: "utrecht", ord: 2, bar_name: "Bar 2 (TBD)", bar_email: "bookings@wogoamsterdam.com", minutes_offset: 75, weekday: null },
+      { id: 6, route_id: "utrecht", ord: 1, bar_name: "Kalff (Saturday route)", bar_email: "hi@kalff.nl", minutes_offset: 0, weekday: 6 },
+      { id: 7, route_id: "utrecht", ord: 2, bar_name: "Bar 2 (TBD)", bar_email: "bookings@wogoamsterdam.com", minutes_offset: 75, weekday: 6 }
+    ]
+  };
+
+  const overrides = {
+    amsterdam: [
+      { id: 11, route_id: "amsterdam", date: day(4), action: "closed", payload: null },
+      { id: 12, route_id: "amsterdam", date: day(5), action: "capacity_override", payload: JSON.stringify({ capacity: 6 }) }
+    ],
+    "rotterdam-hidden-gems": [
+      { id: 13, route_id: "rotterdam-hidden-gems", date: day(2), action: "alternate_bars", payload: JSON.stringify([{ bar_name: "Aloha", bar_email: "aloha@rtm.nl", minutes_offset: 0 }, { bar_name: "Ballroom", bar_email: "ballroom@rtm.nl", minutes_offset: 80 }]) },
+      // slot_capacity_override demo: this one Saturday, 20:00 drops further
+      // still to 4 seats (the route-level default above already caps it at
+      // 6) — every other slot that date keeps its normal capacity.
+      { id: 14, route_id: "rotterdam-hidden-gems", date: day(3), action: "slot_capacity_override", payload: JSON.stringify({ "20:00": 4 }) }
+    ]
+  };
+
+  /* ---- bookings: a busy week spread across routes/slots ---- */
+  const FIRST = ["Anna", "Sofie", "Lars", "Emma", "Daan", "Julia", "Tim", "Noa", "Lucas", "Fleur", "Sem", "Lieke", "Bram", "Sara", "Finn", "Nina", "Ruben", "Isa", "Thijs", "Mila", "Jesse", "Roos", "Kai", "Evi"];
+  const LAST = ["de Vries", "Jansen", "Bakker", "Visser", "Smit", "Meijer", "Mulder", "Bos", "Vos", "Peters", "Hendriks", "Dekker", "Brouwer", "Kok", "Willems"];
+  const STAT = ["confirmed", "confirmed", "confirmed", "confirmed", "confirmed", "hold", "cancelled"];
+
+  let seq = 1000;
+  const bookings = [];
+  function addBooking(routeId, date, slot, party, status, extra) {
+    const r = routes.find((x) => x.id === routeId);
+    extra = extra || {};
+    const fn = FIRST[seq % FIRST.length], ln = LAST[(seq * 7) % LAST.length];
+    const created = dstr(new Date(new Date(date).getTime() - ((seq % 9) + 1) * 864e5));
+    const manual = extra.source === "manual";
+    bookings.push({
+      id: "b_" + (seq++).toString(36) + Math.random().toString(36).slice(2, 6),
+      route_id: routeId, route_name: r.name, city: r.city,
+      date, slot, party,
+      name: extra.name || (fn + " " + ln),
+      email: extra.email || ((fn + "." + ln.replace(/\s/g, "")).toLowerCase() + "@example.com"),
+      phone: extra.phone || ("+316" + (10000000 + (seq * 131) % 89999999)),
+      locale: seq % 3 === 0 ? "nl" : "en",
+      marketing_opt_in: seq % 2,
+      status: status || STAT[seq % STAT.length],
+      source: extra.source || "web",
+      payment_status: extra.payment_status || null,
+      discount_code: extra.discount_code || null,
+      discount_cents: extra.discount_cents || 0,
+      stripe_session: (manual || status === "hold") ? null : "cs_test_" + (seq).toString(36) + "x9",
+      created_at: created + "T14:0" + (seq % 6) + ":00Z",
+      hold_expires: status === "hold" ? new Date(Date.now() + 8 * 60000).toISOString() : null
+    });
+  }
+
+  // seed a realistic spread: today-2 .. today+6
+  const plan = [
+    ["amsterdam", 0, ["17:30", 4], ["18:00", 6], ["18:00", 3], ["18:30", 2], ["19:00", 5], ["19:30", 3]],
+    ["amsterdam", 1, ["18:00", 4], ["18:30", 4], ["19:00", 2]],
+    ["amsterdam", 7, ["18:00", 6], ["18:00", 4]],               // slot fully sold out (10/10)
+    ["utrecht", 0, ["17:30", 2], ["18:30", 3], ["19:30", 4]],
+    ["utrecht", 1, ["17:30", 5], ["18:30", 2]],
+    ["utrecht", -1, ["18:30", 4]],
+    ["groningen", 0, ["17:00", 3], ["18:00", 5], ["18:30", 2], ["19:30", 4]],
+    ["groningen", 1, ["17:30", 6], ["18:00", 3]],
+    ["rotterdam-witte-de-with", 0, ["17:00", 4], ["18:00", 2]],
+    ["rotterdam-hidden-gems", 0, ["18:00", 6], ["18:30", 4], ["19:00", 5], ["19:30", 2], ["20:00", 3]],
+    ["rotterdam-hidden-gems", 2, ["18:00", 4], ["18:30", 6], ["19:00", 3]],
+    ["rotterdam-hidden-gems", -2, ["18:30", 5]],
+    ["rotterdam-premium-gin", 1, ["19:00", 2]]
+  ];
+  plan.forEach((row) => {
+    const routeId = row[0], off = row[1];
+    for (let i = 2; i < row.length; i++) {
+      const forceStatus = (routeId === "amsterdam" && off === 7) ? "confirmed" : undefined;
+      addBooking(routeId, day(off), row[i][0], row[i][1], forceStatus);
+    }
+  });
+  // one confirmed_conflict to show the plum badge
+  addBooking("rotterdam-hidden-gems", day(0), "18:00", 2, "confirmed_conflict");
+  // Guests on the SAME Saturday (day+3) whose 20:00 departure is capped to 4
+  // seats by the slot_capacity_override above — so Participants-per-hour shows
+  // "2 / 4 seats · Override" for 20:00 while 19:00 keeps the normal 10. Pick
+  // rotterdam-hidden-gems + this date to see the per-date editor in action.
+  addBooking("rotterdam-hidden-gems", day(3), "20:00", 2, "confirmed");
+  addBooking("rotterdam-hidden-gems", day(3), "19:00", 3, "confirmed");
+
+  /* ---- Dashboard v2 seeds ---- */
+  // Capacity-at-a-glance demo, guaranteed inside the current week (they sit
+  // on TODAY, so the week grid always shows them): Groningen's 19:00 fills
+  // to exactly 10/10 (FULL) and 17:30 to 8/10 (AMBER, ≥70%).
+  addBooking("groningen", day(0), "19:00", 6, "confirmed");
+  addBooking("groningen", day(0), "19:00", 4, "confirmed");
+  addBooking("groningen", day(0), "17:30", 4, "confirmed");
+  addBooking("groningen", day(0), "17:30", 4, "confirmed");
+  // Repeat customer whose 2nd booking used a Stripe promo code:
+  // WELCOME10, €3,00 saved — shows in the Customers tab's Discount column.
+  const maartje = { name: "Maartje Kuiper", email: "maartje.kuiper@example.com", phone: "+31612345678" };
+  addBooking("utrecht", day(-21), "18:30", 2, "confirmed", maartje);
+  addBooking("rotterdam-hidden-gems", day(2), "19:00", 2, "confirmed",
+    Object.assign({ discount_code: "WELCOME10", discount_cents: 300 }, maartje));
+  // A manual (phone) booking the owner typed in herself — source badge +
+  // payment status visible in Bookings, Customers and the drawers.
+  addBooking("amsterdam", day(1), "18:30", 4, "confirmed",
+    { name: "Hugo Verbeek", email: "hugo.verbeek@example.com", phone: "+31687654321", source: "manual", payment_status: "paid_invoice" });
+
+  /* ---- customers: derived from bookings (mirrors logic.js:aggregateCustomers) ---- */
+  function bookingSpendCents(b) {
+    if (!(b.status === "confirmed" || b.status === "confirmed_conflict")) return 0;
+    if (b.payment_status === "free" || b.payment_status === "comp") return 0;
+    const r = routes.find((x) => x.id === b.route_id);
+    return Math.max(0, (r ? r.price_cents : 0) * b.party - (b.discount_cents || 0));
+  }
+  function aggregateCustomers(rows, qStr) {
+    const byEmail = {};
+    rows.forEach((row) => {
+      const key = String(row.email || "").trim().toLowerCase();
+      if (!key) return;
+      let c = byEmail[key];
+      if (!c) {
+        c = byEmail[key] = {
+          email: key, name: row.name || "", phone: row.phone || "",
+          bookings_count: 0, guests: 0, total_spent_cents: 0, discount_total_cents: 0,
+          last_booking: null, first_booking: null, _last: ""
+        };
+      }
+      c.bookings_count += 1;
+      if (row.status === "confirmed" || row.status === "confirmed_conflict") c.guests += row.party || 0;
+      c.total_spent_cents += bookingSpendCents(row);
+      c.discount_total_cents += row.discount_cents || 0;
+      if (row.date && (!c.last_booking || row.date > c.last_booking)) c.last_booking = row.date;
+      if (row.date && (!c.first_booking || row.date < c.first_booking)) c.first_booking = row.date;
+      const created = String(row.created_at || "");
+      if (created >= c._last) { c._last = created; if (row.name) c.name = row.name; if (row.phone) c.phone = row.phone; }
+    });
+    let list = Object.keys(byEmail).map((k) => { const c = byEmail[k]; delete c._last; return c; });
+    const needle = (qStr || "").trim().toLowerCase();
+    if (needle) {
+      list = list.filter((c) =>
+        c.name.toLowerCase().indexOf(needle) >= 0 ||
+        c.email.indexOf(needle) >= 0 ||
+        (c.phone || "").toLowerCase().indexOf(needle) >= 0);
+    }
+    list.sort((a, b) => String(b.last_booking || "").localeCompare(String(a.last_booking || "")));
+    return list;
+  }
+
+  /* ---------------- fetch interceptor ---------------- */
+  const realFetch = window.fetch.bind(window);
+  let loggedIn = false;
+
+  function json(body, status) {
+    return Promise.resolve(new Response(JSON.stringify(body), {
+      status: status || 200, headers: { "Content-Type": "application/json" }
+    }));
+  }
+  function match(path, re) { const m = path.match(re); return m; }
+
+  window.fetch = function (url, opts) {
+    opts = opts || {};
+    const u = new URL(url, location.href);
+    const path = u.pathname.replace(/\/$/, "");
+    const q = u.searchParams;
+    const method = (opts.method || "GET").toUpperCase();
+    const bodyObj = opts.body ? JSON.parse(opts.body) : null;
+
+    if (path.indexOf("/admin") !== 0) return realFetch(url, opts);
+
+    // auth
+    if (path === "/admin/login" && method === "POST") {
+      if (bodyObj && bodyObj.token && bodyObj.token.length >= 1) { loggedIn = true; return json({ ok: true }); }
+      return json({ error: "invalid_token" }, 401);
+    }
+    if (path === "/admin/logout") { loggedIn = false; return json({ ok: true }); }
+    if (!loggedIn) return json({ error: "unauthenticated" }, 401);
+
+    // routes
+    if (path === "/admin/api/routes" && method === "GET") return json({ routes: routes.slice() });
+    if (path === "/admin/api/routes" && method === "POST") { routes.push(Object.assign({ created_at: dstr(TODAY) }, bodyObj)); return json({ ok: true, route: bodyObj }); }
+
+    let m;
+    if ((m = match(path, /^\/admin\/api\/routes\/([^\/]+)\/bars$/))) {
+      const rid = m[1];
+      if (method === "GET") return json({ bars: (bars[rid] || []).slice() });
+      if (method === "PUT") {
+        // Per-weekday bar sets (migrations/0015): omitted/null weekday
+        // replaces only the DEFAULT set; an ISO weekday 1-7 replaces ONLY
+        // that weekday's own set — mirrors db.js:replaceBars exactly.
+        const weekday = (bodyObj.weekday === undefined || bodyObj.weekday === null) ? null : bodyObj.weekday;
+        const kept = (bars[rid] || []).filter((b) => (b.weekday == null ? null : b.weekday) !== weekday);
+        const replaced = (bodyObj.bars || []).map((b, i) => Object.assign({ id: 900 + i, route_id: rid, weekday }, b));
+        bars[rid] = kept.concat(replaced);
+        return json({ ok: true, bars: bars[rid].slice() });
+      }
+    }
+    if ((m = match(path, /^\/admin\/api\/routes\/([^\/]+)$/)) && method === "PUT") {
+      const r = routes.find((x) => x.id === m[1]); if (r) Object.assign(r, bodyObj); return json({ ok: true });
+    }
+    if ((m = match(path, /^\/admin\/api\/bookings\/([^\/]+)\/resend$/))) return json({ ok: true });
+
+    // Move (reschedule) a booking — mirrors the Worker: only confirmed bookings
+    // move, and the in-memory row is updated so the calendar repaints correctly.
+    if ((m = match(path, /^\/admin\/api\/bookings\/([^\/]+)\/reschedule$/)) && method === "POST") {
+      const b = bookings.find((x) => x.id === m[1]);
+      if (!b) return json({ error: "not_found", message: "booking not found" }, 404);
+      if (!(b.status === "confirmed" || b.status === "confirmed_conflict")) return json({ error: "not_movable", message: "only confirmed bookings can be moved" }, 409);
+      if (bodyObj.date) b.date = bodyObj.date;
+      if (bodyObj.slot) b.slot = bodyObj.slot;
+      return json({ booking: b });
+    }
+    // Cancel a booking — frees the seat (status → cancelled). Refund is manual.
+    if ((m = match(path, /^\/admin\/api\/bookings\/([^\/]+)\/cancel$/)) && method === "POST") {
+      const b = bookings.find((x) => x.id === m[1]);
+      if (!b) return json({ error: "not_found", message: "booking not found" }, 404);
+      if (!(b.status === "confirmed" || b.status === "confirmed_conflict")) return json({ error: "not_cancellable", message: "only confirmed bookings can be cancelled" }, 409);
+      b.status = "cancelled"; b.hold_expires = null;
+      return json({ booking: b });
+    }
+
+    // date overrides
+    if (path === "/admin/api/date-overrides" && method === "GET") { const rid = q.get("route"); return json({ overrides: (overrides[rid] || []).slice() }); }
+    if (path === "/admin/api/date-overrides" && method === "POST") {
+      // Mirror the Worker's INSERT OR REPLACE: one row per (route,date,action).
+      // Re-posting a slot_capacity_override for the same date REPLACES the whole
+      // map rather than stacking duplicates — so the preview behaves like prod.
+      const rid = bodyObj.route_id;
+      const arr = (overrides[rid] = overrides[rid] || []);
+      const existing = arr.find((o) => o.date === bodyObj.date && o.action === bodyObj.action);
+      if (existing) { existing.payload = bodyObj.payload != null ? bodyObj.payload : null; return json({ ok: true, override: existing }); }
+      const row = Object.assign({ id: Math.floor(Math.random() * 1e6) }, bodyObj);
+      arr.push(row); return json({ ok: true, override: row });
+    }
+    if ((m = match(path, /^\/admin\/api\/date-overrides\/(\d+)$/)) && method === "DELETE") {
+      const id = +m[1]; for (const k in overrides) overrides[k] = overrides[k].filter((o) => o.id !== id); return json({ ok: true });
+    }
+
+    // customers (CRM) — derived from bookings, same as the Worker
+    if (path === "/admin/api/customers" && method === "GET") {
+      return json({ customers: aggregateCustomers(bookings, q.get("q")) });
+    }
+    if ((m = match(path, /^\/admin\/api\/customers\/(.+)$/))) {
+      const email = decodeURIComponent(m[1]).trim().toLowerCase();
+      const own = bookings.filter((b) => String(b.email || "").trim().toLowerCase() === email);
+      if (own.length === 0) return json({ error: "not_found", message: "no bookings found for that email" }, 404);
+      if (method === "GET") {
+        const customer = aggregateCustomers(own)[0];
+        const list = own.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+        return json({ customer, bookings: list });
+      }
+      if (method === "PUT") {
+        // propagate the edit onto EVERY booking row for this email — exactly
+        // what db.js:updateCustomer's single UPDATE does in the Worker.
+        own.forEach((b) => {
+          if (bodyObj.name) b.name = bodyObj.name;
+          if ("phone" in bodyObj) b.phone = bodyObj.phone || null;
+          if (bodyObj.email) b.email = String(bodyObj.email).toLowerCase();
+        });
+        return json({ ok: true, updated: own.length });
+      }
+    }
+
+    // manual (phone) booking — same atomic capacity guard as the Worker:
+    // effective capacity is date+slot override > date-wide > route per-slot
+    // > route default; competes with confirmed/conflict/active-hold seats.
+    if (path === "/admin/api/bookings/manual" && method === "POST") {
+      const p = bodyObj || {};
+      const r = routes.find((x) => x.id === p.route_id);
+      if (!r) return json({ error: "route_not_found", message: "route_not_found" }, 404);
+      if (!p.date || !p.slot || !(p.party >= 1) || !p.name || !p.email) {
+        return json({ error: "bad_request", message: "route, date, slot, party, name and email are required" }, 400);
+      }
+      let routeSlots = {};
+      try { routeSlots = JSON.parse(r.slot_capacity || "{}") || {}; } catch (e) { routeSlots = {}; }
+      // weekday_capacity (migrations/0014) — same precedence level as the
+      // Worker: between route.slot_capacity and route.capacity.
+      let routeWeekdayCap = {};
+      try { routeWeekdayCap = JSON.parse(r.weekday_capacity || "{}") || {}; } catch (e) { routeWeekdayCap = {}; }
+      let ovDateSlot = null, ovDateWide = null;
+      (overrides[r.id] || []).forEach((o) => {
+        if (o.date !== p.date) return;
+        try {
+          const pay = o.payload ? JSON.parse(o.payload) : null;
+          if (o.action === "slot_capacity_override" && pay && pay[p.slot] != null) ovDateSlot = pay[p.slot];
+          if (o.action === "capacity_override" && pay && pay.capacity != null) ovDateWide = pay.capacity;
+        } catch (e) { /* noop */ }
+      });
+      const weekdayCap = routeWeekdayCap[String(isoWeekdayOf(p.date))];
+      const cap = ovDateSlot != null ? ovDateSlot
+        : ovDateWide != null ? ovDateWide
+        : routeSlots[p.slot] != null ? routeSlots[p.slot]
+        : weekdayCap != null ? weekdayCap
+        : r.capacity;
+      const used = bookings.reduce((a, b) =>
+        (b.route_id === p.route_id && b.date === p.date && b.slot === p.slot &&
+          (b.status === "confirmed" || b.status === "confirmed_conflict" || b.status === "hold")) ? a + b.party : a, 0);
+      if (used + p.party > cap) {
+        return json({ error: "sold_out", message: "only " + Math.max(0, cap - used) + " seat(s) left for that date/slot" }, 409);
+      }
+      const booking = {
+        id: "b_manual" + (seq++).toString(36),
+        route_id: r.id, route_name: r.name, city: r.city,
+        date: p.date, slot: p.slot, party: p.party,
+        name: p.name, email: String(p.email).toLowerCase(), phone: p.phone || null,
+        locale: p.locale === "nl" ? "nl" : "en",
+        marketing_opt_in: p.marketing_opt_in ? 1 : 0,
+        status: "confirmed", source: "manual",
+        payment_status: p.payment_status || "paid_invoice",
+        discount_code: p.discount_code || null,
+        discount_cents: p.discount_cents || 0,
+        stripe_session: null,
+        created_at: new Date().toISOString(),
+        hold_expires: null
+      };
+      bookings.push(booking);
+      return json({ booking }, 201);
+    }
+
+    // bookings list
+    if (path === "/admin/api/bookings" && method === "GET") {
+      let list = bookings.slice();
+      if (q.get("route")) list = list.filter((b) => b.route_id === q.get("route"));
+      if (q.get("city")) list = list.filter((b) => b.city === q.get("city"));
+      if (q.get("status")) list = list.filter((b) => b.status === q.get("status"));
+      if (q.get("date_from")) list = list.filter((b) => b.date >= q.get("date_from"));
+      if (q.get("date_to")) list = list.filter((b) => b.date <= q.get("date_to"));
+      if (q.get("q")) { const s = q.get("q").toLowerCase(); list = list.filter((b) => b.name.toLowerCase().indexOf(s) >= 0 || b.email.toLowerCase().indexOf(s) >= 0); }
+      return json({ bookings: list, total: list.length });
+    }
+
+    // participants per hour
+    if (path === "/admin/api/participants-per-hour" && method === "GET") {
+      const date = q.get("date"), route = q.get("route");
+      const agg = {};
+      bookings.forEach((b) => {
+        if (b.date !== date) return;
+        if (route && b.route_id !== route) return;
+        if (!(b.status === "confirmed" || b.status === "confirmed_conflict" || b.status === "hold")) return;
+        const key = b.route_id + "|" + b.slot;
+        agg[key] = agg[key] || { route_id: b.route_id, route_name: b.route_name, slot: b.slot, guests: 0, bookings: 0 };
+        agg[key].guests += b.party; agg[key].bookings += 1;
+      });
+      return json({ date, rows: Object.values(agg) });
+    }
+
+    // CSV
+    if (path === "/admin/api/bookings.csv") {
+      let list = bookings.slice();
+      if (q.get("route")) list = list.filter((b) => b.route_id === q.get("route"));
+      if (q.get("city")) list = list.filter((b) => b.city === q.get("city"));
+      if (q.get("status")) list = list.filter((b) => b.status === q.get("status"));
+      if (q.get("date_from")) list = list.filter((b) => b.date >= q.get("date_from"));
+      if (q.get("date_to")) list = list.filter((b) => b.date <= q.get("date_to"));
+      const cols = ["id", "route_name", "city", "date", "slot", "party", "name", "email", "phone", "status", "source", "payment_status", "discount_code", "discount_cents", "stripe_session", "created_at"];
+      const esc = (v) => { v = v == null ? "" : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+      const csv = [cols.join(",")].concat(list.map((b) => cols.map((c) => esc(b[c])).join(","))).join("\n");
+      return Promise.resolve(new Response(csv, { status: 200, headers: { "Content-Type": "text/csv; charset=utf-8" } }));
+    }
+
+    return json({ error: "not_found", message: "mock: no handler for " + method + " " + path }, 404);
+  };
+
+  // banner so it's obvious this is the offline preview
+  window.addEventListener("DOMContentLoaded", function () {
+    const b = document.createElement("div");
+    b.textContent = "PREVIEW · sample data · any token signs you in";
+    b.style.cssText = "position:fixed;bottom:10px;left:10px;z-index:500;background:#3f2b21;color:#ffd9c4;font:600 11px -apple-system,sans-serif;padding:6px 12px;border-radius:999px;letter-spacing:.04em;box-shadow:0 6px 18px rgba(0,0,0,.25);pointer-events:none;";
+    document.body.appendChild(b);
+  });
+})();
+</script>
+<script>/* ==========================================================================
+   WOGO Admin — client application (vanilla JS, zero dependencies)
+   Talks to the Worker's /admin/api/* endpoints. Same file runs when the
+   Worker serves it and inside preview/admin.html (where fetch is mocked).
+   ========================================================================== */
+(function () {
+  "use strict";
+
+  /* ---------- tiny DOM helper ------------------------------------------- */
+  function el(tag, attrs, children) {
+    const n = document.createElement(tag);
+    if (attrs) {
+      for (const k in attrs) {
+        const v = attrs[k];
+        if (v == null || v === false) continue;
+        if (k === "class") n.className = v;
+        else if (k === "html") n.innerHTML = v;
+        else if (k === "text") n.textContent = v;
+        else if (k.slice(0, 2) === "on" && typeof v === "function") n.addEventListener(k.slice(2), v);
+        else if (k === "dataset") for (const d in v) n.dataset[d] = v[d];
+        else n.setAttribute(k, v);
+      }
+    }
+    if (children != null) {
+      const arr = Array.isArray(children) ? children : [children];
+      for (const c of arr) {
+        if (c == null || c === false) continue;
+        n.appendChild(typeof c === "object" ? c : document.createTextNode(String(c)));
+      }
+    }
+    return n;
+  }
+  const $ = (s, r) => (r || document).querySelector(s);
+  const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); };
+
+  /* ---------- constants ------------------------------------------------- */
+  const API = "";                       // same-origin; Worker serves both
+  const CAT = ["--cat-1", "--cat-2", "--cat-3", "--cat-4", "--cat-5", "--cat-6"];
+  const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];   // ISO Mon=1
+  const DOW_FULL = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const MONTHS = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"];
+  const STATUSES = ["confirmed", "hold", "cancelled", "expired", "confirmed_conflict"];
+
+  /* ---------- state ----------------------------------------------------- */
+  const S = {
+    view: "bookings",
+    routes: [],
+    routeColor: {},                     // route_id -> css var
+    bookings: { list: [], mode: "list", filters: {}, calMonth: null, page: 0, per: 50 },
+    week: { start: null, loadedStart: null, bookings: [], overrides: {}, show: {}, showInit: false, mini: null },
+    customers: { list: [], q: "", codes: {}, codesLoaded: false, loaded: false, formOpen: false },
+    hours: { date: todayStr(), route: "", _data: null, editSlot: null },
+    routesUI: { openId: null, tab: "details", bars: {}, overrides: {} }
+  };
+
+  /* ---------- date utils (timezone-safe, local) ------------------------- */
+  function todayStr() { return dstr(new Date()); }
+  function dstr(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function parseD(s) { const p = s.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function addDays(s, n) { const d = parseD(s); d.setDate(d.getDate() + n); return dstr(d); }
+  function mondayOf(s) { const d = parseD(s); d.setDate(d.getDate() - (isoDow(s) - 1)); return dstr(d); }
+  function isoDow(s) { const d = parseD(s).getDay(); return d === 0 ? 7 : d; }   // Mon=1..Sun=7
+  function prettyDate(s) {
+    const d = parseD(s);
+    return DOW[isoDow(s) - 1] + " " + d.getDate() + " " + MONTHS[d.getMonth()].slice(0, 3);
+  }
+  function euros(cents) { return "€" + (cents / 100).toFixed(2).replace(".", ","); }
+
+  /* ---------- fetch layer ----------------------------------------------- */
+  async function api(path, opts) {
+    opts = opts || {};
+    const headers = Object.assign({ "Accept": "application/json" }, opts.headers || {});
+    if (opts.body != null && typeof opts.body !== "string") {
+      headers["Content-Type"] = "application/json";
+      opts.body = JSON.stringify(opts.body);
+    }
+    if (opts.method && opts.method !== "GET") headers["X-Requested-With"] = "wogo-admin";
+    const res = await fetch(API + path, {
+      method: opts.method || "GET",
+      headers,
+      body: opts.body,
+      credentials: "same-origin"
+    });
+    if (res.status === 401) { showLogin(); throw new Error("unauthenticated"); }
+    if (!res.ok) {
+      let msg = "Request failed (" + res.status + ")";
+      try { const j = await res.json(); if (j && j.message) msg = j.message; } catch (e) { /* noop */ }
+      throw new Error(msg);
+    }
+    if (res.status === 204) return null;
+    const ct = res.headers.get("content-type") || "";
+    return ct.indexOf("application/json") >= 0 ? res.json() : res.text();
+  }
+
+  /* ---------- toast ----------------------------------------------------- */
+  function toast(msg, kind) {
+    const t = el("div", { class: "toast" + (kind ? " " + kind : ""), text: msg });
+    $("#toasts").appendChild(t);
+    setTimeout(() => { t.style.opacity = "0"; t.style.transition = "opacity .3s"; setTimeout(() => t.remove(), 320); }, 2600);
+  }
+
+  /* ---------- auth ------------------------------------------------------ */
+  function showLogin() {
+    $("#app-view").classList.remove("show");
+    $("#login-view").style.display = "grid";
+    setTimeout(() => { const i = $("#admin-token"); if (i) i.focus(); }, 60);
+  }
+  function showApp() {
+    $("#login-view").style.display = "none";
+    $("#app-view").classList.add("show");
+  }
+
+  $("#login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = $("#login-btn"), errBox = $("#login-error");
+    const token = $("#admin-token").value.trim();
+    errBox.classList.remove("show");
+    if (!token) return;
+    btn.disabled = true; btn.textContent = "Signing in…";
+    try {
+      await api("/admin/login", { method: "POST", body: { token } });
+      $("#admin-token").value = "";
+      await boot();
+    } catch (err) {
+      errBox.textContent = err.message === "unauthenticated" ? "That token isn’t right. Check and try again." : err.message;
+      errBox.classList.add("show");
+    } finally {
+      btn.disabled = false; btn.textContent = "Sign in";
+    }
+  });
+
+  $("#logout-btn").addEventListener("click", async () => {
+    try { await api("/admin/logout", { method: "POST" }); } catch (e) { /* noop */ }
+    showLogin();
+  });
+
+  /* ---------- navigation ------------------------------------------------ */
+  const NAV = document.querySelectorAll(".nav-item[data-view]");
+  NAV.forEach((b) => b.addEventListener("click", () => go(b.dataset.view)));
+  $("#menu-btn").addEventListener("click", () => $("#sidebar").classList.add("open"));
+  $("#sidebar-scrim").addEventListener("click", () => $("#sidebar").classList.remove("open"));
+
+  function go(view) {
+    S.view = view;
+    NAV.forEach((b) => b.classList.toggle("active", b.dataset.view === view));
+    $("#sidebar").classList.remove("open");
+    $("#topbar-actions").innerHTML = "";
+    const titles = {
+      bookings: ["Bookings", "Every walk booked, across all cities and routes"],
+      customers: ["Customers", "Who books with you, how often, and what they spend"],
+      hours: ["Participants per hour", "Who is arriving, and when — pick a date"],
+      routes: ["Route manager", "Days, times, seats, bars and one-off date changes"],
+      export: ["Export", "Download bookings as a spreadsheet (CSV)"]
+    };
+    $("#page-title").textContent = titles[view][0];
+    $("#page-sub").textContent = titles[view][1];
+    const target = $("#view");
+    clear(target);
+    if (view === "bookings") renderBookings(target);
+    else if (view === "customers") renderCustomers(target);
+    else if (view === "hours") renderHours(target);
+    else if (view === "routes") renderRoutes(target);
+    else if (view === "export") renderExport(target);
+  }
+
+  /* ---------- shared: route color + dot ---------------------------------- */
+  function assignColors() {
+    S.routes.forEach((r, i) => { if (!S.routeColor[r.id]) S.routeColor[r.id] = CAT[i % CAT.length]; });
+  }
+  function dot(routeId) {
+    return el("span", { class: "dot", style: "background:var(" + (S.routeColor[routeId] || "--cat-3") + ")" });
+  }
+  function routeById(id) { return S.routes.find((r) => r.id === id); }
+  function cities() {
+    const set = []; S.routes.forEach((r) => { if (set.indexOf(r.city) < 0) set.push(r.city); });
+    return set.sort();
+  }
+
+  /* ======================================================================
+     VIEW 1 — BOOKINGS
+     ====================================================================== */
+  function renderBookings(root) {
+    clear(root);
+    if (S.bookings.mode === "week") { renderWeek(root); return; }
+    const f = S.bookings.filters;
+
+    // ---- filter bar ----
+    const routeChips = el("div", { class: "chips" });
+    routeChips.appendChild(chip("All routes", !f.route, dot("--none"), () => { delete f.route; loadBookings(); }, true));
+    S.routes.forEach((r) => {
+      routeChips.appendChild(chip(r.name.replace(/^WOGO Cocktail Walk /, "").replace(/^Rotterdam /, "R· "),
+        f.route === r.id, dot(r.id), () => { f.route = r.id; loadBookings(); }));
+    });
+
+    const citySel = selectField("City", "", ["Any city"].concat(cities()), (v) => {
+      if (v === "Any city") delete f.city; else f.city = v; loadBookings();
+    }, f.city || "Any city");
+    const statusSel = selectField("Status", "", ["Any status"].concat(STATUSES.map(prettyStatus)), (v) => {
+      if (v === "Any status") delete f.status; else f.status = STATUSES[["Any status"].concat(STATUSES.map(prettyStatus)).indexOf(v) - 1];
+      loadBookings();
+    }, f.status ? prettyStatus(f.status) : "Any status");
+    const fromF = dateField("From", f.date_from || "", (v) => { if (v) f.date_from = v; else delete f.date_from; loadBookings(); });
+    const toF = dateField("To", f.date_to || "", (v) => { if (v) f.date_to = v; else delete f.date_to; loadBookings(); });
+
+    const searchInput = el("input", { type: "text", placeholder: "Name or email…", value: f.q || "" });
+    let sT;
+    searchInput.addEventListener("input", () => { clearTimeout(sT); sT = setTimeout(() => { const v = searchInput.value.trim(); if (v) f.q = v; else delete f.q; loadBookings(); }, 320); });
+    const searchF = el("div", { class: "filter-group search" }, [el("label", { text: "Search" }), searchInput]);
+
+    const seg = el("div", { class: "seg" }, [
+      segBtn("List", S.bookings.mode === "list", () => { S.bookings.mode = "list"; renderBookings(root); }),
+      segBtn("Week", false, () => { S.bookings.mode = "week"; renderBookings(root); }),
+      segBtn("Month", S.bookings.mode === "cal", () => { S.bookings.mode = "cal"; renderBookings(root); })
+    ]);
+    const clearBtn = el("button", { class: "btn btn-quiet btn-sm", text: "Clear", onclick: () => { S.bookings.filters = {}; renderBookings(root); loadBookings(); } });
+
+    const filters = el("div", { class: "filters" }, [
+      el("div", { class: "filters-row", style: "margin-bottom:12px" }, [
+        el("div", { class: "filter-group", style: "flex:1" }, [el("label", { text: "Route" }), routeChips])
+      ]),
+      el("div", { class: "filters-row" }, [
+        citySel, statusSel, fromF, toF, searchF,
+        el("div", { class: "filter-actions" }, [seg, clearBtn])
+      ])
+    ]);
+    root.appendChild(filters);
+
+    const stats = el("div", { class: "stat-row", id: "bk-stats" });
+    root.appendChild(stats);
+
+    const holder = el("div", { id: "bk-holder" });
+    root.appendChild(holder);
+
+    if (S.bookings.list.length === 0) loadBookings();
+    else paintBookings();
+  }
+
+  async function loadBookings() {
+    const holder = $("#bk-holder");
+    if (!holder) return;
+    clear(holder);
+    holder.appendChild(skeletonCard());
+    try {
+      const qs = new URLSearchParams();
+      const f = S.bookings.filters;
+      for (const k in f) qs.set(k, f[k]);
+      qs.set("limit", "500");
+      const data = await api("/admin/api/bookings?" + qs.toString());
+      S.bookings.list = data.bookings || [];
+      paintBookings();
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(holder); holder.appendChild(errorCard(e.message, loadBookings)); }
+    }
+  }
+
+  function paintBookings() {
+    paintStats();
+    const holder = $("#bk-holder");
+    if (!holder) return;
+    clear(holder);
+    holder.appendChild(S.bookings.mode === "cal" ? bookingsCalendar() : bookingsTable());
+  }
+
+  function paintStats() {
+    const box = $("#bk-stats");
+    if (!box) return;
+    clear(box);
+    const list = S.bookings.list;
+    let guests = 0, revenue = 0, confirmed = 0, holds = 0;
+    list.forEach((b) => {
+      const counts = b.status === "confirmed" || b.status === "confirmed_conflict";
+      if (counts) {
+        guests += b.party; confirmed++;
+        const r = routeById(b.route_id);
+        const unpaid = b.payment_status === "free" || b.payment_status === "comp";
+        if (r && !unpaid) revenue += Math.max(0, r.price_cents * b.party - (b.discount_cents || 0));
+      }
+      if (b.status === "hold") holds++;
+    });
+    box.appendChild(stat("Bookings", list.length, "in current filter"));
+    box.appendChild(stat("Guests (confirmed)", guests, confirmed + " confirmed bookings"));
+    box.appendChild(stat("Revenue (confirmed)", euros(revenue), "gross, ex. Stripe fees"));
+    box.appendChild(stat("Active holds", holds, "paying right now"));
+  }
+
+  function bookingsTable() {
+    const list = S.bookings.list.slice().sort((a, b) =>
+      (b.date + b.slot).localeCompare(a.date + a.slot));
+    const card = el("div", { class: "card" });
+    card.appendChild(el("div", { class: "card-head" }, [
+      el("h2", { text: "All bookings" }),
+      el("span", { class: "count-badge", text: list.length + " rows" })
+    ]));
+    if (list.length === 0) {
+      card.appendChild(el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "☕" }),
+        el("div", { text: "No bookings match these filters yet." })
+      ]));
+      return card;
+    }
+    const scroll = el("div", { class: "table-scroll" });
+    const t = el("table", { class: "data" });
+    t.appendChild(el("thead", {}, el("tr", {}, [
+      th("When"), th("Route"), th("City"), th("Guest"), th("Party"), th("Status"), th("Booked")
+    ])));
+    const tb = el("tbody");
+    list.forEach((b) => {
+      const r = routeById(b.route_id);
+      const tr = el("tr", { onclick: () => openDrawer(b) }, [
+        el("td", {}, [el("div", { class: "td-name num", text: prettyDate(b.date) }), el("div", { class: "td-sub num", text: b.slot })]),
+        el("td", {}, el("span", { class: "route-tag" }, [dot(b.route_id), shortRoute(b.route_name || (r && r.name) || b.route_id)])),
+        el("td", { class: "td-sub", text: b.city || (r && r.city) || "" }),
+        el("td", {}, [el("div", { class: "td-name", text: b.name }), el("div", { class: "td-sub", text: b.email })]),
+        el("td", { class: "num", text: b.party }),
+        el("td", {}, el("div", { class: "badge-stack" }, [
+          badge(b.status),
+          b.source === "manual" ? el("span", { class: "tag-mini src", text: "Manual" }) : null,
+          (b.discount_code || b.discount_cents > 0) ? el("span", { class: "tag-mini disc", text: (b.discount_code || "discount") + " −" + euros(b.discount_cents || 0) }) : null
+        ].filter(Boolean))),
+        el("td", { class: "td-sub num", text: (b.created_at || "").slice(0, 10) })
+      ]);
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    scroll.appendChild(t);
+    card.appendChild(scroll);
+    return card;
+  }
+
+  function bookingsCalendar() {
+    const card = el("div", { class: "card" });
+    let month = S.bookings.calMonth || todayStr().slice(0, 7);
+    const [yy, mm] = month.split("-").map(Number);
+
+    const head = el("div", { class: "cal-head" });
+    head.appendChild(el("h2", { text: MONTHS[mm - 1] + " " + yy }));
+    head.appendChild(el("div", { class: "cal-nav" }, [
+      el("button", { class: "icon-btn", "aria-label": "Previous month", text: "‹", onclick: () => { S.bookings.calMonth = shiftMonth(month, -1); paintBookings(); } }),
+      el("button", { class: "icon-btn", "aria-label": "Next month", text: "›", onclick: () => { S.bookings.calMonth = shiftMonth(month, 1); paintBookings(); } })
+    ]));
+    head.appendChild(el("div", { class: "grow" }));
+    head.appendChild(el("div", { class: "legend" }, S.routes.map((r) =>
+      el("span", { class: "legend-item" }, [el("span", { class: "sw", style: "background:var(" + S.routeColor[r.id] + ")" }), shortRoute(r.name)]))));
+    card.appendChild(head);
+
+    // aggregate guests per day per route
+    const byDay = {};
+    S.bookings.list.forEach((b) => {
+      if (b.date.slice(0, 7) !== month) return;
+      if (!(b.status === "confirmed" || b.status === "confirmed_conflict" || b.status === "hold")) return;
+      (byDay[b.date] = byDay[b.date] || {});
+      byDay[b.date][b.route_id] = (byDay[b.date][b.route_id] || 0) + b.party;
+    });
+
+    const grid = el("div", { class: "cal-grid" });
+    DOW.forEach((d) => grid.appendChild(el("div", { class: "cal-dow", text: d })));
+    const first = new Date(yy, mm - 1, 1);
+    const startPad = (first.getDay() === 0 ? 7 : first.getDay()) - 1;
+    const daysInMonth = new Date(yy, mm, 0).getDate();
+    for (let i = 0; i < startPad; i++) grid.appendChild(el("div", { class: "cal-cell blank" }));
+    for (let day = 1; day <= daysInMonth; day++) {
+      const ds = month + "-" + String(day).padStart(2, "0");
+      const routeGuests = byDay[ds] || {};
+      const total = Object.values(routeGuests).reduce((a, c) => a + c, 0);
+      const maxDay = Math.max(1, ...Object.values(byDay).map((o) => Object.values(o).reduce((a, c) => a + c, 0)));
+      const cell = el("div", { class: "cal-cell" + (ds === todayStr() ? " today" : ""), onclick: () => drillDay(ds) });
+      cell.appendChild(el("div", { class: "cal-date", text: String(day) }));
+      if (total > 0) {
+        const bars = el("div", { class: "cal-bars" });
+        Object.keys(routeGuests).forEach((rid) => {
+          bars.appendChild(el("div", { class: "cb", style: "background:var(" + (S.routeColor[rid] || "--cat-3") + ");flex:" + routeGuests[rid] }));
+        });
+        cell.appendChild(bars);
+        cell.appendChild(el("div", { class: "cal-guests", text: total + " guest" + (total === 1 ? "" : "s") }));
+      }
+      grid.appendChild(cell);
+    }
+    card.appendChild(grid);
+    return card;
+  }
+
+  function drillDay(ds) {
+    S.bookings.filters.date_from = ds;
+    S.bookings.filters.date_to = ds;
+    S.bookings.mode = "list";
+    renderBookings($("#view"));
+    loadBookings();
+  }
+
+  /* ---------- drawer ---------------------------------------------------- */
+  // Shared post-mutation refresh for Move/Cancel (and anything else that
+  // changes a booking's date/slot/status from the drawer). openDrawer() is
+  // reachable from three different places — the bookings list/month view,
+  // the Week time-grid (a totally different render path, no #bk-holder in
+  // its DOM), and the Customers drawer — so this can't just call
+  // loadBookings() directly (it no-ops with no #bk-holder, silently leaving
+  // the Week grid showing the stale pre-move/cancel state). Same
+  // invalidate-caches-then-re-render-if-visible pattern the customer-edit
+  // save already uses (see openCustomerDrawer's "Save changes" handler).
+  function refreshAfterBookingMutation() {
+    S.bookings.list = [];      // list/month view refetches on next visit
+    S.week.loadedStart = null; // week grid refetches on next visit
+    if (S.view === "bookings") renderBookings($("#view")); // repaint now if it's on screen
+  }
+  function openDrawer(b) {
+    const r = routeById(b.route_id);
+    $("#drawer-title").textContent = b.name;
+    const body = $("#drawer-body");
+    clear(body);
+    const kv = el("dl", { class: "kv" });
+    const rows = [
+      ["Status", null, badge(b.status)],
+      ["Route", (b.route_name || (r && r.name) || b.route_id)],
+      ["City", (b.city || (r && r.city) || "—")],
+      ["Date", prettyDate(b.date) + " (" + b.date + ")"],
+      ["Time", b.slot],
+      ["Party size", b.party + " guest" + (b.party === 1 ? "" : "s")],
+      ["Price", r ? euros(r.price_cents * b.party) + "  (" + euros(r.price_cents) + " pp)" : "—"],
+      (b.discount_code || b.discount_cents > 0)
+        ? ["Discount", (b.discount_code ? b.discount_code + " · " : "") + "−" + euros(b.discount_cents || 0) + (r ? "  → paid " + euros(Math.max(0, r.price_cents * b.party - (b.discount_cents || 0))) : "")]
+        : null,
+      ["Source", b.source === "manual" ? "Manual (phone booking)" : "Website"],
+      b.payment_status ? ["Payment", prettyPayment(b.payment_status)] : null,
+      ["Email", b.email],
+      ["Phone", b.phone || "—"],
+      b.notes ? ["⚠️ Allergies / notes", b.notes] : null,
+      ["Language", (b.locale || "en").toUpperCase()],
+      ["Marketing", b.marketing_opt_in ? "Opted in" : "No"],
+      ["Booking ID", b.id, null, "mono"],
+      ["Stripe session", b.stripe_session || "—", null, "mono"],
+      ["Created", b.created_at || "—"]
+    ];
+    rows.filter(Boolean).forEach((row) => {
+      kv.appendChild(el("dt", { text: row[0] }));
+      if (row[2]) kv.appendChild(el("dd", {}, row[2]));
+      else kv.appendChild(el("dd", { class: row[3] || "", text: row[1] }));
+    });
+    body.appendChild(kv);
+
+    // "Move" and "Cancel" are only meaningful for a booking that's actually
+    // holding a seat — a hold/expired/already-cancelled row has nothing to
+    // move or free.
+    const movable = b.status === "confirmed" || b.status === "confirmed_conflict";
+    const moveWrap = el("div", { class: "inline-form", style: "display:none;margin-top:16px" });
+    const cancelWrap = el("div", { style: "display:none;margin-top:16px" });
+
+    if (movable) {
+      // -- Move booking: new date + a slot picker from the route's own times.
+      const dateI = el("input", { type: "date", value: b.date });
+      const slotSel = el("select");
+      let rawSlots = [];
+      try { rawSlots = JSON.parse((r && r.slots) || "[]"); } catch (e) { rawSlots = []; }
+      const perWeekday = !!(rawSlots && typeof rawSlots === "object" && !Array.isArray(rawSlots));
+      function paintMoveSlotOptions() {
+        const opts = perWeekday ? (rawSlots[String(isoDow(dateI.value || b.date))] || []).slice()
+          : (Array.isArray(rawSlots) ? rawSlots.slice() : []);
+        // Same-times-every-day routes always keep the booking's own slot in
+        // the list, exactly as before this feature. Per-weekday routes only
+        // force it in while still viewing the booking's original date — a
+        // new date shows THAT day's real offerings.
+        if (!perWeekday || dateI.value === b.date) {
+          if (!opts.includes(b.slot)) opts.push(b.slot);
+        }
+        clear(slotSel);
+        opts.sort().forEach((s) => slotSel.appendChild(el("option", { value: s, text: s })));
+        slotSel.value = opts.includes(b.slot) ? b.slot : (opts[0] || "");
+      }
+      paintMoveSlotOptions();
+      if (perWeekday) dateI.addEventListener("change", paintMoveSlotOptions);
+      const moveErr = el("div", { class: "form-error", role: "alert", "aria-live": "assertive" });
+      moveWrap.appendChild(el("div", { class: "subhead", text: "Move to a new date/time" }));
+      moveWrap.appendChild(moveErr);
+      moveWrap.appendChild(el("div", { class: "field" }, [el("label", { text: "New date" }), dateI]));
+      moveWrap.appendChild(el("div", { class: "field" }, [el("label", { text: "New start time" }), slotSel]));
+      moveWrap.appendChild(el("div", { class: "rc-actions" }, [
+        el("button", { class: "btn btn-ghost btn-sm", text: "Never mind", onclick: () => { moveWrap.style.display = "none"; } }),
+        el("div", { class: "grow" }),
+        el("button", { class: "btn btn-primary btn-sm", text: "Confirm move", onclick: async (ev) => {
+          moveErr.classList.remove("show");
+          if (!dateI.value) { moveErr.textContent = "Pick a date."; moveErr.classList.add("show"); return; }
+          const btn = ev.currentTarget;
+          btn.disabled = true; btn.textContent = "Moving…";
+          try {
+            await api("/admin/api/bookings/" + b.id + "/reschedule", { method: "POST", body: { date: dateI.value, slot: slotSel.value } });
+            toast("Booking moved — guest and bars emailed", "ok");
+            closeDrawer();
+            refreshAfterBookingMutation();
+          } catch (e) {
+            moveErr.textContent = e.message; moveErr.classList.add("show");
+            btn.disabled = false; btn.textContent = "Confirm move";
+          }
+        } })
+      ]));
+      body.appendChild(moveWrap);
+
+      // -- Cancel booking: a deliberate second step (reveal → explicit
+      //    "Yes, cancel booking" click) rather than a native confirm() popup,
+      //    with an optional note the guest email can carry (e.g. refund
+      //    wording) — refunds themselves stay a manual Stripe action.
+      const noteI = el("textarea", { rows: "3", maxlength: "2000", placeholder: "e.g. “Refund of €30 is on its way.”" });
+      const cancelErr = el("div", { class: "form-error", role: "alert", "aria-live": "assertive" });
+      cancelWrap.appendChild(el("div", { class: "subhead", text: "Cancel this booking" }));
+      cancelWrap.appendChild(el("p", { class: "capacity-hint", style: "padding:0;margin:0 0 10px", text: "Frees the seats and emails the guest and every bar on the route. Refunds are NOT automatic — handle those yourself in Stripe." }));
+      cancelWrap.appendChild(cancelErr);
+      cancelWrap.appendChild(el("div", { class: "field" }, [el("label", { text: "Optional note to the guest — e.g. refund wording" }), noteI]));
+      cancelWrap.appendChild(el("div", { class: "rc-actions" }, [
+        el("button", { class: "btn btn-ghost btn-sm", text: "Never mind", onclick: () => { cancelWrap.style.display = "none"; } }),
+        el("div", { class: "grow" }),
+        el("button", { class: "btn btn-danger btn-sm", text: "Yes, cancel booking", onclick: async (ev) => {
+          const btn = ev.currentTarget;
+          btn.disabled = true; btn.textContent = "Cancelling…";
+          try {
+            await api("/admin/api/bookings/" + b.id + "/cancel", { method: "POST", body: { message: noteI.value.trim() || undefined } });
+            toast("Booking cancelled — guest and bars emailed", "ok");
+            closeDrawer();
+            refreshAfterBookingMutation();
+          } catch (e) {
+            cancelErr.textContent = e.message; cancelErr.classList.add("show");
+            btn.disabled = false; btn.textContent = "Yes, cancel booking";
+          }
+        } })
+      ]));
+      body.appendChild(cancelWrap);
+    }
+
+    const foot = $("#drawer-foot");
+    clear(foot);
+    foot.appendChild(el("button", {
+      class: "btn btn-quiet", text: "Resend confirmation",
+      onclick: async () => {
+        try { await api("/admin/api/bookings/" + b.id + "/resend", { method: "POST" }); toast("Confirmation re-sent to " + b.email, "ok"); }
+        catch (e) { toast(e.message, "err"); }
+      }
+    }));
+    if (movable) {
+      foot.appendChild(el("button", {
+        class: "btn btn-quiet", text: "Move booking",
+        onclick: () => {
+          cancelWrap.style.display = "none";
+          moveWrap.style.display = moveWrap.style.display === "none" ? "block" : "none";
+          if (moveWrap.style.display === "block") moveWrap.scrollIntoView({ block: "nearest" });
+        }
+      }));
+      foot.appendChild(el("button", {
+        class: "btn btn-danger", text: "Cancel booking",
+        onclick: () => {
+          moveWrap.style.display = "none";
+          cancelWrap.style.display = cancelWrap.style.display === "none" ? "block" : "none";
+          if (cancelWrap.style.display === "block") cancelWrap.scrollIntoView({ block: "nearest" });
+        }
+      }));
+    }
+    foot.appendChild(el("button", { class: "btn btn-ghost", text: "Close", onclick: closeDrawer }));
+
+    $("#drawer").classList.add("show");
+    $("#drawer").setAttribute("aria-hidden", "false");
+    $("#drawer-scrim").classList.add("show");
+  }
+  function closeDrawer() {
+    $("#drawer").classList.remove("show");
+    $("#drawer").setAttribute("aria-hidden", "true");
+    $("#drawer-scrim").classList.remove("show");
+  }
+  $("#drawer-close").addEventListener("click", closeDrawer);
+  $("#drawer-scrim").addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeDrawer(); $("#sidebar").classList.remove("open"); } });
+
+  /* ======================================================================
+     VIEW 1b — WEEK TIME-GRID
+     Mon–Sun columns × hour rows; every departure is one block coloured by
+     route, with a booked/capacity pill (green = open, amber = 70%+, full).
+     Click a block for that departure's guest list. Sidebar: mini month
+     picker, route filter with colour key, upcoming departures.
+     ====================================================================== */
+  function renderWeek(root) {
+    const wk = S.week;
+    if (!wk.start) wk.start = mondayOf(todayStr());
+    if (!wk.showInit) { S.routes.forEach((r) => { wk.show[r.id] = true; }); wk.showInit = true; }
+    if (!wk.mini) wk.mini = wk.start.slice(0, 7);
+
+    const seg = el("div", { class: "seg" }, [
+      segBtn("List", false, () => { S.bookings.mode = "list"; renderBookings(root); }),
+      segBtn("Week", true, () => { /* already here */ }),
+      segBtn("Month", false, () => { S.bookings.mode = "cal"; renderBookings(root); })
+    ]);
+    root.appendChild(el("div", { class: "wk-head" }, [
+      el("div", { class: "cal-nav" }, [
+        el("button", { class: "icon-btn", "aria-label": "Previous week", text: "‹", onclick: () => shiftWeek(-7) }),
+        el("button", { class: "icon-btn", "aria-label": "Next week", text: "›", onclick: () => shiftWeek(7) })
+      ]),
+      el("button", { class: "btn btn-quiet btn-sm", text: "This week", onclick: () => { wk.start = mondayOf(todayStr()); wk.mini = wk.start.slice(0, 7); renderBookings($("#view")); } }),
+      el("h2", { class: "wk-title", text: weekLabel(wk.start) }),
+      el("div", { class: "grow" }),
+      seg
+    ]));
+
+    root.appendChild(el("div", { class: "wk-layout" }, [
+      el("aside", { class: "wk-side", "aria-label": "Week filters" }, [miniMonthCard(), routeFilterCard(), el("div", { id: "wk-upcoming" })]),
+      el("div", { class: "wk-main", id: "wk-holder" }, skeletonCard())
+    ]));
+
+    if (wk.loadedStart === wk.start) paintWeek();
+    else loadWeek();
+  }
+  function shiftWeek(days) { S.week.start = addDays(S.week.start, days); S.week.mini = S.week.start.slice(0, 7); renderBookings($("#view")); }
+  function weekLabel(start) {
+    const a = parseD(start), b = parseD(addDays(start, 6));
+    const am = MONTHS[a.getMonth()].slice(0, 3), bm = MONTHS[b.getMonth()].slice(0, 3);
+    return a.getDate() + (am === bm ? "" : " " + am) + " – " + b.getDate() + " " + bm + " " + b.getFullYear();
+  }
+
+  async function loadWeek() {
+    const wk = S.week;
+    try {
+      const qs = new URLSearchParams({ date_from: wk.start, date_to: addDays(wk.start, 6), limit: "500" });
+      const results = await Promise.all([
+        api("/admin/api/bookings?" + qs.toString()),
+        Promise.all(S.routes.map((r) =>
+          api("/admin/api/date-overrides?route=" + encodeURIComponent(r.id))
+            .then((d) => [r.id, d.overrides || []])
+            .catch(() => [r.id, []])))
+      ]);
+      wk.bookings = results[0].bookings || [];
+      wk.overrides = {};
+      results[1].forEach((pair) => { wk.overrides[pair[0]] = pair[1]; });
+      wk.loadedStart = wk.start;
+      paintWeek();
+    } catch (e) {
+      if (e.message !== "unauthenticated") {
+        const h = $("#wk-holder");
+        if (h) { clear(h); h.appendChild(errorCard(e.message, loadWeek)); }
+      }
+    }
+  }
+
+  // One entry per (day, route, slot): every scheduled departure that week,
+  // PLUS any off-schedule departure that has bookings (manual bookings may
+  // sit outside open_days on purpose — the owner overrode the rules by hand).
+  function weekDeps() {
+    const wk = S.week, deps = [];
+    for (let i = 0; i < 7; i++) {
+      const ds = addDays(wk.start, i);
+      S.routes.forEach((r) => {
+        if (!wk.show[r.id]) return;
+        const ov = overridesForDate(wk.overrides[r.id] || [], ds);
+        let openDays = [];
+        try { openDays = JSON.parse(r.open_days || "[]"); } catch (e) { openDays = []; }
+        const scheduled = (!ov.closed && r.active && openDays.indexOf(isoDow(ds)) >= 0) ? dateSlots(r, ov, ds) : [];
+        const bySlot = {};
+        wk.bookings.forEach((b) => {
+          if (b.route_id !== r.id || b.date !== ds) return;
+          if (!(b.status === "confirmed" || b.status === "confirmed_conflict" || b.status === "hold")) return;
+          (bySlot[b.slot] = bySlot[b.slot] || []).push(b);
+        });
+        const slots = scheduled.slice();
+        Object.keys(bySlot).forEach((s) => { if (slots.indexOf(s) < 0) slots.push(s); });
+        slots.sort().forEach((slot) => {
+          const cap = slotCapInfo(r, ov, slot).effective;
+          const list = (bySlot[slot] || []).slice().sort((a, b2) => a.name.localeCompare(b2.name));
+          const booked = list.reduce((a, b2) => a + b2.party, 0);
+          if (cap === 0 && booked === 0) return;   // closed and empty — not a departure
+          const state = (cap === 0 || booked >= cap) ? "full" : (booked / cap >= 0.7 ? "amber" : "open");
+          deps.push({ date: ds, dayIdx: i, slot, route: r, cap, booked, list, state });
+        });
+      });
+    }
+    return deps;
+  }
+
+  function paintWeek() {
+    const holder = $("#wk-holder");
+    if (!holder) return;
+    const deps = weekDeps();
+
+    // hour rows ~14:00–23:00, stretched only if a departure falls outside
+    let startH = 14, endH = 23;
+    deps.forEach((d) => {
+      const h = parseInt(d.slot.slice(0, 2), 10);
+      if (h < startH) startH = h;
+      if (h + 1 > endH) endH = h + 1;
+    });
+
+    clear(holder);
+    const card = el("div", { class: "card" });
+    const grid = el("div", { class: "wk-grid" });
+
+    grid.appendChild(el("div", { class: "wk-corner" }));
+    for (let i = 0; i < 7; i++) {
+      const ds = addDays(S.week.start, i);
+      grid.appendChild(el("div", { class: "wk-day" + (ds === todayStr() ? " today" : "") }, [
+        el("span", { class: "wk-dow", text: DOW[i] }),
+        el("span", { class: "wk-dnum", text: String(parseD(ds).getDate()) })
+      ]));
+    }
+
+    // one row per half hour; departures stack inside their half-hour cell
+    const cells = {};
+    for (let h = startH; h < endH; h++) {
+      for (let half = 0; half < 2; half++) {
+        const t = String(h).padStart(2, "0") + ":" + (half ? "30" : "00");
+        grid.appendChild(el("div", { class: "wk-time" + (half ? "" : " hr"), text: half ? "" : t }));
+        for (let i = 0; i < 7; i++) {
+          const cell = el("div", { class: "wk-cell" + (half ? "" : " hr") });
+          cells[i + "|" + t] = cell;
+          grid.appendChild(cell);
+        }
+      }
+    }
+    deps.forEach((dep) => {
+      const mins = parseInt(dep.slot.slice(3, 5), 10);
+      const cell = cells[dep.dayIdx + "|" + dep.slot.slice(0, 2) + ":" + (mins < 30 ? "00" : "30")];
+      if (cell) cell.appendChild(depBlock(dep));
+    });
+
+    card.appendChild(el("div", { class: "wk-scroll" }, grid));
+    card.appendChild(el("div", { class: "wk-key" }, [
+      keySwatch("open", "Seats open"),
+      keySwatch("amber", "Filling up (70%+)"),
+      keySwatch("full", "Full"),
+      el("span", { class: "legend-item", style: "color:var(--muted)", text: "Faded block = scheduled, nothing booked yet" })
+    ]));
+    holder.appendChild(card);
+    paintUpcoming(deps);
+  }
+  function keySwatch(state, label) {
+    return el("span", { class: "legend-item" }, [el("span", { class: "sw cap-" + state }), label]);
+  }
+
+  function depBlock(dep) {
+    return el("button", {
+      type: "button",
+      class: "wk-dep" + (dep.booked === 0 ? " ghost" : ""),
+      style: "border-left-color:var(" + (S.routeColor[dep.route.id] || "--cat-3") + ")",
+      "aria-label": shortRoute(dep.route.name) + ", " + dep.route.city + ", " + prettyDate(dep.date) + " " + dep.slot + ", " + dep.booked + " of " + dep.cap + " seats booked",
+      onclick: () => openDepartureDrawer(dep)
+    }, [
+      el("div", { class: "wk-dep-top" }, [
+        dot(dep.route.id),
+        el("span", { class: "wk-dep-name", text: shortRoute(dep.route.name) }),
+        el("span", { class: "wk-pill " + dep.state, text: dep.booked + "/" + dep.cap })
+      ]),
+      el("div", { class: "wk-dep-sub", text: dep.slot + " · " + dep.route.city })
+    ]);
+  }
+
+  function openDepartureDrawer(dep) {
+    $("#drawer-title").textContent = shortRoute(dep.route.name) + " · " + dep.slot;
+    const body = $("#drawer-body");
+    clear(body);
+
+    const left = Math.max(0, dep.cap - dep.booked);
+    const pct = dep.cap > 0 ? Math.min(100, Math.round((dep.booked / dep.cap) * 100)) : 100;
+    const fillClass = dep.state === "full" ? "full" : dep.state === "amber" ? "mid" : "low";
+    body.appendChild(el("div", { class: "dep-summary" }, [
+      el("div", { class: "td-name", text: prettyDate(dep.date) + " · " + dep.route.city }),
+      el("div", { class: "cap-meter", style: "margin:10px 0 6px" },
+        el("div", { class: "cap-fill " + fillClass, style: "width:" + pct + "%" })),
+      el("div", { class: "cap-labels" }, [
+        el("span", { class: "cap-count", text: dep.booked + " / " + dep.cap + " seats" }),
+        el("span", { class: "cap-left", text: dep.cap === 0 ? "closed for this date" : left + " left" })
+      ])
+    ]));
+
+    body.appendChild(el("div", { class: "subhead", text: "Guest list" }));
+    if (dep.list.length === 0) {
+      body.appendChild(el("p", { class: "capacity-hint", text: "No guests booked on this start time yet." }));
+    } else {
+      const listEl = el("div", { class: "dep-guests" });
+      dep.list.forEach((b) => {
+        listEl.appendChild(el("button", { type: "button", class: "dep-guest", onclick: () => openDrawer(b) }, [
+          el("div", {}, [
+            el("div", { class: "td-name", text: b.name }),
+            el("div", { class: "td-sub", text: b.email })
+          ]),
+          el("div", { class: "dep-guest-right" }, [
+            el("span", { class: "count-badge", text: b.party + " " + (b.party === 1 ? "guest" : "guests") }),
+            badge(b.status)
+          ])
+        ]));
+      });
+      body.appendChild(listEl);
+      body.appendChild(el("p", { class: "capacity-hint", text: "Tap a guest for the full booking — and to resend their confirmation." }));
+    }
+
+    const foot = $("#drawer-foot");
+    clear(foot);
+    foot.appendChild(el("button", { class: "btn btn-ghost", text: "Close", onclick: closeDrawer }));
+
+    $("#drawer").classList.add("show");
+    $("#drawer").setAttribute("aria-hidden", "false");
+    $("#drawer-scrim").classList.add("show");
+  }
+
+  function miniMonthCard() {
+    const wk = S.week;
+    const [yy, mm] = wk.mini.split("-").map(Number);
+    const card = el("div", { class: "side-card" });
+    card.appendChild(el("div", { class: "side-head" }, [
+      el("span", { class: "side-title", text: MONTHS[mm - 1] + " " + yy }),
+      el("div", { class: "grow" }),
+      el("button", { class: "icon-btn mini", "aria-label": "Previous month", text: "‹", onclick: () => { wk.mini = shiftMonth(wk.mini, -1); renderBookings($("#view")); } }),
+      el("button", { class: "icon-btn mini", "aria-label": "Next month", text: "›", onclick: () => { wk.mini = shiftMonth(wk.mini, 1); renderBookings($("#view")); } })
+    ]));
+    const g = el("div", { class: "mini-cal" });
+    DOW.forEach((d) => g.appendChild(el("span", { class: "mc-dow", text: d[0] })));
+    const first = new Date(yy, mm - 1, 1);
+    const pad = (first.getDay() === 0 ? 7 : first.getDay()) - 1;
+    const days = new Date(yy, mm, 0).getDate();
+    const weekEnd = addDays(wk.start, 6);
+    for (let i = 0; i < pad; i++) g.appendChild(el("span", { class: "mc-day blank" }));
+    for (let d = 1; d <= days; d++) {
+      const ds = wk.mini + "-" + String(d).padStart(2, "0");
+      g.appendChild(el("button", {
+        type: "button",
+        class: "mc-day" + (ds >= wk.start && ds <= weekEnd ? " sel" : "") + (ds === todayStr() ? " today" : ""),
+        text: String(d),
+        "aria-label": "Jump to week of " + ds,
+        onclick: () => { wk.start = mondayOf(ds); wk.mini = wk.start.slice(0, 7); renderBookings($("#view")); }
+      }));
+    }
+    card.appendChild(g);
+    return card;
+  }
+
+  function routeFilterCard() {
+    const wk = S.week;
+    const card = el("div", { class: "side-card" });
+    const allCb = el("input", { type: "checkbox" });
+    allCb.checked = S.routes.every((r) => wk.show[r.id]);
+    allCb.addEventListener("change", () => {
+      S.routes.forEach((r) => { wk.show[r.id] = allCb.checked; });
+      renderBookings($("#view"));
+    });
+    card.appendChild(el("div", { class: "side-head" }, [
+      el("span", { class: "side-title", text: "Routes" }),
+      el("div", { class: "grow" }),
+      el("label", { class: "rf-all" }, [allCb, "All"])
+    ]));
+    const list = el("div", { class: "rf-list" });
+    S.routes.forEach((r) => {
+      const cb = el("input", { type: "checkbox" });
+      cb.checked = !!wk.show[r.id];
+      cb.addEventListener("change", () => {
+        wk.show[r.id] = cb.checked;
+        allCb.checked = S.routes.every((x) => wk.show[x.id]);
+        paintWeek();
+      });
+      list.appendChild(el("label", { class: "rf-item" }, [
+        cb,
+        el("span", { class: "sw", style: "background:var(" + (S.routeColor[r.id] || "--cat-3") + ")" }),
+        el("span", { class: "rf-name", text: shortRoute(r.name) }),
+        el("span", { class: "rf-city", text: r.city })
+      ]));
+    });
+    card.appendChild(list);
+    return card;
+  }
+
+  function paintUpcoming(deps) {
+    const holder = $("#wk-upcoming");
+    if (!holder) return;
+    clear(holder);
+    const card = el("div", { class: "side-card" });
+    card.appendChild(el("div", { class: "side-head" }, [el("span", { class: "side-title", text: "Upcoming start times" })]));
+    const now = new Date();
+    const nowT = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+    const today = todayStr();
+    const up = deps
+      .filter((d) => d.date > today || (d.date === today && d.slot >= nowT))
+      .sort((a, b) => (a.date + a.slot).localeCompare(b.date + b.slot))
+      .slice(0, 6);
+    if (up.length === 0) {
+      card.appendChild(el("p", { class: "capacity-hint", style: "padding:10px 14px 12px;margin:0", text: "Nothing left in this week — jump ahead with › or the month picker." }));
+    } else {
+      const list = el("div", { class: "up-list" });
+      up.forEach((d) => {
+        list.appendChild(el("button", { type: "button", class: "up-item", onclick: () => openDepartureDrawer(d) }, [
+          el("span", { class: "up-when num", text: DOW[isoDow(d.date) - 1] + " " + d.slot }),
+          dot(d.route.id),
+          el("span", { class: "up-name", text: shortRoute(d.route.name) }),
+          el("span", { class: "wk-pill " + d.state, text: d.booked + "/" + d.cap })
+        ]));
+      });
+      card.appendChild(list);
+    }
+    holder.appendChild(card);
+  }
+
+  /* ======================================================================
+     VIEW 2 — PARTICIPANTS PER HOUR
+     ====================================================================== */
+  function renderHours(root) {
+    const routeChips = el("div", { class: "chips" });
+    routeChips.appendChild(chip("All routes", !S.hours.route, dot("--none"), () => { S.hours.route = ""; S.hours.editSlot = null; renderHours(root); }, true));
+    S.routes.forEach((r) => routeChips.appendChild(
+      chip(shortRoute(r.name), S.hours.route === r.id, dot(r.id), () => { S.hours.route = r.id; S.hours.editSlot = null; renderHours(root); })));
+
+    const dateI = el("input", { type: "date", value: S.hours.date });
+    dateI.addEventListener("change", () => { S.hours.date = dateI.value || todayStr(); S.hours.editSlot = null; loadHours(); });
+
+    root.appendChild(el("div", { class: "filters" }, [
+      el("div", { class: "filters-row", style: "margin-bottom:12px" }, [
+        el("div", { class: "filter-group", style: "flex:1" }, [el("label", { text: "Route" }), routeChips])
+      ]),
+      el("div", { class: "filters-row" }, [
+        el("div", { class: "filter-group" }, [el("label", { text: "Date" }), dateI]),
+        el("div", { class: "filter-actions" }, [
+          el("button", { class: "btn btn-quiet btn-sm", text: "‹ Prev day", onclick: () => { S.hours.date = dstr(new Date(parseD(S.hours.date).getTime() - 864e5)); dateI.value = S.hours.date; loadHours(); } }),
+          el("button", { class: "btn btn-quiet btn-sm", text: "Today", onclick: () => { S.hours.date = todayStr(); dateI.value = S.hours.date; loadHours(); } }),
+          el("button", { class: "btn btn-quiet btn-sm", text: "Next day ›", onclick: () => { S.hours.date = dstr(new Date(parseD(S.hours.date).getTime() + 864e5)); dateI.value = S.hours.date; loadHours(); } })
+        ])
+      ])
+    ]));
+    root.appendChild(el("div", { id: "hours-holder" }));
+    loadHours();
+  }
+
+  async function loadHours() {
+    const holder = $("#hours-holder");
+    if (!holder) return;
+    clear(holder); holder.appendChild(skeletonCard());
+    try {
+      const qs = new URLSearchParams({ date: S.hours.date });
+      if (S.hours.route) qs.set("route", S.hours.route);
+      const data = await api("/admin/api/participants-per-hour?" + qs.toString());
+      // When a single route is picked we also need that route's date overrides
+      // so each departure can show its EFFECTIVE seats (and be edited per date).
+      let overrides = [];
+      if (S.hours.route) {
+        try {
+          const od = await api("/admin/api/date-overrides?route=" + encodeURIComponent(S.hours.route));
+          overrides = od.overrides || [];
+        } catch (e) { overrides = []; }
+      }
+      S.hours._data = { rows: data.rows || [], overrides };
+      S.hours.editSlot = null;
+      paintHours();
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(holder); holder.appendChild(errorCard(e.message, loadHours)); }
+    }
+  }
+
+  function paintHours() {
+    const holder = $("#hours-holder");
+    if (!holder || !S.hours._data) return;
+    clear(holder);
+    const route = S.hours.route ? routeById(S.hours.route) : null;
+    holder.appendChild(route
+      ? routeHoursCard(route, S.hours._data.rows, S.hours._data.overrides)
+      : hoursCard(S.hours._data.rows));
+  }
+
+  /* ---- per-timeslot capacity: precedence helpers (mirror logic.js §7.6) ---- */
+  function parsePayload(o) { try { return o && o.payload ? JSON.parse(o.payload) : null; } catch (e) { return null; } }
+  function overridesForDate(list, date) {
+    const out = {};
+    (list || []).forEach((o) => { if (o.date === date) out[o.action] = o; });
+    return out;   // keyed by action; each action is UNIQUE per (route,date)
+  }
+  // Resolves route.slots (POLYMORPHIC — array = same times every open day;
+  // object keyed by ISO weekday "1".."7" = per-weekday times) for one date,
+  // mirroring logic.js:slotsForWeekday. `date` is required to resolve the
+  // object shape; pass one whenever it's available.
+  function slotsRawForDate(route, date) {
+    let parsed = [];
+    try { parsed = JSON.parse(route.slots || "[]"); } catch (e) { parsed = []; }
+    if (Array.isArray(parsed)) return parsed.slice();
+    if (parsed && typeof parsed === "object") {
+      const iso = date ? isoDow(date) : null;
+      return (iso && parsed[String(iso)]) ? parsed[String(iso)].slice() : [];
+    }
+    return [];
+  }
+  // Effective slots for one date: route.slots (weekday-resolved), minus remove_slot, plus extra_slot.
+  function dateSlots(route, ovByAction, date) {
+    let slots = slotsRawForDate(route, date);
+    const rem = parsePayload(ovByAction.remove_slot);
+    if (rem && rem.slot) slots = slots.filter((s) => s !== rem.slot);
+    const ex = parsePayload(ovByAction.extra_slot);
+    if (ex && ex.slot && slots.indexOf(ex.slot) < 0) slots.push(ex.slot);
+    return slots.sort();
+  }
+  // Four-level precedence: date+slot > date-wide > route per-slot > route default.
+  function slotCapInfo(route, ovByAction, slot) {
+    const sc = parsePayload(ovByAction.slot_capacity_override) || {};
+    const cw = parsePayload(ovByAction.capacity_override);
+    let routeSlots = {};
+    try { routeSlots = JSON.parse(route.slot_capacity || "{}") || {}; } catch (e) { routeSlots = {}; }
+    const hasRouteSlot = routeSlots[slot] != null;
+    const routeDefault = hasRouteSlot ? routeSlots[slot] : route.capacity;
+    const dateSlot = (sc[slot] != null) ? sc[slot] : null;
+    const dateWide = (cw && cw.capacity != null) ? cw.capacity : null;
+    let effective, source;
+    if (dateSlot != null) { effective = dateSlot; source = "date_slot"; }
+    else if (dateWide != null) { effective = dateWide; source = "date_wide"; }
+    else if (hasRouteSlot) { effective = routeDefault; source = "route_slot"; }
+    else { effective = route.capacity; source = "route"; }
+    return { effective, routeDefault, dateSlot, dateWide, source };
+  }
+  // Save one date+slot capacity. value = integer seats, or null to clear the
+  // date+slot override for this slot. The override payload is a whole map for
+  // (route,date), so we merge into the existing map (INSERT OR REPLACE), and
+  // delete the row entirely when the last entry is removed.
+  async function saveSlotCap(route, date, slot, value, overridesList) {
+    const ovByAction = overridesForDate(overridesList, date);
+    const existing = ovByAction.slot_capacity_override;
+    const map = parsePayload(existing) || {};
+    if (value == null) delete map[slot]; else map[slot] = value;
+    if (Object.keys(map).length === 0) {
+      if (existing) await api("/admin/api/date-overrides/" + existing.id, { method: "DELETE" });
+    } else {
+      await api("/admin/api/date-overrides", {
+        method: "POST",
+        body: { route_id: route.id, date, action: "slot_capacity_override", payload: JSON.stringify(map) }
+      });
+    }
+  }
+
+  function routeHoursCard(route, rows, overrides) {
+    const ovByAction = overridesForDate(overrides, S.hours.date);
+    const card = el("div", { class: "card" });
+    const totalGuests = rows.reduce((a, r) => a + r.guests, 0);
+    card.appendChild(el("div", { class: "card-head" }, [
+      el("h2", { text: prettyDate(S.hours.date) + " — " + shortRoute(route.name) }),
+      el("div", { class: "grow" }),
+      el("span", { class: "count-badge", text: totalGuests + " guest" + (totalGuests === 1 ? "" : "s") })
+    ]));
+
+    if (ovByAction.closed) {
+      card.appendChild(el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "🚫" }),
+        el("div", { text: "This date is closed for " + shortRoute(route.name) + ". Reopen it in Route manager → Date overrides." })
+      ]));
+      return card;
+    }
+    const slots = dateSlots(route, ovByAction, S.hours.date);
+    if (slots.length === 0) {
+      card.appendChild(el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "🗓" }),
+        el("div", { text: "No start times set for this route on this date." })
+      ]));
+      return card;
+    }
+
+    const guestsBySlot = {}, bookingsBySlot = {};
+    rows.forEach((r) => {
+      guestsBySlot[r.slot] = (guestsBySlot[r.slot] || 0) + r.guests;
+      bookingsBySlot[r.slot] = (bookingsBySlot[r.slot] || 0) + (r.bookings || 0);
+    });
+
+    const list = el("div", { class: "cap-list" });
+    slots.forEach((slot) => {
+      const info = slotCapInfo(route, ovByAction, slot);
+      const cap = info.effective;
+      const guests = guestsBySlot[slot] || 0;
+      const left = Math.max(0, cap - guests);
+      const pct = cap > 0 ? Math.min(100, Math.round((guests / cap) * 100)) : 100;
+      const fillClass = cap === 0 || pct >= 100 ? "full" : pct >= 70 ? "mid" : "low";
+
+      const badges = el("div", { class: "cap-badges" });
+      if (cap === 0) badges.appendChild(el("span", { class: "cap-tag closed", text: "Closed" }));
+      else if (info.source === "date_slot") badges.appendChild(el("span", { class: "cap-tag override", text: "Override" }));
+      else if (info.source === "date_wide") badges.appendChild(el("span", { class: "cap-tag datecap", text: "Date cap" }));
+      else if (info.source === "route_slot") badges.appendChild(el("span", { class: "cap-tag routedef", text: "Route default " + info.routeDefault }));
+
+      const meter = el("div", { class: "cap-meter" },
+        el("div", { class: "cap-fill " + fillClass, style: "width:" + (cap === 0 ? 100 : pct) + "%" }));
+      const labels = el("div", { class: "cap-labels" }, [
+        el("span", { class: "cap-count", text: guests + " / " + cap + " seats" }),
+        el("span", { class: "cap-left", text: cap === 0 ? "closed for this date" : left + " left" })
+      ]);
+      const editing = S.hours.editSlot === slot;
+      const row = el("button", {
+        type: "button", class: "cap-row" + (cap === 0 ? " closed" : ""),
+        "aria-expanded": editing ? "true" : "false",
+        onclick: () => { S.hours.editSlot = editing ? null : slot; paintHours(); }
+      }, [
+        el("div", { class: "cap-time", text: slot }),
+        el("div", { class: "cap-meter-wrap" }, [meter, labels]),
+        el("div", { class: "cap-right" }, [badges, el("span", { class: "cap-edit-hint", "aria-hidden": "true", text: editing ? "▾" : "✏️" })])
+      ]);
+      list.appendChild(row);
+      if (editing) list.appendChild(slotEditor(route, slot, info, overrides));
+    });
+    card.appendChild(list);
+    card.appendChild(el("div", { class: "capacity-hint", style: "padding:6px 18px 16px",
+      text: "Tap a start time to change its seats or close it for " + prettyDate(S.hours.date) + " only — the route’s normal seats stay as they are." }));
+    return card;
+  }
+
+  function slotEditor(route, slot, info, overrides) {
+    const capI = el("input", { type: "number", min: "0", step: "1", value: String(info.effective) });
+    async function persist(value) {
+      try {
+        await saveSlotCap(route, S.hours.date, slot, value, overrides);
+        toast(value == null ? slot + " reset to route default (" + info.routeDefault + ")"
+          : value === 0 ? slot + " closed for " + S.hours.date
+          : slot + " set to " + value + " seat" + (value === 1 ? "" : "s") + " for " + S.hours.date, "ok");
+        loadHours();
+      } catch (e) { toast(e.message, "err"); }
+    }
+    const wrap = el("div", { class: "cap-editor" }, [
+      el("label", { class: "cap-editor-field" }, [el("span", { text: "Seats for " + slot }), capI]),
+      el("button", { class: "btn btn-primary btn-sm", text: "Save", onclick: () => persist(Math.max(0, parseInt(capI.value, 10) || 0)) }),
+      el("button", { class: "btn btn-quiet btn-sm", text: "Close departure", onclick: () => persist(0) }),
+      info.dateSlot != null ? el("button", { class: "btn btn-ghost btn-sm", text: "Reset to default", onclick: () => persist(null) }) : null,
+      el("button", { class: "btn btn-ghost btn-sm", text: "Cancel", onclick: () => { S.hours.editSlot = null; paintHours(); } }),
+      el("p", { class: "capacity-hint",
+        text: "Route default for this departure is " + info.routeDefault + " seat" + (info.routeDefault === 1 ? "" : "s") + ". Set 0 to close just this one departure (guests see “sold out”); every other slot and date is untouched." })
+    ].filter(Boolean));
+    return wrap;
+  }
+
+  function hoursCard(rows) {
+    const card = el("div", { class: "card" });
+    card.appendChild(el("div", { class: "card-head" }, [
+      el("h2", { text: prettyDate(S.hours.date) + " — arrivals by hour" }),
+      el("div", { class: "grow" }),
+      el("span", { class: "count-badge", text: rows.reduce((a, r) => a + r.guests, 0) + " guests" })
+    ]));
+    const body = el("div", { style: "padding:16px 18px 8px" });
+
+    if (rows.length === 0) {
+      card.appendChild(el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "⏰" }),
+        el("div", { text: "No guests booked for this date." })
+      ]));
+      return card;
+    }
+
+    // group by slot -> [{route_id, route_name, guests, bookings}]
+    const slots = {};
+    rows.forEach((r) => { (slots[r.slot] = slots[r.slot] || []).push(r); });
+    const slotKeys = Object.keys(slots).sort();
+    const slotTotals = slotKeys.map((s) => slots[s].reduce((a, r) => a + r.guests, 0));
+    const maxTotal = Math.max(1, ...slotTotals);
+
+    // legend (routes present)
+    const present = [];
+    rows.forEach((r) => { if (!present.find((p) => p.route_id === r.route_id)) present.push(r); });
+    body.appendChild(el("div", { class: "legend" }, present.map((r) =>
+      el("span", { class: "legend-item" }, [el("span", { class: "sw", style: "background:var(" + (S.routeColor[r.route_id] || "--cat-3") + ")" }), shortRoute(r.route_name)]))));
+
+    slotKeys.forEach((slot) => {
+      const segs = slots[slot];
+      const total = segs.reduce((a, r) => a + r.guests, 0);
+      const bookings = segs.reduce((a, r) => a + (r.bookings || 0), 0);
+      const track = el("div", { class: "hour-bar-track" });
+      segs.forEach((seg) => {
+        const w = (seg.guests / maxTotal) * 100;
+        track.appendChild(el("div", {
+          class: "hour-seg",
+          style: "width:" + w + "%;background:var(" + (S.routeColor[seg.route_id] || "--cat-3") + ")",
+          title: shortRoute(seg.route_name) + ": " + seg.guests + " guests"
+        }, w > 8 ? String(seg.guests) : ""));
+      });
+      body.appendChild(el("div", { class: "hour-row" }, [
+        el("div", { class: "hour-time", text: slot }),
+        track,
+        el("div", { class: "hour-count" }, [String(total), el("small", { text: bookings + " booking" + (bookings === 1 ? "" : "s") })])
+      ]));
+    });
+    card.appendChild(body);
+    card.appendChild(el("div", { class: "capacity-hint", style: "padding:4px 18px 16px", text: "Bar length is relative to the busiest hour (" + maxTotal + " guests). Each colour is a route." }));
+    return card;
+  }
+
+  /* ======================================================================
+     VIEW 3 — ROUTE MANAGER
+     ====================================================================== */
+  function renderRoutes(root) {
+    clear(root);
+    $("#topbar-actions").innerHTML = "";
+    $("#topbar-actions").appendChild(el("button", {
+      class: "btn btn-primary", text: "+ Add tour", onclick: () => openAddTour(root)
+    }));
+
+    const list = el("div", { class: "route-list", id: "route-list" });
+    root.appendChild(list);
+    S.routes.forEach((r) => list.appendChild(routeCard(r)));
+  }
+
+  // Classifies routes.slots (POLYMORPHIC TEXT/JSON — different-start-times-
+  // per-weekday feature): an array means same times every open day; an
+  // object keyed by ISO weekday string "1".."7" means per-weekday times.
+  // Always returns both `arr` (used by "same" mode) and `perDay` (used by
+  // "different times per day" mode) so callers don't need their own parsing.
+  function parseSlotsRaw(raw) {
+    let parsed;
+    try { parsed = JSON.parse(raw || "[]"); } catch (e) { parsed = []; }
+    if (Array.isArray(parsed)) return { mode: "same", arr: parsed, perDay: {} };
+    if (parsed && typeof parsed === "object") return { mode: "perday", arr: [], perDay: parsed };
+    return { mode: "same", arr: [], perDay: {} };
+  }
+
+  function routeCard(r) {
+    const open = S.routesUI.openId === r.id;
+    const card = el("div", { class: "route-card" + (open ? " open" : "") + (r.active ? "" : " inactive") });
+    const openDays = JSON.parse(r.open_days || "[]");
+    const slotsInfo = parseSlotsRaw(r.slots);
+    const slotsSummary = slotsInfo.mode === "same"
+      ? slotsInfo.arr.length + " slot" + (slotsInfo.arr.length === 1 ? "" : "s")
+      : "different times per day";
+
+    const head = el("div", { class: "rc-head", onclick: () => { S.routesUI.openId = open ? null : r.id; S.routesUI.tab = "details"; renderRoutes($("#view")); } }, [
+      dot(r.id),
+      el("div", {}, [
+        el("div", { class: "rc-title", text: r.name }),
+        el("div", { class: "rc-meta", text: r.city + " · " + euros(r.price_cents) + " pp · " + slotsSummary + " · " + openDays.map((d) => DOW[d - 1]).join(" ") })
+      ]),
+      el("div", { class: "rc-badges" }, [
+        el("span", { class: "mini-badge", text: "cap " + r.capacity }),
+        el("span", { class: "mini-badge", text: "max " + r.max_party }),
+        el("span", { class: "mini-badge " + (r.active ? "on" : "off"), text: r.active ? "Live" : "Hidden" })
+      ]),
+      el("div", { class: "rc-chevron", text: "›" })
+    ]);
+    card.appendChild(head);
+
+    if (open) {
+      const body = el("div", { class: "rc-body" });
+      const tabs = el("div", { class: "rc-tabs" }, ["details", "bars", "overrides"].map((t) =>
+        el("button", { class: "rc-tab" + (S.routesUI.tab === t ? " active" : ""), text: t === "details" ? "Details" : t === "bars" ? "Bars & timing" : "Date overrides", onclick: () => { S.routesUI.tab = t; renderRoutes($("#view")); } })));
+      body.appendChild(tabs);
+      if (S.routesUI.tab === "details") body.appendChild(routeDetailsForm(r, openDays, slotsInfo));
+      else if (S.routesUI.tab === "bars") body.appendChild(barsPanel(r));
+      else body.appendChild(overridesPanel(r));
+      card.appendChild(body);
+    }
+    return card;
+  }
+
+  function routeDetailsForm(r, openDays, slotsInfo) {
+    const wrap = el("div");
+    const draftDays = openDays.slice();
+    // "Same times every day" draft — the original single list.
+    let draftSlots = slotsInfo.mode === "same" ? slotsInfo.arr.slice() : [];
+    // "Different times per day" draft — one array + one open/closed flag per
+    // ISO weekday (1..7). Kept even while a day is toggled closed, so
+    // reopening it restores whatever times were there before (no accidental
+    // data loss from a stray click).
+    const draftPerDay = {};
+    const draftPerDayOpen = {};
+    for (let iso = 1; iso <= 7; iso++) {
+      draftPerDay[iso] = (slotsInfo.perDay[String(iso)] || []).slice();
+      draftPerDayOpen[iso] = draftPerDay[iso].length > 0;
+    }
+    let scheduleMode = slotsInfo.mode; // "same" | "perday"
+    // True only once the owner has ACTIVELY switched from "Different times
+    // per day" back to "Same times every day" during THIS edit session —
+    // that's the one moment weekday_capacity should actually be cleared.
+    // Opening a route that already happens to be in "same" mode (e.g. it
+    // uses the plain array slots shape) must NOT silently wipe an existing
+    // per-weekday cap just because the owner saved an unrelated field —
+    // the seats control lives in "perday" mode, so a route that's never
+    // been in "perday" mode this session never had a chance to touch it.
+    let weekdayCapacitySwitchedOff = false;
+
+    // Per-slot capacity DEFAULTS for this route (independent of date) — the
+    // "Rotterdam 20:00 is only ever 6 seats, every other slot stays at the
+    // route's normal 10" case. Blank chip input = no override, falls back to
+    // the "Seats per departure" field below. Stored as routes.slot_capacity,
+    // migrations/0003. Shared across BOTH schedule modes: a departure time
+    // keeps its seat override whichever weekday(s) it runs on.
+    let draftSlotCapacity = {};
+    try { draftSlotCapacity = JSON.parse(r.slot_capacity || "{}") || {}; } catch (e) { draftSlotCapacity = {}; }
+
+    // Per-WEEKDAY capacity DEFAULTS (migrations/0014) — e.g. "Saturdays are
+    // always 6 seats, every other open day stays at the route's normal 10",
+    // as a recurring rule (not a one-off date change). Sits between the
+    // per-slot override above and "Seats per departure" below. Only
+    // meaningful in "Different times per day" mode — cleared when the owner
+    // switches back to "Same times every day" (a per-weekday rule doesn't
+    // mean anything once every day runs the same schedule).
+    let draftWeekdayCapacity = {};
+    try { draftWeekdayCapacity = JSON.parse(r.weekday_capacity || "{}") || {}; } catch (e) { draftWeekdayCapacity = {}; }
+
+    // day of week toggles (used by "same times every day" mode only — the
+    // "different times per day" mode has its own per-row open/closed toggle)
+    const dowRow = el("div", { class: "dow-row" });
+    DOW.forEach((d, i) => {
+      const iso = i + 1;
+      const b = el("button", { type: "button", class: "dow" + (draftDays.indexOf(iso) >= 0 ? " on" : ""), text: d, onclick: () => {
+        const idx = draftDays.indexOf(iso);
+        if (idx >= 0) draftDays.splice(idx, 1); else draftDays.push(iso);
+        b.classList.toggle("on");
+      } });
+      dowRow.appendChild(b);
+    });
+
+    // Generic slot-chip editor (add/remove + per-slot "Seats per departure"
+    // override) — abstracted over WHERE the times array lives so the exact
+    // same widget serves both "same every day" (one shared list) and
+    // "different per day" (one list per weekday row) without duplicating it.
+    function makeSlotChipEditor(getSlots, setSlots) {
+      const wrap2 = el("div", { class: "slot-chips" });
+      function paint() {
+        clear(wrap2);
+        const arr = getSlots().slice().sort();
+        setSlots(arr);
+        arr.forEach((s) => {
+          const hasOverride = draftSlotCapacity[s] != null;
+          const capI = el("input", {
+            type: "number", min: "0", step: "1",
+            value: hasOverride ? String(draftSlotCapacity[s]) : "",
+            placeholder: "default",
+            title: "Seats for the " + s + " departure only — blank uses “Seats per departure” below",
+            oninput: (e) => {
+              const v = e.target.value.trim();
+              if (v === "") delete draftSlotCapacity[s];
+              else draftSlotCapacity[s] = Math.max(0, parseInt(v, 10) || 0);
+            }
+          });
+          wrap2.appendChild(el("span", { class: "slot-chip" + (hasOverride ? " has-override" : "") }, [s, capI,
+            el("button", { type: "button", "aria-label": "Remove " + s, text: "×", onclick: () => { setSlots(getSlots().filter((x) => x !== s)); paint(); } })]));
+        });
+        const timeIn = el("input", { type: "time", style: "width:118px" });
+        const addBtn = el("button", { type: "button", class: "btn btn-quiet btn-sm", text: "+ Add", onclick: () => {
+          if (timeIn.value && getSlots().indexOf(timeIn.value) < 0) { setSlots(getSlots().concat([timeIn.value])); paint(); }
+        } });
+        wrap2.appendChild(timeIn); wrap2.appendChild(addBtn);
+      }
+      paint();
+      return wrap2;
+    }
+
+    // "Different times per day" — one row per weekday, each with its own
+    // open/closed toggle and (when open) its own slot-chip editor.
+    const perDayWrap = el("div", { style: "display:flex;flex-direction:column;gap:10px" });
+    function paintPerDay() {
+      clear(perDayWrap);
+      DOW_FULL.forEach((label, i) => {
+        const iso = i + 1;
+        const row = el("div", { style: "display:flex;align-items:flex-start;gap:12px" });
+        const toggleBtn = el("button", {
+          type: "button", class: "dow" + (draftPerDayOpen[iso] ? " on" : ""), style: "width:52px;flex:none",
+          text: DOW[i],
+          title: label + (draftPerDayOpen[iso] ? " — open" : " — closed"),
+          onclick: () => { draftPerDayOpen[iso] = !draftPerDayOpen[iso]; paintPerDay(); }
+        });
+        row.appendChild(toggleBtn);
+        if (draftPerDayOpen[iso]) {
+          row.appendChild(makeSlotChipEditor(
+            () => draftPerDay[iso] || [],
+            (v) => { draftPerDay[iso] = v; }
+          ));
+          // Per-weekday seat count (migrations/0014) — optional, blank uses
+          // "Seats per departure" below (same fallback convention as the
+          // per-slot chip override above it).
+          const hasWeekdayCap = draftWeekdayCapacity[String(iso)] != null;
+          row.appendChild(el("input", {
+            type: "number", min: "1", step: "1",
+            value: hasWeekdayCap ? String(draftWeekdayCapacity[String(iso)]) : "",
+            placeholder: "seats",
+            style: "width:72px;flex:none",
+            title: label + " — seats per departure that day only, blank uses “Seats per departure” below",
+            oninput: (e) => {
+              const v = e.target.value.trim();
+              if (v === "") delete draftWeekdayCapacity[String(iso)];
+              else draftWeekdayCapacity[String(iso)] = Math.max(1, parseInt(v, 10) || 1);
+            }
+          }));
+        } else {
+          row.appendChild(el("span", { class: "capacity-hint", style: "padding:8px 0 0", text: "Closed" }));
+        }
+        perDayWrap.appendChild(row);
+      });
+    }
+
+    // Mode toggle ("Same times every day" vs "Different times per day") +
+    // whichever editor is currently active — rebuilt on every mode switch,
+    // same pattern as the other paintX() functions in this file.
+    const scheduleWrap = el("div", { class: "field wide" });
+    function paintScheduleSection() {
+      clear(scheduleWrap);
+      scheduleWrap.appendChild(el("label", { text: "Start times" }));
+      const seg = el("div", { class: "seg", style: "margin:2px 0 10px" }, [
+        segBtn("Same times every day", scheduleMode === "same", () => {
+          if (scheduleMode === "same") return;
+          // Carry data forward: union of every weekday's times so far
+          // (deduped, sorted) — switching modes never silently drops times
+          // the owner already typed in.
+          const union = new Set();
+          for (let iso = 1; iso <= 7; iso++) (draftPerDay[iso] || []).forEach((s) => union.add(s));
+          if (union.size > 0) draftSlots = Array.from(union).sort();
+          // A per-weekday seat count only means something when different
+          // weekdays can differ at all — clear it going back to "same".
+          // This is a deliberate action this session, so (unlike simply
+          // opening an already-"same" route) it's fine to actually persist
+          // the clear on Save.
+          draftWeekdayCapacity = {};
+          weekdayCapacitySwitchedOff = true;
+          scheduleMode = "same";
+          paintScheduleSection();
+        }),
+        segBtn("Different times per day", scheduleMode === "perday", () => {
+          if (scheduleMode === "perday") return;
+          // Carry data forward: every currently-open weekday starts out
+          // pre-filled with the same-mode times, so the owner is adjusting
+          // an existing schedule rather than starting from a blank slate.
+          draftDays.forEach((iso) => {
+            if (!draftPerDay[iso] || draftPerDay[iso].length === 0) draftPerDay[iso] = draftSlots.slice();
+            draftPerDayOpen[iso] = true;
+          });
+          scheduleMode = "perday";
+          paintScheduleSection();
+        })
+      ]);
+      scheduleWrap.appendChild(seg);
+      if (scheduleMode === "same") {
+        scheduleWrap.appendChild(el("div", { class: "capacity-hint", style: "padding:0 0 8px", text: "Open days" }));
+        scheduleWrap.appendChild(dowRow);
+        scheduleWrap.appendChild(makeSlotChipEditor(() => draftSlots, (v) => { draftSlots = v; }));
+      } else {
+        paintPerDay();
+        scheduleWrap.appendChild(perDayWrap);
+      }
+      scheduleWrap.appendChild(el("p", { class: "capacity-hint", text: "Type a number on a time chip to give just that departure its own seat count (e.g. a bar that's busier at 20:00) — leave blank to use “Seats per departure” above." }));
+    }
+    paintScheduleSection();
+
+    const priceIn = el("input", { type: "number", min: "0", step: "0.5", value: (r.price_cents / 100).toFixed(2) });
+    const capIn = el("input", { type: "number", min: "1", value: r.capacity });
+    const maxIn = el("input", { type: "number", min: "1", max: "12", value: r.max_party });
+    const cityIn = el("input", { type: "text", value: r.city });
+    const nameIn = el("input", { type: "text", value: r.name });
+    const mapIn = el("input", { type: "text", value: r.map_url || "", placeholder: "https:// English route map (PDF)" });
+    const mapNlIn = el("input", { type: "text", value: r.map_url_nl || "", placeholder: "https:// Dutch route map (PDF)" });
+    const currencyIn = currencySelect(r.currency);
+    const timezoneIn = timezoneSelect(r.timezone);
+    const activeIn = el("input", { type: "checkbox" }); activeIn.checked = !!r.active;
+
+    wrap.appendChild(el("div", { class: "form-grid" }, [
+      field("Display name", nameIn, "wide"),
+      field("City", cityIn),
+      field("Price per person", priceIn),
+      field("Currency", currencyIn),
+      field("Seats per departure", capIn),
+      field("Max guests per booking", maxIn),
+      field("Timezone (bar arrival times + booking calendar)", timezoneIn, "wide"),
+      scheduleWrap,
+      field("Route map link — English (shown inside the confirmation email)", mapIn, "wide"),
+      field("Route map link — Dutch (sent to guests who booked in Dutch; leave blank to use the English map)", mapNlIn, "wide")
+    ]));
+
+    wrap.appendChild(el("div", { class: "rc-actions" }, [
+      el("label", { class: "switch" }, [activeIn, el("span", { class: "track" }), "Bookable (live)"]),
+      el("div", { class: "grow" }),
+      el("button", {
+        class: "btn btn-primary", text: "Save changes", onclick: async (ev) => {
+          const btn = ev.currentTarget; btn.disabled = true;
+          try {
+            // Same-every-day mode sends the original array shape + whatever
+            // open_days the day-toggle row says. Per-day mode sends the
+            // object shape and DERIVES open_days from it here too (matching
+            // what the server also derives, so the dashboard's own display —
+            // e.g. the route card's day chips — is correct even before the
+            // next reload).
+            let slotsPayload, openDaysPayload;
+            if (scheduleMode === "same") {
+              slotsPayload = JSON.stringify(draftSlots.slice().sort());
+              openDaysPayload = JSON.stringify(draftDays.slice().sort((a, b) => a - b));
+            } else {
+              const obj = {};
+              const openIsos = [];
+              for (let iso = 1; iso <= 7; iso++) {
+                if (draftPerDayOpen[iso] && (draftPerDay[iso] || []).length > 0) {
+                  obj[String(iso)] = draftPerDay[iso].slice().sort();
+                  openIsos.push(iso);
+                } else {
+                  // A seat count on a CLOSED weekday has no effect and no
+                  // visible control to remove it — prune it here so it can
+                  // never get "stuck" invisibly in the saved data.
+                  delete draftWeekdayCapacity[String(iso)];
+                }
+              }
+              slotsPayload = JSON.stringify(obj);
+              openDaysPayload = JSON.stringify(openIsos);
+            }
+            const patch = {
+              name: nameIn.value.trim(), city: cityIn.value.trim(),
+              price_cents: Math.round(parseFloat(priceIn.value) * 100) || r.price_cents,
+              capacity: parseInt(capIn.value, 10) || r.capacity,
+              max_party: parseInt(maxIn.value, 10) || r.max_party,
+              open_days: openDaysPayload,
+              slots: slotsPayload,
+              slot_capacity: JSON.stringify(draftSlotCapacity),
+              map_url: mapIn.value.trim() || null,
+              map_url_nl: mapNlIn.value.trim() || null,
+              active: activeIn.checked ? 1 : 0,
+              currency: currencyIn.value,
+              timezone: timezoneIn.value
+            };
+            // Per-weekday seat count only has an editor in "Different times
+            // per day" mode. Only include the field at all when there's
+            // something for THIS session to actually say about it — either
+            // the owner is currently editing per-day drafts, or just
+            // deliberately switched off per-day mode (which clears it).
+            // Otherwise the key is omitted so an unrelated save (e.g. just
+            // the price) never touches an existing per-weekday cap the
+            // owner never saw a control for.
+            if (scheduleMode === "perday" || weekdayCapacitySwitchedOff) {
+              patch.weekday_capacity = JSON.stringify(scheduleMode === "perday" ? draftWeekdayCapacity : {});
+            }
+            await api("/admin/api/routes/" + r.id, { method: "PUT", body: patch });
+            Object.assign(r, patch);
+            toast("Saved ‘" + r.name + "’", "ok");
+            renderRoutes($("#view"));
+          } catch (e) { toast(e.message, "err"); btn.disabled = false; }
+        }
+      })
+    ]));
+    return wrap;
+  }
+
+  // Per-weekday bar sets (migrations/0015): a route can run a DIFFERENT,
+  // RECURRING ordered bar list on different weekdays (Thursday's stops vs
+  // Friday's), distinct from the existing one-off per-date "Alt bars"
+  // date override. Mirrors the "Same/Different times per day" UX from the
+  // Details tab: a mode toggle, and in "different" mode a weekday selector
+  // reveals that weekday's own ordered list — reusing the exact same
+  // bar-row editor either way. The DEFAULT (no-weekday) set is what a route
+  // that's never touched this feature has always had; nothing about it
+  // changes when the owner stays in "Same bars every day".
+  //
+  // Drafts are cached in S.routesUI.bars keyed "<routeId>|default" or
+  // "<routeId>|wd<1-7>" — one GET (handleListBars, ALL rows) populates every
+  // key at once, grouped client-side by each row's `weekday`.
+  function barsStateKey(routeId, mode, weekday) {
+    return routeId + "|" + (mode === "perday" ? "wd" + weekday : "default");
+  }
+
+  function barsPanel(r) {
+    const wrap = el("div");
+    wrap.appendChild(el("p", { class: "capacity-hint", text: "Each bar gets its own arrival email, staggered by the minutes after the booked start time." }));
+
+    S.routesUI.barsMode = S.routesUI.barsMode || {};
+    S.routesUI.barsWeekday = S.routesUI.barsWeekday || {};
+    S.routesUI.barsAllLoaded = S.routesUI.barsAllLoaded || {};
+    if (!(r.id in S.routesUI.barsMode)) S.routesUI.barsMode[r.id] = "same";
+    if (!(r.id in S.routesUI.barsWeekday)) S.routesUI.barsWeekday[r.id] = 1;
+    const mode = S.routesUI.barsMode[r.id];
+    const weekday = S.routesUI.barsWeekday[r.id];
+    const stateKey = barsStateKey(r.id, mode, weekday);
+
+    const modeWrap = el("div", { class: "field wide" });
+    modeWrap.appendChild(el("label", { text: "Bars" }));
+    modeWrap.appendChild(el("div", { class: "seg", style: "margin:2px 0 10px" }, [
+      segBtn("Same bars every day", mode === "same", () => { S.routesUI.barsMode[r.id] = "same"; renderRoutes($("#view")); }),
+      segBtn("Different bars per day", mode === "perday", () => { S.routesUI.barsMode[r.id] = "perday"; renderRoutes($("#view")); })
+    ]));
+    wrap.appendChild(modeWrap);
+
+    if (mode === "perday") {
+      const wdRow = el("div", { class: "dow-row" });
+      DOW.forEach((d, i) => {
+        const iso = i + 1;
+        wdRow.appendChild(el("button", {
+          type: "button", class: "dow" + (weekday === iso ? " on" : ""), text: d,
+          onclick: () => { S.routesUI.barsWeekday[r.id] = iso; renderRoutes($("#view")); }
+        }));
+      });
+      wrap.appendChild(wdRow);
+      wrap.appendChild(el("p", { class: "capacity-hint", style: "margin:6px 0 0", text: "Editing " + DOW_FULL[weekday - 1] + "'s bars. Any weekday you never save here keeps using the default (\"Same bars every day\") list below." }));
+    }
+
+    const listEl = el("div", { class: "bar-list", id: "bars-" + r.id });
+    wrap.appendChild(listEl);
+
+    // paint() always reads the live draft from state, so it works whether the
+    // bars were already cached or arrive later from an async fetch.
+    function paint() {
+      const draft = S.routesUI.bars[stateKey] || [];
+      clear(listEl);
+      if (draft.length === 0) { listEl.appendChild(el("p", { class: "capacity-hint", text: "No bars yet. Add the stops for this route below." })); return; }
+      draft.forEach((bar, i) => {
+        const nameI = el("input", { type: "text", value: bar.bar_name, placeholder: "Bar name", oninput: (e) => bar.bar_name = e.target.value });
+        const mailI = el("input", { type: "email", value: bar.bar_email, placeholder: "email@bar.nl", oninput: (e) => bar.bar_email = e.target.value });
+        const offI = el("input", { type: "number", min: "0", step: "5", value: bar.minutes_offset, style: "width:64px", oninput: (e) => bar.minutes_offset = parseInt(e.target.value, 10) || 0 });
+        listEl.appendChild(el("div", { class: "bar-item" }, [
+          el("div", { class: "bar-ord", text: i + 1 }),
+          nameI, mailI,
+          el("div", { class: "bar-offset" }, [offI, el("span", { text: "min" })]),
+          el("button", { class: "icon-btn", "aria-label": "Remove bar", text: "×", onclick: () => { S.routesUI.bars[stateKey].splice(i, 1); paint(); } })
+        ]));
+      });
+    }
+    if (S.routesUI.bars[stateKey]) paint();
+    else if (S.routesUI.barsAllLoaded[r.id]) { S.routesUI.bars[stateKey] = []; paint(); }
+    else { listEl.appendChild(skeletonRows(3)); loadBars(r); }
+
+    wrap.appendChild(el("div", { class: "rc-actions" }, [
+      el("button", { class: "btn btn-quiet", text: "+ Add bar", onclick: () => { (S.routesUI.bars[stateKey] = S.routesUI.bars[stateKey] || []).push({ bar_name: "", bar_email: "bookings@wogoamsterdam.com", minutes_offset: (S.routesUI.bars[stateKey].length) * 75 }); paint(); } }),
+      el("div", { class: "grow" }),
+      el("button", {
+        class: "btn btn-primary", text: mode === "perday" ? "Save " + DOW_FULL[weekday - 1] + "'s bars" : "Save bars", onclick: async (ev) => {
+          const btn = ev.currentTarget; btn.disabled = true;
+          try {
+            const bars = (S.routesUI.bars[stateKey] || []).map((b, i) => ({ ord: i + 1, bar_name: b.bar_name, bar_email: b.bar_email, minutes_offset: b.minutes_offset }));
+            const body = mode === "perday" ? { bars, weekday } : { bars };
+            await api("/admin/api/routes/" + r.id + "/bars", { method: "PUT", body });
+            toast("Bar list saved", "ok");
+          } catch (e) { toast(e.message, "err"); }
+          btn.disabled = false;
+        }
+      })
+    ]));
+    return wrap;
+  }
+  async function loadBars(r) {
+    try {
+      const d = await api("/admin/api/routes/" + r.id + "/bars");
+      const byKey = {};
+      (d.bars || []).slice().sort((a, b) => a.ord - b.ord).forEach((b) => {
+        const key = r.id + "|" + (b.weekday == null ? "default" : "wd" + b.weekday);
+        (byKey[key] = byKey[key] || []).push({ bar_name: b.bar_name, bar_email: b.bar_email, minutes_offset: b.minutes_offset });
+      });
+      Object.keys(byKey).forEach((key) => { S.routesUI.bars[key] = byKey[key]; });
+      if (!S.routesUI.bars[r.id + "|default"]) S.routesUI.bars[r.id + "|default"] = [];
+      S.routesUI.barsAllLoaded[r.id] = true;
+      if (S.routesUI.openId === r.id && S.routesUI.tab === "bars") renderRoutes($("#view"));
+    }
+    catch (e) { /* noop */ }
+  }
+
+  function overridesPanel(r) {
+    const wrap = el("div");
+    const listEl = el("div", { class: "ov-list", id: "ov-" + r.id });
+    wrap.appendChild(listEl);
+
+    function paint(list) {
+      clear(listEl);
+      if (!list || list.length === 0) { listEl.appendChild(el("p", { class: "capacity-hint", text: "No date changes yet. Close a date, cap seats, or add a one-off slot below." })); return; }
+      list.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach((o) => {
+        listEl.appendChild(el("div", { class: "ov-item" }, [
+          el("span", { class: "ov-date", text: o.date }),
+          el("span", { class: "ov-action " + (o.action === "closed" ? "closed" : ""), text: prettyAction(o.action) }),
+          el("span", { class: "ov-payload", text: o.payload ? summarizePayload(o.action, o.payload) : "" }),
+          el("div", { class: "grow" }),
+          el("button", { class: "btn btn-danger btn-sm", text: "Remove", onclick: async () => {
+            try { await api("/admin/api/date-overrides/" + o.id, { method: "DELETE" }); toast("Override removed", "ok"); loadOverrides(r, paint); }
+            catch (e) { toast(e.message, "err"); } } })
+        ]));
+      });
+    }
+    loadOverrides(r, paint);
+    listEl.appendChild(skeletonRows(2));
+
+    // add form
+    const dateI = el("input", { type: "date" });
+    const actionOpts = ["closed", "capacity_override", "slot_capacity_override", "remove_slot", "extra_slot", "alternate_bars"];
+    const actionI = el("select", {}, actionOpts.map((a) => el("option", { value: a, text: prettyAction(a) })));
+    const payloadI = el("input", { type: "text", placeholder: "e.g. 6  (seats)  or  21:00", style: "width:190px" });
+    const payloadWrap = el("div", { class: "field" }, [el("label", { text: "Value" }), payloadI]);
+    const payloadHint = el("p", { class: "capacity-hint", style: "flex-basis:100%;margin:0" });
+    function syncPayloadVisibility() {
+      const a = actionI.value;
+      payloadWrap.style.display = a === "closed" ? "none" : "flex";
+      payloadI.placeholder =
+        a === "capacity_override" ? "seats, e.g. 6" :
+        a === "slot_capacity_override" ? "20:00=4, 19:00=6" :
+        a === "remove_slot" ? "slot, e.g. 18:00" :
+        a === "extra_slot" ? "slot, e.g. 21:00" : "bar name";
+      payloadHint.textContent = a === "slot_capacity_override"
+        ? "One or more slot=seats pairs, comma-separated. 0 means that slot shows 0 seats left (closed) that date. This REPLACES the whole list for this date — include every slot you want capped, not just the new one."
+        : "";
+    }
+    actionI.addEventListener("change", syncPayloadVisibility);
+    syncPayloadVisibility();
+
+    wrap.appendChild(el("div", { class: "subhead", text: "Add a date change" }));
+    wrap.appendChild(el("div", { class: "inline-form" }, [
+      el("div", { class: "field" }, [el("label", { text: "Date" }), dateI]),
+      el("div", { class: "field" }, [el("label", { text: "Change" }), actionI]),
+      payloadWrap,
+      el("button", { class: "btn btn-primary btn-sm", text: "Apply", onclick: async () => {
+        if (!dateI.value) { toast("Pick a date first", "err"); return; }
+        const payload = buildPayload(actionI.value, payloadI.value.trim());
+        if (payload === undefined) { toast("Enter at least one slot=seats pair, e.g. 20:00=4", "err"); return; }
+        try {
+          await api("/admin/api/date-overrides", { method: "POST", body: { route_id: r.id, date: dateI.value, action: actionI.value, payload } });
+          toast("Date change applied", "ok"); payloadI.value = ""; loadOverrides(r, paint);
+        } catch (e) { toast(e.message, "err"); }
+      } }),
+      payloadHint
+    ]));
+    return wrap;
+  }
+  async function loadOverrides(r, paint) {
+    try { const d = await api("/admin/api/date-overrides?route=" + encodeURIComponent(r.id)); paint(d.overrides || []); }
+    catch (e) { paint([]); }
+  }
+  function buildPayload(action, val) {
+    if (action === "closed") return null;
+    if (action === "capacity_override") return JSON.stringify({ capacity: parseInt(val, 10) || 0 });
+    if (action === "slot_capacity_override") {
+      const map = {};
+      val.split(",").map((s) => s.trim()).filter(Boolean).forEach((pair) => {
+        const [slot, cap] = pair.split("=").map((x) => x.trim());
+        if (slot && cap !== undefined && cap !== "") map[slot] = Math.max(0, parseInt(cap, 10) || 0);
+      });
+      if (Object.keys(map).length === 0) return undefined; // signals "nothing entered" to the caller
+      return JSON.stringify(map);
+    }
+    if (action === "remove_slot") return JSON.stringify({ slot: val });
+    if (action === "extra_slot") return JSON.stringify({ slot: val });
+    if (action === "alternate_bars") return JSON.stringify([{ bar_name: val, bar_email: "bookings@wogoamsterdam.com", minutes_offset: 0 }]);
+    return null;
+  }
+  function summarizePayload(action, payload) {
+    try {
+      const p = JSON.parse(payload);
+      if (action === "capacity_override") return p.capacity + " seats";
+      if (action === "slot_capacity_override") return Object.keys(p).map((k) => k + "→" + p[k]).join(", ");
+      if (action === "remove_slot" || action === "extra_slot") return p.slot;
+      if (action === "alternate_bars") return (Array.isArray(p) ? p.length : 0) + " alt bar(s)";
+    } catch (e) { /* noop */ }
+    return "";
+  }
+  function prettyAction(a) {
+    return {
+      closed: "Closed", capacity_override: "Cap all slots", slot_capacity_override: "Cap one slot",
+      remove_slot: "Remove slot", extra_slot: "Extra slot", alternate_bars: "Alt bars"
+    }[a] || a;
+  }
+
+  function openAddTour(root) {
+    const idI = el("input", { type: "text", placeholder: "e.g. haarlem" });
+    const nameI = el("input", { type: "text", placeholder: "WOGO Cocktail Walk Haarlem" });
+    const cityI = el("input", { type: "text", placeholder: "Haarlem" });
+    const priceI = el("input", { type: "number", value: "29.95", step: "0.5" });
+    const capI = el("input", { type: "number", value: "10" });
+    const maxI = el("input", { type: "number", value: "6" });
+    const currencyI = currencySelect("EUR");
+    const timezoneI = timezoneSelect("Europe/Amsterdam");
+    const draftDays = [4, 5, 6];
+    const dowRow = el("div", { class: "dow-row" });
+    DOW.forEach((d, i) => { const iso = i + 1; const b = el("button", { type: "button", class: "dow" + (draftDays.indexOf(iso) >= 0 ? " on" : ""), text: d, onclick: () => { const x = draftDays.indexOf(iso); if (x >= 0) draftDays.splice(x, 1); else draftDays.push(iso); b.classList.toggle("on"); } }); dowRow.appendChild(b); });
+    const slotsI = el("input", { type: "text", value: "17:30, 18:00, 18:30", placeholder: "comma-separated HH:MM" });
+    const mapI = el("input", { type: "text", placeholder: "https://www.wogococktailwalk.com/maps/haarlem-en.pdf" });
+    const mapNlI = el("input", { type: "text", placeholder: "https://www.wogococktailwalk.com/maps/haarlem-nl.pdf" });
+
+    const card = el("div", { class: "card", style: "margin-bottom:16px" });
+    card.appendChild(el("div", { class: "card-head" }, [el("h2", { text: "Add a new tour" }), el("div", { class: "grow" }), el("button", { class: "icon-btn", "aria-label": "Cancel", text: "✕", onclick: () => renderRoutes(root) })]));
+    const body = el("div", { style: "padding:18px" });
+    body.appendChild(el("div", { class: "form-grid" }, [
+      field("Slug (url id, lowercase)", idI),
+      field("Display name", nameI),
+      field("City", cityI),
+      field("Price per person", priceI),
+      field("Currency", currencyI),
+      field("Seats per departure", capI),
+      field("Max per booking", maxI),
+      field("Timezone (bar arrival times + booking calendar)", timezoneI, "wide"),
+      el("div", { class: "field wide" }, [el("label", { text: "Open days" }), dowRow]),
+      field("Start times", slotsI, "wide"),
+      field("Route map link — English (shown inside the confirmation email)", mapI, "wide"),
+      field("Route map link — Dutch (sent to guests who booked in Dutch; leave blank to use the English map)", mapNlI, "wide")
+    ]));
+    body.appendChild(el("div", { class: "rc-actions" }, [
+      el("div", { class: "grow" }),
+      el("button", { class: "btn btn-ghost", text: "Cancel", onclick: () => renderRoutes(root) }),
+      el("button", {
+        class: "btn btn-primary", text: "Create tour", onclick: async (ev) => {
+          const btn = ev.currentTarget;
+          const id = idI.value.trim().toLowerCase();
+          if (!/^[a-z0-9-]+$/.test(id)) { toast("Slug must be lowercase letters, numbers, dashes", "err"); return; }
+          if (S.routes.find((r) => r.id === id)) { toast("That slug already exists", "err"); return; }
+          btn.disabled = true;
+          const slots = slotsI.value.split(",").map((s) => s.trim()).filter(Boolean);
+          const route = {
+            id, name: nameI.value.trim() || ("WOGO Cocktail Walk " + cityI.value.trim()),
+            city: cityI.value.trim(), price_cents: Math.round(parseFloat(priceI.value) * 100) || 2995,
+            capacity: parseInt(capI.value, 10) || 10, max_party: parseInt(maxI.value, 10) || 6,
+            open_days: JSON.stringify(draftDays.sort((a, b) => a - b)), slots: JSON.stringify(slots),
+            currency: currencyI.value, timezone: timezoneI.value,
+            map_url: mapI.value.trim() || null, map_url_nl: mapNlI.value.trim() || null, active: 1
+          };
+          try {
+            await api("/admin/api/routes", { method: "POST", body: route });
+            route.created_at = todayStr();
+            S.routes.push(route); assignColors();
+            toast("Created ‘" + route.name + "’", "ok");
+            S.routesUI.openId = id; S.routesUI.tab = "details";
+            renderRoutes(root);
+          } catch (e) { toast(e.message, "err"); btn.disabled = false; }
+        }
+      })
+    ]));
+    card.appendChild(body);
+    clear(root); root.appendChild(card);
+    const list = el("div", { class: "route-list" });
+    root.appendChild(list);
+    S.routes.forEach((r) => list.appendChild(routeCard(r)));
+  }
+
+  /* ======================================================================
+     VIEW 4 — EXPORT
+     ====================================================================== */
+  function renderExport(root) {
+    const f = {};
+    const routeSel = selectField("Route", "", ["All routes"].concat(S.routes.map((r) => r.name)), (v) => {
+      if (v === "All routes") delete f.route; else { const r = S.routes.find((x) => x.name === v); f.route = r ? r.id : undefined; }
+    }, "All routes");
+    const citySel = selectField("City", "", ["All cities"].concat(cities()), (v) => { if (v === "All cities") delete f.city; else f.city = v; }, "All cities");
+    const statusSel = selectField("Status", "", ["All statuses"].concat(STATUSES.map(prettyStatus)), (v) => {
+      if (v === "All statuses") delete f.status; else f.status = STATUSES[["All statuses"].concat(STATUSES.map(prettyStatus)).indexOf(v) - 1];
+    }, "All statuses");
+    const fromF = dateField("From", "", (v) => { if (v) f.date_from = v; else delete f.date_from; });
+    const toF = dateField("To", "", (v) => { if (v) f.date_to = v; else delete f.date_to; });
+
+    const card = el("div", { class: "card" });
+    card.appendChild(el("div", { class: "card-head" }, [el("h2", { text: "Download bookings (CSV)" })]));
+    const body = el("div", { style: "padding:18px" });
+    body.appendChild(el("p", { class: "capacity-hint", text: "Choose what to include, then download. Opens in Excel, Numbers or Google Sheets." }));
+    body.appendChild(el("div", { class: "filters-row", style: "margin-bottom:20px" }, [routeSel, citySel, statusSel, fromF, toF]));
+    body.appendChild(el("button", {
+      class: "btn btn-primary", text: "⬇  Download CSV", onclick: async (ev) => {
+        const btn = ev.currentTarget; btn.disabled = true;
+        const qs = new URLSearchParams();
+        for (const k in f) if (f[k]) qs.set(k, f[k]);
+        try {
+          const res = await fetch(API + "/admin/api/bookings.csv?" + qs.toString(), { credentials: "same-origin" });
+          if (res.status === 401) { showLogin(); return; }
+          if (!res.ok) throw new Error("Export failed (" + res.status + ")");
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = el("a", { href: url, download: "wogo-bookings-" + todayStr() + ".csv" });
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 4000);
+          toast("Downloaded CSV", "ok");
+        } catch (e) { toast(e.message, "err"); }
+        btn.disabled = false;
+      }
+    }));
+    card.appendChild(body);
+    root.appendChild(card);
+  }
+
+  /* ======================================================================
+     VIEW 5 — CUSTOMERS (CRM)
+     Derived from bookings by the Worker (no separate customers table).
+     Search, spend, discounts; click-through detail with edit-propagation;
+     "+ Manual booking" for phone bookings (same seat guard as the widget).
+     ====================================================================== */
+  function renderCustomers(root) {
+    clear(root);
+    $("#topbar-actions").innerHTML = "";
+    $("#topbar-actions").appendChild(el("button", {
+      class: "btn btn-primary", text: "+ Manual booking",
+      onclick: () => {
+        S.customers.formOpen = true;
+        renderCustomers(root);
+        setTimeout(() => { const i = $("#mb-name"); if (i) i.focus(); }, 60);
+      }
+    }));
+
+    if (S.customers.formOpen) root.appendChild(manualBookingCard(root));
+
+    const searchInput = el("input", { type: "text", placeholder: "Name, email or phone…", value: S.customers.q });
+    let sT;
+    searchInput.addEventListener("input", () => {
+      clearTimeout(sT);
+      sT = setTimeout(() => { S.customers.q = searchInput.value.trim(); loadCustomers(); }, 320);
+    });
+    root.appendChild(el("div", { class: "filters" }, [
+      el("div", { class: "filters-row" }, [
+        el("div", { class: "filter-group search", style: "flex:1;max-width:340px" }, [el("label", { text: "Search customers" }), searchInput])
+      ])
+    ]));
+
+    root.appendChild(el("div", { class: "stat-row", id: "cust-stats" }));
+    root.appendChild(el("div", { id: "cust-holder" }));
+
+    if (S.customers.loaded) paintCustomers();
+    else loadCustomers();
+  }
+
+  async function loadCustomers() {
+    const holder = $("#cust-holder");
+    if (!holder) return;
+    clear(holder);
+    holder.appendChild(skeletonCard());
+    try {
+      const jobs = [api("/admin/api/customers" + (S.customers.q ? "?q=" + encodeURIComponent(S.customers.q) : ""))];
+      // one-time fetch of bookings, only to map email -> promo codes used
+      // (the aggregate endpoint returns the amount saved but not the codes)
+      if (!S.customers.codesLoaded) jobs.push(api("/admin/api/bookings?limit=10000"));
+      const res = await Promise.all(jobs);
+      S.customers.list = res[0].customers || [];
+      if (res[1]) {
+        const codes = {};
+        (res[1].bookings || []).forEach((b) => {
+          if (!b.discount_code) return;
+          const k = String(b.email || "").trim().toLowerCase();
+          const arr = (codes[k] = codes[k] || []);
+          if (arr.indexOf(b.discount_code) < 0) arr.push(b.discount_code);
+        });
+        S.customers.codes = codes;
+        S.customers.codesLoaded = true;
+      }
+      S.customers.loaded = true;
+      paintCustomers();
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(holder); holder.appendChild(errorCard(e.message, loadCustomers)); }
+    }
+  }
+
+  function paintCustomers() {
+    const stats = $("#cust-stats"), holder = $("#cust-holder");
+    if (!holder) return;
+    const list = S.customers.list;
+
+    if (stats) {
+      clear(stats);
+      const repeat = list.filter((c) => c.bookings_count > 1).length;
+      const revenue = list.reduce((a, c) => a + c.total_spent_cents, 0);
+      const saved = list.reduce((a, c) => a + c.discount_total_cents, 0);
+      stats.appendChild(stat("Customers", list.length, S.customers.q ? "matching your search" : "everyone who ever booked"));
+      stats.appendChild(stat("Repeat customers", repeat, "booked more than once"));
+      stats.appendChild(stat("Lifetime revenue", euros(revenue), "net of discounts"));
+      stats.appendChild(stat("Discounts given", euros(saved), "total saved by guests"));
+    }
+
+    clear(holder);
+    const card = el("div", { class: "card" });
+    card.appendChild(el("div", { class: "card-head" }, [
+      el("h2", { text: "Customers" }),
+      el("span", { class: "count-badge", text: list.length + (list.length === 1 ? " person" : " people") })
+    ]));
+    if (list.length === 0) {
+      card.appendChild(el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "👤" }),
+        el("div", { text: S.customers.q ? "No customers match “" + S.customers.q + "”." : "No customers yet — everyone appears here with their first booking." })
+      ]));
+      holder.appendChild(card);
+      return;
+    }
+    const scroll = el("div", { class: "table-scroll" });
+    const t = el("table", { class: "data" });
+    t.appendChild(el("thead", {}, el("tr", {}, [
+      th("Customer"), th("Email"), th("Bookings"), th("Total spent"), th("Discount"), th("Last booking")
+    ])));
+    const tb = el("tbody");
+    list.forEach((c) => {
+      const codes = S.customers.codes[c.email] || [];
+      const discCell = el("td", {});
+      if (c.discount_total_cents > 0 || codes.length > 0) {
+        discCell.appendChild(el("span", { class: "disc-tag" }, [
+          codes.length ? codes.join(", ") : "discount",
+          el("b", { text: "−" + euros(c.discount_total_cents) })
+        ]));
+      } else {
+        discCell.appendChild(el("span", { class: "td-sub", text: "—" }));
+      }
+      tb.appendChild(el("tr", { onclick: () => openCustomerDrawer(c.email) }, [
+        el("td", {}, [el("div", { class: "td-name", text: c.name || "(no name)" }), el("div", { class: "td-sub", text: c.phone || "" })]),
+        el("td", { class: "td-sub", text: c.email }),
+        el("td", {}, [el("div", { class: "td-name num", text: c.bookings_count }), el("div", { class: "td-sub num", text: c.guests + " guest" + (c.guests === 1 ? "" : "s") })]),
+        el("td", { class: "num td-name", text: euros(c.total_spent_cents) }),
+        discCell,
+        el("td", { class: "td-sub num", text: c.last_booking ? prettyDate(c.last_booking) : "—" })
+      ]));
+    });
+    t.appendChild(tb);
+    scroll.appendChild(t);
+    card.appendChild(scroll);
+    holder.appendChild(card);
+  }
+
+  async function openCustomerDrawer(email) {
+    let data;
+    try { data = await api("/admin/api/customers/" + encodeURIComponent(email)); }
+    catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); return; }
+    const c = data.customer, hist = data.bookings || [];
+
+    $("#drawer-title").textContent = c.name || c.email;
+    const body = $("#drawer-body");
+    clear(body);
+
+    const codes = S.customers.codes[c.email] || [];
+    const kv = el("dl", { class: "kv" });
+    [
+      ["Email", c.email],
+      ["Phone", c.phone || "—"],
+      ["Bookings", c.bookings_count + " (" + c.guests + " guest" + (c.guests === 1 ? "" : "s") + ")"],
+      ["Total spent", euros(c.total_spent_cents)],
+      ["Saved", c.discount_total_cents > 0 ? "−" + euros(c.discount_total_cents) + (codes.length ? "  (" + codes.join(", ") + ")" : "") : "—"],
+      ["First booking", c.first_booking ? prettyDate(c.first_booking) : "—"],
+      ["Last booking", c.last_booking ? prettyDate(c.last_booking) : "—"]
+    ].forEach((row) => { kv.appendChild(el("dt", { text: row[0] })); kv.appendChild(el("dd", { text: row[1] })); });
+    body.appendChild(kv);
+
+    // -- edit form (opens via the “Edit details” button below) --
+    const nameI = el("input", { type: "text", value: c.name || "" });
+    const emailI = el("input", { type: "email", value: c.email });
+    const phoneI = el("input", { type: "tel", value: c.phone || "" });
+    const editErr = el("div", { class: "form-error", role: "alert" });
+    const editWrap = el("div", { class: "cust-edit" }, [
+      el("div", { class: "subhead", style: "margin-top:0", text: "Edit details" }),
+      editErr,
+      field("Name", nameI), field("Email", emailI), field("Phone", phoneI),
+      el("p", { class: "capacity-hint", text: "Saving fixes it on every booking this customer has — one edit, their whole history follows." }),
+      el("div", { style: "display:flex;gap:10px" }, [
+        el("button", { class: "btn btn-primary btn-sm", text: "Save changes", onclick: async (ev) => {
+          const btn = ev.currentTarget; btn.disabled = true;
+          editErr.classList.remove("show");
+          try {
+            const patch = { name: nameI.value.trim(), phone: phoneI.value.trim() || null };
+            const newEmail = emailI.value.trim().toLowerCase();
+            if (newEmail && newEmail !== c.email) patch.email = newEmail;
+            const res = await api("/admin/api/customers/" + encodeURIComponent(c.email), { method: "PUT", body: patch });
+            toast("Saved — updated " + res.updated + " booking" + (res.updated === 1 ? "" : "s"), "ok");
+            S.customers.loaded = false;
+            S.customers.codesLoaded = false;
+            S.bookings.list = [];            // bookings table refetches with the new details
+            S.week.loadedStart = null;       // week grid too
+            if (S.view === "customers") renderCustomers($("#view"));
+            openCustomerDrawer(patch.email || c.email);
+          } catch (e) {
+            editErr.textContent = e.message;
+            editErr.classList.add("show");
+            btn.disabled = false;
+          }
+        } }),
+        el("button", { class: "btn btn-ghost btn-sm", text: "Cancel", onclick: () => editWrap.classList.remove("show") })
+      ])
+    ]);
+    body.appendChild(editWrap);
+
+    body.appendChild(el("div", { class: "subhead", text: "Booking history" }));
+    hist.forEach((b) => {
+      body.appendChild(el("div", { class: "cust-bk" }, [
+        el("div", {}, [
+          el("div", { class: "td-name num", text: prettyDate(b.date) + " · " + b.slot }),
+          el("div", { class: "td-sub" }, el("span", { class: "route-tag" }, [dot(b.route_id), shortRoute(b.route_name || b.route_id)]))
+        ]),
+        el("div", { class: "cust-bk-right" }, [
+          el("span", { class: "count-badge", text: b.party + " " + (b.party === 1 ? "guest" : "guests") }),
+          el("div", { class: "cust-bk-tags" }, [
+            badge(b.status),
+            b.source === "manual" ? el("span", { class: "tag-mini src", text: "Manual" }) : null,
+            b.payment_status ? el("span", { class: "tag-mini pay", text: prettyPayment(b.payment_status) }) : null,
+            (b.discount_code || b.discount_cents > 0) ? el("span", { class: "tag-mini disc", text: (b.discount_code || "discount") + " −" + euros(b.discount_cents || 0) }) : null
+          ].filter(Boolean))
+        ])
+      ]));
+    });
+
+    const foot = $("#drawer-foot");
+    clear(foot);
+    foot.appendChild(el("button", { class: "btn btn-quiet", text: "Edit details", onclick: () => {
+      editWrap.classList.toggle("show");
+      if (editWrap.classList.contains("show")) nameI.focus();
+    } }));
+    foot.appendChild(el("button", { class: "btn btn-ghost", text: "Close", onclick: closeDrawer }));
+
+    $("#drawer").classList.add("show");
+    $("#drawer").setAttribute("aria-hidden", "false");
+    $("#drawer-scrim").classList.add("show");
+  }
+
+  function prettyPayment(p) { return { paid_invoice: "Paid on invoice", free: "Free", comp: "Comp (on the house)" }[p] || p; }
+
+  /* -- “Add customer + manual booking” — a phone booking IS the customer’s
+        first (or next) row, guarded by the same atomic seat check as the
+        widget. 409 sold-out errors surface inline, with the seats left. -- */
+  function manualBookingCard(root) {
+    const nameI = el("input", { type: "text", id: "mb-name", placeholder: "Guest name" });
+    const emailI = el("input", { type: "email", placeholder: "guest@email.com" });
+    const phoneI = el("input", { type: "tel", placeholder: "+31 6 …" });
+    const partyI = el("input", { type: "number", min: "1", step: "1", value: "2" });
+    const dateI = el("input", { type: "date", value: todayStr() });
+    const slotSel = el("select");
+    const routeSel = el("select", {}, S.routes.map((r) => el("option", { value: r.id, text: r.name + (r.active ? "" : " (hidden)") })));
+    function syncSlots() {
+      clear(slotSel);
+      const r = routeById(routeSel.value);
+      let parsed = [];
+      try { parsed = JSON.parse((r && r.slots) || "[]"); } catch (e) { parsed = []; }
+      let slots;
+      if (Array.isArray(parsed)) slots = parsed.slice();
+      else if (parsed && typeof parsed === "object") slots = (parsed[String(isoDow(dateI.value || todayStr()))] || []).slice();
+      else slots = [];
+      slots.sort().forEach((s) => slotSel.appendChild(el("option", { value: s, text: s })));
+    }
+    routeSel.addEventListener("change", syncSlots);
+    dateI.addEventListener("change", syncSlots);
+    syncSlots();
+    const paySel = el("select", {}, [
+      el("option", { value: "paid_invoice", text: "Paid on invoice" }),
+      el("option", { value: "free", text: "Free" }),
+      el("option", { value: "comp", text: "Comp (on the house)" })
+    ]);
+    const discCodeI = el("input", { type: "text", placeholder: "e.g. WELCOME10 — optional" });
+    const discAmtI = el("input", { type: "number", min: "0", step: "0.05", placeholder: "0,00 — optional" });
+    const notesI = el("textarea", { rows: "2", maxlength: "500", placeholder: "Nut allergy, wheelchair access, celebrating a birthday… — optional" });
+    const errBox = el("div", { class: "form-error", role: "alert", "aria-live": "assertive" });
+
+    const closeForm = () => { S.customers.formOpen = false; renderCustomers(root); };
+    const card = el("div", { class: "card", style: "margin-bottom:18px" });
+    card.appendChild(el("div", { class: "card-head" }, [
+      el("h2", { text: "New manual booking (phone)" }),
+      el("div", { class: "grow" }),
+      el("button", { class: "icon-btn", "aria-label": "Cancel", text: "✕", onclick: closeForm })
+    ]));
+    const bodyEl = el("div", { style: "padding:18px" });
+    bodyEl.appendChild(errBox);
+    bodyEl.appendChild(el("div", { class: "form-grid" }, [
+      field("Guest name", nameI),
+      field("Email (gets the confirmation)", emailI),
+      field("Phone", phoneI),
+      field("Route", routeSel),
+      field("Date", dateI),
+      field("Start time", slotSel),
+      field("Guests", partyI),
+      field("Payment", paySel),
+      field("Discount code", discCodeI),
+      field("Discount (€)", discAmtI),
+      field("Allergies / notes (goes to the bars)", notesI)
+    ]));
+    bodyEl.appendChild(el("div", { class: "rc-actions" }, [
+      el("p", { class: "capacity-hint", style: "padding:0;margin:0;align-self:center;max-width:420px", text: "Same seat protection as the website — you can never oversell a bar. The guest gets the normal confirmation email; each bar gets its arrival notice." }),
+      el("div", { class: "grow" }),
+      el("button", { class: "btn btn-ghost", text: "Cancel", onclick: closeForm }),
+      el("button", { class: "btn btn-primary", text: "Add booking", onclick: async (ev) => {
+        const btn = ev.currentTarget;
+        errBox.classList.remove("show");
+        const fail = (msg) => { errBox.textContent = msg; errBox.classList.add("show"); errBox.scrollIntoView({ block: "nearest" }); };
+        const name = nameI.value.trim(), email = emailI.value.trim();
+        const party = parseInt(partyI.value, 10);
+        if (!name) return fail("Enter the guest’s name.");
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("Enter a valid email — the confirmation goes there.");
+        if (!dateI.value) return fail("Pick a date.");
+        if (!slotSel.value) return fail("This route has no start times yet — add them in Route manager first.");
+        if (!(party >= 1)) return fail("Guests must be at least 1.");
+        btn.disabled = true; btn.textContent = "Booking…";
+        const payload = {
+          route_id: routeSel.value, date: dateI.value, slot: slotSel.value, party,
+          name, email, payment_status: paySel.value
+        };
+        if (phoneI.value.trim()) payload.phone = phoneI.value.trim();
+        if (notesI.value.trim()) payload.notes = notesI.value.trim();
+        const code = discCodeI.value.trim();
+        const amt = Math.round((parseFloat(discAmtI.value) || 0) * 100);
+        if (code) payload.discount_code = code;
+        if (amt > 0) payload.discount_cents = amt;
+        try {
+          const d = await api("/admin/api/bookings/manual", { method: "POST", body: payload });
+          const r = routeById(routeSel.value);
+          toast("Booked " + party + " guest" + (party === 1 ? "" : "s") + " · " + (r ? shortRoute(r.name) : "") + " " + prettyDate(dateI.value) + " " + slotSel.value + " — confirmation sent", "ok");
+          S.customers.formOpen = false;
+          S.customers.loaded = false;
+          S.customers.codesLoaded = false;
+          S.bookings.list = [];            // bookings list refetches next visit
+          S.week.loadedStart = null;       // week grid refetches next visit
+          renderCustomers(root);
+          if (d && d.booking) openDrawer(d.booking);
+        } catch (e) {
+          fail(e.message.indexOf("seat") >= 0
+            ? "No room on that departure — " + e.message + ". Pick another time, lower the group size, or raise its seats under Per hour."
+            : e.message);
+          btn.disabled = false; btn.textContent = "Add booking";
+        }
+      } })
+    ]));
+    card.appendChild(bodyEl);
+    return card;
+  }
+
+  /* ======================================================================
+     shared components
+     ====================================================================== */
+  function chip(label, active, dotEl, onClick, noDot) {
+    return el("button", { class: "chip" + (active ? " active" : ""), type: "button", onclick: onClick },
+      [noDot ? null : dotEl, label].filter(Boolean));
+  }
+  function segBtn(label, active, onClick) { return el("button", { class: active ? "active" : "", type: "button", text: label, onclick: onClick }); }
+  function selectField(label, _, options, onChange, value) {
+    const sel = el("select", { onchange: (e) => onChange(e.target.value) }, options.map((o) => {
+      const opt = el("option", { value: o, text: o }); if (o === value) opt.selected = true; return opt;
+    }));
+    return el("div", { class: "filter-group" }, [el("label", { text: label }), sel]);
+  }
+  function dateField(label, value, onChange) {
+    const inp = el("input", { type: "date", value: value || "" });
+    inp.addEventListener("change", () => onChange(inp.value));
+    return el("div", { class: "filter-group" }, [el("label", { text: label }), inp]);
+  }
+  function field(label, input, extra) { return el("div", { class: "field" + (extra ? " " + extra : "") }, [el("label", { text: label }), input]); }
+
+  /* ---------- currency + timezone pickers (migrations/0011) --------------
+     Curated to WOGO's near-term city roadmap (NL = EUR/Amsterdam today;
+     London imminent = GBP/Europe London; New York later = USD/America New
+     York) — the current value is always kept as an option even if it isn't
+     one of these, so an unusual value round-trips instead of silently
+     resetting. Add a new city's code/zone to these two arrays when it's
+     ready to book (see backend/ADD-A-CITY.md). */
+  const CURRENCY_OPTIONS = ["EUR", "GBP", "USD"];
+  const TIMEZONE_OPTIONS = ["Europe/Amsterdam", "Europe/London", "America/New_York"];
+  function currencySelect(current) {
+    const codes = CURRENCY_OPTIONS.slice();
+    if (current && codes.indexOf(current) < 0) codes.push(current);
+    const sel = el("select", {}, codes.map((c) => el("option", { value: c, text: c })));
+    sel.value = current || "EUR";
+    return sel;
+  }
+  function timezoneSelect(current) {
+    const zones = TIMEZONE_OPTIONS.slice();
+    if (current && zones.indexOf(current) < 0) zones.push(current);
+    const sel = el("select", {}, zones.map((z) => el("option", { value: z, text: z })));
+    sel.value = current || "Europe/Amsterdam";
+    return sel;
+  }
+  function th(t) { return el("th", { scope: "col", text: t }); }
+  function badge(status) { return el("span", { class: "badge " + status, text: prettyStatus(status) }); }
+  function prettyStatus(s) { return { confirmed: "Confirmed", hold: "Hold", cancelled: "Cancelled", expired: "Expired", confirmed_conflict: "Conflict" }[s] || s; }
+  function stat(k, v, d) { return el("div", { class: "stat" }, [el("div", { class: "k", text: k }), el("div", { class: "v", text: v }), el("div", { class: "d", text: d })]); }
+  function shortRoute(name) {
+    const s = String(name || "");
+    const m = /^Rotterdam Route (\d+)/.exec(s);          // "Rotterdam Route 2 · Hidden Gems" → "Route 2"
+    if (m) return "Route " + m[1] + (/premium/i.test(s) ? " Premium" : "");
+    if (/^Rotterdam Premium/i.test(s)) return "Route 3 Premium";
+    return s.replace(/^WOGO Cocktail Walk /, "").replace(/ \(best seller\)/, "").replace(/^Rotterdam /, "");
+  }
+  function skeletonCard() { const c = el("div", { class: "card" }); for (let i = 0; i < 6; i++) c.appendChild(el("div", { class: "skeleton sk-row" })); return c; }
+  function skeletonRows(n) { const w = el("div"); for (let i = 0; i < n; i++) w.appendChild(el("div", { class: "skeleton sk-row" })); return w; }
+  function errorCard(msg, retry) {
+    return el("div", { class: "card" }, el("div", { class: "empty" }, [
+      el("div", { class: "big", text: "⚠️" }),
+      el("div", { text: msg }),
+      el("div", { style: "margin-top:14px" }, el("button", { class: "btn btn-quiet btn-sm", text: "Try again", onclick: retry }))
+    ]));
+  }
+  function shiftMonth(m, delta) { const [y, mo] = m.split("-").map(Number); const d = new Date(y, mo - 1 + delta, 1); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); }
+
+  /* ======================================================================
+     boot
+     ====================================================================== */
+  async function boot() {
+    try {
+      const data = await api("/admin/api/routes");
+      S.routes = data.routes || [];
+      assignColors();
+      showApp();
+      go("bookings");
+    } catch (e) {
+      if (e.message === "unauthenticated") showLogin();
+      else { showLogin(); toast(e.message, "err"); }
+    }
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
