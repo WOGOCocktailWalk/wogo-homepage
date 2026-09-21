@@ -1,6 +1,9 @@
 // src/config.js — non-secret constants. Nothing here is sensitive; safe to commit.
 
-export const SITE_URL = 'https://www.wogococktailwalk.com';
+// STAGING: points at the live GitHub Pages site so the whole booking flow
+// (Stripe success/cancel redirect, confirmation page) works before the Wix
+// cutover. AT CUTOVER: change back to 'https://www.wogococktailwalk.com'.
+export const SITE_URL = 'https://wogococktailwalk.github.io/wogo-homepage';
 
 // Echoed back as Access-Control-Allow-Origin ONLY if the request Origin matches
 // one of these exactly, or matches the localhost dev pattern below.
