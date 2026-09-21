@@ -1,0 +1,346 @@
+/* ============================================================================
+   WOGO GUEST CALENDAR  ·  wogo-calendar.css
+   Self-contained booking widget styling. Hardcodes the WOGO palette so it
+   matches the live site (espresso / blush / salmon) with zero external fonts —
+   it inherits the host page's font stack, exactly like the rest of the site's
+   component CSS. Everything is namespaced under `.wc-` so it can never collide
+   with the page's own `.w-*` classes.
+
+   Palette (verified against the live route pages):
+     espresso  #3f2b21    ink     #201611 / #1a1410
+     blush     #ffe5d9    cream   #fffaf6    surface-tint #fbe9df
+     salmon    #ffaa81    salmon-deep #f2905c
+     brown-soft #7e5541   brown   #643e2b
+   ========================================================================== */
+
+.wogo-calendar {
+  /* tokens — scoped to the widget so the file is drop-in anywhere */
+  --wc-espresso: #3f2b21;
+  --wc-ink: #201611;
+  --wc-blush: #ffe5d9;
+  --wc-cream: #fffaf6;
+  --wc-tint: #fbe9df;
+  --wc-salmon: #ffaa81;
+  --wc-salmon-deep: #f2905c;
+  --wc-brown-soft: #7e5541;
+  --wc-brown: #643e2b;
+  --wc-cta-bg: linear-gradient(135deg, #ffaa81 0%, #f2905c 100%);
+  --wc-cta-bg-hover: linear-gradient(135deg, #f2905c 0%, #f2905c 100%);
+  --wc-cta-shadow: 0 8px 20px rgba(242, 144, 92, 0.45);
+  --wc-line: rgba(63, 43, 33, 0.12);
+
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  /* inherit the host page's font stack — no webfont loaded */
+  font-family: inherit;
+  color: var(--wc-espresso);
+  text-align: left;
+  -webkit-font-smoothing: antialiased;
+}
+.wogo-calendar *,
+.wogo-calendar *::before,
+.wogo-calendar *::after { box-sizing: border-box; }
+
+/* ---- The card shell (mirrors the site's blush "ticket" panel) ------------- */
+.wc-card {
+  background: var(--wc-cream);
+  border: 1px solid var(--wc-line);
+  border-radius: 20px;
+  padding: 20px 20px 22px;
+  box-shadow: 0 20px 46px rgba(32, 22, 17, 0.18);
+}
+
+/* ---- Header: route name + price ------------------------------------------ */
+.wc-head { margin-bottom: 16px; }
+.wc-eyebrow {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--wc-brown-soft); margin-bottom: 6px;
+}
+.wc-title {
+  font-size: clamp(17px, 2.4vw, 20px); font-weight: 900; line-height: 1.15;
+  letter-spacing: -0.01em; color: var(--wc-ink); text-transform: uppercase;
+}
+.wc-price {
+  margin-top: 6px; font-size: 13.5px; font-weight: 700; color: var(--wc-espresso);
+}
+.wc-price b { font-weight: 900; }
+
+/* ---- Live status region (screen-reader announcements) -------------------- */
+.wc-status {
+  min-height: 0; font-size: 12.5px; font-weight: 700; color: var(--wc-brown-soft);
+  margin-top: 4px;
+}
+.wc-status:empty { display: none; }
+
+/* ---- Progress cue: Date · Time · Details --------------------------------- */
+.wc-steps { display: flex; align-items: center; gap: 8px; margin: 2px 0 14px; }
+.wc-step {
+  display: flex; align-items: center; gap: 7px; flex: 1 1 0; min-width: 0;
+  font-size: 11.5px; font-weight: 800; letter-spacing: 0.02em;
+  text-transform: uppercase; color: var(--wc-brown-soft);
+}
+.wc-step-num {
+  flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--wc-tint); color: var(--wc-brown-soft);
+  font-size: 12px; font-weight: 900;
+}
+.wc-step-lb { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wc-step--on { color: var(--wc-espresso); }
+.wc-step--on .wc-step-num {
+  background: var(--wc-cta-bg); color: var(--wc-espresso); box-shadow: var(--wc-cta-shadow);
+}
+.wc-step--done { color: var(--wc-espresso); }
+.wc-step--done .wc-step-num { background: var(--wc-espresso); color: var(--wc-blush); }
+@media (max-width: 380px) {
+  .wc-step-lb { display: none; }   /* keep just the numbered dots on the narrowest phones */
+  .wc-steps { gap: 6px; justify-content: flex-start; }
+  .wc-step { flex: 0 0 auto; }
+}
+
+/* ---- Month navigation ---------------------------------------------------- */
+.wc-monthbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin: 4px 0 12px;
+}
+.wc-monthlabel {
+  flex: 1 1 auto; text-align: center; font-size: 14.5px; font-weight: 800;
+  letter-spacing: 0.02em; text-transform: capitalize; color: var(--wc-espresso);
+}
+.wc-navbtn {
+  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%;
+  background: var(--wc-espresso); color: var(--wc-blush); border: none;
+  cursor: pointer; font-size: 20px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.wc-navbtn:disabled { opacity: 0.32; cursor: not-allowed; }
+
+/* ---- Weekday header + day grid (7-col) ----------------------------------- */
+.wc-dow {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+  margin-bottom: 6px;
+}
+.wc-dow span {
+  text-align: center; font-size: 10.5px; font-weight: 800;
+  letter-spacing: 0.04em; text-transform: uppercase; color: var(--wc-brown-soft);
+  padding: 2px 0;
+}
+.wc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+
+.wc-day {
+  position: relative; aspect-ratio: 1 / 1; min-height: 40px; width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; font-family: inherit;
+  border: 1px solid transparent; border-radius: 12px;
+  background: #fff; color: var(--wc-espresso); cursor: pointer; padding: 0;
+}
+.wc-day--empty { background: transparent; border-color: transparent; cursor: default; }
+.wc-day--open:hover { background: var(--wc-blush); border-color: rgba(242, 144, 92, 0.4); }
+.wc-day--soldout,
+.wc-day--closed {
+  color: rgba(63, 43, 33, 0.32); background: transparent; cursor: not-allowed;
+  font-weight: 600;
+}
+.wc-day--soldout { text-decoration: line-through; }
+.wc-day--today { box-shadow: inset 0 0 0 1.5px rgba(126, 85, 65, 0.45); }
+.wc-day[aria-pressed="true"] {
+  background: var(--wc-salmon); border-color: var(--wc-salmon-deep);
+  color: var(--wc-ink); font-weight: 900;
+  box-shadow: 0 6px 16px rgba(242, 144, 92, 0.4);
+}
+.wc-day-dot {
+  position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+  width: 4px; height: 4px; border-radius: 50%; background: var(--wc-salmon-deep);
+}
+.wc-day[aria-pressed="true"] .wc-day-dot { background: var(--wc-ink); }
+
+/* ---- Legend -------------------------------------------------------------- */
+.wc-legend {
+  display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px;
+  font-size: 11px; font-weight: 700; color: var(--wc-brown-soft);
+}
+.wc-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.wc-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.wc-legend .wc-lg-open { background: var(--wc-salmon-deep); }
+.wc-legend .wc-lg-soldout { background: rgba(63, 43, 33, 0.28); }
+
+/* ---- Step panels (slots, party+form) ------------------------------------- */
+.wc-panel { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--wc-line); }
+.wc-panel-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 10px; margin-bottom: 12px;
+}
+.wc-panel-title {
+  font-size: 13px; font-weight: 900; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--wc-ink);
+}
+.wc-back {
+  background: none; border: none; font-family: inherit; cursor: pointer;
+  font-size: 12px; font-weight: 800; color: var(--wc-brown-soft);
+  text-decoration: underline; text-underline-offset: 3px; padding: 4px;
+}
+
+/* ---- Slot list ----------------------------------------------------------- */
+.wc-slots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.wc-slot {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+  padding: 11px 13px; border: 1.5px solid var(--wc-line); border-radius: 12px;
+  background: #fff; color: var(--wc-espresso); cursor: pointer;
+  font-family: inherit; text-align: left;
+}
+.wc-slot:hover { border-color: var(--wc-salmon-deep); background: var(--wc-tint); }
+.wc-slot[aria-pressed="true"] {
+  border-color: var(--wc-salmon-deep); background: var(--wc-salmon);
+  color: var(--wc-ink);
+}
+.wc-slot-time { font-size: 16px; font-weight: 900; letter-spacing: -0.01em; }
+.wc-slot-seats { font-size: 11px; font-weight: 700; color: var(--wc-brown-soft); }
+.wc-slot[aria-pressed="true"] .wc-slot-seats { color: rgba(32, 22, 17, 0.7); }
+.wc-slot-seats.wc-low { color: var(--wc-salmon-deep); font-weight: 800; }
+.wc-slot--soldout {
+  cursor: not-allowed; background: transparent; border-style: dashed;
+  color: rgba(63, 43, 33, 0.4);
+}
+.wc-slot--soldout .wc-slot-time { text-decoration: line-through; font-weight: 700; }
+
+/* ---- "Tickets include" reassurance strip ----------------------------------
+   Appears with the details step the moment a timeslot is chosen. A compact
+   blush echo of the route pages' hero ticket card: espresso text on blush
+   (AA), cream icon roundels, 2×2 grid so it never pushes the form far down. */
+.wc-includes {
+  margin-bottom: 14px; padding: 12px 14px 13px;
+  background: var(--wc-blush); border: 1px solid rgba(63, 43, 33, 0.1);
+  border-radius: 14px;
+}
+.wc-includes-head {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--wc-brown-soft); margin-bottom: 9px;
+}
+.wc-includes-rows {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px;
+}
+.wc-inc {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px; font-weight: 700; color: var(--wc-espresso); line-height: 1.25;
+}
+.wc-inc-ico {
+  flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--wc-cream); display: flex; align-items: center;
+  justify-content: center; font-size: 13px;
+  box-shadow: 0 2px 5px rgba(32, 22, 17, 0.1);
+}
+
+/* ---- Party stepper ------------------------------------------------------- */
+.wc-field { margin-bottom: 14px; }
+.wc-label {
+  display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--wc-brown-soft); margin-bottom: 7px;
+}
+.wc-stepper { display: inline-flex; align-items: center; gap: 4px; }
+.wc-step-btn {
+  width: 44px; height: 44px; border-radius: 12px; border: 1.5px solid var(--wc-line);
+  background: #fff; color: var(--wc-espresso); font-size: 22px; font-weight: 800;
+  line-height: 1; cursor: pointer; font-family: inherit;
+  display: flex; align-items: center; justify-content: center;
+}
+.wc-step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.wc-step-val {
+  min-width: 56px; text-align: center; font-size: 20px; font-weight: 900;
+  color: var(--wc-ink);
+}
+.wc-step-hint { margin-left: 10px; font-size: 12px; font-weight: 600; color: var(--wc-brown-soft); }
+
+/* ---- Text inputs --------------------------------------------------------- */
+.wc-input {
+  width: 100%; padding: 12px 14px; border: 1.5px solid var(--wc-line);
+  border-radius: 12px; background: #fff; font-family: inherit; font-size: 15px;
+  font-weight: 600; color: var(--wc-ink);
+}
+.wc-input::placeholder { color: rgba(63, 43, 33, 0.4); font-weight: 500; }
+/* Allergies/notes textarea shares the .wc-input skin; user may grow it
+   vertically only (horizontal resize would break the card layout). */
+.wc-textarea { min-height: 72px; resize: vertical; line-height: 1.45; display: block; }
+.wc-input:focus { outline: none; border-color: var(--wc-salmon-deep); }
+.wc-input[aria-invalid="true"] { border-color: #c8551a; }
+.wc-error {
+  display: none; margin-top: 6px; font-size: 12px; font-weight: 700; color: #c8551a;
+}
+.wc-error.show { display: block; }
+
+.wc-check {
+  display: flex; align-items: flex-start; gap: 9px; margin: 2px 0 16px;
+  font-size: 12.5px; font-weight: 600; line-height: 1.4; color: var(--wc-espresso);
+  cursor: pointer;
+}
+.wc-check input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--wc-salmon-deep); flex: 0 0 auto; }
+
+/* ---- Total + Book button ------------------------------------------------- */
+.wc-total {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin: 4px 0 14px; font-size: 13px; font-weight: 700; color: var(--wc-espresso);
+}
+.wc-total b { font-size: 22px; font-weight: 900; color: var(--wc-ink); }
+.wc-book {
+  display: block; width: 100%; text-align: center; border: none; cursor: pointer;
+  background: var(--wc-cta-bg); color: var(--wc-espresso); font-family: inherit;
+  padding: 16px 20px; border-radius: 999px; font-size: 15px; font-weight: 800;
+  letter-spacing: 0.03em; text-transform: uppercase; box-shadow: var(--wc-cta-shadow);
+}
+.wc-book:hover { background: var(--wc-cta-bg-hover); }
+.wc-book:disabled { opacity: 0.6; cursor: progress; }
+.wc-fine {
+  margin-top: 12px; font-size: 11.5px; font-weight: 600; line-height: 1.55;
+  color: var(--wc-brown-soft); text-align: center;
+}
+
+/* ---- Loading skeleton ---------------------------------------------------- */
+.wc-skel-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.wc-skel {
+  aspect-ratio: 1 / 1; min-height: 40px; border-radius: 12px;
+  background: linear-gradient(100deg, var(--wc-tint) 30%, #fff 50%, var(--wc-tint) 70%);
+  background-size: 200% 100%;
+}
+
+/* ---- Error state --------------------------------------------------------- */
+.wc-errbox { text-align: center; padding: 22px 10px; }
+.wc-errbox p { font-size: 14px; font-weight: 700; color: var(--wc-espresso); margin: 0 0 14px; }
+.wc-retry {
+  display: inline-block; border: none; cursor: pointer; font-family: inherit;
+  background: var(--wc-espresso); color: var(--wc-blush); padding: 12px 24px;
+  border-radius: 999px; font-size: 13px; font-weight: 800; letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* ---- Focus ring: brand salmon, visible for keyboard users ---------------- */
+.wogo-calendar :focus-visible {
+  outline: 3px solid var(--wc-salmon); outline-offset: 2px; border-radius: 10px;
+}
+
+/* ---- Motion: only animate when the user hasn't asked us not to ----------- */
+@media (prefers-reduced-motion: no-preference) {
+  .wc-navbtn, .wc-day, .wc-slot, .wc-step-btn, .wc-book, .wc-retry, .wc-input {
+    transition: background 0.18s ease, border-color 0.18s ease,
+                color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
+  }
+  .wc-navbtn:hover { background: var(--wc-ink); }
+  .wc-navbtn:active { transform: scale(0.92); }
+  .wc-day:active, .wc-slot:active, .wc-step-btn:active { transform: scale(0.96); }
+  .wc-book:hover { transform: translateY(-2px); }
+  .wc-book:active { transform: scale(0.98); }
+  .wc-panel { animation: wc-fade 0.24s ease; }
+  .wc-includes { animation: wc-fade 0.3s ease; } /* gentle reveal on slot pick */
+  .wc-skel { animation: wc-shimmer 1.3s ease-in-out infinite; }
+  @keyframes wc-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes wc-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+}
+
+/* ---- Small screens: keep the 7-col month grid, tighten spacing ----------- */
+@media (max-width: 380px) {
+  .wc-card { padding: 16px 14px 18px; }
+  .wc-slots { grid-template-columns: 1fr; }
+  .wc-day { min-height: 38px; border-radius: 10px; }
+}

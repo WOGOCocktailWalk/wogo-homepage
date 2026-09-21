@@ -1,0 +1,37 @@
+-- migrations/0014_weekday_capacity.sql
+-- Per-weekday capacity (owner requirement, 2026-08): a route-level RECURRING
+-- default that varies by day of week — e.g. Saturdays always cap at 6 seats
+-- per departure while every other open day stays at the route's normal 10 —
+-- without having to hand-maintain a 'capacity_override' date_overrides row
+-- for every single Saturday, forever.
+--
+-- This is a NEW level slotted between the two levels migrations/0003 already
+-- defined for routes.slot_capacity (per-slot default) and routes.capacity
+-- (route-wide default) — it never touches the date_overrides table at all,
+-- so a genuine one-off date exception still wins over it. Full precedence,
+-- highest to lowest specificity (implemented in src/logic.js:buildSlotsForDate
+-- and mirrored — for the no-overbooking guarantee — in src/db.js's atomic
+-- createHold/createManualBooking/rescheduleBooking guards):
+--
+--   1. date_overrides (route, date, action='slot_capacity_override')
+--   2. date_overrides (route, date, action='capacity_override')
+--   3. routes.slot_capacity      — per-slot default, independent of date
+--   4. routes.weekday_capacity   — NEW column below: per-WEEKDAY default,
+--      independent of date and slot. JSON object keyed by ISO weekday
+--      string "1".."7" (Mon=1 .. Sun=7), e.g. {"6":6,"7":6} — every weekday
+--      absent from the map (or the whole column NULL) falls through to...
+--   5. routes.capacity           — route-wide default.
+--
+-- Deliberately NULLable (unlike slot_capacity's NOT NULL DEFAULT '{}') so
+-- "this route has never touched the feature" is a distinct, trivially-cheap
+-- state from "this route explicitly maps every weekday" — both behave
+-- identically (fall through to routes.capacity), but NULL keeps the common
+-- case (no per-weekday capacity at all) out of every route's JSON entirely.
+-- No existing data changes meaning: every route's weekday_capacity is NULL
+-- until an owner opts in via the admin dashboard — today's behaviour is
+-- byte-for-byte unchanged.
+--
+-- NOT applied to remote D1 by tooling — the operator applies this by hand
+-- (wrangler d1 migrations apply wogo-bookings --remote) and redeploys.
+
+ALTER TABLE routes ADD COLUMN weekday_capacity TEXT;

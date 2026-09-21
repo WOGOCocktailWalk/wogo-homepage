@@ -1,0 +1,13 @@
+{
+  "name": "wogo-booking-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "build:admin": "node src/admin/build.mjs",
+    "build:emails-preview": "node src/emails_preview.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.113.0"
+  }
+}

@@ -1,0 +1,11 @@
+-- migrations/0017_map_by_weekday.sql
+-- Per-weekday route map override. A route normally has one map per language
+-- (map_url / map_url_nl). Some routes run a DIFFERENT line-up on a specific
+-- weekday (e.g. 1NUL8 Meent joins Route 1 & Route 2 on Thursdays), which needs
+-- its own map on that day's confirmation email. This column holds an optional
+-- JSON object keyed by ISO weekday (Mon=1 .. Sun=7):
+--   {"4":{"en":"https://…/thursday-en.pdf","nl":"https://…/thursday-nl.pdf"}}
+-- The guest email (src/emails.js:resolveMapUrl) uses the entry for the
+-- booking's weekday when present, otherwise falls back to map_url / map_url_nl.
+-- NULL / absent ⇒ every day uses the normal map (unchanged behaviour).
+ALTER TABLE routes ADD COLUMN map_url_by_weekday TEXT;

@@ -1,0 +1,33 @@
+-- migrations/0011_currency_timezone.sql
+-- Per-route currency + timezone (2026-08) — makes WOGO ready to add
+-- international cities (London imminent; New York later) without touching
+-- any existing NL route. Additive + backward-compatible: both new columns
+-- are NOT NULL with a default that reproduces today's only-ever-NL behaviour
+-- exactly, so every existing route (amsterdam/utrecht/groningen/rotterdam-*)
+-- keeps rendering, checking out, and emailing byte-for-byte as before this
+-- migration — no data backfill needed.
+--
+-- currency: ISO 4217 code (uppercase, e.g. 'EUR' | 'GBP' | 'USD'), consumed by:
+--   * src/stripe.js:createCheckoutSession — Stripe Checkout Session's
+--     line_items[0][price_data][currency] (lowercased for the Stripe API).
+--   * src/logic.js:formatMoney(cents, currency) — the one shared money
+--     formatter (EUR: comma decimal, symbol first, e.g. "€29,95"; GBP/USD:
+--     point decimal, symbol first, e.g. "£29.95" / "$29.95").
+--   * src/emails.js — every price line in the guest/owner emails.
+--   * src/meta.js — the Meta CAPI Purchase event's `currency` field.
+--
+-- timezone: IANA zone name (e.g. 'Europe/Amsterdam' | 'Europe/London' |
+--   'America/New_York'), consumed via the Intl API's `timeZone` option only
+--   (no tz database bundled — Workers-safe, zero new deps) by:
+--   * src/logic.js:todayInTimezone — the booking-horizon "today" cutoff, so a
+--     London/NYC guest's calendar day is judged correctly, not the server's
+--     UTC day.
+--   * src/logic.js:computeBarArrivals — the staggered per-bar arrival-time
+--     computation, so a London route's bars are told London local times
+--     (never silently shifted to Amsterdam/UTC).
+--
+-- NOT applied to remote D1 by tooling — the operator applies this by hand
+-- (wrangler d1 migrations apply wogo-bookings --remote) and redeploys.
+
+ALTER TABLE routes ADD COLUMN currency TEXT NOT NULL DEFAULT 'EUR';
+ALTER TABLE routes ADD COLUMN timezone TEXT NOT NULL DEFAULT 'Europe/Amsterdam';

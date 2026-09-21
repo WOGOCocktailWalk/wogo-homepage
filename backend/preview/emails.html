@@ -1,0 +1,1413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>WOGO — email templates preview</title>
+<style>
+  :root{
+    --espresso:#3f2b21; --ink:#201611; --brown:#643e2b; --brownSoft:#7e5541;
+    --blush:#ffe5d9; --cream:#fffaf6; --page:#f4e6dc; --salmon:#ffaa81;
+    --salmonDeep:#f2905c; --line:#e7d3c6; --muted:#8a6a58;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--page);color:var(--ink);}
+  .wp-shell{display:grid;grid-template-columns:300px 1fr;min-height:100vh;}
+  .wp-sidebar{background:linear-gradient(180deg,var(--espresso),var(--ink));color:#fff;padding:22px 16px;overflow-y:auto;}
+  .wp-sidebar h1{font-size:14px;letter-spacing:.18em;text-transform:uppercase;margin:0 0 4px;color:var(--salmon);}
+  .wp-sidebar .wp-tagline{font-size:12px;color:rgba(255,245,238,.65);margin:0 0 20px;line-height:1.5;}
+  .wp-navgroup h2{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,245,238,.55);margin:18px 4px 8px;}
+  .wp-navitem{display:block;width:100%;text-align:left;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 11px;margin-bottom:6px;color:#fff;cursor:pointer;}
+  .wp-navitem:hover{background:rgba(255,170,129,.14);border-color:rgba(255,170,129,.4);}
+  .wp-navitem.active{background:rgba(255,170,129,.22);border-color:var(--salmon);}
+  .wp-navitem-label{display:block;font-size:12.5px;font-weight:700;}
+  .wp-navitem-subject{display:block;font-size:11px;color:rgba(255,245,238,.55);margin-top:2px;}
+  .wp-main{padding:26px 32px;overflow-y:auto;}
+  .wp-panel-head h1{font-size:18px;margin:0 0 4px;}
+  .wp-subject{font-size:13px;color:var(--brown);margin:0 0 6px;}
+  .wp-note{font-size:12.5px;color:var(--muted);max-width:640px;line-height:1.5;margin:0 0 18px;}
+  .wp-frame-wrap{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#ddd;height:calc(100vh - 200px);min-height:520px;}
+  .wp-frame{width:100%;height:100%;border:0;background:#fff;}
+  @media (max-width: 860px){
+    .wp-shell{grid-template-columns:1fr;}
+    .wp-sidebar{position:sticky;top:0;z-index:2;max-height:40vh;}
+  }
+</style>
+</head>
+<body>
+<div class="wp-shell">
+  <nav class="wp-sidebar">
+    <h1>WOGO emails</h1>
+    <p class="wp-tagline">Every transactional template, rendered from the exact same src/emails.js functions Brevo receives. Amsterdam seed data, 3 bars staggered 0 / 75 / 150 min.</p>
+    <div class="wp-navgroup"><h2>1. Guest — confirmation (incl. route map)</h2><button class="wp-navitem" data-id="tpl-0" type="button">
+          <span class="wp-navitem-label">Guest confirmation (EN) — with route map + promo code applied</span>
+          <span class="wp-navitem-subject">You're booked — Groningen Cocktail Walk 🍸</span>
+        </button><button class="wp-navitem" data-id="tpl-1" type="button">
+          <span class="wp-navitem-label">Guest confirmation (NL) — manual/phone booking, comped</span>
+          <span class="wp-navitem-subject">Je boeking is bevestigd — Groningen Cocktail Walk 🍸</span>
+        </button></div><div class="wp-navgroup"><h2>2. Owner — new booking</h2><button class="wp-navitem" data-id="tpl-2" type="button">
+          <span class="wp-navitem-label">Owner notification — paid web booking with a discount</span>
+          <span class="wp-navitem-subject">New booking · Groningen 2026-08-06 18:00 · 3p</span>
+        </button><button class="wp-navitem" data-id="tpl-3" type="button">
+          <span class="wp-navitem-label">Owner notification — manual/comp phone booking</span>
+          <span class="wp-navitem-subject">New booking · Groningen 2026-08-06 19:00 · 2p</span>
+        </button></div><div class="wp-navgroup"><h2>3. Bars — staggered arrival</h2><button class="wp-navitem" data-id="tpl-4" type="button">
+          <span class="wp-navitem-label">Bar notification — Van de Werf (NDSM wharf) (arrives 18:00, +0 min)</span>
+          <span class="wp-navitem-subject">WOGO reservation · 18:00 · 3 guests · 2026-08-06</span>
+        </button><button class="wp-navitem" data-id="tpl-5" type="button">
+          <span class="wp-navitem-label">Bar notification — Bar 2 (TBD — set real name/email) (arrives 19:00, +60 min)</span>
+          <span class="wp-navitem-subject">WOGO reservation · 19:00 · 3 guests · 2026-08-06</span>
+        </button><button class="wp-navitem" data-id="tpl-6" type="button">
+          <span class="wp-navitem-label">Bar notification — Bar 3 (TBD — set real name/email) (arrives 20:00, +120 min)</span>
+          <span class="wp-navitem-subject">WOGO reservation · 20:00 · 3 guests · 2026-08-06</span>
+        </button></div><div class="wp-navgroup"><h2>4. Owner — conflict alert</h2><button class="wp-navitem" data-id="tpl-7" type="button">
+          <span class="wp-navitem-label">Owner conflict alert — the rare double-booked case (SPEC.md §6.4)</span>
+          <span class="wp-navitem-subject">&amp;#9888; Double-booked — b_conflict_772f</span>
+        </button></div><div class="wp-navgroup"><h2>5. Booking moved (reschedule)</h2><button class="wp-navitem" data-id="tpl-8" type="button">
+          <span class="wp-navitem-label">Guest — booking moved (EN)</span>
+          <span class="wp-navitem-subject">Your booking has moved — Groningen Cocktail Walk 🍸</span>
+        </button><button class="wp-navitem" data-id="tpl-9" type="button">
+          <span class="wp-navitem-label">Guest — booking moved (NL)</span>
+          <span class="wp-navitem-subject">Je boeking is verzet — Groningen Cocktail Walk 🍸</span>
+        </button><button class="wp-navitem" data-id="tpl-10" type="button">
+          <span class="wp-navitem-label">Bar — reservation moved (Bar 2 (TBD — set real name/email))</span>
+          <span class="wp-navitem-subject">WOGO reservation MOVED · now 20:30 · 2026-09-19 · 3 guests</span>
+        </button></div><div class="wp-navgroup"><h2>6. Cancellation</h2><button class="wp-navitem" data-id="tpl-11" type="button">
+          <span class="wp-navitem-label">Guest — booking cancelled (EN, with refund note)</span>
+          <span class="wp-navitem-subject">Your booking has been cancelled — Groningen Cocktail Walk</span>
+        </button><button class="wp-navitem" data-id="tpl-12" type="button">
+          <span class="wp-navitem-label">Guest — booking cancelled (NL, no note)</span>
+          <span class="wp-navitem-subject">Je boeking is geannuleerd — Groningen Cocktail Walk</span>
+        </button><button class="wp-navitem" data-id="tpl-13" type="button">
+          <span class="wp-navitem-label">Bar — reservation cancelled (Bar 2 (TBD — set real name/email))</span>
+          <span class="wp-navitem-subject">WOGO reservation CANCELLED · 2026-08-06 19:00 · 3 guests</span>
+        </button></div>
+  </nav>
+  <main class="wp-main">
+    <section class="wp-panel" data-id="tpl-0" >
+      <header class="wp-panel-head">
+        <div>
+          <h1>Guest confirmation (EN) — with route map + promo code applied</h1>
+          <p class="wp-subject">Subject: <strong>You're booked — Groningen Cocktail Walk 🍸</strong></p>
+          <p class="wp-note">The ONE guest email, sent the moment Stripe confirms payment. Now includes the route-map section (button + save note) — the former separate route-map email was merged into it. Note the struck-through original price next to the discounted total.</p>
+        </div>
+      </header>
+      <div class="wp-frame-wrap">
+        <iframe class="wp-frame" title="Guest confirmation (EN) — with route map + promo code applied" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;title&gt;You&amp;#39;re booked, Anna! 🍸&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#f4e6dc;&quot;&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;&quot;&gt;Your tables are reserved. Everything for your night out is inside.&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#f4e6dc;padding:24px 12px;&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot;&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;max-width:560px;width:100%;background:#fffaf6;border:1px solid #e7d3c6;border-radius:18px;overflow:hidden;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:linear-gradient(135deg,#3f2b21 0%,#201611 100%);padding:34px 30px 30px;text-align:center;&quot;&gt;
+    
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/logo-salmon.png&quot; width=&quot;120&quot; alt=&quot;WOGO&quot; style=&quot;display:block;width:120px;max-width:60%;height:auto;margin:0 auto;color:#fffaf6;font:800 22px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.22em;&quot;&gt;
+    &lt;div style=&quot;margin-top:10px;font:600 11px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.26em;color:rgba(255,245,238,.6);text-transform:uppercase;&quot;&gt;Cocktail Walk&lt;/div&gt;
+    
+    &lt;div style=&quot;margin:14px 0 0;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffe5d9;color:#643e2b;font:700 13px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;padding:9px 16px;border-radius:999px;&quot;&gt;Groningen · Self-guided cocktail walk&lt;/span&gt;&lt;/div&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:#fffaf6;padding:24px 30px 4px;text-align:center;&quot;&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/poster-groningen.jpg&quot; width=&quot;240&quot; alt=&quot;WOGO Cocktail Walk Groningen&quot; style=&quot;display:block;width:240px;max-width:100%;height:auto;margin:0 auto;border-radius:14px;border:1px solid #e7d3c6;&quot;&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- body --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:26px 30px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#3f2b21;&quot;&gt;
+        &lt;h1 style=&quot;margin:0 0 8px;font-size:23px;line-height:1.25;font-weight:800;color:#201611;&quot;&gt;You&amp;#39;re booked, Anna! 🍸&lt;/h1&gt;
+        &lt;p style=&quot;margin:0 0 22px;font-size:15px;line-height:1.55;color:#643e2b;&quot;&gt;Everything is arranged — your tables are held. Here are the essentials, your route map, and a few things worth knowing before you go.&lt;/p&gt;
+        
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #f2905c;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Experience&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;WOGO Cocktail Walk Groningen&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Date&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Thursday 6 August 2026&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Start time&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;18:00&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Guests&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;3 guests&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Total paid&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;span style=&quot;color:#8a6a58;text-decoration:line-through;font-weight:600;&quot;&gt;€89,85&lt;/span&gt;
+      &amp;nbsp;&lt;span&gt;€84,85&lt;/span&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Booking ref&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;span style=&quot;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#8a6a58;&quot;&gt;b_8f3a2c91&lt;/span&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#ffe5d9;border-radius:12px;margin:0 0 22px;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:14px 16px;font-size:13.5px;line-height:1.5;color:#643e2b;&quot;&gt;
+        &lt;strong style=&quot;color:#201611;&quot;&gt;Your note to us:&lt;/strong&gt;&lt;br&gt;Nut allergy (one guest) — and we are celebrating a birthday!
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#ffe5d9;border:1px solid #e7d3c6;border-radius:16px;margin:0 0 8px;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:22px 20px;&quot;&gt;
+        &lt;div style=&quot;font-size:17px;font-weight:800;color:#201611;margin:0 0 6px;&quot;&gt;Your route map&lt;/div&gt;
+        &lt;p style=&quot;margin:0 0 16px;font-size:14px;line-height:1.55;color:#643e2b;&quot;&gt;Your full itinerary lives here — the bars, the order, and each bar’s own WOGO cocktail menu.&lt;/p&gt;
+        &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;margin:0 0 14px;&quot;&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;border-radius:14px;background:linear-gradient(135deg,#ffaa81 0%,#f2905c 100%);&quot;&gt;
+      &lt;a href=&quot;https://maps.app.goo.gl/example-wogo-amsterdam-route&quot; style=&quot;display:block;padding:18px 26px;font-size:17px;font-weight:800;color:#3f2b21;text-decoration:none;text-align:center;letter-spacing:.01em;&quot;&gt;Open your route map &amp;rarr;&lt;/a&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+  &lt;/table&gt;
+        &lt;p style=&quot;margin:6px 0 0;font-size:12.5px;line-height:1.5;color:#8a6a58;&quot;&gt;Save this email — it’s the only place your full route lives.&lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+    &lt;div style=&quot;border-top:1px solid #e7d3c6;margin:26px 0 22px;&quot;&gt;&lt;/div&gt;
+    &lt;h3 style=&quot;margin:0 0 6px;font-size:13px;font-weight:800;letter-spacing:.02em;color:#201611;text-transform:uppercase;&quot;&gt;Good to know&lt;/h3&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;margin:0 0 20px;&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:5px 0;font-size:14px;line-height:1.55;color:#643e2b;vertical-align:top;&quot;&gt;
+        &lt;span style=&quot;color:#f2905c;font-weight:800;&quot;&gt;&amp;#8226;&lt;/span&gt;&amp;nbsp;&amp;nbsp;Please start on time — the whole evening is built around your start time.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:5px 0;font-size:14px;line-height:1.55;color:#643e2b;vertical-align:top;&quot;&gt;
+        &lt;span style=&quot;color:#f2905c;font-weight:800;&quot;&gt;&amp;#8226;&lt;/span&gt;&amp;nbsp;&amp;nbsp;Follow the bars in order, but walk between them at your own pace. Only the start time is fixed.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:5px 0;font-size:14px;line-height:1.55;color:#643e2b;vertical-align:top;&quot;&gt;
+        &lt;span style=&quot;color:#f2905c;font-weight:800;&quot;&gt;&amp;#8226;&lt;/span&gt;&amp;nbsp;&amp;nbsp;Not every bar sends a separate confirmation — don&amp;#39;t worry, they&amp;#39;re all expecting you.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+    &lt;h3 style=&quot;margin:0 0 6px;font-size:13px;font-weight:800;letter-spacing:.02em;color:#201611;text-transform:uppercase;&quot;&gt;How it works&lt;/h3&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;margin:0 0 20px;&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:5px 0;font-size:14px;line-height:1.55;color:#643e2b;vertical-align:top;&quot;&gt;
+        &lt;span style=&quot;color:#f2905c;font-weight:800;&quot;&gt;&amp;#8226;&lt;/span&gt;&amp;nbsp;&amp;nbsp;On arrival, tell the staff you&amp;#39;re doing the WOGO Cocktail Walk and how many you are.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:5px 0;font-size:14px;line-height:1.55;color:#643e2b;vertical-align:top;&quot;&gt;
+        &lt;span style=&quot;color:#f2905c;font-weight:800;&quot;&gt;&amp;#8226;&lt;/span&gt;&amp;nbsp;&amp;nbsp;At each bar, everyone picks one cocktail from that bar&amp;#39;s WOGO menu — it&amp;#39;s included in your ticket.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:5px 0;font-size:14px;line-height:1.55;color:#643e2b;vertical-align:top;&quot;&gt;
+        &lt;span style=&quot;color:#f2905c;font-weight:800;&quot;&gt;&amp;#8226;&lt;/span&gt;&amp;nbsp;&amp;nbsp;Fancy another drink or a bite? Go for it — extras are paid directly at the bar.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+    &lt;p style=&quot;margin:8px 0 0;font-size:16px;line-height:1.5;font-weight:800;color:#201611;&quot;&gt;Enjoy Groningen — one cocktail at a time!&lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- footer --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:20px 30px 26px;border-top:1px solid #e7d3c6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;&quot;&gt;
+        &lt;p style=&quot;margin:0;font-size:13px;line-height:1.5;color:#643e2b;&quot;&gt;Questions? Just reply to this email — we read every one.&lt;/p&gt;
+        &lt;p style=&quot;margin:14px 0 0;font-size:12px;line-height:1.5;color:#8a6a58;&quot;&gt;
+          WOGO Amsterdam B.V. · Amsterdam, Netherlands&lt;br&gt;
+          &lt;a href=&quot;https://www.wogococktailwalk.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;wogococktailwalk.com&lt;/a&gt;
+        &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+      </div>
+    </section><section class="wp-panel" data-id="tpl-1" hidden>
+      <header class="wp-panel-head">
+        <div>
+          <h1>Guest confirmation (NL) — manual/phone booking, comped</h1>
+          <p class="wp-subject">Subject: <strong>Je boeking is bevestigd — Groningen Cocktail Walk 🍸</strong></p>
+          <p class="wp-note">Same template, Dutch copy — this is what a phone booking the owner marks &quot;Comp&quot; looks like to the guest (still a real confirmation, route map included).</p>
+        </div>
+      </header>
+      <div class="wp-frame-wrap">
+        <iframe class="wp-frame" title="Guest confirmation (NL) — manual/phone booking, comped" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;title&gt;Je boeking is bevestigd, Bram&amp;#39;s! 🍸&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#f4e6dc;&quot;&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;&quot;&gt;Je tafels staan gereserveerd. Alles voor je avondje uit staat hierin.&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#f4e6dc;padding:24px 12px;&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot;&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;max-width:560px;width:100%;background:#fffaf6;border:1px solid #e7d3c6;border-radius:18px;overflow:hidden;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:linear-gradient(135deg,#3f2b21 0%,#201611 100%);padding:34px 30px 30px;text-align:center;&quot;&gt;
+    
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/logo-salmon.png&quot; width=&quot;120&quot; alt=&quot;WOGO&quot; style=&quot;display:block;width:120px;max-width:60%;height:auto;margin:0 auto;color:#fffaf6;font:800 22px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.22em;&quot;&gt;
+    &lt;div style=&quot;margin-top:10px;font:600 11px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.26em;color:rgba(255,245,238,.6);text-transform:uppercase;&quot;&gt;Cocktail Walk&lt;/div&gt;
+    
+    &lt;div style=&quot;margin:14px 0 0;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffe5d9;color:#643e2b;font:700 13px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;padding:9px 16px;border-radius:999px;&quot;&gt;Groningen · Zelfgeleide cocktail walk&lt;/span&gt;&lt;/div&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:#fffaf6;padding:24px 30px 4px;text-align:center;&quot;&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/poster-groningen.jpg&quot; width=&quot;240&quot; alt=&quot;WOGO Cocktail Walk Groningen&quot; style=&quot;display:block;width:240px;max-width:100%;height:auto;margin:0 auto;border-radius:14px;border:1px solid #e7d3c6;&quot;&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- body --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:26px 30px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#3f2b21;&quot;&gt;
+        &lt;h1 style=&quot;margin:0 0 8px;font-size:23px;line-height:1.25;font-weight:800;color:#201611;&quot;&gt;Je boeking is bevestigd, Bram&amp;#39;s! 🍸&lt;/h1&gt;
+        &lt;p style=&quot;margin:0 0 22px;font-size:15px;line-height:1.55;color:#643e2b;&quot;&gt;Alles is geregeld — je tafels staan klaar. Hier zijn je gegevens, je routekaart en een paar dingen die handig zijn om te weten.&lt;/p&gt;
+        
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #f2905c;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Ervaring&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;WOGO Cocktail Walk Groningen&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Datum&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;donderdag 6 augustus 2026&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Starttijd&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;19:00&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Gasten&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;2 gasten&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Totaal betaald&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;€59,90&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Boekingsnr.&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;span style=&quot;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#8a6a58;&quot;&gt;b_manual_a1c4&lt;/span&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#ffe5d9;border:1px solid #e7d3c6;border-radius:16px;margin:0 0 8px;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:22px 20px;&quot;&gt;
+        &lt;div style=&quot;font-size:17px;font-weight:800;color:#201611;margin:0 0 6px;&quot;&gt;Je routekaart&lt;/div&gt;
+        &lt;p style=&quot;margin:0 0 16px;font-size:14px;line-height:1.55;color:#643e2b;&quot;&gt;Je volledige route staat hier — de bars, de volgorde en het eigen WOGO-cocktailmenu van elke bar.&lt;/p&gt;
+        &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;margin:0 0 14px;&quot;&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;border-radius:14px;background:linear-gradient(135deg,#ffaa81 0%,#f2905c 100%);&quot;&gt;
+      &lt;a href=&quot;https://maps.app.goo.gl/example-wogo-amsterdam-route-nl&quot; style=&quot;display:block;padding:18px 26px;font-size:17px;font-weight:800;color:#3f2b21;text-decoration:none;text-align:center;letter-spacing:.01em;&quot;&gt;Open je routekaart &amp;rarr;&lt;/a&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+  &lt;/table&gt;
+        &lt;p style=&quot;margin:6px 0 0;font-size:12.5px;line-height:1.5;color:#8a6a58;&quot;&gt;Bewaar deze e-mail — dit is de enige plek waar je volledige route staat.&lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+    &lt;div style=&quot;border-top:1px solid #e7d3c6;margin:26px 0 22px;&quot;&gt;&lt;/div&gt;
+    &lt;h3 style=&quot;margin:0 0 6px;font-size:13px;font-weight:800;letter-spacing:.02em;color:#201611;text-transform:uppercase;&quot;&gt;Goed om te weten&lt;/h3&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;margin:0 0 20px;&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:5px 0;font-size:14px;line-height:1.55;color:#643e2b;vertical-align:top;&quot;&gt;
+        &lt;span style=&quot;color:#f2905c;font-weight:800;&quot;&gt;&amp;#8226;&lt;/span&gt;&amp;nbsp;&amp;nbsp;Begin op tijd — de hele avond is opgebouwd rond je starttijd.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:5px 0;font-size:14px;line-height:1.55;color:#643e2b;vertical-align:top;&quot;&gt;
+        &lt;span style=&quot;color:#f2905c;font-weight:800;&quot;&gt;&amp;#8226;&lt;/span&gt;&amp;nbsp;&amp;nbsp;Volg de bars op volgorde, maar wandel er in je eigen tempo tussen. Alleen de starttijd ligt vast.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:5px 0;font-size:14px;line-height:1.55;color:#643e2b;vertical-align:top;&quot;&gt;
+        &lt;span style=&quot;color:#f2905c;font-weight:800;&quot;&gt;&amp;#8226;&lt;/span&gt;&amp;nbsp;&amp;nbsp;Niet elke bar stuurt een aparte bevestiging — geen zorgen, ze verwachten je allemaal.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+    &lt;h3 style=&quot;margin:0 0 6px;font-size:13px;font-weight:800;letter-spacing:.02em;color:#201611;text-transform:uppercase;&quot;&gt;Hoe werkt het?&lt;/h3&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;margin:0 0 20px;&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:5px 0;font-size:14px;line-height:1.55;color:#643e2b;vertical-align:top;&quot;&gt;
+        &lt;span style=&quot;color:#f2905c;font-weight:800;&quot;&gt;&amp;#8226;&lt;/span&gt;&amp;nbsp;&amp;nbsp;Zeg bij aankomst tegen het personeel dat je de WOGO Cocktail Walk doet en met hoeveel jullie zijn.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:5px 0;font-size:14px;line-height:1.55;color:#643e2b;vertical-align:top;&quot;&gt;
+        &lt;span style=&quot;color:#f2905c;font-weight:800;&quot;&gt;&amp;#8226;&lt;/span&gt;&amp;nbsp;&amp;nbsp;In elke bar kiest iedereen één cocktail van het WOGO-menu van die bar — inbegrepen bij je ticket.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:5px 0;font-size:14px;line-height:1.55;color:#643e2b;vertical-align:top;&quot;&gt;
+        &lt;span style=&quot;color:#f2905c;font-weight:800;&quot;&gt;&amp;#8226;&lt;/span&gt;&amp;nbsp;&amp;nbsp;Zin in nog een drankje of een hapje? Doen — extra&amp;#39;s reken je direct af bij de bar.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+    &lt;p style=&quot;margin:8px 0 0;font-size:16px;line-height:1.5;font-weight:800;color:#201611;&quot;&gt;Geniet van Groningen — één cocktail per keer!&lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- footer --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:20px 30px 26px;border-top:1px solid #e7d3c6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;&quot;&gt;
+        &lt;p style=&quot;margin:0;font-size:13px;line-height:1.5;color:#643e2b;&quot;&gt;Vragen? Beantwoord gewoon deze e-mail — we lezen ze allemaal.&lt;/p&gt;
+        &lt;p style=&quot;margin:14px 0 0;font-size:12px;line-height:1.5;color:#8a6a58;&quot;&gt;
+          WOGO Amsterdam B.V. · Amsterdam, Netherlands&lt;br&gt;
+          &lt;a href=&quot;https://www.wogococktailwalk.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;wogococktailwalk.com&lt;/a&gt;
+        &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+      </div>
+    </section><section class="wp-panel" data-id="tpl-2" hidden>
+      <header class="wp-panel-head">
+        <div>
+          <h1>Owner notification — paid web booking with a discount</h1>
+          <p class="wp-subject">Subject: <strong>New booking · Groningen 2026-08-06 18:00 · 3p</strong></p>
+          <p class="wp-note">Wired into the confirmed-booking flow (src/webhook.js) for every status=&quot;confirmed&quot; booking. Shows the discount code + amount, and every bar’s staggered arrival time for this booking’s slot.</p>
+        </div>
+      </header>
+      <div class="wp-frame-wrap">
+        <iframe class="wp-frame" title="Owner notification — paid web booking with a discount" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;title&gt;You got a new booking!&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#f4e6dc;&quot;&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;&quot;&gt;Anna de Vries — WOGO Cocktail Walk Groningen — 3 guests&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#f4e6dc;padding:24px 12px;&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot;&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;max-width:560px;width:100%;background:#fffaf6;border:1px solid #e7d3c6;border-radius:18px;overflow:hidden;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:linear-gradient(135deg,#3f2b21 0%,#201611 100%);padding:34px 30px 30px;text-align:center;&quot;&gt;
+    &lt;div style=&quot;margin:0 0 16px;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffaa81;color:#3f2b21;font:800 10px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;padding:7px 12px;border-radius:999px;&quot;&gt;New booking&lt;/span&gt;&lt;/div&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/logo-salmon.png&quot; width=&quot;120&quot; alt=&quot;WOGO&quot; style=&quot;display:block;width:120px;max-width:60%;height:auto;margin:0 auto;color:#fffaf6;font:800 22px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.22em;&quot;&gt;
+    &lt;div style=&quot;margin-top:10px;font:600 11px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.26em;color:rgba(255,245,238,.6);text-transform:uppercase;&quot;&gt;Cocktail Walk&lt;/div&gt;
+    &lt;div style=&quot;margin:16px 0 0;font:800 24px/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#fffaf6;&quot;&gt;WOGO Cocktail Walk Groningen&lt;/div&gt;
+    &lt;div style=&quot;margin:14px 0 0;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffe5d9;color:#643e2b;font:700 13px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;padding:9px 16px;border-radius:999px;&quot;&gt;Groningen · 3 guests&lt;/span&gt;&lt;/div&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:#fffaf6;padding:24px 30px 4px;text-align:center;&quot;&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/poster-groningen.jpg&quot; width=&quot;240&quot; alt=&quot;WOGO Cocktail Walk Groningen&quot; style=&quot;display:block;width:240px;max-width:100%;height:auto;margin:0 auto;border-radius:14px;border:1px solid #e7d3c6;&quot;&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- body --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:26px 30px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#3f2b21;&quot;&gt;
+        &lt;h1 style=&quot;margin:0 0 8px;font-size:23px;line-height:1.25;font-weight:800;color:#201611;&quot;&gt;You got a new booking!&lt;/h1&gt;
+        &lt;p style=&quot;margin:0 0 22px;font-size:15px;line-height:1.55;color:#643e2b;&quot;&gt;A new website booking just came in. Here it is at a glance.&lt;/p&gt;
+        
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fff4e0;border:1px solid #eec489;border-left:5px solid #e08a00;border-radius:12px;margin:0 0 22px;&quot;&gt;
+    &lt;tr&gt;&lt;td style=&quot;padding:14px 16px;&quot;&gt;
+      &lt;div style=&quot;font-size:13px;font-weight:800;letter-spacing:.02em;color:#8a5200;&quot;&gt;&amp;#9888;&amp;#65039; Allergies / notes:&lt;/div&gt;
+      &lt;div style=&quot;margin-top:6px;font-size:14.5px;font-weight:700;line-height:1.5;color:#201611;&quot;&gt;Nut allergy (one guest) — and we are celebrating a birthday!&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+  &lt;/table&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #f2905c;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Experience&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;WOGO Cocktail Walk Groningen&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;City&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Groningen&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Date&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Thursday 6 August 2026&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Start time&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;18:00&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Party&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;3 guests&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Revenue&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;span style=&quot;color:#8a6a58;text-decoration:line-through;font-weight:600;&quot;&gt;€89,85&lt;/span&gt;
+      &amp;nbsp;&lt;span&gt;€84,85&lt;/span&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Source&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Website&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Discount&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;span style=&quot;color:#f2905c;font-weight:800;&quot;&gt;SUMMER10&lt;/span&gt; &amp;middot; &amp;minus;€5,00&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;h2 style=&quot;margin:26px 0 10px;font-size:15px;font-weight:800;color:#201611;&quot;&gt;Customer&lt;/h2&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #7e5541;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Name&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Anna de Vries&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Email&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;a href=&quot;mailto:anna@example.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;anna@example.com&lt;/a&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Phone&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;+31 6 12345678&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Language&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;EN&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;h2 style=&quot;margin:26px 0 10px;font-size:15px;font-weight:800;color:#201611;&quot;&gt;Bar arrival times&lt;/h2&gt;
+       &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #7e5541;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Van de Werf (NDSM wharf)&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;span style=&quot;font-variant-numeric:tabular-nums;&quot;&gt;18:00&lt;/span&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Bar 2 (TBD — set real name/email)&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;span style=&quot;font-variant-numeric:tabular-nums;&quot;&gt;19:00&lt;/span&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Bar 3 (TBD — set real name/email)&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;span style=&quot;font-variant-numeric:tabular-nums;&quot;&gt;20:00&lt;/span&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- footer --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:20px 30px 26px;border-top:1px solid #e7d3c6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;&quot;&gt;
+        
+        &lt;p style=&quot;margin:14px 0 0;font-size:12px;line-height:1.5;color:#8a6a58;&quot;&gt;
+          WOGO Amsterdam B.V. · Amsterdam, Netherlands&lt;br&gt;
+          &lt;a href=&quot;https://www.wogococktailwalk.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;wogococktailwalk.com&lt;/a&gt;
+        &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+      </div>
+    </section><section class="wp-panel" data-id="tpl-3" hidden>
+      <header class="wp-panel-head">
+        <div>
+          <h1>Owner notification — manual/comp phone booking</h1>
+          <p class="wp-subject">Subject: <strong>New booking · Groningen 2026-08-06 19:00 · 2p</strong></p>
+          <p class="wp-note">Manual bookings do NOT trigger this email (the owner is the one creating them) — shown here only so every field renders at least once; see DASHBOARD-V2-SPEC.md §8.</p>
+        </div>
+      </header>
+      <div class="wp-frame-wrap">
+        <iframe class="wp-frame" title="Owner notification — manual/comp phone booking" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;title&gt;You got a new booking!&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#f4e6dc;&quot;&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;&quot;&gt;Bram&amp;#39;s birthday — WOGO Cocktail Walk Groningen — 2 guests&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#f4e6dc;padding:24px 12px;&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot;&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;max-width:560px;width:100%;background:#fffaf6;border:1px solid #e7d3c6;border-radius:18px;overflow:hidden;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:linear-gradient(135deg,#3f2b21 0%,#201611 100%);padding:34px 30px 30px;text-align:center;&quot;&gt;
+    &lt;div style=&quot;margin:0 0 16px;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffaa81;color:#3f2b21;font:800 10px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;padding:7px 12px;border-radius:999px;&quot;&gt;New booking&lt;/span&gt;&lt;/div&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/logo-salmon.png&quot; width=&quot;120&quot; alt=&quot;WOGO&quot; style=&quot;display:block;width:120px;max-width:60%;height:auto;margin:0 auto;color:#fffaf6;font:800 22px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.22em;&quot;&gt;
+    &lt;div style=&quot;margin-top:10px;font:600 11px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.26em;color:rgba(255,245,238,.6);text-transform:uppercase;&quot;&gt;Cocktail Walk&lt;/div&gt;
+    &lt;div style=&quot;margin:16px 0 0;font:800 24px/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#fffaf6;&quot;&gt;WOGO Cocktail Walk Groningen&lt;/div&gt;
+    &lt;div style=&quot;margin:14px 0 0;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffe5d9;color:#643e2b;font:700 13px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;padding:9px 16px;border-radius:999px;&quot;&gt;Groningen · 2 guests&lt;/span&gt;&lt;/div&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:#fffaf6;padding:24px 30px 4px;text-align:center;&quot;&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/poster-groningen.jpg&quot; width=&quot;240&quot; alt=&quot;WOGO Cocktail Walk Groningen&quot; style=&quot;display:block;width:240px;max-width:100%;height:auto;margin:0 auto;border-radius:14px;border:1px solid #e7d3c6;&quot;&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- body --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:26px 30px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#3f2b21;&quot;&gt;
+        &lt;h1 style=&quot;margin:0 0 8px;font-size:23px;line-height:1.25;font-weight:800;color:#201611;&quot;&gt;You got a new booking!&lt;/h1&gt;
+        &lt;p style=&quot;margin:0 0 22px;font-size:15px;line-height:1.55;color:#643e2b;&quot;&gt;A new manual (phone booking) booking just came in. Here it is at a glance.&lt;/p&gt;
+        
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #f2905c;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Experience&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;WOGO Cocktail Walk Groningen&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;City&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Groningen&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Date&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Thursday 6 August 2026&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Start time&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;19:00&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Party&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;2 guests&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Revenue&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;€59,90&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Source&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Manual (phone booking)&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Payment&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Comp&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;h2 style=&quot;margin:26px 0 10px;font-size:15px;font-weight:800;color:#201611;&quot;&gt;Customer&lt;/h2&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #7e5541;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Name&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Bram&amp;#39;s birthday&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Email&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;a href=&quot;mailto:bram@example.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;bram@example.com&lt;/a&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Phone&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&amp;mdash;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Language&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;NL&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;h2 style=&quot;margin:26px 0 10px;font-size:15px;font-weight:800;color:#201611;&quot;&gt;Bar arrival times&lt;/h2&gt;
+       &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #7e5541;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Van de Werf (NDSM wharf)&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;span style=&quot;font-variant-numeric:tabular-nums;&quot;&gt;19:00&lt;/span&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Bar 2 (TBD — set real name/email)&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;span style=&quot;font-variant-numeric:tabular-nums;&quot;&gt;20:00&lt;/span&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Bar 3 (TBD — set real name/email)&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;span style=&quot;font-variant-numeric:tabular-nums;&quot;&gt;21:00&lt;/span&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- footer --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:20px 30px 26px;border-top:1px solid #e7d3c6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;&quot;&gt;
+        
+        &lt;p style=&quot;margin:14px 0 0;font-size:12px;line-height:1.5;color:#8a6a58;&quot;&gt;
+          WOGO Amsterdam B.V. · Amsterdam, Netherlands&lt;br&gt;
+          &lt;a href=&quot;https://www.wogococktailwalk.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;wogococktailwalk.com&lt;/a&gt;
+        &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+      </div>
+    </section><section class="wp-panel" data-id="tpl-4" hidden>
+      <header class="wp-panel-head">
+        <div>
+          <h1>Bar notification — Van de Werf (NDSM wharf) (arrives 18:00, +0 min)</h1>
+          <p class="wp-subject">Subject: <strong>WOGO reservation · 18:00 · 3 guests · 2026-08-06</strong></p>
+          <p class="wp-note">Three separate emails go out per booking, one per bar, each with ONLY that bar’s own arrival time — never the full itinerary. Each now carries the guest’s direct contact (email · phone) so the bar can reach the group that evening.</p>
+        </div>
+      </header>
+      <div class="wp-frame-wrap">
+        <iframe class="wp-frame" title="Bar notification — Van de Werf (NDSM wharf) (arrives 18:00, +0 min)" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;title&gt;Hi Van de Werf (NDSM wharf),&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#f4e6dc;&quot;&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;&quot;&gt;Hold a table for 3 at 18:00.&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#f4e6dc;padding:24px 12px;&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot;&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;max-width:560px;width:100%;background:#fffaf6;border:1px solid #e7d3c6;border-radius:18px;overflow:hidden;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:linear-gradient(135deg,#3f2b21 0%,#201611 100%);padding:34px 30px 30px;text-align:center;&quot;&gt;
+    &lt;div style=&quot;margin:0 0 16px;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffaa81;color:#3f2b21;font:800 10px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;padding:7px 12px;border-radius:999px;&quot;&gt;New WOGO reservation&lt;/span&gt;&lt;/div&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/logo-salmon.png&quot; width=&quot;120&quot; alt=&quot;WOGO&quot; style=&quot;display:block;width:120px;max-width:60%;height:auto;margin:0 auto;color:#fffaf6;font:800 22px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.22em;&quot;&gt;
+    &lt;div style=&quot;margin-top:10px;font:600 11px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.26em;color:rgba(255,245,238,.6);text-transform:uppercase;&quot;&gt;Cocktail Walk&lt;/div&gt;
+    &lt;div style=&quot;margin:16px 0 0;font:800 24px/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#fffaf6;&quot;&gt;Table for 3 at 18:00&lt;/div&gt;
+    &lt;div style=&quot;margin:14px 0 0;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffe5d9;color:#643e2b;font:700 13px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;padding:9px 16px;border-radius:999px;&quot;&gt;Van de Werf (NDSM wharf) · Groningen&lt;/span&gt;&lt;/div&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:#fffaf6;padding:24px 30px 4px;text-align:center;&quot;&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/poster-groningen.jpg&quot; width=&quot;240&quot; alt=&quot;WOGO Cocktail Walk Groningen&quot; style=&quot;display:block;width:240px;max-width:100%;height:auto;margin:0 auto;border-radius:14px;border:1px solid #e7d3c6;&quot;&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- body --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:26px 30px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#3f2b21;&quot;&gt;
+        &lt;h1 style=&quot;margin:0 0 8px;font-size:23px;line-height:1.25;font-weight:800;color:#201611;&quot;&gt;Hi Van de Werf (NDSM wharf),&lt;/h1&gt;
+        &lt;p style=&quot;margin:0 0 22px;font-size:15px;line-height:1.55;color:#643e2b;&quot;&gt;A WOGO Cocktail Walk group is on the way to you. Here is everything you need.&lt;/p&gt;
+        
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fff4e0;border:1px solid #eec489;border-left:5px solid #e08a00;border-radius:12px;margin:0 0 22px;&quot;&gt;
+    &lt;tr&gt;&lt;td style=&quot;padding:14px 16px;&quot;&gt;
+      &lt;div style=&quot;font-size:13px;font-weight:800;letter-spacing:.02em;color:#8a5200;&quot;&gt;&amp;#9888;&amp;#65039; Allergies / notes:&lt;/div&gt;
+      &lt;div style=&quot;margin-top:6px;font-size:14.5px;font-weight:700;line-height:1.5;color:#201611;&quot;&gt;Nut allergy (one guest) — and we are celebrating a birthday!&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+  &lt;/table&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#ffe5d9;border:1px solid #e7d3c6;border-radius:16px;margin:0 0 22px;&quot;&gt;
+    &lt;tr&gt;&lt;td style=&quot;padding:22px 24px;text-align:center;&quot;&gt;
+      &lt;div style=&quot;font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#643e2b;&quot;&gt;Arrival time&lt;/div&gt;
+      &lt;div style=&quot;margin-top:6px;font-size:46px;line-height:1;font-weight:800;color:#f2905c;font-variant-numeric:tabular-nums;&quot;&gt;18:00&lt;/div&gt;
+      &lt;div style=&quot;margin-top:10px;font-size:14px;font-weight:700;color:#201611;&quot;&gt;Table for 3 · Thursday 6 August 2026&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #f2905c;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Party&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;3 guests&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Route&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;WOGO Cocktail Walk Groningen&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Guest name&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Anna de Vries&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Guest contact&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;a href=&quot;mailto:anna@example.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;anna@example.com&lt;/a&gt; &amp;middot; +31 6 12345678&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;p style=&quot;margin:0;font-size:13.5px;line-height:1.55;color:#643e2b;&quot;&gt;
+      Please hold a table for &lt;strong&gt;3&lt;/strong&gt; at
+      &lt;strong&gt;18:00&lt;/strong&gt;. This is part of a WOGO Cocktail Walk —
+      the group moves between bars on a staggered schedule across the evening, so this is
+      &lt;strong&gt;your&lt;/strong&gt; arrival time for them. Need to reach the guests? Use the contact
+      details above.
+    &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- footer --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:20px 30px 26px;border-top:1px solid #e7d3c6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;&quot;&gt;
+        
+        &lt;p style=&quot;margin:14px 0 0;font-size:12px;line-height:1.5;color:#8a6a58;&quot;&gt;
+          WOGO Amsterdam B.V. · Amsterdam, Netherlands&lt;br&gt;
+          &lt;a href=&quot;https://www.wogococktailwalk.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;wogococktailwalk.com&lt;/a&gt;
+        &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+      </div>
+    </section><section class="wp-panel" data-id="tpl-5" hidden>
+      <header class="wp-panel-head">
+        <div>
+          <h1>Bar notification — Bar 2 (TBD — set real name/email) (arrives 19:00, +60 min)</h1>
+          <p class="wp-subject">Subject: <strong>WOGO reservation · 19:00 · 3 guests · 2026-08-06</strong></p>
+          
+        </div>
+      </header>
+      <div class="wp-frame-wrap">
+        <iframe class="wp-frame" title="Bar notification — Bar 2 (TBD — set real name/email) (arrives 19:00, +60 min)" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;title&gt;Hi Bar 2 (TBD — set real name/email),&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#f4e6dc;&quot;&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;&quot;&gt;Hold a table for 3 at 19:00.&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#f4e6dc;padding:24px 12px;&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot;&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;max-width:560px;width:100%;background:#fffaf6;border:1px solid #e7d3c6;border-radius:18px;overflow:hidden;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:linear-gradient(135deg,#3f2b21 0%,#201611 100%);padding:34px 30px 30px;text-align:center;&quot;&gt;
+    &lt;div style=&quot;margin:0 0 16px;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffaa81;color:#3f2b21;font:800 10px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;padding:7px 12px;border-radius:999px;&quot;&gt;New WOGO reservation&lt;/span&gt;&lt;/div&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/logo-salmon.png&quot; width=&quot;120&quot; alt=&quot;WOGO&quot; style=&quot;display:block;width:120px;max-width:60%;height:auto;margin:0 auto;color:#fffaf6;font:800 22px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.22em;&quot;&gt;
+    &lt;div style=&quot;margin-top:10px;font:600 11px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.26em;color:rgba(255,245,238,.6);text-transform:uppercase;&quot;&gt;Cocktail Walk&lt;/div&gt;
+    &lt;div style=&quot;margin:16px 0 0;font:800 24px/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#fffaf6;&quot;&gt;Table for 3 at 19:00&lt;/div&gt;
+    &lt;div style=&quot;margin:14px 0 0;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffe5d9;color:#643e2b;font:700 13px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;padding:9px 16px;border-radius:999px;&quot;&gt;Bar 2 (TBD — set real name/email) · Groningen&lt;/span&gt;&lt;/div&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:#fffaf6;padding:24px 30px 4px;text-align:center;&quot;&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/poster-groningen.jpg&quot; width=&quot;240&quot; alt=&quot;WOGO Cocktail Walk Groningen&quot; style=&quot;display:block;width:240px;max-width:100%;height:auto;margin:0 auto;border-radius:14px;border:1px solid #e7d3c6;&quot;&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- body --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:26px 30px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#3f2b21;&quot;&gt;
+        &lt;h1 style=&quot;margin:0 0 8px;font-size:23px;line-height:1.25;font-weight:800;color:#201611;&quot;&gt;Hi Bar 2 (TBD — set real name/email),&lt;/h1&gt;
+        &lt;p style=&quot;margin:0 0 22px;font-size:15px;line-height:1.55;color:#643e2b;&quot;&gt;A WOGO Cocktail Walk group is on the way to you. Here is everything you need.&lt;/p&gt;
+        
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fff4e0;border:1px solid #eec489;border-left:5px solid #e08a00;border-radius:12px;margin:0 0 22px;&quot;&gt;
+    &lt;tr&gt;&lt;td style=&quot;padding:14px 16px;&quot;&gt;
+      &lt;div style=&quot;font-size:13px;font-weight:800;letter-spacing:.02em;color:#8a5200;&quot;&gt;&amp;#9888;&amp;#65039; Allergies / notes:&lt;/div&gt;
+      &lt;div style=&quot;margin-top:6px;font-size:14.5px;font-weight:700;line-height:1.5;color:#201611;&quot;&gt;Nut allergy (one guest) — and we are celebrating a birthday!&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+  &lt;/table&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#ffe5d9;border:1px solid #e7d3c6;border-radius:16px;margin:0 0 22px;&quot;&gt;
+    &lt;tr&gt;&lt;td style=&quot;padding:22px 24px;text-align:center;&quot;&gt;
+      &lt;div style=&quot;font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#643e2b;&quot;&gt;Arrival time&lt;/div&gt;
+      &lt;div style=&quot;margin-top:6px;font-size:46px;line-height:1;font-weight:800;color:#f2905c;font-variant-numeric:tabular-nums;&quot;&gt;19:00&lt;/div&gt;
+      &lt;div style=&quot;margin-top:10px;font-size:14px;font-weight:700;color:#201611;&quot;&gt;Table for 3 · Thursday 6 August 2026&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #f2905c;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Party&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;3 guests&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Route&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;WOGO Cocktail Walk Groningen&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Guest name&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Anna de Vries&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Guest contact&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;a href=&quot;mailto:anna@example.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;anna@example.com&lt;/a&gt; &amp;middot; +31 6 12345678&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;p style=&quot;margin:0;font-size:13.5px;line-height:1.55;color:#643e2b;&quot;&gt;
+      Please hold a table for &lt;strong&gt;3&lt;/strong&gt; at
+      &lt;strong&gt;19:00&lt;/strong&gt;. This is part of a WOGO Cocktail Walk —
+      the group moves between bars on a staggered schedule across the evening, so this is
+      &lt;strong&gt;your&lt;/strong&gt; arrival time for them. Need to reach the guests? Use the contact
+      details above.
+    &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- footer --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:20px 30px 26px;border-top:1px solid #e7d3c6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;&quot;&gt;
+        
+        &lt;p style=&quot;margin:14px 0 0;font-size:12px;line-height:1.5;color:#8a6a58;&quot;&gt;
+          WOGO Amsterdam B.V. · Amsterdam, Netherlands&lt;br&gt;
+          &lt;a href=&quot;https://www.wogococktailwalk.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;wogococktailwalk.com&lt;/a&gt;
+        &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+      </div>
+    </section><section class="wp-panel" data-id="tpl-6" hidden>
+      <header class="wp-panel-head">
+        <div>
+          <h1>Bar notification — Bar 3 (TBD — set real name/email) (arrives 20:00, +120 min)</h1>
+          <p class="wp-subject">Subject: <strong>WOGO reservation · 20:00 · 3 guests · 2026-08-06</strong></p>
+          <p class="wp-note">Same 18:00 booking, third bar — 18:00 → 19:00 → 20:00, exactly the 0/60/120-minute stagger seeded in migrations/0002_seed_routes.sql.</p>
+        </div>
+      </header>
+      <div class="wp-frame-wrap">
+        <iframe class="wp-frame" title="Bar notification — Bar 3 (TBD — set real name/email) (arrives 20:00, +120 min)" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;title&gt;Hi Bar 3 (TBD — set real name/email),&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#f4e6dc;&quot;&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;&quot;&gt;Hold a table for 3 at 20:00.&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#f4e6dc;padding:24px 12px;&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot;&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;max-width:560px;width:100%;background:#fffaf6;border:1px solid #e7d3c6;border-radius:18px;overflow:hidden;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:linear-gradient(135deg,#3f2b21 0%,#201611 100%);padding:34px 30px 30px;text-align:center;&quot;&gt;
+    &lt;div style=&quot;margin:0 0 16px;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffaa81;color:#3f2b21;font:800 10px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;padding:7px 12px;border-radius:999px;&quot;&gt;New WOGO reservation&lt;/span&gt;&lt;/div&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/logo-salmon.png&quot; width=&quot;120&quot; alt=&quot;WOGO&quot; style=&quot;display:block;width:120px;max-width:60%;height:auto;margin:0 auto;color:#fffaf6;font:800 22px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.22em;&quot;&gt;
+    &lt;div style=&quot;margin-top:10px;font:600 11px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.26em;color:rgba(255,245,238,.6);text-transform:uppercase;&quot;&gt;Cocktail Walk&lt;/div&gt;
+    &lt;div style=&quot;margin:16px 0 0;font:800 24px/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#fffaf6;&quot;&gt;Table for 3 at 20:00&lt;/div&gt;
+    &lt;div style=&quot;margin:14px 0 0;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffe5d9;color:#643e2b;font:700 13px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;padding:9px 16px;border-radius:999px;&quot;&gt;Bar 3 (TBD — set real name/email) · Groningen&lt;/span&gt;&lt;/div&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:#fffaf6;padding:24px 30px 4px;text-align:center;&quot;&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/poster-groningen.jpg&quot; width=&quot;240&quot; alt=&quot;WOGO Cocktail Walk Groningen&quot; style=&quot;display:block;width:240px;max-width:100%;height:auto;margin:0 auto;border-radius:14px;border:1px solid #e7d3c6;&quot;&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- body --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:26px 30px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#3f2b21;&quot;&gt;
+        &lt;h1 style=&quot;margin:0 0 8px;font-size:23px;line-height:1.25;font-weight:800;color:#201611;&quot;&gt;Hi Bar 3 (TBD — set real name/email),&lt;/h1&gt;
+        &lt;p style=&quot;margin:0 0 22px;font-size:15px;line-height:1.55;color:#643e2b;&quot;&gt;A WOGO Cocktail Walk group is on the way to you. Here is everything you need.&lt;/p&gt;
+        
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fff4e0;border:1px solid #eec489;border-left:5px solid #e08a00;border-radius:12px;margin:0 0 22px;&quot;&gt;
+    &lt;tr&gt;&lt;td style=&quot;padding:14px 16px;&quot;&gt;
+      &lt;div style=&quot;font-size:13px;font-weight:800;letter-spacing:.02em;color:#8a5200;&quot;&gt;&amp;#9888;&amp;#65039; Allergies / notes:&lt;/div&gt;
+      &lt;div style=&quot;margin-top:6px;font-size:14.5px;font-weight:700;line-height:1.5;color:#201611;&quot;&gt;Nut allergy (one guest) — and we are celebrating a birthday!&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+  &lt;/table&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#ffe5d9;border:1px solid #e7d3c6;border-radius:16px;margin:0 0 22px;&quot;&gt;
+    &lt;tr&gt;&lt;td style=&quot;padding:22px 24px;text-align:center;&quot;&gt;
+      &lt;div style=&quot;font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#643e2b;&quot;&gt;Arrival time&lt;/div&gt;
+      &lt;div style=&quot;margin-top:6px;font-size:46px;line-height:1;font-weight:800;color:#f2905c;font-variant-numeric:tabular-nums;&quot;&gt;20:00&lt;/div&gt;
+      &lt;div style=&quot;margin-top:10px;font-size:14px;font-weight:700;color:#201611;&quot;&gt;Table for 3 · Thursday 6 August 2026&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #f2905c;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Party&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;3 guests&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Route&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;WOGO Cocktail Walk Groningen&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Guest name&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Anna de Vries&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Guest contact&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;a href=&quot;mailto:anna@example.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;anna@example.com&lt;/a&gt; &amp;middot; +31 6 12345678&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;p style=&quot;margin:0;font-size:13.5px;line-height:1.55;color:#643e2b;&quot;&gt;
+      Please hold a table for &lt;strong&gt;3&lt;/strong&gt; at
+      &lt;strong&gt;20:00&lt;/strong&gt;. This is part of a WOGO Cocktail Walk —
+      the group moves between bars on a staggered schedule across the evening, so this is
+      &lt;strong&gt;your&lt;/strong&gt; arrival time for them. Need to reach the guests? Use the contact
+      details above.
+    &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- footer --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:20px 30px 26px;border-top:1px solid #e7d3c6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;&quot;&gt;
+        
+        &lt;p style=&quot;margin:14px 0 0;font-size:12px;line-height:1.5;color:#8a6a58;&quot;&gt;
+          WOGO Amsterdam B.V. · Amsterdam, Netherlands&lt;br&gt;
+          &lt;a href=&quot;https://www.wogococktailwalk.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;wogococktailwalk.com&lt;/a&gt;
+        &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+      </div>
+    </section><section class="wp-panel" data-id="tpl-7" hidden>
+      <header class="wp-panel-head">
+        <div>
+          <h1>Owner conflict alert — the rare double-booked case (SPEC.md §6.4)</h1>
+          <p class="wp-subject">Subject: <strong>&amp;#9888; Double-booked — b_conflict_772f</strong></p>
+          <p class="wp-note">Only fires when a guest’s payment lands just after their hold expired and the seat was already resold.</p>
+        </div>
+      </header>
+      <div class="wp-frame-wrap">
+        <iframe class="wp-frame" title="Owner conflict alert — the rare double-booked case (SPEC.md §6.4)" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;title&gt;Double-booked — action needed&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#f4e6dc;&quot;&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;&quot;&gt;A paid booking could not be seated — resolve by hand.&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#f4e6dc;padding:24px 12px;&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot;&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;max-width:560px;width:100%;background:#fffaf6;border:1px solid #e7d3c6;border-radius:18px;overflow:hidden;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:linear-gradient(135deg,#3f2b21 0%,#201611 100%);padding:34px 30px 30px;text-align:center;&quot;&gt;
+    &lt;div style=&quot;margin:0 0 16px;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffaa81;color:#3f2b21;font:800 10px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;padding:7px 12px;border-radius:999px;&quot;&gt;Action needed&lt;/span&gt;&lt;/div&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/logo-salmon.png&quot; width=&quot;120&quot; alt=&quot;WOGO&quot; style=&quot;display:block;width:120px;max-width:60%;height:auto;margin:0 auto;color:#fffaf6;font:800 22px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.22em;&quot;&gt;
+    &lt;div style=&quot;margin-top:10px;font:600 11px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.26em;color:rgba(255,245,238,.6);text-transform:uppercase;&quot;&gt;Cocktail Walk&lt;/div&gt;
+    &lt;div style=&quot;margin:16px 0 0;font:800 24px/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#fffaf6;&quot;&gt;Double-booked&lt;/div&gt;
+    &lt;div style=&quot;margin:14px 0 0;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffe5d9;color:#643e2b;font:700 13px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;padding:9px 16px;border-radius:999px;&quot;&gt;Groningen · 2026-08-06 18:00&lt;/span&gt;&lt;/div&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      
+      &lt;!-- body --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:26px 30px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#3f2b21;&quot;&gt;
+        &lt;h1 style=&quot;margin:0 0 8px;font-size:23px;line-height:1.25;font-weight:800;color:#201611;&quot;&gt;Double-booked — action needed&lt;/h1&gt;
+        &lt;p style=&quot;margin:0 0 22px;font-size:15px;line-height:1.55;color:#643e2b;&quot;&gt;A guest paid but their seat was gone. Please resolve this one personally.&lt;/p&gt;
+        
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #8a3f6b;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Booking ref&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;span style=&quot;font-family:ui-monospace,Menlo,monospace;font-size:12px;&quot;&gt;b_conflict_772f&lt;/span&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Experience&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;WOGO Cocktail Walk Groningen&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Date&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Thursday 6 August 2026&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Start time&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;18:00&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Party&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;3 guests&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Guest&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Late Larry &amp;middot; larry@example.com&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;p style=&quot;margin:0;font-size:14px;line-height:1.55;color:#643e2b;&quot;&gt;
+      This guest completed payment, but the seat had already been resold in the short window
+      after their hold expired. &lt;strong&gt;Action needed:&lt;/strong&gt; offer them an alternate slot,
+      or refund via the Stripe dashboard.
+    &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- footer --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:20px 30px 26px;border-top:1px solid #e7d3c6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;&quot;&gt;
+        
+        &lt;p style=&quot;margin:14px 0 0;font-size:12px;line-height:1.5;color:#8a6a58;&quot;&gt;
+          WOGO Amsterdam B.V. · Amsterdam, Netherlands&lt;br&gt;
+          &lt;a href=&quot;https://www.wogococktailwalk.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;wogococktailwalk.com&lt;/a&gt;
+        &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+      </div>
+    </section><section class="wp-panel" data-id="tpl-8" hidden>
+      <header class="wp-panel-head">
+        <div>
+          <h1>Guest — booking moved (EN)</h1>
+          <p class="wp-subject">Subject: <strong>Your booking has moved — Groningen Cocktail Walk 🍸</strong></p>
+          <p class="wp-note">Sent to the guest when a booking is moved to a new date/time. Shows the old date struck through, the new details, and the route map again. Same route, same price.</p>
+        </div>
+      </header>
+      <div class="wp-frame-wrap">
+        <iframe class="wp-frame" title="Guest — booking moved (EN)" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;title&gt;Your booking has moved, Anna 🍸&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#f4e6dc;&quot;&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;&quot;&gt;New date and time confirmed — here are your updated details.&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#f4e6dc;padding:24px 12px;&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot;&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;max-width:560px;width:100%;background:#fffaf6;border:1px solid #e7d3c6;border-radius:18px;overflow:hidden;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:linear-gradient(135deg,#3f2b21 0%,#201611 100%);padding:34px 30px 30px;text-align:center;&quot;&gt;
+    
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/logo-salmon.png&quot; width=&quot;120&quot; alt=&quot;WOGO&quot; style=&quot;display:block;width:120px;max-width:60%;height:auto;margin:0 auto;color:#fffaf6;font:800 22px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.22em;&quot;&gt;
+    &lt;div style=&quot;margin-top:10px;font:600 11px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.26em;color:rgba(255,245,238,.6);text-transform:uppercase;&quot;&gt;Cocktail Walk&lt;/div&gt;
+    
+    &lt;div style=&quot;margin:14px 0 0;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffe5d9;color:#643e2b;font:700 13px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;padding:9px 16px;border-radius:999px;&quot;&gt;Groningen · Self-guided cocktail walk&lt;/span&gt;&lt;/div&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:#fffaf6;padding:24px 30px 4px;text-align:center;&quot;&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/poster-groningen.jpg&quot; width=&quot;240&quot; alt=&quot;WOGO Cocktail Walk Groningen&quot; style=&quot;display:block;width:240px;max-width:100%;height:auto;margin:0 auto;border-radius:14px;border:1px solid #e7d3c6;&quot;&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- body --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:26px 30px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#3f2b21;&quot;&gt;
+        &lt;h1 style=&quot;margin:0 0 8px;font-size:23px;line-height:1.25;font-weight:800;color:#201611;&quot;&gt;Your booking has moved, Anna 🍸&lt;/h1&gt;
+        &lt;p style=&quot;margin:0 0 22px;font-size:15px;line-height:1.55;color:#643e2b;&quot;&gt;No problem — we’ve moved your Cocktail Walk to the new date and time below. Everything else stays exactly the same.&lt;/p&gt;
+        
+    &lt;p style=&quot;margin:0 0 14px;font-size:13.5px;color:#8a6a58;&quot;&gt;&lt;span style=&quot;text-transform:uppercase;letter-spacing:.08em;font-weight:800;font-size:11px;&quot;&gt;Previously:&lt;/span&gt; &lt;span style=&quot;text-decoration:line-through;&quot;&gt;Thursday 6 August 2026 · 18:00&lt;/span&gt;&lt;/p&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #f2905c;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Experience&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;WOGO Cocktail Walk Groningen&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;New date&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Saturday 19 September 2026&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;New start time&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;19:30&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Guests&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;3 guests&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Booking ref&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;span style=&quot;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#8a6a58;&quot;&gt;b_8f3a2c91&lt;/span&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#ffe5d9;border:1px solid #e7d3c6;border-radius:16px;margin:0 0 8px;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:22px 20px;&quot;&gt;
+        &lt;div style=&quot;font-size:17px;font-weight:800;color:#201611;margin:0 0 6px;&quot;&gt;Your route map&lt;/div&gt;
+        &lt;p style=&quot;margin:0 0 16px;font-size:14px;line-height:1.55;color:#643e2b;&quot;&gt;Your full itinerary lives here — the bars, the order, and each bar’s own WOGO cocktail menu.&lt;/p&gt;
+        &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;margin:0 0 14px;&quot;&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;border-radius:14px;background:linear-gradient(135deg,#ffaa81 0%,#f2905c 100%);&quot;&gt;
+      &lt;a href=&quot;https://maps.app.goo.gl/example-wogo-amsterdam-route&quot; style=&quot;display:block;padding:18px 26px;font-size:17px;font-weight:800;color:#3f2b21;text-decoration:none;text-align:center;letter-spacing:.01em;&quot;&gt;Open your route map &amp;rarr;&lt;/a&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+  &lt;/table&gt;
+        &lt;p style=&quot;margin:6px 0 0;font-size:12.5px;line-height:1.5;color:#8a6a58;&quot;&gt;Save this email — it’s the only place your full route lives.&lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+    &lt;p style=&quot;margin:18px 0 0;font-size:16px;line-height:1.5;font-weight:800;color:#201611;&quot;&gt;See you in Groningen — one cocktail at a time!&lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- footer --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:20px 30px 26px;border-top:1px solid #e7d3c6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;&quot;&gt;
+        &lt;p style=&quot;margin:0;font-size:13px;line-height:1.5;color:#643e2b;&quot;&gt;Didn’t request this change? Just reply to this email and we’ll sort it out.&lt;/p&gt;
+        &lt;p style=&quot;margin:14px 0 0;font-size:12px;line-height:1.5;color:#8a6a58;&quot;&gt;
+          WOGO Amsterdam B.V. · Amsterdam, Netherlands&lt;br&gt;
+          &lt;a href=&quot;https://www.wogococktailwalk.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;wogococktailwalk.com&lt;/a&gt;
+        &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+      </div>
+    </section><section class="wp-panel" data-id="tpl-9" hidden>
+      <header class="wp-panel-head">
+        <div>
+          <h1>Guest — booking moved (NL)</h1>
+          <p class="wp-subject">Subject: <strong>Je boeking is verzet — Groningen Cocktail Walk 🍸</strong></p>
+          <p class="wp-note">Dutch version of the moved-booking confirmation.</p>
+        </div>
+      </header>
+      <div class="wp-frame-wrap">
+        <iframe class="wp-frame" title="Guest — booking moved (NL)" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;title&gt;Je boeking is verzet, Anna 🍸&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#f4e6dc;&quot;&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;&quot;&gt;Nieuwe datum en tijd bevestigd — hier zijn je bijgewerkte gegevens.&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#f4e6dc;padding:24px 12px;&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot;&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;max-width:560px;width:100%;background:#fffaf6;border:1px solid #e7d3c6;border-radius:18px;overflow:hidden;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:linear-gradient(135deg,#3f2b21 0%,#201611 100%);padding:34px 30px 30px;text-align:center;&quot;&gt;
+    
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/logo-salmon.png&quot; width=&quot;120&quot; alt=&quot;WOGO&quot; style=&quot;display:block;width:120px;max-width:60%;height:auto;margin:0 auto;color:#fffaf6;font:800 22px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.22em;&quot;&gt;
+    &lt;div style=&quot;margin-top:10px;font:600 11px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.26em;color:rgba(255,245,238,.6);text-transform:uppercase;&quot;&gt;Cocktail Walk&lt;/div&gt;
+    
+    &lt;div style=&quot;margin:14px 0 0;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffe5d9;color:#643e2b;font:700 13px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;padding:9px 16px;border-radius:999px;&quot;&gt;Groningen · Zelfgeleide cocktail walk&lt;/span&gt;&lt;/div&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:#fffaf6;padding:24px 30px 4px;text-align:center;&quot;&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/poster-groningen.jpg&quot; width=&quot;240&quot; alt=&quot;WOGO Cocktail Walk Groningen&quot; style=&quot;display:block;width:240px;max-width:100%;height:auto;margin:0 auto;border-radius:14px;border:1px solid #e7d3c6;&quot;&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- body --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:26px 30px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#3f2b21;&quot;&gt;
+        &lt;h1 style=&quot;margin:0 0 8px;font-size:23px;line-height:1.25;font-weight:800;color:#201611;&quot;&gt;Je boeking is verzet, Anna 🍸&lt;/h1&gt;
+        &lt;p style=&quot;margin:0 0 22px;font-size:15px;line-height:1.55;color:#643e2b;&quot;&gt;Geen probleem — we hebben je Cocktail Walk verzet naar de nieuwe datum en tijd hieronder. De rest blijft precies hetzelfde.&lt;/p&gt;
+        
+    &lt;p style=&quot;margin:0 0 14px;font-size:13.5px;color:#8a6a58;&quot;&gt;&lt;span style=&quot;text-transform:uppercase;letter-spacing:.08em;font-weight:800;font-size:11px;&quot;&gt;Voorheen:&lt;/span&gt; &lt;span style=&quot;text-decoration:line-through;&quot;&gt;donderdag 6 augustus 2026 · 18:00&lt;/span&gt;&lt;/p&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #f2905c;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Ervaring&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;WOGO Cocktail Walk Groningen&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Nieuwe datum&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;zaterdag 19 september 2026&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Nieuwe starttijd&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;19:30&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Gasten&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;3 gasten&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Boekingsnr.&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;span style=&quot;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#8a6a58;&quot;&gt;b_8f3a2c91&lt;/span&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#ffe5d9;border:1px solid #e7d3c6;border-radius:16px;margin:0 0 8px;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:22px 20px;&quot;&gt;
+        &lt;div style=&quot;font-size:17px;font-weight:800;color:#201611;margin:0 0 6px;&quot;&gt;Je routekaart&lt;/div&gt;
+        &lt;p style=&quot;margin:0 0 16px;font-size:14px;line-height:1.55;color:#643e2b;&quot;&gt;Je volledige route staat hier — de bars, de volgorde en het eigen WOGO-cocktailmenu van elke bar.&lt;/p&gt;
+        &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;margin:0 0 14px;&quot;&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;border-radius:14px;background:linear-gradient(135deg,#ffaa81 0%,#f2905c 100%);&quot;&gt;
+      &lt;a href=&quot;https://maps.app.goo.gl/example-wogo-amsterdam-route-nl&quot; style=&quot;display:block;padding:18px 26px;font-size:17px;font-weight:800;color:#3f2b21;text-decoration:none;text-align:center;letter-spacing:.01em;&quot;&gt;Open je routekaart &amp;rarr;&lt;/a&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+  &lt;/table&gt;
+        &lt;p style=&quot;margin:6px 0 0;font-size:12.5px;line-height:1.5;color:#8a6a58;&quot;&gt;Bewaar deze e-mail — dit is de enige plek waar je volledige route staat.&lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+    &lt;p style=&quot;margin:18px 0 0;font-size:16px;line-height:1.5;font-weight:800;color:#201611;&quot;&gt;Tot in Groningen — één cocktail per keer!&lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- footer --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:20px 30px 26px;border-top:1px solid #e7d3c6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;&quot;&gt;
+        &lt;p style=&quot;margin:0;font-size:13px;line-height:1.5;color:#643e2b;&quot;&gt;Deze wijziging niet aangevraagd? Beantwoord deze e-mail en we lossen het op.&lt;/p&gt;
+        &lt;p style=&quot;margin:14px 0 0;font-size:12px;line-height:1.5;color:#8a6a58;&quot;&gt;
+          WOGO Amsterdam B.V. · Amsterdam, Netherlands&lt;br&gt;
+          &lt;a href=&quot;https://www.wogococktailwalk.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;wogococktailwalk.com&lt;/a&gt;
+        &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+      </div>
+    </section><section class="wp-panel" data-id="tpl-10" hidden>
+      <header class="wp-panel-head">
+        <div>
+          <h1>Bar — reservation moved (Bar 2 (TBD — set real name/email))</h1>
+          <p class="wp-subject">Subject: <strong>WOGO reservation MOVED · now 20:30 · 2026-09-19 · 3 guests</strong></p>
+          <p class="wp-note">One per bar for the new time. Shows the old table to release + the new arrival time as a big hero.</p>
+        </div>
+      </header>
+      <div class="wp-frame-wrap">
+        <iframe class="wp-frame" title="Bar — reservation moved (Bar 2 (TBD — set real name/email))" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;title&gt;Hi Bar 2 (TBD — set real name/email),&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#f4e6dc;&quot;&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;&quot;&gt;Moved: now hold a table for 3 at 20:30.&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#f4e6dc;padding:24px 12px;&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot;&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;max-width:560px;width:100%;background:#fffaf6;border:1px solid #e7d3c6;border-radius:18px;overflow:hidden;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:linear-gradient(135deg,#3f2b21 0%,#201611 100%);padding:34px 30px 30px;text-align:center;&quot;&gt;
+    &lt;div style=&quot;margin:0 0 16px;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffaa81;color:#3f2b21;font:800 10px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;padding:7px 12px;border-radius:999px;&quot;&gt;Reservation moved&lt;/span&gt;&lt;/div&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/logo-salmon.png&quot; width=&quot;120&quot; alt=&quot;WOGO&quot; style=&quot;display:block;width:120px;max-width:60%;height:auto;margin:0 auto;color:#fffaf6;font:800 22px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.22em;&quot;&gt;
+    &lt;div style=&quot;margin-top:10px;font:600 11px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.26em;color:rgba(255,245,238,.6);text-transform:uppercase;&quot;&gt;Cocktail Walk&lt;/div&gt;
+    &lt;div style=&quot;margin:16px 0 0;font:800 24px/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#fffaf6;&quot;&gt;New time 20:30&lt;/div&gt;
+    &lt;div style=&quot;margin:14px 0 0;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffe5d9;color:#643e2b;font:700 13px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;padding:9px 16px;border-radius:999px;&quot;&gt;Bar 2 (TBD — set real name/email) · Groningen&lt;/span&gt;&lt;/div&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:#fffaf6;padding:24px 30px 4px;text-align:center;&quot;&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/poster-groningen.jpg&quot; width=&quot;240&quot; alt=&quot;WOGO Cocktail Walk Groningen&quot; style=&quot;display:block;width:240px;max-width:100%;height:auto;margin:0 auto;border-radius:14px;border:1px solid #e7d3c6;&quot;&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- body --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:26px 30px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#3f2b21;&quot;&gt;
+        &lt;h1 style=&quot;margin:0 0 8px;font-size:23px;line-height:1.25;font-weight:800;color:#201611;&quot;&gt;Hi Bar 2 (TBD — set real name/email),&lt;/h1&gt;
+        &lt;p style=&quot;margin:0 0 22px;font-size:15px;line-height:1.55;color:#643e2b;&quot;&gt;A WOGO reservation has been rescheduled. Here is the new arrival time.&lt;/p&gt;
+        
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fff4e0;border:1px solid #eec489;border-left:5px solid #e08a00;border-radius:12px;margin:0 0 22px;&quot;&gt;
+    &lt;tr&gt;&lt;td style=&quot;padding:14px 16px;&quot;&gt;
+      &lt;div style=&quot;font-size:13px;font-weight:800;letter-spacing:.02em;color:#8a5200;&quot;&gt;&amp;#9888;&amp;#65039; Allergies / notes:&lt;/div&gt;
+      &lt;div style=&quot;margin-top:6px;font-size:14.5px;font-weight:700;line-height:1.5;color:#201611;&quot;&gt;Nut allergy (one guest) — and we are celebrating a birthday!&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+  &lt;/table&gt;&lt;p style=&quot;margin:0 0 14px;font-size:13.5px;color:#8a6a58;&quot;&gt;&lt;strong style=&quot;color:#201611;&quot;&gt;Was:&lt;/strong&gt; &lt;span style=&quot;text-decoration:line-through;&quot;&gt;Thursday 6 August 2026 · 19:00&lt;/span&gt; — please release that table.&lt;/p&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#ffe5d9;border:1px solid #e7d3c6;border-radius:16px;margin:0 0 22px;&quot;&gt;
+    &lt;tr&gt;&lt;td style=&quot;padding:22px 24px;text-align:center;&quot;&gt;
+      &lt;div style=&quot;font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#643e2b;&quot;&gt;New arrival time&lt;/div&gt;
+      &lt;div style=&quot;margin-top:6px;font-size:46px;line-height:1;font-weight:800;color:#f2905c;font-variant-numeric:tabular-nums;&quot;&gt;20:30&lt;/div&gt;
+      &lt;div style=&quot;margin-top:10px;font-size:14px;font-weight:700;color:#201611;&quot;&gt;Table for 3 · Saturday 19 September 2026&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #f2905c;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Party&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;3 guests&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Route&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;WOGO Cocktail Walk Groningen&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Guest name&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Anna de Vries&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Guest contact&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;a href=&quot;mailto:anna@example.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;anna@example.com&lt;/a&gt; &amp;middot; +31 6 12345678&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;p style=&quot;margin:0;font-size:13.5px;line-height:1.55;color:#643e2b;&quot;&gt;
+      This WOGO reservation has &lt;strong&gt;moved&lt;/strong&gt;. Please release the earlier table and
+      hold the new one shown above. Need to reach the guests? Use the contact details above.
+    &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- footer --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:20px 30px 26px;border-top:1px solid #e7d3c6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;&quot;&gt;
+        
+        &lt;p style=&quot;margin:14px 0 0;font-size:12px;line-height:1.5;color:#8a6a58;&quot;&gt;
+          WOGO Amsterdam B.V. · Amsterdam, Netherlands&lt;br&gt;
+          &lt;a href=&quot;https://www.wogococktailwalk.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;wogococktailwalk.com&lt;/a&gt;
+        &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+      </div>
+    </section><section class="wp-panel" data-id="tpl-11" hidden>
+      <header class="wp-panel-head">
+        <div>
+          <h1>Guest — booking cancelled (EN, with refund note)</h1>
+          <p class="wp-subject">Subject: <strong>Your booking has been cancelled — Groningen Cocktail Walk</strong></p>
+          <p class="wp-note">Sent when a booking is cancelled (the rare exception to the no-cancellation policy). The refund/exception wording is passed in per-case by the owner — here shown with an example note.</p>
+        </div>
+      </header>
+      <div class="wp-frame-wrap">
+        <iframe class="wp-frame" title="Guest — booking cancelled (EN, with refund note)" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;title&gt;Your booking has been cancelled&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#f4e6dc;&quot;&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;&quot;&gt;Confirmation that your Cocktail Walk booking has been cancelled.&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#f4e6dc;padding:24px 12px;&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot;&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;max-width:560px;width:100%;background:#fffaf6;border:1px solid #e7d3c6;border-radius:18px;overflow:hidden;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:linear-gradient(135deg,#3f2b21 0%,#201611 100%);padding:34px 30px 30px;text-align:center;&quot;&gt;
+    
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/logo-salmon.png&quot; width=&quot;120&quot; alt=&quot;WOGO&quot; style=&quot;display:block;width:120px;max-width:60%;height:auto;margin:0 auto;color:#fffaf6;font:800 22px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.22em;&quot;&gt;
+    &lt;div style=&quot;margin-top:10px;font:600 11px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.26em;color:rgba(255,245,238,.6);text-transform:uppercase;&quot;&gt;Cocktail Walk&lt;/div&gt;
+    
+    &lt;div style=&quot;margin:14px 0 0;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffe5d9;color:#643e2b;font:700 13px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;padding:9px 16px;border-radius:999px;&quot;&gt;Groningen · Cocktail walk&lt;/span&gt;&lt;/div&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:#fffaf6;padding:24px 30px 4px;text-align:center;&quot;&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/poster-groningen.jpg&quot; width=&quot;240&quot; alt=&quot;WOGO Cocktail Walk Groningen&quot; style=&quot;display:block;width:240px;max-width:100%;height:auto;margin:0 auto;border-radius:14px;border:1px solid #e7d3c6;&quot;&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- body --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:26px 30px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#3f2b21;&quot;&gt;
+        &lt;h1 style=&quot;margin:0 0 8px;font-size:23px;line-height:1.25;font-weight:800;color:#201611;&quot;&gt;Your booking has been cancelled&lt;/h1&gt;
+        &lt;p style=&quot;margin:0 0 22px;font-size:15px;line-height:1.55;color:#643e2b;&quot;&gt;We’ve cancelled the booking below. We’re sorry we won’t see you this time — we’d love to welcome you on another evening.&lt;/p&gt;
+        
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #8a3f6b;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Experience&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;WOGO Cocktail Walk Groningen&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Date&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Thursday 6 August 2026&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Start time&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;18:00&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Guests&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;3 guests&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Booking ref&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;span style=&quot;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#8a6a58;&quot;&gt;b_8f3a2c91&lt;/span&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#ffe5d9;border-radius:12px;margin:0 0 8px;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:14px 16px;font-size:13.5px;line-height:1.5;color:#643e2b;&quot;&gt;As a one-time exception, a full refund of your booking has been issued to your original payment method — please allow 5–10 days for it to appear.&lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- footer --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:20px 30px 26px;border-top:1px solid #e7d3c6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;&quot;&gt;
+        &lt;p style=&quot;margin:0;font-size:13px;line-height:1.5;color:#643e2b;&quot;&gt;Questions? Just reply to this email — we read every one.&lt;/p&gt;
+        &lt;p style=&quot;margin:14px 0 0;font-size:12px;line-height:1.5;color:#8a6a58;&quot;&gt;
+          WOGO Amsterdam B.V. · Amsterdam, Netherlands&lt;br&gt;
+          &lt;a href=&quot;https://www.wogococktailwalk.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;wogococktailwalk.com&lt;/a&gt;
+        &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+      </div>
+    </section><section class="wp-panel" data-id="tpl-12" hidden>
+      <header class="wp-panel-head">
+        <div>
+          <h1>Guest — booking cancelled (NL, no note)</h1>
+          <p class="wp-subject">Subject: <strong>Je boeking is geannuleerd — Groningen Cocktail Walk</strong></p>
+          <p class="wp-note">Dutch version, without an extra note — the plain cancellation confirmation.</p>
+        </div>
+      </header>
+      <div class="wp-frame-wrap">
+        <iframe class="wp-frame" title="Guest — booking cancelled (NL, no note)" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;title&gt;Je boeking is geannuleerd&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#f4e6dc;&quot;&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;&quot;&gt;Bevestiging dat je Cocktail Walk-boeking is geannuleerd.&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#f4e6dc;padding:24px 12px;&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot;&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;max-width:560px;width:100%;background:#fffaf6;border:1px solid #e7d3c6;border-radius:18px;overflow:hidden;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:linear-gradient(135deg,#3f2b21 0%,#201611 100%);padding:34px 30px 30px;text-align:center;&quot;&gt;
+    
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/logo-salmon.png&quot; width=&quot;120&quot; alt=&quot;WOGO&quot; style=&quot;display:block;width:120px;max-width:60%;height:auto;margin:0 auto;color:#fffaf6;font:800 22px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.22em;&quot;&gt;
+    &lt;div style=&quot;margin-top:10px;font:600 11px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.26em;color:rgba(255,245,238,.6);text-transform:uppercase;&quot;&gt;Cocktail Walk&lt;/div&gt;
+    
+    &lt;div style=&quot;margin:14px 0 0;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffe5d9;color:#643e2b;font:700 13px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;padding:9px 16px;border-radius:999px;&quot;&gt;Groningen · Cocktail walk&lt;/span&gt;&lt;/div&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:#fffaf6;padding:24px 30px 4px;text-align:center;&quot;&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/poster-groningen.jpg&quot; width=&quot;240&quot; alt=&quot;WOGO Cocktail Walk Groningen&quot; style=&quot;display:block;width:240px;max-width:100%;height:auto;margin:0 auto;border-radius:14px;border:1px solid #e7d3c6;&quot;&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- body --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:26px 30px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#3f2b21;&quot;&gt;
+        &lt;h1 style=&quot;margin:0 0 8px;font-size:23px;line-height:1.25;font-weight:800;color:#201611;&quot;&gt;Je boeking is geannuleerd&lt;/h1&gt;
+        &lt;p style=&quot;margin:0 0 22px;font-size:15px;line-height:1.55;color:#643e2b;&quot;&gt;We hebben onderstaande boeking geannuleerd. Jammer dat het deze keer niet doorgaat — we verwelkomen je graag op een andere avond.&lt;/p&gt;
+        
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #8a3f6b;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Ervaring&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;WOGO Cocktail Walk Groningen&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Datum&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;donderdag 6 augustus 2026&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Starttijd&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;18:00&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Gasten&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;3 gasten&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Boekingsnr.&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;span style=&quot;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#8a6a58;&quot;&gt;b_8f3a2c91&lt;/span&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+    
+      &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- footer --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:20px 30px 26px;border-top:1px solid #e7d3c6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;&quot;&gt;
+        &lt;p style=&quot;margin:0;font-size:13px;line-height:1.5;color:#643e2b;&quot;&gt;Vragen? Beantwoord gewoon deze e-mail — we lezen ze allemaal.&lt;/p&gt;
+        &lt;p style=&quot;margin:14px 0 0;font-size:12px;line-height:1.5;color:#8a6a58;&quot;&gt;
+          WOGO Amsterdam B.V. · Amsterdam, Netherlands&lt;br&gt;
+          &lt;a href=&quot;https://www.wogococktailwalk.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;wogococktailwalk.com&lt;/a&gt;
+        &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+      </div>
+    </section><section class="wp-panel" data-id="tpl-13" hidden>
+      <header class="wp-panel-head">
+        <div>
+          <h1>Bar — reservation cancelled (Bar 2 (TBD — set real name/email))</h1>
+          <p class="wp-subject">Subject: <strong>WOGO reservation CANCELLED · 2026-08-06 19:00 · 3 guests</strong></p>
+          <p class="wp-note">One per bar: release the table, nothing else needed.</p>
+        </div>
+      </header>
+      <div class="wp-frame-wrap">
+        <iframe class="wp-frame" title="Bar — reservation cancelled (Bar 2 (TBD — set real name/email))" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;title&gt;Hi Bar 2 (TBD — set real name/email),&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#f4e6dc;&quot;&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;&quot;&gt;Cancelled: you can release the 19:00 table for 3.&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#f4e6dc;padding:24px 12px;&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot;&gt;
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;max-width:560px;width:100%;background:#fffaf6;border:1px solid #e7d3c6;border-radius:18px;overflow:hidden;&quot;&gt;
+      &lt;tr&gt;&lt;td style=&quot;background:linear-gradient(135deg,#3f2b21 0%,#201611 100%);padding:34px 30px 30px;text-align:center;&quot;&gt;
+    &lt;div style=&quot;margin:0 0 16px;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffaa81;color:#3f2b21;font:800 10px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;padding:7px 12px;border-radius:999px;&quot;&gt;Reservation cancelled&lt;/span&gt;&lt;/div&gt;
+    &lt;img src=&quot;https://wogococktailwalk.github.io/wogo-homepage/email/logo-salmon.png&quot; width=&quot;120&quot; alt=&quot;WOGO&quot; style=&quot;display:block;width:120px;max-width:60%;height:auto;margin:0 auto;color:#fffaf6;font:800 22px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.22em;&quot;&gt;
+    &lt;div style=&quot;margin-top:10px;font:600 11px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:.26em;color:rgba(255,245,238,.6);text-transform:uppercase;&quot;&gt;Cocktail Walk&lt;/div&gt;
+    &lt;div style=&quot;margin:16px 0 0;font:800 24px/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#fffaf6;&quot;&gt;Table released&lt;/div&gt;
+    &lt;div style=&quot;margin:14px 0 0;&quot;&gt;&lt;span style=&quot;display:inline-block;background:#ffe5d9;color:#643e2b;font:700 13px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;padding:9px 16px;border-radius:999px;&quot;&gt;Bar 2 (TBD — set real name/email) · Groningen&lt;/span&gt;&lt;/div&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+      
+      &lt;!-- body --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:26px 30px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#3f2b21;&quot;&gt;
+        &lt;h1 style=&quot;margin:0 0 8px;font-size:23px;line-height:1.25;font-weight:800;color:#201611;&quot;&gt;Hi Bar 2 (TBD — set real name/email),&lt;/h1&gt;
+        &lt;p style=&quot;margin:0 0 22px;font-size:15px;line-height:1.55;color:#643e2b;&quot;&gt;A WOGO reservation has been cancelled — here are the details so you can free the table.&lt;/p&gt;
+        
+    &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; style=&quot;background:#fffaf6;border:1px solid #e7d3c6;border-left:4px solid #8a3f6b;border-radius:12px;padding:6px 18px;margin:0 0 22px;&quot;&gt;
+    
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Date&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Thursday 6 August 2026&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Time&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;&lt;span style=&quot;font-variant-numeric:tabular-nums;&quot;&gt;19:00&lt;/span&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Party&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;3 guests&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:13px;color:#8a6a58;width:42%;vertical-align:top;&quot;&gt;Guest name&lt;/td&gt;
+        &lt;td style=&quot;padding:9px 0;font-size:14px;font-weight:700;color:#201611;text-align:right;&quot;&gt;Anna de Vries&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/table&gt;
+    &lt;p style=&quot;margin:0;font-size:13.5px;line-height:1.55;color:#643e2b;&quot;&gt;
+      This WOGO reservation has been &lt;strong&gt;cancelled&lt;/strong&gt; — you can release the table
+      above. Nothing else is needed on your side.
+    &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+      &lt;!-- footer --&gt;
+      &lt;tr&gt;&lt;td style=&quot;padding:20px 30px 26px;border-top:1px solid #e7d3c6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;&quot;&gt;
+        
+        &lt;p style=&quot;margin:14px 0 0;font-size:12px;line-height:1.5;color:#8a6a58;&quot;&gt;
+          WOGO Amsterdam B.V. · Amsterdam, Netherlands&lt;br&gt;
+          &lt;a href=&quot;https://www.wogococktailwalk.com&quot; style=&quot;color:#f2905c;text-decoration:none;&quot;&gt;wogococktailwalk.com&lt;/a&gt;
+        &lt;/p&gt;
+      &lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+  &lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+      </div>
+    </section>
+  </main>
+</div>
+<script>
+  (function () {
+    var buttons = Array.prototype.slice.call(document.querySelectorAll('.wp-navitem'));
+    var panels = Array.prototype.slice.call(document.querySelectorAll('.wp-panel'));
+    function show(id) {
+      panels.forEach(function (p) { p.hidden = p.getAttribute('data-id') !== id; });
+      buttons.forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-id') === id); });
+    }
+    buttons.forEach(function (b) {
+      b.addEventListener('click', function () { show(b.getAttribute('data-id')); });
+    });
+    if (buttons[0]) { buttons[0].classList.add('active'); }
+  })();
+</script>
+</body>
+</html>
