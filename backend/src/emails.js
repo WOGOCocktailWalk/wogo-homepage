@@ -31,7 +31,7 @@
 // per-language map, the allergies block ordering, and the currency-aware money.
 
 import { isoWeekday, formatMoney } from './logic.js';
-import { EMAIL_LOGO_URL, posterUrlFor } from './config.js';
+import { EMAIL_LOGO_URL, posterUrlFor, SITE_URL } from './config.js';
 
 // ---------------------------------------------------------------------------
 // Brand tokens (verbatim from the site palette — see src/admin/admin.css)
@@ -298,7 +298,7 @@ const GUEST_STRINGS = {
     chip: (r) => `${r.city} · Self-guided cocktail walk`,
     heading: (n) => `You're booked${n ? ', ' + n : ''}! 🍸`,
     intro: 'Everything is arranged — your tables are held. Here are the essentials, your route map, and a few things worth knowing before you go.',
-    labels: { route: 'Experience', date: 'Date', time: 'Start time', party: 'Guests', total: 'Total paid', ref: 'Booking ref' },
+    labels: { route: 'Experience', date: 'Date', time: 'Start time', party: 'Guests', total: 'Total paid', ref: 'Booking ref', gift: 'Gift card' },
     includedTitle: "What's included",
     included: [
       'A reserved table waiting at every stop on your route',
@@ -333,7 +333,7 @@ const GUEST_STRINGS = {
     chip: (r) => `${r.city} · Zelfgeleide cocktail walk`,
     heading: (n) => `Je boeking is bevestigd${n ? ', ' + n : ''}! 🍸`,
     intro: 'Alles is geregeld — je tafels staan klaar. Hier zijn je gegevens, je routekaart en een paar dingen die handig zijn om te weten.',
-    labels: { route: 'Ervaring', date: 'Datum', time: 'Starttijd', party: 'Gasten', total: 'Totaal betaald', ref: 'Boekingsnr.' },
+    labels: { route: 'Ervaring', date: 'Datum', time: 'Starttijd', party: 'Gasten', total: 'Totaal betaald', ref: 'Boekingsnr.', gift: 'Cadeaubon' },
     includedTitle: 'Wat is inbegrepen',
     included: [
       'Een gereserveerde tafel bij elke stop op je route',
@@ -379,6 +379,15 @@ export function renderGuestConfirmation(booking, route, opts = {}) {
     [t.labels.total, priceLine(booking, route)],
     [t.labels.ref, `<span style="font-family:ui-monospace,Menlo,monospace;font-size:12px;color:${C.muted};">${escapeHtml(booking.id)}</span>`],
   ];
+  // Gift-card redemption (migrations/0018/0019) — additive row, only when a
+  // gift card actually reduced this booking's total; every booking without
+  // one renders this exact same `rows` array as before this feature existed.
+  if (booking.gift_applied_cents > 0) {
+    rows.splice(rows.length - 1, 0, [
+      t.labels.gift,
+      `${escapeHtml(booking.gift_code || '')} &middot; &minus;${escapeHtml(formatMoney(booking.gift_applied_cents, route.currency || 'EUR'))}`,
+    ]);
+  }
 
   // Echo the guest's own allergies/notes back so they know we received it.
   // Omitted entirely when blank — no empty "Your note to us" label.
@@ -460,6 +469,12 @@ export function renderOwnerNotification(booking, route, opts = {}) {
   if (booking.payment_status) {
     const label = { paid_invoice: 'Paid on invoice', free: 'Free', comp: 'Comp' }[booking.payment_status] || booking.payment_status;
     rows.push(['Payment', escapeHtml(label)]);
+  }
+  if (booking.gift_applied_cents > 0) {
+    rows.push([
+      'Gift card',
+      `<span style="color:${C.salmonDeep};font-weight:800;">${escapeHtml(booking.gift_code || '')}</span> &middot; &minus;${escapeHtml(formatMoney(booking.gift_applied_cents, route.currency || 'EUR'))}`,
+    ]);
   }
 
   const customerRows = [
@@ -808,6 +823,174 @@ export function renderBarCancellation(bar, booking, route) {
       hero: { badge: 'Reservation cancelled', title: 'Table released', chip: `${escapeHtml(bar.bar_name)} · ${route.city}` },
       heading: `Hi ${bar.bar_name},`,
       intro: 'A WOGO reservation has been cancelled — here are the details so you can free the table.',
+      contentHtml: content,
+    }),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 7, 8 & 9. GIFT CARDS (migrations/0018/0019) — EN/NL.
+//   7. RECIPIENT — the actual gift, built around the code + how to use it.
+//   8. BUYER     — a short receipt confirming delivery.
+//   9. OWNER redemption alert — the rare "balance guard failed" edge case.
+// ---------------------------------------------------------------------------
+
+/** Big salmon monospace code block, echoing arrivalHero's "one dominant
+ * number" shape from the bar emails — a gift-card code is the one thing this
+ * email exists to deliver, so it gets the same visual weight. */
+function codeHero(code, amountLabel) {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.blush};border:1px solid ${C.line};border-radius:16px;margin:0 0 22px;">
+    <tr><td style="padding:22px 24px;text-align:center;">
+      <div style="font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:${C.brown};">Gift card code</div>
+      <div style="margin-top:6px;font-size:30px;line-height:1.25;font-weight:800;color:${C.salmonDeep};font-family:ui-monospace,Menlo,monospace;letter-spacing:.03em;">${escapeHtml(code)}</div>
+      <div style="margin-top:10px;font-size:15px;font-weight:700;color:${C.ink};">${escapeHtml(amountLabel)}</div>
+    </td></tr>
+  </table>`;
+}
+
+const GIFT_STRINGS = {
+  en: {
+    subjectRecipient: (amt) => `You've received a WOGO Gift Card worth ${amt}! 🎁`,
+    preheaderRecipient: 'A cocktail walk gift card is waiting for you.',
+    chip: 'Gift card',
+    headingRecipient: (name) => `You've been gifted a Cocktail Walk${name ? ', ' + name : ''}! 🎁`,
+    introRecipient: (buyer) => `${buyer} sent you a WOGO Gift Card — redeemable on any WOGO Cocktail Walk, in any city.`,
+    balanceLabel: 'Value',
+    howTitle: 'How to use it',
+    how: [
+      'Pick any WOGO Cocktail Walk, in any city.',
+      'At checkout, enter your gift card code in the "Gift card code" field.',
+      'The value is deducted from your total automatically — pay only the difference, if any.',
+    ],
+    bookButton: 'Book your Cocktail Walk',
+    messageTitle: 'A message for you',
+    footer: 'Questions about your gift card? Just reply to this email.',
+    subjectBuyer: (name) => `Your WOGO Gift Card for ${name} is on its way ✅`,
+    headingBuyer: 'Your gift card is on its way!',
+    introBuyer: (recipient) => `Thanks for the gift! We've emailed the WOGO Gift Card straight to ${recipient}.`,
+    rowRecipient: 'Recipient',
+    rowAmount: 'Amount',
+    rowCode: 'Code',
+  },
+  nl: {
+    subjectRecipient: (amt) => `Je hebt een WOGO Cadeaubon ter waarde van ${amt} ontvangen! 🎁`,
+    preheaderRecipient: 'Er wacht een cadeaubon voor een cocktail walk op je.',
+    chip: 'Cadeaubon',
+    headingRecipient: (name) => `Je hebt een Cocktail Walk cadeau gekregen${name ? ', ' + name : ''}! 🎁`,
+    introRecipient: (buyer) => `${buyer} heeft je een WOGO Cadeaubon gestuurd — inwisselbaar voor elke WOGO Cocktail Walk, in elke stad.`,
+    balanceLabel: 'Waarde',
+    howTitle: 'Zo gebruik je hem',
+    how: [
+      'Kies een WOGO Cocktail Walk, in een stad naar keuze.',
+      'Vul bij het afrekenen je cadeaubon-code in bij het veld "Cadeaubon-code".',
+      'De waarde wordt automatisch van je totaal afgetrokken — je betaalt alleen het verschil, als dat er is.',
+    ],
+    bookButton: 'Boek je Cocktail Walk',
+    messageTitle: 'Een bericht voor jou',
+    footer: 'Vragen over je cadeaubon? Beantwoord gewoon deze e-mail.',
+    subjectBuyer: (name) => `Je WOGO Cadeaubon voor ${name} is onderweg ✅`,
+    headingBuyer: 'Je cadeaubon is onderweg!',
+    introBuyer: (recipient) => `Bedankt voor het cadeau! We hebben de WOGO Cadeaubon rechtstreeks naar ${recipient} gestuurd.`,
+    rowRecipient: 'Ontvanger',
+    rowAmount: 'Bedrag',
+    rowCode: 'Code',
+  },
+};
+
+function giftLocale(giftCard, opts) {
+  return loc((opts && opts.locale) || (giftCard && giftCard.locale));
+}
+
+/** 7. The gift itself — sent to the RECIPIENT once the purchase Checkout
+ * Session completes (src/webhook.js:handleGiftCardPurchaseCompleted). */
+export function renderGiftCardRecipient(giftCard, opts = {}) {
+  const lang = giftLocale(giftCard, opts);
+  const t = GIFT_STRINGS[lang];
+  const firstName = giftCard.recipient_name ? String(giftCard.recipient_name).trim().split(/\s+/)[0] : '';
+  const buyerName = giftCard.buyer_name || (lang === 'nl' ? 'Iemand' : 'Someone');
+  const amount = formatMoney(giftCard.balance_cents, giftCard.currency || 'EUR');
+
+  const messageSection = giftCard.message && String(giftCard.message).trim()
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.blush};border-radius:12px;margin:0 0 22px;">
+        <tr><td style="padding:14px 16px;font-size:14px;line-height:1.55;color:${C.brown};">
+          <strong style="color:${C.ink};">${escapeHtml(t.messageTitle)}:</strong><br>${notesToHtml(giftCard.message)}
+        </td></tr>
+      </table>`
+    : '';
+
+  const content = `
+    ${codeHero(giftCard.code, `${t.balanceLabel}: ${amount}`)}
+    ${messageSection}
+    ${primaryButton(`${SITE_URL}/`, t.bookButton)}
+    ${quietSection(t.howTitle, t.how)}`;
+
+  return {
+    subject: t.subjectRecipient(amount),
+    html: layout({
+      preheader: t.preheaderRecipient,
+      hero: { chip: t.chip },
+      heading: t.headingRecipient(firstName),
+      intro: t.introRecipient(buyerName),
+      contentHtml: content,
+      footerHtml: `<p style="margin:0;font-size:13px;line-height:1.5;color:${C.brown};">${escapeHtml(t.footer)}</p>`,
+    }),
+  };
+}
+
+/** 8. A short receipt to the BUYER confirming delivery — no code shown here
+ * beyond a small reference line; the recipient's copy is the "real" one. */
+export function renderGiftCardBuyer(giftCard, opts = {}) {
+  const lang = giftLocale(giftCard, opts);
+  const t = GIFT_STRINGS[lang];
+  const amount = formatMoney(giftCard.initial_cents, giftCard.currency || 'EUR');
+  const recipientLabel = giftCard.recipient_name || giftCard.recipient_email;
+  const rows = [
+    [t.rowRecipient, escapeHtml(recipientLabel)],
+    [t.rowAmount, escapeHtml(amount)],
+    [t.rowCode, `<span style="font-family:ui-monospace,Menlo,monospace;font-size:12px;color:${C.muted};">${escapeHtml(giftCard.code)}</span>`],
+  ];
+  const content = `${detailPanel(rows, C.salmonDeep)}`;
+  return {
+    subject: t.subjectBuyer(recipientLabel),
+    html: layout({
+      preheader: t.introBuyer(giftCard.recipient_email),
+      hero: { chip: t.chip },
+      heading: t.headingBuyer,
+      intro: t.introBuyer(giftCard.recipient_email),
+      contentHtml: content,
+    }),
+  };
+}
+
+/** 9. OWNER alert — the rare case where a paid booking's gift-card deduction
+ * couldn't be applied automatically (src/webhook.js:applyGiftCardRedemption).
+ * The guest already paid the reduced Stripe amount either way; this is a
+ * bookkeeping reconciliation ask, not a guest-facing problem. EN only, same
+ * as every other internal/owner mail in this file. */
+export function renderGiftCardRedemptionAlert(booking, result) {
+  const giftCard = result && result.gift_card;
+  const rows = [
+    ['Booking ref', `<span style="font-family:ui-monospace,Menlo,monospace;font-size:12px;">${escapeHtml(booking.id)}</span>`],
+    ['Gift code', escapeHtml(booking.gift_code || '')],
+    ['Amount that failed', escapeHtml(formatMoney(booking.gift_applied_cents || 0, (giftCard && giftCard.currency) || 'EUR'))],
+    ['Current balance', giftCard ? escapeHtml(formatMoney(giftCard.balance_cents, giftCard.currency || 'EUR')) : 'unknown — card not found'],
+    ['Reason', escapeHtml((result && result.status) || 'unknown')],
+    ['Guest', `${escapeHtml(booking.name)} &middot; ${escapeHtml(booking.email)}`],
+  ];
+  const content = `
+    ${detailPanel(rows, '#8a3f6b')}
+    <p style="margin:0;font-size:14px;line-height:1.55;color:${C.brown};">
+      This guest's booking was paid and confirmed — their Stripe charge already reflects the
+      applied gift-card amount — but the gift card's balance could not be deducted automatically.
+      Please reconcile the gift card balance by hand.
+    </p>`;
+  return {
+    subject: `&#9888; Gift card redemption needs attention — ${booking.id}`,
+    html: layout({
+      preheader: 'A paid booking needs its gift card balance reconciled by hand.',
+      hero: { badge: 'Action needed', title: 'Gift card redemption issue', chip: `${escapeHtml(booking.date)} ${escapeHtml(booking.slot)}` },
+      heading: 'Gift card redemption needs attention',
+      intro: 'A guest paid with a gift card discount, but the balance could not be automatically deducted.',
       contentHtml: content,
     }),
   };

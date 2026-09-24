@@ -44,6 +44,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       phone: "Mobile (optional)", phone_ph: "+31 6 12345678",
       notes: "Allergies or notes (optional)",
       notes_ph: "Nut allergy, wheelchair access, celebrating a birthday…",
+      gift: "Gift card code (optional)", gift_ph: "WOGO-XXXX-XXXX",
       optin: "Send me the occasional WOGO tip — no spam, unsubscribe anytime.",
       total: "Total", book: "Continue to secure payment",
       redirecting: "Taking you to secure checkout…",
@@ -53,6 +54,8 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       err_load: "We couldn't load availability. Please try again.",
       err_book: "Something went wrong. Your card was not charged — please try again.",
       err_soldout: "Sorry, that time just sold out. Please pick another.",
+      err_gift_invalid: "That gift card code wasn't found, or has no balance left.",
+      err_gift_currency: "That gift card can't be used on this route.",
       retry: "Try again",
       status_month: "Showing availability for %s.",
       status_slots: "%s selected. Choose a time below.",
@@ -85,6 +88,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       phone: "Mobiel (optioneel)", phone_ph: "+31 6 12345678",
       notes: "Allergieën of opmerkingen (optioneel)",
       notes_ph: "Notenallergie, rolstoeltoegang, een verjaardag vieren…",
+      gift: "Cadeaubon-code (optioneel)", gift_ph: "WOGO-XXXX-XXXX",
       optin: "Stuur me af en toe een WOGO-tip — geen spam, altijd uitschrijfbaar.",
       total: "Totaal", book: "Naar veilig betalen",
       redirecting: "Je gaat naar de beveiligde betaalpagina…",
@@ -94,6 +98,8 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       err_load: "We konden de beschikbaarheid niet laden. Probeer opnieuw.",
       err_book: "Er ging iets mis. Er is niets afgeschreven — probeer opnieuw.",
       err_soldout: "Helaas, die tijd is net uitverkocht. Kies een andere.",
+      err_gift_invalid: "Die cadeaubon-code is niet gevonden, of heeft geen saldo meer.",
+      err_gift_currency: "Die cadeaubon kan niet worden gebruikt voor deze route.",
       retry: "Opnieuw proberen",
       status_month: "Beschikbaarheid voor %s.",
       status_slots: "%s geselecteerd. Kies hieronder een tijd.",
@@ -612,6 +618,10 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       this.phoneInput = this.textField(panel, "wc-phone", t.phone, "tel", t.phone_ph, "tel");
       // allergies / notes — optional free text, sent as `notes` on /api/book
       this.notesInput = this.textareaField(panel, "wc-notes", t.notes, t.notes_ph);
+      // gift-card code — optional, SEPARATE from any marketing promo code
+      // (which is entered on Stripe's own Checkout page, not here). Sent as
+      // `gift_code` on /api/book; server validates it (backend/src/guest_api.js).
+      this.giftInput = this.textField(panel, "wc-gift", t.gift, "text", t.gift_ph, "off");
 
       // opt-in
       const optWrap = el("label", "wc-check");
@@ -691,12 +701,14 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       book.textContent = t.redirecting;
       this.announce(t.redirecting);
 
+      const giftCode = this.giftInput ? this.giftInput.el.value.trim() : "";
       const payload = {
         route_id: this.routeId, date: this.selectedDate, slot: this.selectedSlot.slot,
         party: this.party, name, email, phone: this.phoneInput.el.value.trim(),
         notes: this.notesInput ? this.notesInput.el.value.trim() : "",
         locale: this.lang, marketing_opt_in: !!this.optIn.checked,
       };
+      if (giftCode) payload.gift_code = giftCode;
       try {
         const res = await this._fetch(`${this.api}/api/book`, {
           method: "POST",
@@ -714,6 +726,15 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
           // refresh the day's slots so the numbers are honest again
           try { const s = await this.loadSlots(this.selectedDate); this.slots = s.closed ? [] : (s.slots || []); this.selectedSlot = null; this.renderSlots(); } catch (e) { /* noop */ }
           this.flashError(t.err_soldout);
+          return;
+        }
+        // A bad/typo'd gift code shouldn't read as a mystery "something went
+        // wrong" — surface it on the gift field itself, same as name/email.
+        if (res.status === 400 && (data.error === "invalid_gift_card" || data.error === "gift_card_currency_mismatch") && this.giftInput) {
+          book.disabled = false; book.textContent = original;
+          const msg = data.error === "invalid_gift_card" ? t.err_gift_invalid : t.err_gift_currency;
+          setErr(this.giftInput, msg);
+          this.announce(msg);
           return;
         }
         throw new Error(data.error || "book_failed");

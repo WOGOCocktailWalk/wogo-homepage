@@ -13,6 +13,9 @@ import {
   renderBarReschedule,
   renderGuestCancellation,
   renderBarCancellation,
+  renderGiftCardRecipient,
+  renderGiftCardBuyer,
+  renderGiftCardRedemptionAlert,
 } from './emails.js';
 import * as db from './db.js';
 import { OWNER_NOTIFY_EMAIL, OWNER_ALERT_EMAIL, WEBHOOK_TOLERANCE_SECONDS } from './config.js';
@@ -79,45 +82,71 @@ export async function handleWebhook(request, env, deps = {}) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const bookingId = session.client_reference_id;
-    const result = await database.confirmBooking(env.DB, bookingId, session.id, session.payment_intent || null);
 
-    if (result.status === 'confirmed' || result.status === 'confirmed_conflict') {
-      const booking = result.booking;
+    if (session.metadata && session.metadata.type === 'giftcard') {
+      // Gift-card PURCHASE — a completely separate flow from a booking: no
+      // client_reference_id, no seat, no confirmBooking call. Branched here
+      // FIRST so this never falls into the booking-confirm path below (which
+      // would throw trying to confirm a non-existent booking id).
+      await handleGiftCardPurchaseCompleted(env, session, { database, sendTransactional: brevoSend });
+    } else {
+      const bookingId = session.client_reference_id;
+      const result = await database.confirmBooking(env.DB, bookingId, session.id, session.payment_intent || null);
 
-      // Capture any promo code + amount saved from the Stripe session, persist
-      // it, and reflect it on the in-memory booking so the emails show it.
-      const discount = extractDiscount(session);
-      if (discount.discount_cents > 0 || discount.discount_code) {
-        await safe(() => database.setBookingDiscount(env.DB, booking.id, discount.discount_code, discount.discount_cents));
-        booking.discount_code = discount.discount_code;
-        booking.discount_cents = discount.discount_cents;
-      }
+      if (result.status === 'confirmed' || result.status === 'confirmed_conflict') {
+        const booking = result.booking;
 
-      const route = await database.getRoute(env.DB, booking.route_id);
-
-      if (route) {
-        // Each send now goes through sendWithRetry (owner audit item #12):
-        // it never throws (same contract `safe()` gave every call site here),
-        // and on failure queues to failed_email instead of just logging+
-        // dropping it, so a Brevo blip gets a few automatic retries before
-        // anyone needs to notice.
-        await sendGuestConfirmationEmails(env, booking, route, { database, sendTransactional: brevoSend });
-
-        const arrivals = await notifyBars(env, booking, route, { database, computeBarArrivals: computeBars, sendTransactional: brevoSend });
-
-        if (result.status === 'confirmed') {
-          // Owner/internal "new booking" copy (Dashboard v2 §8.4).
-          const mail = renderOwnerNotification(booking, route, { arrivals });
-          await sendWithRetry(env, { to: OWNER_NOTIFY_EMAIL, subject: mail.subject, htmlContent: mail.html }, { database, sendTransactional: brevoSend, kind: 'owner_notification' });
+        // Capture any promo code + amount saved from the Stripe session,
+        // persist it, and reflect it on the in-memory booking so the emails
+        // show it. Skipped for a gift-card redemption: that session had
+        // `allow_promotion_codes` turned OFF in favor of a one-time gift-card
+        // coupon (src/stripe.js), so `total_details.amount_discount` there is
+        // the GIFT amount, not a promo — extractDiscount must never mistake
+        // one for the other (they're deliberately separate columns).
+        if (!booking.gift_applied_cents) {
+          const discount = extractDiscount(session);
+          if (discount.discount_cents > 0 || discount.discount_code) {
+            await safe(() => database.setBookingDiscount(env.DB, booking.id, discount.discount_code, discount.discount_cents));
+            booking.discount_code = discount.discount_code;
+            booking.discount_cents = discount.discount_cents;
+          }
         }
 
-        if (result.status === 'confirmed_conflict') {
-          const mail = renderOwnerConflict(booking, route);
-          await sendWithRetry(env, { to: OWNER_ALERT_EMAIL, subject: mail.subject, htmlContent: mail.html }, { database, sendTransactional: brevoSend, kind: 'owner_conflict' });
-        }
+        const route = await database.getRoute(env.DB, booking.route_id);
 
-        await safe(() => metaSend(env, booking, route));
+        if (route) {
+          // Each send now goes through sendWithRetry (owner audit item #12):
+          // it never throws (same contract `safe()` gave every call site here),
+          // and on failure queues to failed_email instead of just logging+
+          // dropping it, so a Brevo blip gets a few automatic retries before
+          // anyone needs to notice.
+          await sendGuestConfirmationEmails(env, booking, route, { database, sendTransactional: brevoSend });
+
+          const arrivals = await notifyBars(env, booking, route, { database, computeBarArrivals: computeBars, sendTransactional: brevoSend });
+
+          if (result.status === 'confirmed') {
+            // Owner/internal "new booking" copy (Dashboard v2 §8.4).
+            const mail = renderOwnerNotification(booking, route, { arrivals });
+            await sendWithRetry(env, { to: OWNER_NOTIFY_EMAIL, subject: mail.subject, htmlContent: mail.html }, { database, sendTransactional: brevoSend, kind: 'owner_notification' });
+          }
+
+          if (result.status === 'confirmed_conflict') {
+            const mail = renderOwnerConflict(booking, route);
+            await sendWithRetry(env, { to: OWNER_ALERT_EMAIL, subject: mail.subject, htmlContent: mail.html }, { database, sendTransactional: brevoSend, kind: 'owner_conflict' });
+          }
+
+          // Gift-card redemption (migrations/0018/0019) — the Stripe charge
+          // was ALREADY reduced by gift_applied_cents at checkout time (the
+          // one-time coupon in src/stripe.js); this is the step that actually
+          // deducts it from the card's D1 balance. Runs for BOTH 'confirmed'
+          // and 'confirmed_conflict' — the guest paid the reduced amount
+          // either way, so the card must be charged either way.
+          if (booking.gift_code) {
+            await applyGiftCardRedemption(env, booking, { database, sendTransactional: brevoSend });
+          }
+
+          await safe(() => metaSend(env, booking, route));
+        }
       }
     }
   } else if (event.type === 'checkout.session.expired') {
@@ -280,4 +309,91 @@ export async function sendGuestCancellationEmail(env, booking, route, opts = {},
   const locale = booking.locale === 'nl' ? 'nl' : 'en';
   const mail = renderGuestCancellation(booking, route, { locale, message: opts.message });
   await sendWithRetry(env, { to: booking.email, subject: mail.subject, htmlContent: mail.html }, { database, sendTransactional: brevoSend, kind: 'guest_cancellation' });
+}
+
+// ---------------------------------------------------------------------------
+// Gift cards (migrations/0018/0019) — purchase completion + redemption.
+// ---------------------------------------------------------------------------
+
+/**
+ * Mints the gift card once its own PURCHASE Checkout Session completes, and
+ * emails the recipient + the buyer. Does NOT create a booking — this is a
+ * completely separate product from a cocktail walk.
+ * Idempotent against a redelivered webhook event for the SAME purchase
+ * session: getGiftCardByStripeSession finds the already-minted card instead
+ * of creating a second one (mirrors confirmBooking's own "already confirmed?
+ * reuse it" shape for the booking-confirm path).
+ */
+export async function handleGiftCardPurchaseCompleted(env, session, deps = {}) {
+  const database = deps.database || deps.db || db;
+  const brevoSend = deps.sendTransactional || sendTransactional;
+  const md = session.metadata || {};
+
+  let giftCard = await database.getGiftCardByStripeSession(env.DB, session.id);
+  if (!giftCard) {
+    const amountCents = Number(md.amount_cents) || Number(session.amount_total) || 0;
+    giftCard = await database.createGiftCard(env.DB, {
+      initial_cents: amountCents,
+      currency: (session.currency || 'eur').toUpperCase(),
+      buyer_email: md.buyer_email || session.customer_email || '',
+      buyer_name: md.buyer_name || '',
+      recipient_name: md.recipient_name || '',
+      recipient_email: md.recipient_email || '',
+      message: md.message || null,
+      stripe_session: session.id,
+      locale: md.locale === 'nl' ? 'nl' : 'en',
+    });
+  }
+
+  if (giftCard.recipient_email) {
+    const recipientMail = renderGiftCardRecipient(giftCard);
+    await sendWithRetry(
+      env,
+      { to: giftCard.recipient_email, subject: recipientMail.subject, htmlContent: recipientMail.html },
+      { database, sendTransactional: brevoSend, kind: 'giftcard_recipient' }
+    );
+  }
+  if (giftCard.buyer_email) {
+    const buyerMail = renderGiftCardBuyer(giftCard);
+    await sendWithRetry(
+      env,
+      { to: giftCard.buyer_email, subject: buyerMail.subject, htmlContent: buyerMail.html },
+      { database, sendTransactional: brevoSend, kind: 'giftcard_buyer' }
+    );
+  }
+}
+
+/**
+ * Deducts a confirmed booking's gift-card redemption from the card's D1
+ * balance (src/db.js:redeemGiftCard — the atomic guarded UPDATE that is the
+ * real double-spend guard + per-booking idempotency guard). The Stripe
+ * charge was ALREADY reduced at checkout time; this only updates OUR ledger.
+ * If the guard didn't hold (balance changed between hold-creation and this
+ * confirm — a genuine, rare race) the booking stays paid+confirmed exactly
+ * as the guest experienced it; the owner gets an alert to reconcile the
+ * gift card balance by hand. Never throws — a gift-card bookkeeping hiccup
+ * must not turn a successful, paid booking into a 500/webhook retry storm.
+ */
+export async function applyGiftCardRedemption(env, booking, deps = {}) {
+  const database = deps.database || deps.db || db;
+  const brevoSend = deps.sendTransactional || sendTransactional;
+  try {
+    const result = await database.redeemGiftCard(env.DB, {
+      code: booking.gift_code,
+      applied_cents: booking.gift_applied_cents,
+      booking_id: booking.id,
+    });
+    if (result.status === 'insufficient_balance' || result.status === 'not_found') {
+      const mail = renderGiftCardRedemptionAlert(booking, result);
+      await sendWithRetry(
+        env,
+        { to: OWNER_ALERT_EMAIL, subject: mail.subject, htmlContent: mail.html },
+        { database, sendTransactional: brevoSend, kind: 'giftcard_redeem_alert' }
+      );
+    }
+    return result;
+  } catch (err) {
+    console.error('gift_card_redemption_failed', err);
+    return { status: 'error' };
+  }
 }

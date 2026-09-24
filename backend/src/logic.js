@@ -751,3 +751,35 @@ export function aggregateCustomers(rows, q) {
   list.sort((a, b) => String(b.last_booking || '').localeCompare(String(a.last_booking || '')));
   return list;
 }
+
+// ---------------------------------------------------------------------------
+// Gift cards (migrations/0018) — code generation
+// ---------------------------------------------------------------------------
+
+// Crockford-ish alphabet: no 0/O, 1/I/L, U — every remaining character is
+// unambiguous read aloud or retyped by hand, since a gift-card code (unlike a
+// booking id) is something a human actually copies from an email into a form.
+const GIFT_CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTVWXYZ';
+
+/** 'WOGO-XXXX-XXXX' — 8 random chars from GIFT_CODE_ALPHABET via Web Crypto
+ * (available in both Workers and Node >=19, same global `crypto` every other
+ * id in this codebase already uses via crypto.randomUUID()). Collisions
+ * against existing codes are handled by the caller (src/db.js:createGiftCard
+ * retries on a UNIQUE constraint violation) — this function is pure and
+ * never touches the database. */
+export function generateGiftCardCode() {
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  let s = '';
+  for (let i = 0; i < bytes.length; i++) {
+    s += GIFT_CODE_ALPHABET[bytes[i] % GIFT_CODE_ALPHABET.length];
+  }
+  return `WOGO-${s.slice(0, 4)}-${s.slice(4, 8)}`;
+}
+
+/** Normalizes user/API input for a gift-card code lookup: trims, uppercases.
+ * A guest who types "wogo-7f3k-9qrt" or pastes trailing whitespace must still
+ * match the stored (always-uppercase) code. */
+export function normalizeGiftCardCode(code) {
+  return String(code == null ? '' : code).trim().toUpperCase();
+}

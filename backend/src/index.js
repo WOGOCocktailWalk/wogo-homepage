@@ -41,6 +41,7 @@ router.get('/api/availability', guestApi.handleAvailability);
 router.get('/api/slots', guestApi.handleSlots);
 router.get('/api/booking', guestApi.handleBookingLookup);
 router.post('/api/book', guestApi.handleBook);
+router.post('/api/giftcard/checkout', guestApi.handleGiftCardCheckout);
 
 // -- Webhook ------------------------------------------------------------------
 router.post('/webhooks/stripe', (request, env) => handleWebhook(request, env));
@@ -99,6 +100,10 @@ router.get('/admin/api/audit-log', adminApi.handleAuditLog);
 router.get('/admin/api/error-log', adminApi.handleErrorLog);
 router.get('/admin/api/failed-emails', adminApi.handleFailedEmails);
 router.get('/admin/api/health', adminApi.handleHealthCheck);
+
+// -- Gift cards (migrations/0018/0019) ---------------------------------------
+router.get('/admin/api/gift-cards', adminApi.handleListGiftCards);
+router.post('/admin/api/gift-cards/:code/void', adminApi.handleVoidGiftCard);
 
 const ADMIN_API_PREFIX = '/admin/api/';
 const PUBLIC_ADMIN_PATHS = new Set(['/admin/login', '/admin/logout', '/admin/public-config']);

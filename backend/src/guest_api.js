@@ -9,6 +9,9 @@ import {
   HOLD_ATTEMPTS_PER_WINDOW,
   HOLD_ATTEMPT_WINDOW_MINUTES,
   posterUrlFor,
+  GIFT_CARD_TIERS_CENTS,
+  GIFT_CARD_CUSTOM_MIN_CENTS,
+  GIFT_CARD_CUSTOM_MAX_CENTS,
 } from './config.js';
 import {
   computeHoldExpiry,
@@ -23,12 +26,16 @@ import {
   todayInTimezone,
 } from './logic.js';
 import * as db from './db.js';
-import { createCheckoutSession } from './stripe.js';
+import { createCheckoutSession, createGiftCardCheckoutSession } from './stripe.js';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH_RE = /^\d{4}-\d{2}$/;
 const SLOT_RE = /^\d{2}:\d{2}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// 'WOGO-XXXX-XXXX' shape (src/logic.js:generateGiftCardCode) — loose enough
+// that a legacy/manually-issued code still passes this shape check; the real
+// validation is the DB lookup that follows.
+const GIFT_CODE_RE = /^[A-Za-z0-9-]{4,40}$/;
 
 export function corsHeaders(request) {
   const origin = request.headers.get('Origin');
@@ -224,7 +231,7 @@ export async function handleBookingLookup(request, env) {
 
   const amountCents = Math.max(
     0,
-    (route.price_cents || 0) * (booking.party || 0) - (booking.discount_cents || 0)
+    (route.price_cents || 0) * (booking.party || 0) - (booking.discount_cents || 0) - (booking.gift_applied_cents || 0)
   );
   const firstName = booking.name ? String(booking.name).trim().split(/\s+/)[0] : '';
   const confirmed = booking.status === 'confirmed' || booking.status === 'confirmed_conflict';
@@ -243,6 +250,8 @@ export async function handleBookingLookup(request, env) {
       first_name: firstName,
       locale: booking.locale === 'nl' ? 'nl' : 'en',
       poster_url: posterUrlFor(route),
+      gift_code: booking.gift_code || null,
+      gift_applied_cents: booking.gift_applied_cents || 0,
     },
     200,
     request
@@ -271,7 +280,7 @@ export async function handleBook(request, env) {
     return errorJson('bad_request', 'invalid JSON body', 400, request);
   }
 
-  const { route_id, date, slot, party, name, email, phone, notes, locale, marketing_opt_in } = body || {};
+  const { route_id, date, slot, party, name, email, phone, notes, locale, marketing_opt_in, gift_code } = body || {};
 
   if (!route_id || typeof route_id !== 'string' || route_id.length > 100) {
     return errorJson('bad_request', 'route_id is required', 400, request);
@@ -351,6 +360,27 @@ export async function handleBook(request, env) {
     return errorJson('too_many_requests', 'too many booking attempts — please try again in a few minutes', 429, request);
   }
 
+  // Optional gift-card redemption (migrations/0018/0019) — deliberately
+  // SEPARATE from any marketing promo code (Stripe's allow_promotion_codes):
+  // validated up front, BEFORE a hold is created, so an invalid/typo'd code
+  // never burns a seat hold on a booking that's about to be rejected anyway.
+  let giftCard = null;
+  let giftApplied = 0;
+  if (gift_code !== undefined && gift_code !== null && gift_code !== '') {
+    if (typeof gift_code !== 'string' || !GIFT_CODE_RE.test(gift_code)) {
+      return errorJson('bad_request', 'invalid gift card code', 400, request);
+    }
+    giftCard = await db.getGiftCardByCode(env.DB, gift_code);
+    if (!giftCard || giftCard.status !== 'active' || giftCard.balance_cents <= 0) {
+      return errorJson('invalid_gift_card', 'that gift card code was not found or has no balance left', 400, request);
+    }
+    if ((giftCard.currency || 'EUR') !== (route.currency || 'EUR')) {
+      return errorJson('gift_card_currency_mismatch', 'this gift card is not valid for this route’s currency', 400, request);
+    }
+    const bookingTotalCents = (route.price_cents || 0) * party;
+    giftApplied = Math.min(giftCard.balance_cents, bookingTotalCents);
+  }
+
   const bookingId = `b_${crypto.randomUUID()}`;
   const holdExpires = computeHoldExpiry(HOLD_MINUTES);
 
@@ -384,6 +414,15 @@ export async function handleBook(request, env) {
     return errorJson('route_closed', 'this date is not bookable', 409, request);
   }
 
+  if (giftCard && giftApplied > 0) {
+    await db.attachGiftCardToBooking(env.DB, bookingId, giftCard.code, giftApplied);
+    // Reflect it on the in-memory booking so createCheckoutSession (below)
+    // sees the applied amount without a re-read — same pattern the webhook
+    // uses for discount_code/discount_cents after setBookingDiscount.
+    holdResult.booking.gift_code = giftCard.code;
+    holdResult.booking.gift_applied_cents = giftApplied;
+  }
+
   let session;
   try {
     session = await createCheckoutSession(env, holdResult.booking, route);
@@ -396,4 +435,87 @@ export async function handleBook(request, env) {
   await db.attachStripeSession(env.DB, bookingId, session.id);
 
   return json({ booking_id: bookingId, checkout_url: session.url }, 200, request);
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/giftcard/checkout — buying a gift card (migrations/0018/0019).
+// A completely separate flow from /api/book: no route, no date, no seat hold
+// — just a Checkout Session for the chosen amount. The card itself is minted
+// by the webhook once payment completes (src/webhook.js), never here.
+// ---------------------------------------------------------------------------
+
+const GIFT_CARD_TIER_SET = new Set(GIFT_CARD_TIERS_CENTS);
+
+function isValidGiftAmount(cents) {
+  if (!Number.isInteger(cents)) return false;
+  if (GIFT_CARD_TIER_SET.has(cents)) return true;
+  return cents >= GIFT_CARD_CUSTOM_MIN_CENTS && cents <= GIFT_CARD_CUSTOM_MAX_CENTS;
+}
+
+export async function handleGiftCardCheckout(request, env) {
+  const origin = request.headers.get('Origin');
+  if (origin && !isAllowedOrigin(origin)) {
+    return errorJson('forbidden', null, 403, request);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return errorJson('bad_request', 'invalid JSON body', 400, request);
+  }
+
+  const { amount_cents, buyer_name, buyer_email, recipient_name, recipient_email, message, locale } = body || {};
+
+  if (!isValidGiftAmount(amount_cents)) {
+    return errorJson(
+      'bad_request',
+      `amount_cents must be one of ${GIFT_CARD_TIERS_CENTS.join(', ')}, or between ${GIFT_CARD_CUSTOM_MIN_CENTS} and ${GIFT_CARD_CUSTOM_MAX_CENTS}`,
+      400,
+      request
+    );
+  }
+  if (!buyer_name || typeof buyer_name !== 'string' || buyer_name.length > 200) {
+    return errorJson('bad_request', 'buyer_name is required', 400, request);
+  }
+  if (!buyer_email || typeof buyer_email !== 'string' || buyer_email.length > 254 || !EMAIL_RE.test(buyer_email)) {
+    return errorJson('bad_request', 'a valid buyer email is required', 400, request);
+  }
+  if (!recipient_name || typeof recipient_name !== 'string' || recipient_name.length > 200) {
+    return errorJson('bad_request', 'recipient_name is required', 400, request);
+  }
+  if (!recipient_email || typeof recipient_email !== 'string' || recipient_email.length > 254 || !EMAIL_RE.test(recipient_email)) {
+    return errorJson('bad_request', 'a valid recipient email is required', 400, request);
+  }
+  if (message !== undefined && message !== null && (typeof message !== 'string' || message.length > 500)) {
+    return errorJson('bad_request', 'message must be 500 characters or fewer', 400, request);
+  }
+
+  // Own rate-limit bucket ('giftcard', not 'book') — a burst of gift-card
+  // purchases must never eat into the booking widget's abuse budget, and
+  // vice versa (SPEC.md §15.1-style layered, D1-backed, per-IP).
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  await db.recordRateEvent(env.DB, 'giftcard', ip);
+  const attempts = await db.countRateEventsSince(env.DB, 'giftcard', ip, sqliteMinutesAgo(HOLD_ATTEMPT_WINDOW_MINUTES));
+  if (attempts > HOLD_ATTEMPTS_PER_WINDOW) {
+    return errorJson('too_many_requests', 'too many attempts — please try again in a few minutes', 429, request);
+  }
+
+  let session;
+  try {
+    session = await createGiftCardCheckoutSession(env, {
+      amount_cents,
+      buyer_name,
+      buyer_email,
+      recipient_name,
+      recipient_email,
+      message: message || '',
+      locale: locale === 'nl' ? 'nl' : 'en',
+    });
+  } catch (err) {
+    console.error('giftcard_checkout_failed', err);
+    return errorJson('payment_setup_failed', 'something went wrong, please try again', 502, request);
+  }
+
+  return json({ url: session.url }, 200, request);
 }

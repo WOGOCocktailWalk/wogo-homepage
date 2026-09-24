@@ -4,58 +4,50 @@
 <!-- ============================================================================
      WOGO GIFT-CARDS PAGE — built from the content-page template at
      /how-it-works/index.html (that file stays the REFERENCE template).
-     Purpose: own "cocktail walk gift card" / "cadeaubon" search intent and
-     pre-sell the decision, then hand off to the EXISTING Wix gift-card
-     checkout. Stripe self-serve gift cards are a LATER phase.
+     Purpose: own "cocktail walk gift card" / "cadeaubon" search intent AND
+     sell it — self-serve, owner-owned, €0/month (Stripe processes payment,
+     the balance itself lives in D1 — see backend/src/db.js gift_cards table,
+     migrations/0018 + 0019). The Wix widget is RETIRED on this page.
 
-     CONSISTENCY RULE (two specialists agreed, overrides SITE-PLAN future
-     tiers): this page shows the CURRENT live Wix tiers — €25 / €50 / €100,
-     quantity 1–10, personalized message — because every Buy button lands on
-     the Wix widget and the two must not contradict each other. Re-tier to
-     €30/€60/€100 with a "most popular" badge only at Stripe launch.
+     CUTOVER DONE (this build): every Buy button now opens the on-page order
+     form (#tiers), which POSTs to POST /api/giftcard/checkout on the same
+     Worker the booking widget uses, then redirects to Stripe Checkout. Tiers
+     re-priced to €30/€60/€100 with "most popular" on €60 (the re-tier the
+     old CONSISTENCY RULE comment was holding back until this exact moment).
+     If any gift cards are still outstanding from the OLD Wix widget, honor
+     them manually — they are NOT in this D1 table.
 
-     CUTOVER FLAG — Wix-native gift-card redemption dies with Wix. Before
-     cancelling the Wix subscription:
-       1) export all sold gift-card codes + outstanding balances from the
-          Wix dashboard,
-       2) plan to HONOR already-sold cards (manually or preloaded into the
-          Stripe replacement),
-       3) repoint every Buy button on this page to the new checkout,
-       4) only then re-tier per SITE-PLAN.
-
-     TODO (validity): the live Wix site publishes NO gift-card validity terms
-     (checked 2026-07-06 — widget page and terms URLs have none). Dutch law
-     sets a 2-year statutory minimum for vouchers, but per the build brief we
-     don't CLAIM it until the Wix gift-card expiry setting is confirmed in the
-     Wix dashboard (Settings → Gift cards). Once confirmed ≥ 2 years, replace
-     the neutral fq2_b copy (EN + NL) with the plain "valid for at least
-     2 years" trust point.
+     TODO (validity): no expiry logic yet (see migrations/0018's own TODO) —
+     cards are valid indefinitely until redeemed or voided by the owner. The
+     existing fq2_b FAQ copy below is UNCHANGED by this build — left exactly
+     as the previous specialist wrote it; revisit only if the owner wants to
+     make a validity claim once the no-expiry behaviour above is reviewed.
      ========================================================================= -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- PAGE-EDIT: title + description + canonical -->
-<title>Cocktail Walk Gift Cards · From €25 | WOGO</title>
+<title>Cocktail Walk Gift Cards · From €30 | WOGO</title>
 <meta name="robots" content="noindex"> <!-- REMOVE at cutover -->
 <link rel="canonical" href="https://www.wogococktailwalk.com/gift-cards/">
-<meta name="description" content="Give a WOGO cocktail walk gift card — from €25, valid on any city or route, delivered by email in seconds.">
+<meta name="description" content="Give a WOGO cocktail walk gift card — from €30, valid on any city or route, delivered by email in seconds.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="WOGO Cocktail Walk">
-<meta property="og:title" content="Cocktail Walk Gift Cards · From €25 | WOGO">
-<meta property="og:description" content="Give a WOGO cocktail walk gift card — from €25, valid on any city or route, delivered by email in seconds.">
+<meta property="og:title" content="Cocktail Walk Gift Cards · From €30 | WOGO">
+<meta property="og:description" content="Give a WOGO cocktail walk gift card — from €30, valid on any city or route, delivered by email in seconds.">
 <meta property="og:url" content="https://www.wogococktailwalk.com/gift-cards/">
 <meta property="og:image" content="https://static.wixstatic.com/media/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="WOGO Gift Cards · Give a Cocktail Walk">
-<meta name="twitter:description" content="Any route, any city, redeemable on all our walks. From €25, delivered by email.">
+<meta name="twitter:description" content="Any route, any city, redeemable on all our walks. From €30, delivered by email.">
 <meta name="twitter:image" content="https://static.wixstatic.com/media/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png">
 <!-- PAGE-EDIT: structured data — gift cards carry Product + AggregateOffer
-     (lowPrice 25 / highPrice 100 EUR, matching the live Wix widget's own
-     JSON-LD so the two pages never disagree), plus the site-wide light
-     Organization block shared by all content pages. -->
+     (lowPrice 30 / highPrice 100 EUR — the real Stripe self-serve tiers, a
+     custom amount up to €500 is also offered on-page but not claimed here),
+     plus the site-wide light Organization block shared by all content pages. -->
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Product","name":"WOGO Gift Card","description":"A WOGO Cocktail Walk gift card, redeemable on all WOGO self-guided cocktail walks in Amsterdam, Rotterdam, Utrecht and Groningen. Choose an amount, add a personalized message, delivered by email.","image":"https://static.wixstatic.com/media/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png","brand":{"@type":"Brand","name":"WOGO Cocktail Walk"},"offers":{"@type":"AggregateOffer","priceCurrency":"EUR","lowPrice":"25","highPrice":"100","offerCount":"3","availability":"https://schema.org/InStock","url":"https://www.wogococktailwalk.com/gift-cards"}}
+{"@context":"https://schema.org","@type":"Product","name":"WOGO Gift Card","description":"A WOGO Cocktail Walk gift card, redeemable on all WOGO self-guided cocktail walks in Amsterdam, Rotterdam, Utrecht and Groningen. Choose an amount, add a personalized message, delivered by email.","image":"https://static.wixstatic.com/media/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png","brand":{"@type":"Brand","name":"WOGO Cocktail Walk"},"offers":{"@type":"AggregateOffer","priceCurrency":"EUR","lowPrice":"30","highPrice":"100","offerCount":"3","availability":"https://schema.org/InStock","url":"https://www.wogococktailwalk.com/gift-cards"}}
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Organization","name":"WOGO Cocktail Walk","url":"https://www.wogococktailwalk.com/","logo":"https://www.wogococktailwalk.com/wogo-logo.png","email":"info@wogoamsterdam.com","telephone":"+31202101168","address":{"@type":"PostalAddress","addressLocality":"Amsterdam","addressCountry":"NL"},"sameAs":["https://www.instagram.com/wogococktailwalk/","https://www.tiktok.com/@wogococktailwalk","https://www.facebook.com/wogoamsterdam/"]}
@@ -424,6 +416,32 @@
   /* 4 cols >900 (base) · 2 cols 721–900 · 1 col ≤720 (existing mobile rule) */
   @media (min-width: 721px) and (max-width: 900px){ .w-tiers { grid-template-columns: 1fr 1fr; } }
 
+  /* ===== Self-serve order form (Stripe launch) ===== */
+  .w-tier { position: relative; }
+  .w-tier-popular { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #ffaa81 0%, #f2905c 100%); color: #3f2b21; font-size: 10.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; padding: 5px 14px; border-radius: 999px; box-shadow: 0 4px 10px rgba(242,144,92,0.4); white-space: nowrap; }
+  .w-tier.is-selected { outline: 2.5px solid #f2905c; outline-offset: 2px; }
+  button.w-tier-btn { border: none; cursor: pointer; width: 100%; font-family: inherit; }
+  .w-tier-input { display: flex; align-items: center; gap: 6px; background: #fffaf6; border: 1.5px solid #e7d3c6; border-radius: 12px; padding: 10px 14px; font-size: 15px; font-weight: 700; color: #3f2b21; margin-top: 4px; }
+  .w-tier-input input { border: none; background: none; font: inherit; font-weight: 800; width: 100%; min-width: 0; color: #3f2b21; }
+  .w-tier-input input:focus { outline: none; }
+  .w-tier-custom .w-tier-btn { margin-top: 6px; }
+
+  .gc-order { max-width: 620px; margin: 34px auto 0; background: #fff; border: 1px solid rgba(63,43,33,0.12); border-radius: 18px; box-shadow: 0 10px 30px rgba(26,20,16,0.08); padding: 28px 26px; scroll-margin-top: 90px; }
+  .gc-order-amt { font-size: 13.5px; font-weight: 700; color: #3f2b21; background: #ffe5d9; border-radius: 12px; padding: 12px 16px; margin-bottom: 18px; }
+  .gc-order-amt b { font-size: 17px; }
+  .gc-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+  .gc-form .gc-full { grid-column: 1 / -1; }
+  .gc-field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #7e5541; }
+  .gc-field input, .gc-field textarea { font: inherit; font-size: 15.5px; font-weight: 500; text-transform: none; letter-spacing: normal; color: #201611; background: #fffaf6; border: 1.5px solid #e7d3c6; border-radius: 12px; padding: 12px 14px; }
+  .gc-field textarea { resize: vertical; min-height: 80px; }
+  .gc-field input:focus, .gc-field textarea:focus { outline: none; border-color: #f2905c; box-shadow: 0 0 0 3px rgba(242,144,92,0.18); }
+  .gc-form .w-hero-cta { grid-column: 1 / -1; justify-self: stretch; text-align: center; border: none; cursor: pointer; margin-top: 6px; }
+  .gc-form .w-hero-cta:disabled { opacity: 0.6; cursor: default; }
+  .gc-note { grid-column: 1 / -1; font-size: 12px; color: #8a7066; font-weight: 600; line-height: 1.5; margin: 0; }
+  .gc-error { grid-column: 1 / -1; display: none; font-size: 13px; font-weight: 700; color: #a5313f; background: #fdeceb; border-radius: 10px; padding: 10px 14px; }
+  .gc-error.show { display: block; }
+  @media (max-width: 640px) { .gc-form { grid-template-columns: 1fr; } .gc-order { padding: 22px 18px; } }
+
   /* CTA sheen on primary buttons (transform-only, once on hover) */
   .w-hero-cta, .w-final-btn { position: relative; overflow: hidden; }
   .w-hero-cta::after, .w-final-btn::after { content:""; position:absolute; top:0; left:-120%; width:60%; height:100%; background: linear-gradient(115deg, transparent, rgba(255,255,255,0.35), transparent); transform: skewX(-18deg); transition: left .6s ease; pointer-events: none; }
@@ -570,7 +588,7 @@
       <h1 data-i18n="hero_h1">Give a Cocktail Walk Gift Card</h1>
       <!-- Dash-free punch under the SEO h1 (§1a: the "—" ban) -->
       <p class="w-hero-sub" data-i18n="hero_sub">A night out they'll remember. In their inbox in minutes.</p>
-      <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-hero-cta w-navlink" data-i18n="hero_cta">Buy a gift card →</a>
+      <a href="#tiers" class="w-hero-cta w-scroll" data-i18n="hero_cta">Buy a gift card →</a>
     </div>
     <div class="w-gift-cardwrap">
       <!-- Pure CSS gift-card mock — no image asset. Espresso + peach, WOGO
@@ -593,55 +611,77 @@
 </section>
 
 <!-- ============================================================
-     SECTION: AMOUNT TIERS (#tiers) — PAGE-EDIT
-     CURRENT live Wix tiers only (€25/€50/€100, qty 1–10, personal
-     message). No "most popular" badge until the Stripe re-tier —
-     this page must never contradict the checkout it links to.
-     ============================================================ -->
+     SECTION: AMOUNT TIERS + ORDER FORM (#tiers) — PAGE-EDIT
+     Stripe self-serve, live: €30 / €60 / €100 ("most popular" on €60) or a
+     custom amount (€10–€500). Picking a tile selects the amount and scrolls
+     to the order form below, which POSTs to POST /api/giftcard/checkout on
+     the same Worker the booking widget uses (see the foot script's
+     WOGO_GIFT_API), then redirects to Stripe Checkout. The gift card itself
+     (code + balance) is minted by the webhook once payment completes — see
+     backend/src/webhook.js's metadata.type==='giftcard' branch — and emailed
+     straight to the recipient; nothing here talks to D1 directly. -->
 <section class="w-section w-pad" id="tiers">
   <div class="w-head">
     <div class="w-eyebrow" data-i18n="tiers_eyebrow">Choose an amount</div>
     <h2 data-i18n="tiers_h2">Three amounts, zero guesswork</h2>
     <p data-i18n="tiers_p">Every card works on every route in every city. They pick the walk.</p>
   </div>
-  <div class="w-tiers wg-stagger">
-    <div class="w-tier">
-      <div class="w-tier-amt">€25</div>
+  <div class="w-tiers wg-stagger" id="wGcTiers">
+    <div class="w-tier" data-tier="3000">
+      <div class="w-tier-amt">€30</div>
       <div class="w-tier-sub" data-i18n="tier1_sub">Gift card</div>
       <div class="w-tier-benefit"><span aria-hidden="true">✨</span><span data-i18n="tier1_b">Toward a walk</span></div>
-      <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-tier-btn w-navlink" data-i18n="tier_btn">Buy this card →</a>
+      <button type="button" class="w-tier-btn" data-i18n="tier_btn">Buy this card →</button>
     </div>
-    <div class="w-tier">
-      <div class="w-tier-amt">€50</div>
+    <div class="w-tier" data-tier="6000">
+      <span class="w-tier-popular" data-i18n="tier2_popular">Most popular</span>
+      <div class="w-tier-amt">€60</div>
       <div class="w-tier-sub" data-i18n="tier2_sub">Gift card</div>
       <div class="w-tier-benefit"><span aria-hidden="true">🍸</span><span data-i18n="tier2_b">A cocktail walk for one</span></div>
-      <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-tier-btn w-navlink" data-i18n="tier_btn">Buy this card →</a>
+      <button type="button" class="w-tier-btn" data-i18n="tier_btn">Buy this card →</button>
     </div>
-    <div class="w-tier">
+    <div class="w-tier" data-tier="10000">
       <div class="w-tier-amt">€100</div>
       <div class="w-tier-sub" data-i18n="tier3_sub">Gift card</div>
       <div class="w-tier-benefit"><span aria-hidden="true">👥</span><span data-i18n="tier3_b">A night out for two</span></div>
-      <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-tier-btn w-navlink" data-i18n="tier_btn">Buy this card →</a>
+      <button type="button" class="w-tier-btn" data-i18n="tier_btn">Buy this card →</button>
     </div>
-    <!-- CUSTOM AMOUNT tile — 4th in the grid.
-         PHASE 1 (now): links to the live Wix gift-card page, where the buyer
-         enters any amount at checkout. target=_top breaks out of the Wix iframe.
-         PHASE 2 (Stripe): swap the href for the Stripe custom-amount checkout and
-         uncomment the inline amount <input> below (min 10, step 5). -->
-    <div class="w-tier w-tier-custom">
+    <!-- CUSTOM AMOUNT tile — 4th in the grid. Any value €10–€500 (matches the
+         server's GIFT_CARD_CUSTOM_MIN_CENTS/MAX_CENTS in backend/src/config.js). -->
+    <div class="w-tier w-tier-custom" data-tier="custom">
       <div class="w-tier-amt" aria-hidden="true">€ …</div>
       <div class="w-tier-sub" data-i18n="tierc_sub">Your amount</div>
       <div class="w-tier-benefit"><span aria-hidden="true">🎁</span><span data-i18n="tierc_b">Any value you like</span></div>
-      <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-tier-btn w-navlink" data-i18n="tierc_btn">Choose an amount →</a>
-      <!-- PHASE 2 (Stripe) — do not enable until Stripe gift cards are live:
       <label class="w-tier-input"><span>€</span>
-        <input type="number" min="10" step="5" inputmode="numeric" placeholder="50" aria-label="Custom gift amount in euros">
+        <input type="number" id="wGcCustomAmount" min="10" max="500" step="5" inputmode="numeric" placeholder="50" aria-label="Custom gift amount in euros">
       </label>
-      -->
+      <button type="button" class="w-tier-btn" data-i18n="tierc_btn">Choose this amount →</button>
     </div>
   </div>
-  <p class="w-tiers-note" data-i18n="tiers_note">Buy 1 to 10 cards in one order and add a personalized message at checkout. The card lands in an inbox within minutes — no shipping, no wrapping.</p>
-  <p class="w-tiers-note" data-i18n="tiers_anchor">A walk is €29,95 per person. €25 covers most of a walk, €50 is a full walk for one, and €100 makes it a night out for two. Prefer an exact number? Enter your own amount at checkout.</p>
+  <p class="w-tiers-note" data-i18n="tiers_note">One gift card per order, with a personal message at checkout. It lands in their inbox within minutes — no shipping, no wrapping.</p>
+  <p class="w-tiers-note" data-i18n="tiers_anchor">A walk is €29,95 per person. €30 covers most of a walk, €60 is a full walk for one, and €100 makes it a night out for two. Prefer an exact number? Choose your own amount above.</p>
+
+  <!-- ORDER FORM — always present (progressive: works the moment a tile is
+       picked, no modal/JS-only gate). POSTs JSON to the Worker; on success
+       redirects to the returned Stripe Checkout url. -->
+  <div class="gc-order" id="wGcOrder">
+    <div class="gc-order-amt" id="wGcOrderAmt" data-i18n="gc_order_amt_empty">Pick an amount above to get started.</div>
+    <form id="wGcForm" novalidate>
+      <div class="gc-error" id="wGcError" role="alert"></div>
+      <label class="gc-field gc-full"><span data-i18n="gc_buyer_name">Your name</span>
+        <input type="text" name="buyer_name" autocomplete="name" required></label>
+      <label class="gc-field gc-full"><span data-i18n="gc_buyer_email">Your email</span>
+        <input type="email" name="buyer_email" autocomplete="email" required></label>
+      <label class="gc-field"><span data-i18n="gc_recipient_name">Recipient's name</span>
+        <input type="text" name="recipient_name" autocomplete="off" required></label>
+      <label class="gc-field"><span data-i18n="gc_recipient_email">Recipient's email</span>
+        <input type="email" name="recipient_email" autocomplete="off" required></label>
+      <label class="gc-field gc-full"><span data-i18n="gc_message">Personal message (optional)</span>
+        <textarea name="message" rows="3" maxlength="500"></textarea></label>
+      <button type="submit" class="w-hero-cta" id="wGcSubmit" data-i18n="gc_submit" disabled>Choose an amount first</button>
+      <p class="gc-note" data-i18n="gc_note">You'll pay securely via Stripe. The gift card is emailed straight to your recipient the moment payment completes.</p>
+    </form>
+  </div>
 </section>
 
 <!-- ============================================================
@@ -661,7 +701,7 @@
       <div class="w-stepcard-num" aria-hidden="true">1</div>
       <div class="w-stepcard-body">
         <h3><span class="w-stepcard-ico" aria-hidden="true">💳</span><span data-i18n="g1_h">Choose an amount</span></h3>
-        <p data-i18n="g1_p">Pick €25, €50 or €100 — one to ten cards per order.</p>
+        <p data-i18n="g1_p">Pick €30, €60, €100 or your own amount.</p>
       </div>
     </div>
 
@@ -760,7 +800,7 @@
 <section class="w-section dark w-pad w-final">
   <h2 class="wg-reveal" data-i18n="final_h2">Give a night, not a thing</h2>
   <p class="wg-reveal" data-i18n="final_p">Delivered by email in minutes — even if the birthday is today.</p>
-  <a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-final-btn w-navlink" data-i18n="final_btn">Buy a gift card →</a>
+  <a href="#tiers" class="w-final-btn w-scroll" data-i18n="final_btn">Buy a gift card →</a>
 </section>
 
 </main>
@@ -838,7 +878,7 @@
 <!-- Sticky mobile buy bar (funnel page per SITE-PLAN — block + JS copied from the
      homepage; hides while the tier cards are on screen so it never stacks on the
      real Buy buttons). -->
-<div class="w-sticky-cta" id="wStickyCta"><a href="https://www.wogococktailwalk.com/gift-cards" target="_top" class="w-sticky-cta-btn w-navlink" data-i18n="sticky_cta">Buy a gift card · from €25</a></div>
+<div class="w-sticky-cta" id="wStickyCta"><a href="#tiers" class="w-sticky-cta-btn w-scroll" data-i18n="sticky_cta">Buy a gift card · from €30</a></div>
 
 <script>
 (function () {
@@ -879,19 +919,29 @@
     tier3_sub: "Cadeaubon",
     tier1_b: "Bijna een hele walk",
     tier2_b: "Een Cocktail Walk voor één",
+    tier2_popular: "Meest gekozen",
     tier3_b: "Een avond uit voor twee",
     tier_btn: "Koop deze bon →",
     tierc_sub: "Eigen bedrag",
     tierc_b: "Elk bedrag dat je wilt",
-    tierc_btn: "Kies een bedrag →",
-    tiers_note: "Koop 1 tot 10 bonnen in één bestelling en voeg bij het afrekenen een persoonlijk bericht toe. De bon landt binnen een paar minuten in de inbox — geen verzending, geen inpakpapier.",
-    tiers_anchor: "Een walk is €29,95 per persoon. €25 dekt bijna een hele walk, €50 is een volledige walk voor één en €100 maakt er een avond uit voor twee van. Liever een exact bedrag? Vul bij het afrekenen je eigen bedrag in.",
+    tierc_btn: "Kies dit bedrag →",
+    tiers_note: "Eén cadeaubon per bestelling, met een persoonlijk bericht bij het afrekenen. Binnen een paar minuten in de inbox — geen verzending, geen inpakpapier.",
+    tiers_anchor: "Een walk is €29,95 per persoon. €30 dekt bijna een hele walk, €60 is een volledige walk voor één en €100 maakt er een avond uit voor twee van. Liever een exact bedrag? Kies hierboven je eigen bedrag.",
+    /* --- order form --- */
+    gc_order_amt_empty: "Kies hierboven een bedrag om te beginnen.",
+    gc_buyer_name: "Jouw naam",
+    gc_buyer_email: "Jouw e-mailadres",
+    gc_recipient_name: "Naam van de ontvanger",
+    gc_recipient_email: "E-mailadres van de ontvanger",
+    gc_message: "Persoonlijk bericht (optioneel)",
+    gc_submit: "Kies eerst een bedrag",
+    gc_note: "Je betaalt veilig via Stripe. De cadeaubon wordt direct na betaling naar je ontvanger gemaild.",
     /* --- how gifting works --- */
     how_eyebrow: "Zo werkt het",
     how_h2: "Van jouw inbox naar hun avond uit",
     how_p: "Drie stappen. Het regelwerk doen wij, niet zij.",
     g1_h: "Kies een bedrag",
-    g1_p: "Kies €25, €50 of €100 — één tot tien bonnen per bestelling.",
+    g1_p: "Kies €30, €60, €100 of je eigen bedrag.",
     g2_h: "Voeg een bericht toe, reken af",
     g2_p: "Schrijf een persoonlijk bericht en betaal veilig in seconden.",
     g3_h: "Zij krijgen een code per e-mail",
@@ -926,7 +976,7 @@
     final_h2: "Geef een avond, geen cadeau dat stof vangt",
     final_p: "Binnen een paar minuten per e-mail geleverd — ook als de verjaardag vandaag is.",
     final_btn: "Koop een cadeaubon →",
-    sticky_cta: "Koop een cadeaubon · vanaf €25",
+    sticky_cta: "Koop een cadeaubon · vanaf €30",
     /* --- nav --- */
     nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_about: "Over WOGO", nav_cta: "Bekijk data",
     /* --- footer --- */
@@ -1756,5 +1806,117 @@
 @media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
 </style>
 <!-- ===== /WOGO WHATSAPP FLOAT ===== -->
+
+<!-- Gift-card self-serve order form — POST /api/giftcard/checkout, then
+     redirect to the returned Stripe Checkout url. Same Worker base as the
+     booking widget (backend/widget/wogo-calendar.js's WOGO_API). -->
+<script>
+(function(){
+  var API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
+  var TIERS = document.getElementById('wGcTiers');
+  var customInput = document.getElementById('wGcCustomAmount');
+  var orderAmt = document.getElementById('wGcOrderAmt');
+  var order = document.getElementById('wGcOrder');
+  var form = document.getElementById('wGcForm');
+  var submitBtn = document.getElementById('wGcSubmit');
+  var errBox = document.getElementById('wGcError');
+  var selectedCents = null;
+
+  function lang(){ return document.documentElement.lang === 'nl' ? 'nl' : 'en'; }
+  var STR = {
+    en: {
+      pick: function(eur){ return 'You’re buying a €' + eur + ' gift card.'; },
+      ready: 'Continue to payment →',
+      busy: 'Redirecting…',
+      choose: 'Choose an amount first',
+      err: 'Something went wrong. Please try again, or email us at info@wogoamsterdam.com.',
+      errAmount: 'Please choose an amount between €10 and €500.'
+    },
+    nl: {
+      pick: function(eur){ return 'Je koopt een cadeaubon van €' + eur + '.'; },
+      ready: 'Ga naar betalen →',
+      busy: 'Bezig…',
+      choose: 'Kies eerst een bedrag',
+      err: 'Er ging iets mis. Probeer het nog eens, of mail ons op info@wogoamsterdam.com.',
+      errAmount: 'Kies een bedrag tussen €10 en €500.'
+    }
+  };
+
+  function euro(cents){ return (cents / 100).toFixed(0); }
+
+  function selectAmount(cents, tileEl){
+    selectedCents = cents;
+    Array.prototype.forEach.call(TIERS.querySelectorAll('.w-tier'), function (t) { t.classList.toggle('is-selected', t === tileEl); });
+    var t = STR[lang()];
+    orderAmt.textContent = t.pick(euro(cents));
+    submitBtn.disabled = false;
+    submitBtn.textContent = t.ready;
+    order.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  TIERS.querySelectorAll('.w-tier').forEach(function (tile) {
+    var tierAttr = tile.getAttribute('data-tier');
+    var btn = tile.querySelector('.w-tier-btn');
+    if (!btn) return;
+    if (tierAttr === 'custom') {
+      btn.addEventListener('click', function () {
+        var eur = parseInt(customInput.value, 10);
+        if (!eur || eur < 10 || eur > 500) {
+          customInput.focus();
+          errBox.textContent = STR[lang()].errAmount;
+          errBox.classList.add('show');
+          return;
+        }
+        errBox.classList.remove('show');
+        selectAmount(eur * 100, tile);
+      });
+      // Typing a custom amount and pressing Enter behaves the same as clicking the button.
+      customInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); btn.click(); } });
+    } else {
+      btn.addEventListener('click', function () { selectAmount(parseInt(tierAttr, 10), tile); });
+    }
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var t = STR[lang()];
+    errBox.classList.remove('show');
+    if (!selectedCents) { errBox.textContent = t.choose; errBox.classList.add('show'); return; }
+
+    var fd = new FormData(form);
+    var payload = {
+      amount_cents: selectedCents,
+      buyer_name: String(fd.get('buyer_name') || '').trim(),
+      buyer_email: String(fd.get('buyer_email') || '').trim(),
+      recipient_name: String(fd.get('recipient_name') || '').trim(),
+      recipient_email: String(fd.get('recipient_email') || '').trim(),
+      message: String(fd.get('message') || '').trim(),
+      locale: lang()
+    };
+
+    submitBtn.disabled = true;
+    var original = submitBtn.textContent;
+    submitBtn.textContent = t.busy;
+
+    fetch(API + '/api/giftcard/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
+      .then(function (res) {
+        if (res.ok && res.body.url) { window.location.href = res.body.url; return; }
+        submitBtn.disabled = false; submitBtn.textContent = original;
+        errBox.textContent = (res.body && res.body.message) || t.err;
+        errBox.classList.add('show');
+      })
+      .catch(function () {
+        submitBtn.disabled = false; submitBtn.textContent = original;
+        errBox.textContent = t.err;
+        errBox.classList.add('show');
+      });
+  });
+})();
+</script>
 </body>
 </html>

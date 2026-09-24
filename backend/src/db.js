@@ -9,7 +9,7 @@
 // No business-logic math lives here beyond what SQL itself expresses; pure
 // aggregation/formatting is delegated to src/logic.js.
 
-import { nowSqlite, buildSlotsForDate, aggregateCustomers } from './logic.js';
+import { nowSqlite, buildSlotsForDate, aggregateCustomers, generateGiftCardCode, normalizeGiftCardCode } from './logic.js';
 
 // ---------------------------------------------------------------------------
 // Named-param → positional translation (real-D1 compatibility)
@@ -992,6 +992,174 @@ export async function updateCustomer(db, oldEmail, patch) {
     bound
   );
   return { updated: result.meta.changes };
+}
+
+// ---------------------------------------------------------------------------
+// Gift cards (migrations/0018, 0019) — balance-tracked, D1 is the source of
+// truth for balance_cents (Stripe never holds it — see src/stripe.js's doc
+// comment on the one-time redemption coupon). Two flows:
+//   * PURCHASE (src/guest_api.js:handleGiftCardCheckout ->
+//     src/webhook.js's metadata.type==='giftcard' branch) creates the row.
+//   * REDEMPTION (src/guest_api.js:handleBook's optional gift_code ->
+//     src/webhook.js's booking-confirm path) atomically decrements it.
+// ---------------------------------------------------------------------------
+
+/**
+ * Creates a gift card with a fresh, unique human-friendly code. Retries a
+ * handful of times on a UNIQUE constraint hit (the ~1-in-huge chance two
+ * random codes collide) — same "detect the constraint error, don't treat it
+ * as fatal" pattern recordWebhookEvent uses below. `params.initial_cents` is
+ * also the STARTING balance.
+ */
+export async function createGiftCard(db, params) {
+  const id = `gc_${crypto.randomUUID()}`;
+  const bound = {
+    id,
+    initial_cents: params.initial_cents,
+    balance_cents: params.initial_cents,
+    currency: params.currency || 'EUR',
+    buyer_email: params.buyer_email,
+    buyer_name: params.buyer_name,
+    recipient_name: params.recipient_name,
+    recipient_email: params.recipient_email,
+    message: params.message ?? null,
+    stripe_session: params.stripe_session ?? null,
+    locale: params.locale === 'nl' ? 'nl' : 'en',
+  };
+  const MAX_ATTEMPTS = 5;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const code = generateGiftCardCode();
+    try {
+      await run(
+        db,
+        `INSERT INTO gift_cards
+           (id, code, initial_cents, balance_cents, currency, buyer_email, buyer_name,
+            recipient_name, recipient_email, message, status, stripe_session, locale, created_at)
+         VALUES
+           (:id, :code, :initial_cents, :balance_cents, :currency, :buyer_email, :buyer_name,
+            :recipient_name, :recipient_email, :message, 'active', :stripe_session, :locale, datetime('now'))`,
+        { ...bound, code }
+      );
+      return first(db, `SELECT * FROM gift_cards WHERE id = :id`, { id });
+    } catch (err) {
+      const msg = String(err && err.message ? err.message : err);
+      if (/unique|constraint/i.test(msg)) continue; // code collision — try another
+      throw err;
+    }
+  }
+  throw new Error('gift_card_code_generation_failed');
+}
+
+export async function getGiftCardByCode(db, code) {
+  return first(db, `SELECT * FROM gift_cards WHERE code = :code`, { code: normalizeGiftCardCode(code) });
+}
+
+/** Idempotency lookup for the purchase webhook — a redelivered
+ * checkout.session.completed for the same PURCHASE session must not mint a
+ * second card (see src/webhook.js's giftcard branch). */
+export async function getGiftCardByStripeSession(db, sessionId) {
+  return first(db, `SELECT * FROM gift_cards WHERE stripe_session = :session_id`, { session_id: sessionId });
+}
+
+export async function listGiftCards(db) {
+  return all(db, `SELECT * FROM gift_cards ORDER BY created_at DESC`, {});
+}
+
+/** Owner "void" action (admin dashboard) — only an ACTIVE card can be voided;
+ * a depleted/already-void card is left alone. */
+export async function voidGiftCard(db, code) {
+  const result = await run(
+    db,
+    `UPDATE gift_cards SET status = 'void' WHERE code = :code AND status = 'active'`,
+    { code: normalizeGiftCardCode(code) }
+  );
+  return result.meta.changes === 1;
+}
+
+/**
+ * Records what a HOLD will redeem against — called right after createHold
+ * succeeds (src/guest_api.js:handleBook), mirroring the existing
+ * attachStripeSession/setBookingDiscount pattern of "patch the row after
+ * the fact" rather than widening CREATE_HOLD_SQL's own INSERT (every test
+ * file's hand-built schema stops at a fixed migration list; adding a NOT-YET-
+ * migrated column to that INSERT would break every one of them — see
+ * migrations/0019's doc comment). `WHERE status = 'hold'` guard matches
+ * attachStripeSession exactly.
+ */
+export async function attachGiftCardToBooking(db, bookingId, giftCode, appliedCents) {
+  const result = await run(
+    db,
+    `UPDATE bookings SET gift_code = :gift_code, gift_applied_cents = :applied WHERE id = :id AND status = 'hold'`,
+    { id: bookingId, gift_code: normalizeGiftCardCode(giftCode), applied: appliedCents }
+  );
+  return result.meta.changes === 1;
+}
+
+/**
+ * Atomically redeems `applied_cents` off gift card `code` for `booking_id`.
+ * ONE guarded UPDATE statement carries all three invariants at once (same
+ * "atomic guarded SQL" style as CREATE_HOLD_SQL elsewhere in this file):
+ *   * status = 'active'              — a voided/depleted card can't be spent
+ *   * balance_cents >= :applied      — the double-spend guard: two bookings
+ *     racing to redeem the same nearly-empty card can't both succeed; the
+ *     one whose UPDATE lands second sees the already-decremented balance
+ *     and its own guard fails.
+ *   * NOT EXISTS (a redemption row for this booking_id already) — the
+ *     idempotency guard: a Stripe webhook redelivery for an ALREADY-
+ *     confirmed booking must not deduct twice. gift_card_redemptions.
+ *     booking_id is also UNIQUE (migrations/0019) as a second, structural
+ *     backstop if this NOT EXISTS ever raced.
+ * Returns one of:
+ *   { status: 'redeemed', gift_card }            — balance decremented, audit row written
+ *   { status: 'already_redeemed', gift_card }    — this booking was redeemed before (no-op)
+ *   { status: 'insufficient_balance', gift_card } — guard failed; booking stays paid+confirmed,
+ *                                                     caller alerts the owner to reconcile by hand
+ *   { status: 'not_found', gift_card: null }      — code doesn't exist at all (shouldn't happen —
+ *                                                     handleBook validates it exists before booking)
+ */
+export async function redeemGiftCard(db, { code, applied_cents, booking_id }) {
+  const normalizedCode = normalizeGiftCardCode(code);
+  const result = await run(
+    db,
+    `UPDATE gift_cards
+        SET balance_cents = balance_cents - :applied,
+            status = CASE WHEN (balance_cents - :applied) <= 0 THEN 'depleted' ELSE status END
+      WHERE code = :code
+        AND status = 'active'
+        AND balance_cents >= :applied
+        AND NOT EXISTS (SELECT 1 FROM gift_card_redemptions WHERE booking_id = :booking_id)`,
+    { code: normalizedCode, applied: applied_cents, booking_id }
+  );
+  if (result.meta.changes === 1) {
+    await run(
+      db,
+      `INSERT INTO gift_card_redemptions (id, gift_card_code, booking_id, amount_cents, created_at)
+       VALUES (:id, :code, :booking_id, :applied, datetime('now'))`,
+      { id: `gcr_${crypto.randomUUID()}`, code: normalizedCode, booking_id, applied: applied_cents }
+    );
+    const gift_card = await first(db, `SELECT * FROM gift_cards WHERE code = :code`, { code: normalizedCode });
+    return { status: 'redeemed', gift_card };
+  }
+
+  // Guard failed — work out WHY, so the caller's owner-alert email (or the
+  // idempotent no-op) is specific rather than a bare "didn't work".
+  const gift_card = await first(db, `SELECT * FROM gift_cards WHERE code = :code`, { code: normalizedCode });
+  if (!gift_card) return { status: 'not_found', gift_card: null };
+
+  const existingRedemption = await first(
+    db, `SELECT 1 FROM gift_card_redemptions WHERE booking_id = :booking_id`, { booking_id }
+  );
+  if (existingRedemption) return { status: 'already_redeemed', gift_card };
+
+  return { status: 'insufficient_balance', gift_card };
+}
+
+export async function listGiftCardRedemptions(db, code) {
+  return all(
+    db,
+    `SELECT * FROM gift_card_redemptions WHERE gift_card_code = :code ORDER BY created_at`,
+    { code: normalizeGiftCardCode(code) }
+  );
 }
 
 // ---------------------------------------------------------------------------
