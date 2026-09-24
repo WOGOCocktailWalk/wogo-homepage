@@ -938,3 +938,25 @@ export async function handleHealthCheck(request, env) {
   const result = await runHealthCheck(env);
   return json(result, result.ok ? 200 : 503);
 }
+
+// ---------------------------------------------------------------------------
+// Gift cards (migrations/0018/0019) — dashboard visibility + owner "void".
+// Balances themselves only ever change via src/db.js:redeemGiftCard (the
+// atomic guarded UPDATE called from the Stripe webhook) — nothing here ever
+// edits balance_cents directly.
+// ---------------------------------------------------------------------------
+
+export async function handleListGiftCards(request, env) {
+  const gift_cards = await db.listGiftCards(env.DB);
+  return json({ gift_cards });
+}
+
+/** POST /admin/api/gift-cards/:code/void — owner cancels an active card (e.g.
+ * a refunded purchase). Already-depleted/void cards are left untouched. */
+export async function handleVoidGiftCard(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const ok = await db.voidGiftCard(env.DB, params.code);
+  if (!ok) return errorJson('not_found', 'no active gift card with that code', 404);
+  await audit(env, request, 'gift_card.void', 'gift_card', params.code, null);
+  return json({ ok: true });
+}

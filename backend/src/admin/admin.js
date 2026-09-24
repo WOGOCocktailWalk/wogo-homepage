@@ -51,7 +51,8 @@
     week: { start: null, loadedStart: null, bookings: [], overrides: {}, show: {}, showInit: false, mini: null },
     customers: { list: [], q: "", codes: {}, codesLoaded: false, loaded: false, formOpen: false },
     hours: { date: todayStr(), route: "", _data: null, editSlot: null },
-    routesUI: { openId: null, tab: "details", bars: {}, overrides: {} }
+    routesUI: { openId: null, tab: "details", bars: {}, overrides: {} },
+    giftCards: { list: [], loaded: false }
   };
 
   /* ---------- date utils (timezone-safe, local) ------------------------- */
@@ -153,6 +154,7 @@
       customers: ["Customers", "Who books with you, how often, and what they spend"],
       hours: ["Participants per hour", "Who is arriving, and when — pick a date"],
       routes: ["Route manager", "Days, times, seats, bars and one-off date changes"],
+      giftcards: ["Gift cards", "Every card sold, its balance, and who it's for"],
       export: ["Export", "Download bookings as a spreadsheet (CSV)"]
     };
     $("#page-title").textContent = titles[view][0];
@@ -163,6 +165,7 @@
     else if (view === "customers") renderCustomers(target);
     else if (view === "hours") renderHours(target);
     else if (view === "routes") renderRoutes(target);
+    else if (view === "giftcards") renderGiftCards(target);
     else if (view === "export") renderExport(target);
   }
 
@@ -1838,6 +1841,114 @@
     }));
     card.appendChild(body);
     root.appendChild(card);
+  }
+
+  /* ======================================================================
+     VIEW — GIFT CARDS (migrations/0018/0019)
+     Read-only list (code, initial/balance, status, recipient, created) plus
+     a "Void" action for an active card (e.g. a refunded purchase). Balances
+     themselves only ever move via a Stripe-webhook-triggered redemption —
+     nothing here edits balance_cents directly.
+     ====================================================================== */
+
+  // Reuses the existing booking-status badge palette (admin.css) rather than
+  // inventing new colors: active reads as "good" (confirmed's green), void
+  // as "gone" (cancelled's red), depleted as neutral (hold's amber) — a
+  // fully-spent card isn't a problem, just informational.
+  function giftStatusTag(status) {
+    const cls = status === "active" ? "confirmed" : status === "void" ? "cancelled" : "hold";
+    const label = { active: "Active", depleted: "Depleted", void: "Void" }[status] || status;
+    return el("span", { class: "badge " + cls, text: label });
+  }
+
+  function renderGiftCards(root) {
+    clear(root);
+    root.appendChild(el("div", { class: "stat-row", id: "gc-stats" }));
+    root.appendChild(el("div", { id: "gc-holder" }));
+    if (S.giftCards.loaded) paintGiftCards();
+    else loadGiftCards();
+  }
+
+  async function loadGiftCards() {
+    const holder = $("#gc-holder");
+    if (!holder) return;
+    clear(holder);
+    holder.appendChild(skeletonCard());
+    try {
+      const data = await api("/admin/api/gift-cards");
+      S.giftCards.list = data.gift_cards || [];
+      S.giftCards.loaded = true;
+      paintGiftCards();
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(holder); holder.appendChild(errorCard(e.message, loadGiftCards)); }
+    }
+  }
+
+  function paintGiftCards() {
+    const stats = $("#gc-stats"), holder = $("#gc-holder");
+    if (!holder) return;
+    const list = S.giftCards.list;
+
+    if (stats) {
+      clear(stats);
+      const active = list.filter((c) => c.status === "active");
+      const outstanding = active.reduce((a, c) => a + c.balance_cents, 0);
+      const sold = list.reduce((a, c) => a + c.initial_cents, 0);
+      stats.appendChild(stat("Cards sold", list.length, "all time"));
+      stats.appendChild(stat("Active balance", euros(outstanding), active.length + " active card" + (active.length === 1 ? "" : "s")));
+      stats.appendChild(stat("Total sold", euros(sold), "face value, all cards"));
+    }
+
+    clear(holder);
+    const card = el("div", { class: "card" });
+    card.appendChild(el("div", { class: "card-head" }, [
+      el("h2", { text: "Gift cards" }),
+      el("span", { class: "count-badge", text: list.length + (list.length === 1 ? " card" : " cards") })
+    ]));
+    if (list.length === 0) {
+      card.appendChild(el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "🎁" }),
+        el("div", { text: "No gift cards sold yet — they appear here the moment someone buys one." })
+      ]));
+      holder.appendChild(card);
+      return;
+    }
+    const scroll = el("div", { class: "table-scroll" });
+    const t = el("table", { class: "data" });
+    t.appendChild(el("thead", {}, el("tr", {}, [
+      th("Code"), th("Initial"), th("Balance"), th("Status"), th("Recipient"), th("Buyer"), th("Created"), th("")
+    ])));
+    const tb = el("tbody");
+    list.forEach((c) => {
+      const voidBtn = el("button", {
+        class: "btn btn-quiet btn-sm", text: "Void",
+        disabled: c.status !== "active",
+        onclick: async (ev) => {
+          ev.stopPropagation();
+          if (!confirm("Void gift card " + c.code + "? This cannot be undone.")) return;
+          try {
+            await api("/admin/api/gift-cards/" + encodeURIComponent(c.code) + "/void", { method: "POST" });
+            toast("Gift card voided", "ok");
+            S.giftCards.loaded = false;
+            loadGiftCards();
+          } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+        }
+      });
+      tb.appendChild(el("tr", {}, [
+        el("td", { class: "td-name", style: "font-family:ui-monospace,Menlo,monospace;font-size:12.5px", text: c.code }),
+        el("td", { class: "num", text: euros(c.initial_cents) }),
+        el("td", { class: "num td-name", text: euros(c.balance_cents) }),
+        el("td", {}, giftStatusTag(c.status)),
+        el("td", {}, [el("div", { class: "td-name", text: c.recipient_name || "—" }), el("div", { class: "td-sub", text: c.recipient_email || "" })]),
+        el("td", {}, [el("div", { class: "td-name", text: c.buyer_name || "—" }), el("div", { class: "td-sub", text: c.buyer_email || "" })]),
+        el("td", { class: "td-sub num", text: c.created_at ? prettyDate(String(c.created_at).slice(0, 10)) : "—" }),
+        el("td", {}, voidBtn)
+      ]));
+    });
+    t.appendChild(tb);
+    scroll.appendChild(t);
+    card.appendChild(scroll);
+    holder.appendChild(card);
   }
 
   /* ======================================================================

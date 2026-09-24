@@ -149,6 +149,15 @@ export const GDPR_RETENTION_MONTHS = 24;
 // window costs a rounding error of that.
 export const BACKUP_RETENTION_DAYS = 60;
 
+// --- Gift cards (migrations/0018/0019) --------------------------------------
+// Purchase amount rules for POST /api/giftcard/checkout: the three page tiers
+// (exact cents) OR any custom amount within [MIN, MAX]. Kept here (not
+// hardcoded in guest_api.js) so the page's tiers and the server's validation
+// can never silently drift.
+export const GIFT_CARD_TIERS_CENTS = [3000, 6000, 10000]; // €30 / €60 / €100
+export const GIFT_CARD_CUSTOM_MIN_CENTS = 1000;  // €10
+export const GIFT_CARD_CUSTOM_MAX_CENTS = 50000; // €500
+
 // route slug -> public route page path, used for Stripe cancel_url / Meta event_source_url
 export const ROUTE_PATHS = {
   amsterdam: '/amsterdam/',

@@ -1,57 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="utf-8">
 <!-- ============================================================================
-     WOGO GIFT-CARDS PAGE — built from the content-page template at
-     /how-it-works/index.html (that file stays the REFERENCE template).
-     Purpose: own "cocktail walk gift card" / "cadeaubon" search intent AND
-     sell it — self-serve, owner-owned, €0/month (Stripe processes payment,
-     the balance itself lives in D1 — see backend/src/db.js gift_cards table,
-     migrations/0018 + 0019). The Wix widget is RETIRED on this page.
-
-     CUTOVER DONE (this build): every Buy button now opens the on-page order
-     form (#tiers), which POSTs to POST /api/giftcard/checkout on the same
-     Worker the booking widget uses, then redirects to Stripe Checkout. Tiers
-     re-priced to €30/€60/€100 with "most popular" on €60 (the re-tier the
-     old CONSISTENCY RULE comment was holding back until this exact moment).
-     If any gift cards are still outstanding from the OLD Wix widget, honor
-     them manually — they are NOT in this D1 table.
-
-     TODO (validity): no expiry logic yet (see migrations/0018's own TODO) —
-     cards are valid indefinitely until redeemed or voided by the owner. The
-     existing fq2_b FAQ copy below is UNCHANGED by this build — left exactly
-     as the previous specialist wrote it; revisit only if the owner wants to
-     make a validity claim once the no-expiry behaviour above is reviewed.
+     ★ WOGO GIFT-CARD CONFIRMATION PAGE ★ — cloned from booking-confirmed/
+     (which itself shares the site's shared-nav/shared-footer/cookie-consent/
+     WhatsApp-float chrome — kept byte-identical here). This page is the
+     success_url landing spot for a gift-card PURCHASE Checkout Session
+     (src/stripe.js:createGiftCardCheckoutSession) — NOT a booking. It is
+     deliberately STATIC: no /api lookup call, no session_id-keyed fetch — the
+     actual gift card + code are delivered by EMAIL (src/emails.js:
+     renderGiftCardRecipient / renderGiftCardBuyer) once the webhook mints the
+     card, so this page only needs to confirm "the payment went through, check
+     your inbox" — see webhook.js's giftcard branch for the emailing side.
+     noindex like booking-confirmed (utility page, not a landing page).
      ========================================================================= -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- PAGE-EDIT: title + description + canonical -->
-<title>Cocktail Walk Gift Cards · From €30 | WOGO</title>
-<meta name="robots" content="noindex"> <!-- REMOVE at cutover -->
-<link rel="canonical" href="https://www.wogococktailwalk.com/gift-cards/">
-<meta name="description" content="Give a WOGO cocktail walk gift card — from €30, valid on any city or route, delivered by email in seconds.">
+<title>Your gift card is on its way | WOGO Cocktail Walk</title>
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://www.wogococktailwalk.com/gift-confirmed/">
+<meta name="description" content="Your WOGO Gift Card purchase is confirmed — it's on its way to your recipient's inbox.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="WOGO Cocktail Walk">
-<meta property="og:title" content="Cocktail Walk Gift Cards · From €30 | WOGO">
-<meta property="og:description" content="Give a WOGO cocktail walk gift card — from €30, valid on any city or route, delivered by email in seconds.">
-<meta property="og:url" content="https://www.wogococktailwalk.com/gift-cards/">
-<meta property="og:image" content="https://static.wixstatic.com/media/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png">
+<meta property="og:title" content="Your gift card is on its way | WOGO Cocktail Walk">
+<meta property="og:description" content="Your WOGO Gift Card purchase is confirmed — it's on its way to your recipient's inbox.">
+<meta property="og:url" content="https://www.wogococktailwalk.com/gift-confirmed/">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="nl_NL">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="WOGO Gift Cards · Give a Cocktail Walk">
-<meta name="twitter:description" content="Any route, any city, redeemable on all our walks. From €30, delivered by email.">
-<meta name="twitter:image" content="https://static.wixstatic.com/media/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png">
-<!-- PAGE-EDIT: structured data — gift cards carry Product + AggregateOffer
-     (lowPrice 30 / highPrice 100 EUR — the real Stripe self-serve tiers, a
-     custom amount up to €500 is also offered on-page but not claimed here),
-     plus the site-wide light Organization block shared by all content pages. -->
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Product","name":"WOGO Gift Card","description":"A WOGO Cocktail Walk gift card, redeemable on all WOGO self-guided cocktail walks in Amsterdam, Rotterdam, Utrecht and Groningen. Choose an amount, add a personalized message, delivered by email.","image":"https://static.wixstatic.com/media/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png","brand":{"@type":"Brand","name":"WOGO Cocktail Walk"},"offers":{"@type":"AggregateOffer","priceCurrency":"EUR","lowPrice":"30","highPrice":"100","offerCount":"3","availability":"https://schema.org/InStock","url":"https://www.wogococktailwalk.com/gift-cards"}}
-</script>
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Organization","name":"WOGO Cocktail Walk","url":"https://www.wogococktailwalk.com/","logo":"https://www.wogococktailwalk.com/wogo-logo.png","email":"info@wogoamsterdam.com","telephone":"+31202101168","address":{"@type":"PostalAddress","addressLocality":"Amsterdam","addressCountry":"NL"},"sameAs":["https://www.instagram.com/wogococktailwalk/","https://www.tiktok.com/@wogococktailwalk","https://www.facebook.com/wogoamsterdam/"]}
-</script>
 <!-- Anti-flicker for Dutch visitors: the page is authored in English and translated by
      the script at the foot of the body, so briefly hide the body ONLY when Dutch is about
      to be shown (setLang reveals it; a 2.5s timeout is the safety net). -->
@@ -70,14 +46,21 @@
   .w-skip{position:fixed;top:8px;left:-9999px;z-index:100000;background:#3f2b21;color:#fffaf6;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:800;text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.28);}
   .w-skip:focus{left:12px;}
 
-  /* ===== V5 primary-CTA token — warm salmon→coral, the single high-converting
-     action colour (BRAND.md lists salmon for warm CTAs; #f2905c is canonical
-     salmon-deep, not terracotta). Drives every primary button on this page. ===== */
+  /* ===== V5 primary-CTA token — the single high-converting action colour.
+     Warm salmon→coral gradient, espresso ink (AA on salmon-deep). Drives every
+     primary CTA on this page. Page CSS, outside the shared nav/footer fences. ===== */
   :root{
     --wogo-cta-bg:       linear-gradient(135deg, #ffaa81 0%, #f2905c 100%);
     --wogo-cta-bg-hover: linear-gradient(135deg, #f2905c 0%, #f2905c 100%);
     --wogo-cta-ink:      #3f2b21;
     --wogo-cta-shadow:   0 8px 20px rgba(242,144,92,0.45);
+    /* V6 §1 palette tokens — section-rhythm backgrounds (canonical WOGO hexes) */
+    --wogo-blush:        #ffe5d9;   /* LIGHT · warm            */
+    --wogo-cream:        #fffaf6;   /* LIGHT · lightest        */
+    --wogo-surface-tint: #fbe9df;   /* LIGHT · salmon-tint     */
+    --wogo-espresso:     #3f2b21;   /* DARK  · primary band    */
+    --wogo-ink:          #201611;   /* DARKEST · hero echo     */
+    --wogo-salmon:       #ffaa81;   /* accent / links on dark  */
   }
   /* ===== WOGO SHARED VISUAL SYSTEM (copied from the homepage — keep in sync) ===== */
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -89,9 +72,7 @@
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; } }
   .w-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   .w-hero { position: relative; width: 100%; min-height: 440px; overflow: hidden; background: #1a1410; color: #fff; }
-  /* Content-page hero: no photo/video — a quiet espresso gradient band instead
-     (fast, zero assets to swap when this template is copied). */
-  .w-hero-flat { min-height: 360px; background: linear-gradient(160deg, #1a1410 0%, #201611 50%, #3f2b21 100%); }
+  .w-hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
   .w-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(26,20,16,0.40) 0%, rgba(26,20,16,0.72) 100%); z-index: 1; }
   /* ── Language dropdown: trigger pill + expandable menu (data-driven — see WOGO_LANGS in the foot script; scales beyond EN/NL) ── */
   .w-lang { position: relative; display: inline-flex; }
@@ -110,99 +91,77 @@
   .w-nav-ov-lang { display: flex; padding: 16px 6px; border-bottom: 1px solid rgba(63,43,33,0.12); }
   .w-nav-overlay .w-lang-menu { right: auto; left: 0; }
   .w-hero-content { position: relative; z-index: 2; min-height: 440px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 104px 24px 56px; max-width: 920px; margin: 0 auto; }
-  .w-hero-flat .w-hero-content { min-height: 360px; padding: 118px 24px 50px; }
-  .w-hero-overline { font-size: 11.5px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #ffe5d9; margin-bottom: 16px; }
-  .w-hero h1 { font-size: clamp(28px, 4.6vw, 48px); font-weight: 900; line-height: 1.05; letter-spacing: -0.015em; margin-bottom: 14px; max-width: 20ch; text-shadow: 0 2px 16px rgba(0,0,0,0.45); }
-  .w-hero p { font-size: clamp(14px, 1.3vw, 18px); font-weight: 500; line-height: 1.5; max-width: 560px; margin-bottom: 22px; opacity: 0.95; }
+  .w-hero-brand { font-size: clamp(18px, 2.6vw, 26px); font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #ffe5d9; line-height: 1; margin-bottom: 8px; }
+  .w-hero h1 { font-size: clamp(28px, 4.6vw, 52px); font-weight: 900; line-height: 1.05; letter-spacing: -0.015em; margin-bottom: 14px; max-width: 18ch; text-shadow: 0 2px 16px rgba(0,0,0,0.45); }
+  .w-hero p { font-size: clamp(14px, 1.3vw, 18px); font-weight: 500; line-height: 1.5; max-width: 540px; margin-bottom: 22px; opacity: 0.95; }
   .w-hero-cta { display: inline-block; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 15px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform 0.2s, background 0.2s; }
-  .w-hero-cta:active, .w-gift-btn:active, .w-group-btn:active, .w-final-btn:active, .w-tier-btn:active, .w-sticky-cta-btn:active { transform: scale(0.96); }
+  .w-hero-cta:active, .w-citycard-btn:active, .w-gift-btn:active, .w-group-btn:active, .w-final-btn:active, .w-sticky-cta-btn:active, .w-book-btn:active { transform: scale(0.96); }
   .w-mail { color: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
   .w-hero-cta:hover { background: var(--wogo-cta-bg-hover); color: var(--wogo-cta-ink); transform: translateY(-2px); }
   .w-hero-trust { margin-top: 16px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.86); display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
   .w-hero-trust .w-star { color: #ffe5d9; }
-  /* ===== WOGO V6 SECTION RHYTHM — alternate light/dark; espresso is the recurring
-     dark band so adjacent seams never wash out. Blush/cream/peach are near-identical
-     in value, so two lights never sit back-to-back; a brown/ink band separates them. */
-  .w-section { padding: 50px 0; background: #ffe5d9; }          /* LIGHT  · blush */
-  .w-section.cream, .w-section.alt { background: #fffaf6; }     /* LIGHT  · cream (lightest) */
-  .w-section.peach { background: #fbe9df; }                     /* LIGHT  · salmon-tint */
-  .w-section.brown { background: #3f2b21; }                     /* DARK   · espresso (recurring band) */
-  .w-section.dark { background: #1a1410; }                      /* DARKEST · ink */
-  /* One inversion helper: add `brown`/`dark` and the section's own text flips. */
-  .w-section.brown, .w-section.dark { color: #ffe5d9; }
+  /* ===== WOGO V6 §1 SECTION RHYTHM — identical on every page =====
+     Alternate light/dark; espresso is the recurring dark band; never two light
+     sections of the same token back-to-back. Marking a section `brown`/`dark`
+     auto-inverts its own text (helper below), replacing the old one-offs. */
+  .w-section        { padding: 50px 0; background: var(--wogo-blush); }   /* LIGHT  · warm      */
+  .w-section.cream,
+  .w-section.alt    { background: var(--wogo-cream); }                    /* LIGHT  · lightest  */
+  .w-section.peach  { background: var(--wogo-surface-tint); }             /* LIGHT  · salmon-tint*/
+  .w-section.brown  { background: var(--wogo-espresso); }                 /* DARK   · primary   */
+  .w-section.dark   { background: var(--wogo-ink); }                      /* DARKEST· hero echo */
+  /* ---- ONE inversion helper: add `brown`/`dark` and text flips automatically ---- */
+  .w-section.brown, .w-section.dark { color: var(--wogo-blush); }
   .w-section.brown h2, .w-section.dark h2,
-  .w-section.brown .w-head h2, .w-section.dark .w-head h2 { color: #fffaf6; }
+  .w-section.brown .w-head h2, .w-section.dark .w-head h2 { color: var(--wogo-cream); }
   .w-section.brown .w-eyebrow, .w-section.dark .w-eyebrow,
-  .w-section.brown .w-head p, .w-section.dark .w-head p { color: rgba(255,229,217,0.72); }
-  .w-section.brown p, .w-section.dark p { color: rgba(255,229,217,0.88); }
+  .w-section.brown .w-head p,  .w-section.dark .w-head p  { color: rgba(255,229,217,0.72); }
+  .w-section.brown p,  .w-section.dark p  { color: rgba(255,229,217,0.88); }
+  .w-section.brown .w-fact, .w-section.dark .w-fact { color: var(--wogo-blush); }
   .w-section.brown a:not(.w-btn):not([class*="btn"]),
-  .w-section.dark a:not(.w-btn):not([class*="btn"]) { color: #ffaa81; }
-  /* Bespoke children that sit directly on a dark band (no cream card of their own). */
-  .w-section.brown .w-stepcard { border-bottom-color: rgba(255,229,217,0.18); }
-  .w-section.brown .w-stepcard h3 { color: #fffaf6; }
-  .w-section.brown .w-faq details { border-bottom-color: rgba(255,229,217,0.18); }
-  .w-section.brown .w-faq summary { color: #fffaf6; }
-  .w-section.brown .w-faq summary:hover { color: #ffaa81; }
-  .w-section.brown .w-faq summary::after { color: rgba(255,229,217,0.82); }
-  .w-section.brown .w-faq-body { color: rgba(255,229,217,0.88); }
+  .w-section.dark  a:not(.w-btn):not([class*="btn"]) { color: var(--wogo-salmon); }
+  /* Cards inside dark bands keep their cream surface + espresso text — no change. */
   .w-pad { padding-left: 24px; padding-right: 24px; }
   .w-head { text-align: center; margin-bottom: 28px; }
   .w-head h2 { font-size: clamp(26px, 3.4vw, 38px); font-weight: 900; letter-spacing: -0.01em; text-transform: uppercase; margin-bottom: 6px; }
   .w-head p { font-size: 14px; color: #3f2b21; font-weight: 600; }
   .w-head .w-hint { font-size: 12px; color: #8a7066; margin-top: 6px; font-weight: 500; }
   .w-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #3f2b21; margin-bottom: 10px; text-align: center; }
-
-  /* ===== CONTENT-PAGE EXTRAS (kept from the template + this page's own) ===== */
-  /* Gift-card amount tiers (this page's core section) */
-  .w-tiers { max-width: 1040px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
-  .w-tier { background: #fff; border-radius: 14px; padding: 30px 24px 26px; text-align: center; box-shadow: 0 4px 14px rgba(92,42,20,0.10); display: flex; flex-direction: column; gap: 10px; }
-  .w-tier-amt { font-size: 42px; font-weight: 900; letter-spacing: -0.02em; color: #3f2b21; line-height: 1; }
-  .w-tier-sub { font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #8a7066; }
-  .w-tier p { font-size: 13.5px; line-height: 1.6; font-weight: 500; color: #444; flex: 1 1 auto; }
-  .w-tier-btn { display: block; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 14px 20px; border-radius: 999px; font-size: 13px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform 0.2s, background 0.2s; margin-top: 6px; }
-  .w-tier-btn:hover { background: var(--wogo-cta-bg-hover); transform: translateY(-2px); }
-  .w-tiers-note { max-width: 640px; margin: 22px auto 0; text-align: center; font-size: 13px; line-height: 1.6; font-weight: 600; color: #3f2b21; }
-  /* Numbered step walkthrough (redemption steps) */
-  .w-steps-wrap { max-width: 760px; margin: 0 auto; }
-  .w-stepcard { display: flex; gap: 22px; padding: 26px 0; border-bottom: 1px solid rgba(92,42,20,0.14); }
-  .w-stepcard:last-child { border-bottom: none; }
-  .w-stepcard-num { flex: 0 0 56px; width: 56px; height: 56px; border-radius: 50%; background: #ffe5d9; color: #3f2b21; font-size: 24px; font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(92,42,20,0.14); }
-  .w-stepcard-body { flex: 1 1 auto; }
-  .w-stepcard h3 { font-size: 17px; font-weight: 800; color: #1a1410; margin-bottom: 6px; display: flex; align-items: baseline; gap: 8px; }
-  .w-stepcard-ico { font-size: 19px; line-height: 1; flex: 0 0 auto; }
-  .w-stepcard p { font-size: 14.5px; line-height: 1.65; font-weight: 500; color: #444; }
-  .w-stepcard p a { color: #3f2b21; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
-  /* Definition / SEO copy block (same pattern as the city-hub intro) */
-  .w-intro-wrap { max-width: 740px; margin: 0 auto; text-align: center; }
-  .w-intro-wrap h2 { font-size: clamp(22px, 3vw, 32px); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; margin-bottom: 14px; color: #1a1410; }
-  .w-intro-wrap p { font-size: 14.5px; line-height: 1.7; font-weight: 500; color: #444; margin-bottom: 14px; }
-  /* "Perfect for" occasion mini-cards */
-  .w-gtk { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-  .w-gtk-card { background: #FAF6F2; border-radius: 14px; padding: 24px 22px; }
-  .w-gtk-ico { font-size: 26px; line-height: 1; margin-bottom: 10px; }
-  .w-gtk-card h3 { font-size: 14.5px; font-weight: 800; color: #1a1410; margin-bottom: 6px; }
-  .w-gtk-card p { font-size: 13.5px; line-height: 1.6; font-weight: 500; color: #444; }
-  /* Occasion chip row ("Perfect for") — reuses the homepage/about .w-chip pill;
-     translucent-white fill lifts the pills off the peach section. */
-  .w-chips { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; max-width: 760px; margin: 0 auto; }
-  .w-chip { color: #1a1410; font-size: 13.5px; font-weight: 800; padding: 11px 20px; border: 1.5px solid rgba(26,20,16,0.22); border-radius: 999px; white-space: nowrap; background: rgba(255,255,255,0.38); }
-  /* Real-guest quote */
-  .w-quote { max-width: 680px; margin: 0 auto; text-align: center; }
-  .w-quote blockquote { font-size: clamp(15px, 1.6vw, 18px); line-height: 1.65; font-weight: 600; color: #1a1410; }
-  .w-quote blockquote::before { content: "“"; display: block; font-size: 48px; line-height: 0.6; color: #3f2b21; margin-bottom: 14px; font-weight: 900; }
-  .w-quote-name { margin-top: 14px; font-size: 12.5px; font-weight: 700; color: #3f2b21; }
-  /* City hub cards (soft internal-link row) */
-  .w-cityhub { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-  .w-cityhub-card { display: flex; flex-direction: column; background: #fff; border-radius: 14px; overflow: hidden; text-decoration: none; box-shadow: 0 4px 14px rgba(0,0,0,0.05); transition: transform 0.3s, box-shadow 0.3s; }
-  .w-cityhub-card:hover { transform: translateY(-4px); box-shadow: 0 14px 28px rgba(0,0,0,0.12); }
-  .w-cityhub-card:hover .w-cityhub-img img { transform: scale(1.05); }
-  .w-cityhub-img { position: relative; aspect-ratio: 16/10; overflow: hidden; background: linear-gradient(135deg, #ffe5d9 0%, #3f2b21 100%); }
-  .w-cityhub-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; color: transparent; font-size: 0; }
-  .w-cityhub-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 4px; flex: 1 1 auto; }
-  .w-cityhub-name { font-size: 16px; font-weight: 900; color: #1a1410; text-transform: uppercase; letter-spacing: 0.02em; }
-  .w-cityhub-sub { font-size: 12px; font-weight: 600; color: #3f2b21; }
-  .w-cityhub-go { font-size: 12.5px; font-weight: 800; color: #f2905c; margin-top: 8px; }
-
+  .w-scroller-wrap { position: relative; }
+  .w-scroller { display: flex; justify-content: safe center; gap: 16px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 4px 24px 18px; }
+  .w-scroller::-webkit-scrollbar { display: none; }
+  .w-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: #3f2b21; color: #ffe5d9; border: none; cursor: pointer; font-size: 24px; line-height: 1; display: flex; align-items: center; justify-content: center; z-index: 6; box-shadow: 0 4px 14px rgba(0,0,0,0.22); transition: background 0.2s, transform 0.15s; }
+  .w-arrow:hover { background: #1a1410; }
+  .w-arrow:active { transform: translateY(-50%) scale(0.92); }
+  .w-arrow-left { left: -4px; }
+  .w-arrow-right { right: -4px; }
+  .w-citycard { flex: 0 0 290px; scroll-snap-align: start; display: flex; flex-direction: column; background: #fff; border-radius: 14px; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 14px rgba(0,0,0,0.05); }
+  .w-citycard:hover { transform: translateY(-4px); box-shadow: 0 14px 28px rgba(0,0,0,0.12); }
+  .w-citycard:hover .w-citycard-img-inner { transform: scale(1.05); }
+  .w-citycard-img { position: relative; aspect-ratio: 16/10; overflow: hidden; background: linear-gradient(135deg, #ffe5d9 0%, #3f2b21 100%); }
+  .w-citycard-img-inner { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; color: transparent; font-size: 0; }
+  .w-citycard-badge { position: absolute; bottom: 12px; left: 12px; background: #ffe5d9; color: #1a1410; padding: 5px 11px; border-radius: 999px; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; z-index: 2; }
+  .w-citycard-flag { position: absolute; top: 10px; right: 10px; background: #3f2b21; color: #ffe5d9; font-size: 9.5px; font-weight: 800; letter-spacing: 0.06em; padding: 5px 9px; border-radius: 999px; text-transform: uppercase; z-index: 3; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+  .w-citycard-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.35) 100%); z-index: 1; }
+  .w-citycard-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 5px; flex: 1 1 auto; }
+  .w-citycard-route { font-size: 15px; font-weight: 800; color: #1a1410; line-height: 1.25; overflow-wrap: break-word; word-break: normal; hyphens: none; }
+  .w-citycard-rows { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+  .w-citycard-row { font-size: 12px; color: #3f2b21; font-weight: 600; line-height: 1.35; overflow-wrap: break-word; word-break: normal; hyphens: none; }
+  .w-citycard-price { font-size: 19px; font-weight: 900; color: #1a1410; margin-top: auto; padding-top: 12px; }
+  .w-citycard-price small { font-size: 11.5px; font-weight: 600; color: #3f2b21; }
+  .w-citycard-urgency { font-size: 11px; font-weight: 800; color: #3f2b21; margin-top: 6px; letter-spacing: 0.02em; }
+  .w-citycard-actions { display: flex; gap: 6px; margin-top: 10px; }
+  .w-citycard-btn { flex: 1 1 0; text-align: center; text-decoration: none; padding: 10px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; transition: background 0.2s, color 0.2s; white-space: nowrap; }
+  .w-citycard-btn-primary { background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); box-shadow: var(--wogo-cta-shadow); }
+  .w-citycard-btn-primary:hover { background: var(--wogo-cta-bg-hover); }
+  .w-citycard-btn-secondary { background: transparent; color: #3f2b21; border: 1.5px solid #3f2b21; padding: 8.5px 8px; }
+  .w-citycard-btn-secondary:hover { background: #3f2b21; color: #ffe5d9; }
+  .w-howstrip { display: flex; align-items: stretch; justify-content: center; gap: 10px; max-width: 920px; margin: 0 auto; }
+  .w-hs-item { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 4px 10px; }
+  .w-hs-ico { font-size: 26px; line-height: 1; }
+  .w-hs-tx { font-size: 13.5px; font-weight: 700; line-height: 1.35; color: #ffe5d9; max-width: 15ch; }
+  .w-how .w-head h2 { color: #fff; }
+  .w-how .w-eyebrow { color: rgba(245,201,168,0.7); }
   .w-gift-wrap { max-width: 920px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; }
   .w-gift-text { flex: 1 1 340px; }
   .w-gift-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #3f2b21; margin-bottom: 8px; }
@@ -216,34 +175,72 @@
   .w-group p { font-size: 14.5px; line-height: 1.55; color: #3f2b21; font-weight: 500; max-width: 480px; }
   .w-group-btn { flex: 0 0 auto; background: #ffaa81; color: #3f2b21; text-decoration: none; padding: 16px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 4px 14px rgba(242,144,92,0.35); transition: transform 0.2s, background 0.2s; }
   .w-group-btn:hover { background: #f2905c; transform: translateY(-2px); }
-  .w-faq-wrap { max-width: 740px; margin: 0 auto; }
-  .w-faq details { border-bottom: 1px solid rgba(92,42,20,0.15); }
-  .w-faq summary { padding: 16px 0; font-size: 15px; font-weight: 800; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; color: #1a1410; transition: color 0.2s; }
-  .w-faq summary:hover { color: #3f2b21; }
-  .w-faq summary::-webkit-details-marker { display: none; }
-  .w-faq summary::after { content: "+"; font-size: 24px; font-weight: 400; color: #3f2b21; line-height: 1; flex-shrink: 0; transition: transform 0.3s; }
-  .w-faq details[open] summary::after { transform: rotate(45deg); }
-  .w-faq-body { padding: 0 0 18px; font-size: 14px; line-height: 1.65; font-weight: 500; color: #444; }
-  .w-faq-body a { color: #3f2b21; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
   .w-final { text-align: center; color: #fff; }
   .w-final h2 { font-size: clamp(28px, 4vw, 44px); font-weight: 900; line-height: 1.06; margin-bottom: 12px; text-transform: uppercase; letter-spacing: -0.015em; }
   .w-final p { font-size: 14.5px; font-weight: 500; color: #ffe5d9; margin-bottom: 24px; }
   .w-final-btn { display: inline-block; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 16px 36px; border-radius: 999px; font-size: 15px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform 0.2s, background 0.2s; }
   .w-final-btn:hover { background: var(--wogo-cta-bg-hover); transform: translateY(-2px); }
-  /* Sticky mobile buy bar (funnel page → copied from the homepage, per SITE-PLAN) */
+  /* Sticky mobile bottom CTA (standalone mode only — JS never shows it when embedded) */
   .w-sticky-cta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(250,246,242,0.96); box-shadow: 0 -4px 18px rgba(26,20,16,0.18); transform: translateY(120%); transition: transform 0.25s; display: none; }
   .w-sticky-cta.show { transform: translateY(0); }
   .w-nav.menu-open ~ .w-sticky-cta { display: none; }
   .w-sticky-cta-btn { display: block; text-align: center; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 14px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); }
   @media (max-width: 720px) { .w-sticky-cta { display: block; } }
 
+  /* ===== ROUTE-PAGE extras (this template only) ===== */
+  /* Breadcrumbs — sit inside the hero, above the H1 */
+  .w-crumbs { font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(245,201,168,0.85); margin-bottom: 16px; }
+  .w-crumbs a { color: #ffe5d9; text-decoration: none; }
+  .w-crumbs a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .w-crumbs .w-crumb-sep { opacity: 0.55; margin: 0 7px; }
+  /* Price line — prominent, BEFORE the CTA (conversion rule) */
+  .w-hero-price { font-size: clamp(15px, 1.7vw, 19px); font-weight: 800; color: #ffe5d9; margin-bottom: 20px; letter-spacing: 0.01em; }
+  /* Hero eyebrow — carries CITY · THEME (uppercase) on the dark hero. Reuses
+     .w-eyebrow sizing; only recolours it peach for the dark background. */
+  .w-hero-kicker { color: #ffe5d9; margin-bottom: 10px; }
+  /* Genuine best-seller flag next to the H1 — same pill language as the
+     homepage flag_best card flag (qualitative only, no invented numbers) */
+  .w-hero-flag { display: inline-block; background: #ffe5d9; color: #1a1410; padding: 5px 12px; border-radius: 999px; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
+  /* How-it-works strip folded into the cream "The night" section: the default
+     .w-hs-tx is peach-on-dark, so recolour it espresso for a light background. */
+  .w-hs-dark .w-hs-tx { color: #3f2b21; }
+  /* Quick-facts strip */
+  .w-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; max-width: 920px; margin: 0 auto; text-align: center; }
+  .w-fact { font-size: 13.5px; font-weight: 700; color: #3f2b21; line-height: 1.45; }
+  /* The three stops */
+  .w-stops { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: 1000px; margin: 26px auto 0; }
+  .w-stop { background: #fff; border-radius: 14px; padding: 22px; box-shadow: 0 4px 12px rgba(92,42,20,0.08); }
+  .w-stop h3 { font-size: 14.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #3f2b21; margin-bottom: 8px; }
+  .w-stop p { font-size: 13.5px; line-height: 1.6; font-weight: 500; color: #444; }
+  .w-stops-note { text-align: center; font-size: 12.5px; font-weight: 700; color: #3f2b21; margin-top: 20px; }
+  .w-stops-intro { max-width: 640px; margin: 0 auto; text-align: center; font-size: 14.5px; line-height: 1.65; font-weight: 500; color: #444; }
+  /* What's-included checklist */
+  .w-incl-list { list-style: none; max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+  .w-incl-list li { display: flex; gap: 12px; align-items: flex-start; font-size: 14.5px; line-height: 1.55; font-weight: 500; color: #1a1410; }
+  .w-incl-list li::before { content: "✓"; flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: #3f2b21; color: #ffe5d9; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  /* (V3: review-duo CSS removed — reviews live on the homepage only; route
+     pages carry no review section, per DESIGN-V3-SPEC §6.) */
+  /* The #book block — the one conversion moment on this page */
+  .w-book { text-align: center; color: #fff; }
+  .w-book .w-eyebrow { color: rgba(245,201,168,0.7); }
+  .w-book h2 { font-size: clamp(24px, 3.4vw, 36px); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; color: #fff; margin-bottom: 4px; }
+  .w-book-price { font-size: clamp(34px, 5vw, 48px); font-weight: 900; color: #ffe5d9; line-height: 1; margin: 12px 0 6px; }
+  .w-book-price small { font-size: 14px; font-weight: 700; color: rgba(245,201,168,0.85); }
+  .w-book-deal { font-size: 14px; font-weight: 700; color: rgba(245,201,168,0.92); margin-bottom: 24px; }
+  .w-book-btn { display: inline-block; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 17px 38px; border-radius: 999px; font-size: 15px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform 0.2s, background 0.2s; }
+  .w-book-btn:hover { background: var(--wogo-cta-bg-hover); color: var(--wogo-cta-ink); transform: translateY(-2px); }
+  .w-book-fine { font-size: 12.5px; font-weight: 600; color: rgba(245,201,168,0.85); margin-top: 18px; line-height: 1.65; max-width: 460px; margin-left: auto; margin-right: auto; }
+  .w-book-fine .w-mail { color: #ffe5d9; }
+  /* "See all routes" text link under the sibling cards */
+  .w-sib-all { display: inline-block; font-size: 12.5px; font-weight: 800; color: #3f2b21; text-decoration: underline; text-underline-offset: 3px; }
+
   /* ===== SITE NAV styles (reusable — keep self-contained) ===== */
   html { scroll-padding-top: 76px; }           /* so anchor jumps clear the fixed nav */
-  #tiers, #how, #cities { scroll-margin-top: 76px; }
+  #book { scroll-margin-top: 76px; }
   .w-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; transition: background 0.3s ease, box-shadow 0.3s ease; }
   .w-nav::before { content: ""; position: absolute; inset: 0 0 -22px 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(26,20,16,0.62) 0%, rgba(26,20,16,0.34) 55%, rgba(26,20,16,0) 100%); opacity: 1; transition: opacity 0.3s ease; }
   .w-nav.scrolled::before, .w-nav.menu-open::before { opacity: 0; }
-  .w-nav.w-nav-embedded { position: absolute; }  /* inside the Wix iframe the host scrolls, so don't pin */
+  .w-nav.w-nav-embedded { position: absolute; }  /* inside an iframe the host scrolls, so don't pin */
   .w-nav-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 14px; padding: 14px 24px; }
   .w-nav-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #ffe5d9; text-decoration: none; transition: color 0.3s ease; text-shadow: 0 1px 10px rgba(0,0,0,0.45); }
   .w-nav-logo { height: 34px; width: auto; display: block; flex: 0 0 auto; }
@@ -336,128 +333,46 @@
     .w-footer-legal-links { justify-content: center; width: 100%; }
   }
 
-  /* ===== Mobile (≈85% of traffic) ===== */
   @media (max-width: 720px) {
-    .w-hero-flat { min-height: 340px; } .w-hero-flat .w-hero-content { min-height: 340px; padding: 104px 22px 44px; }
-    .w-hero-overline { font-size: 10px; letter-spacing: 0.16em; margin-bottom: 14px; }
-    .w-hero h1 { font-size: 25px; line-height: 1.14; margin-bottom: 14px; } .w-hero p { font-size: 13.5px; line-height: 1.55; margin-bottom: 20px; }
+    .w-hero { min-height: 460px; } .w-hero-content { min-height: 460px; padding: 96px 22px 48px; }
+    .w-hero-brand { font-size: 17px; letter-spacing: 0.20em; margin-bottom: 6px; }
+    .w-crumbs { font-size: 10px; letter-spacing: 0.06em; margin-bottom: 14px; }
+    .w-hero h1 { font-size: 25px; line-height: 1.14; margin-bottom: 14px; } .w-hero p { font-size: 13.5px; line-height: 1.55; margin-bottom: 18px; }
+    .w-hero-price { font-size: 14px; margin-bottom: 18px; }
     .w-hero-trust { font-size: 11.5px; gap: 6px 10px; margin-top: 16px; }
+    .w-hero-trust .w-trust-hide-m { display: none; }  /* mobile fits 3 trust items */
     .w-section { padding: 40px 0; } .w-pad { padding-left: 16px; padding-right: 16px; }
     .w-head { margin-bottom: 20px; }
-    .w-tiers { grid-template-columns: 1fr; gap: 14px; }
-    .w-tier { padding: 24px 20px 22px; }
-    .w-tier-amt { font-size: 36px; }
-    .w-stepcard { gap: 14px; padding: 20px 0; }
-    .w-stepcard-num { flex: 0 0 44px; width: 44px; height: 44px; font-size: 19px; }
-    .w-stepcard h3 { font-size: 15.5px; }
-    .w-stepcard p { font-size: 13.5px; line-height: 1.6; }
-    .w-gtk { grid-template-columns: 1fr; gap: 12px; }
-    .w-cityhub { grid-template-columns: 1fr 1fr; gap: 12px; }
-    .w-cityhub-name { font-size: 14px; }
-    .w-cityhub-sub { font-size: 11px; }
-    .w-cityhub-go { font-size: 11.5px; }
+    .w-facts { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .w-fact { font-size: 12.5px; }
+    .w-stops { grid-template-columns: 1fr; gap: 14px; }
+    .w-incl-list li { font-size: 13.5px; }
+    .w-scroller { padding: 4px 14px 14px; gap: 12px; } .w-scroller::after { content: ""; flex: 0 0 20px; }
+    .w-citycard { flex: 0 0 calc(100vw - 56px); max-width: 360px; }
+    .w-citycard-img { aspect-ratio: 3/2; }
+    .w-citycard-body { padding: 15px 16px 17px; gap: 5px; }
+    .w-citycard-route { font-size: 14.5px; }
+    .w-citycard-rows { gap: 6px; }
+    .w-citycard-row { font-size: 12px; line-height: 1.45; }
+    .w-citycard-price { font-size: 17px; padding-top: 9px; }
+    .w-citycard-btn { font-size: 11px; padding: 13px 8px; letter-spacing: 0.02em; }
+    .w-arrow { display: none; }
+    .w-citycard-actions { flex-direction: column; gap: 8px; }
+    .w-citycard-btn-primary { width: 100%; min-height: 50px; padding: 15px 10px; font-size: 13px; }
+    .w-citycard-btn-secondary { width: 100%; background: transparent; border: 1.5px solid #3f2b21; color: #3f2b21; text-decoration: none; min-height: 46px; padding: 12px 10px; font-size: 12.5px; }
+    .w-book-btn { width: 100%; max-width: 340px; }
     .w-gift-text { flex: 1 1 100%; }
     .w-gift-btn { width: 100%; max-width: 320px; }
     .w-gift-wrap { text-align: center; justify-content: center; } .w-gift p { margin: 0 auto; }
     .w-group-text { flex: 1 1 100%; }
     .w-group-btn { width: 100%; max-width: 320px; }
     .w-group-wrap { text-align: center; justify-content: center; } .w-group p { margin: 0 auto; }
-    .w-faq summary { padding: 14px 0; font-size: 14.5px; min-height: 52px; }
   }
 
   /* ── Icon patterns: stop tag chips + tier benefit line ── */
   .w-stop-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
   .w-minichip { display: inline-flex; align-items: center; gap: 6px; background: #FAF6F2; border: 1px solid rgba(92,42,20,0.16); color: #3f2b21; font-size: 12.5px; font-weight: 700; padding: 6px 12px; border-radius: 999px; line-height: 1; }
   .w-tier-benefit { display: inline-flex; align-items: center; gap: 8px; justify-content: center; font-size: 13.5px; font-weight: 800; color: #3f2b21; flex: 1 1 auto; }
-
-  /* ============================================================
-     GIFT-CARDS V3 — dash-free hero subline, two-column photo-less
-     hero with a CSS gift-card mock, custom-amount tile, CTA sheen.
-     Transform/opacity only + reduced-motion safe (never gates h1/CTA).
-     ============================================================ */
-  /* Dash-free punch under the SEO h1 (selector beats base ".w-hero p") */
-  .w-hero p.w-hero-sub { font-size: clamp(15px,1.6vw,20px); font-weight: 800; letter-spacing: -0.005em; line-height: 1.25; margin: 2px 0 14px; color: #ffe5d9; text-shadow: 0 2px 14px rgba(0,0,0,0.5); max-width: 26ch; opacity: 1; }
-
-  /* Two-column hero: copy left, gift-card mock right */
-  .w-hero-gift { min-height: 480px; }
-  .w-hero-gift .w-hero-content { min-height: 480px; }
-  .w-gift-hero { flex-direction: row; flex-wrap: wrap; gap: 40px; align-items: center; justify-content: center; text-align: left; max-width: 1000px; }
-  .w-gift-copy { flex: 1 1 340px; max-width: 520px; }
-  .w-gift-copy .w-hero-trust { justify-content: flex-start; }
-  .w-gift-cardwrap { flex: 0 0 auto; display: flex; justify-content: center; }
-
-  /* The card mock — pure CSS, espresso + peach, WOGO wordmark, chip */
-  .w-giftcard { position: relative; width: min(360px, 84vw); aspect-ratio: 1.586 / 1; border-radius: 18px; overflow: hidden; padding: 22px 24px; display: flex; flex-direction: column; justify-content: space-between; color: #ffe5d9; isolation: isolate; background: radial-gradient(130% 120% at 85% 15%, #643e2b 0%, #3f2b21 45%, #201611 100%); box-shadow: 0 22px 48px rgba(26,20,16,0.40), inset 0 1px 0 rgba(245,201,168,0.18); border: 1px solid rgba(245,201,168,0.22); transform: rotate(-3deg); transition: transform .4s cubic-bezier(.22,.61,.36,1), box-shadow .4s ease; }
-  .w-giftcard:hover { transform: rotate(-1deg) translateY(-4px); box-shadow: 0 30px 60px rgba(26,20,16,0.5); }
-  @media (hover:none){ .w-giftcard:hover { transform: rotate(-3deg); } }
-  /* Peach diagonal sheen — a subtle gleam that sweeps every few seconds */
-  .w-giftcard-sheen { position: absolute; inset: -40% -10%; z-index: -1; background: linear-gradient(115deg, transparent 40%, rgba(245,201,168,0.18) 50%, transparent 60%); transform: translateX(-60%); }
-  html.wg-js .w-giftcard-sheen { animation: wgSheen 6s ease-in-out 1s infinite; }
-  @keyframes wgSheen { 0% { transform: translateX(-60%); } 18%, 100% { transform: translateX(60%); } }
-  .w-giftcard-top { display: flex; align-items: center; justify-content: space-between; }
-  .w-giftcard-word { font-size: 26px; font-weight: 900; letter-spacing: 0.24em; }
-  .w-giftcard-chip { width: 40px; height: 30px; border-radius: 6px; background: linear-gradient(135deg, #ffaa81, #f2905c); box-shadow: inset 0 0 0 1px rgba(92,42,20,0.35); position: relative; }
-  .w-giftcard-chip::before { content:""; position:absolute; inset:6px 4px; background-image: linear-gradient(#3f2b21 1px, transparent 1px), linear-gradient(90deg, #3f2b21 1px, transparent 1px); background-size: 100% 8px, 12px 100%; opacity:.5; border-radius:3px; }
-  .w-giftcard-mid { font-size: clamp(22px,4vw,30px); font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; color:#fff; }
-  .w-giftcard-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; opacity:.85; }
-  .w-giftcard-cities { font-size: 10px; opacity:.7; white-space: nowrap; }
-  @media (prefers-reduced-motion: reduce){ .w-giftcard { transition: none; transform: rotate(-3deg); } html.wg-js .w-giftcard-sheen { animation: none; } }
-
-  /* ── Palette infusion (feedback #7): warm the amounts section with a canonical
-     blush wash (--wogo-blush #ffe5d9 / --wogo-surface-tint #fbe9df) and bring the
-     salmon accent (--wogo-salmon #ffaa81) onto the custom-amount tile. Soft fills
-     + accents only — salmon stays a spice, never a flat base. ── */
-  #tiers { background: linear-gradient(180deg, #FAF6F2 0%, #FBE9DF 100%); }
-  .w-tiers-note { background: #ffe5d9; border-radius: 14px; padding: 16px 22px; }
-
-  /* Custom-amount tile (4th in the grid) */
-  .w-tier-custom { border: 1.5px dashed #ffaa81; background: linear-gradient(180deg, #fffaf6 0%, #fbe9df 100%); }
-  .w-tier-custom .w-tier-amt { color: #7e5541; }
-  /* 4 cols >900 (base) · 2 cols 721–900 · 1 col ≤720 (existing mobile rule) */
-  @media (min-width: 721px) and (max-width: 900px){ .w-tiers { grid-template-columns: 1fr 1fr; } }
-
-  /* ===== Self-serve order form (Stripe launch) ===== */
-  .w-tier { position: relative; }
-  .w-tier-popular { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #ffaa81 0%, #f2905c 100%); color: #3f2b21; font-size: 10.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; padding: 5px 14px; border-radius: 999px; box-shadow: 0 4px 10px rgba(242,144,92,0.4); white-space: nowrap; }
-  .w-tier.is-selected { outline: 2.5px solid #f2905c; outline-offset: 2px; }
-  button.w-tier-btn { border: none; cursor: pointer; width: 100%; font-family: inherit; }
-  .w-tier-input { display: flex; align-items: center; gap: 6px; background: #fffaf6; border: 1.5px solid #e7d3c6; border-radius: 12px; padding: 10px 14px; font-size: 15px; font-weight: 700; color: #3f2b21; margin-top: 4px; }
-  .w-tier-input input { border: none; background: none; font: inherit; font-weight: 800; width: 100%; min-width: 0; color: #3f2b21; }
-  .w-tier-input input:focus { outline: none; }
-  .w-tier-custom .w-tier-btn { margin-top: 6px; }
-
-  .gc-order { max-width: 620px; margin: 34px auto 0; background: #fff; border: 1px solid rgba(63,43,33,0.12); border-radius: 18px; box-shadow: 0 10px 30px rgba(26,20,16,0.08); padding: 28px 26px; scroll-margin-top: 90px; }
-  .gc-order-amt { font-size: 13.5px; font-weight: 700; color: #3f2b21; background: #ffe5d9; border-radius: 12px; padding: 12px 16px; margin-bottom: 18px; }
-  .gc-order-amt b { font-size: 17px; }
-  .gc-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
-  .gc-form .gc-full { grid-column: 1 / -1; }
-  .gc-field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #7e5541; }
-  .gc-field input, .gc-field textarea { font: inherit; font-size: 15.5px; font-weight: 500; text-transform: none; letter-spacing: normal; color: #201611; background: #fffaf6; border: 1.5px solid #e7d3c6; border-radius: 12px; padding: 12px 14px; }
-  .gc-field textarea { resize: vertical; min-height: 80px; }
-  .gc-field input:focus, .gc-field textarea:focus { outline: none; border-color: #f2905c; box-shadow: 0 0 0 3px rgba(242,144,92,0.18); }
-  .gc-form .w-hero-cta { grid-column: 1 / -1; justify-self: stretch; text-align: center; border: none; cursor: pointer; margin-top: 6px; }
-  .gc-form .w-hero-cta:disabled { opacity: 0.6; cursor: default; }
-  .gc-note { grid-column: 1 / -1; font-size: 12px; color: #8a7066; font-weight: 600; line-height: 1.5; margin: 0; }
-  .gc-error { grid-column: 1 / -1; display: none; font-size: 13px; font-weight: 700; color: #a5313f; background: #fdeceb; border-radius: 10px; padding: 10px 14px; }
-  .gc-error.show { display: block; }
-  @media (max-width: 640px) { .gc-form { grid-template-columns: 1fr; } .gc-order { padding: 22px 18px; } }
-
-  /* CTA sheen on primary buttons (transform-only, once on hover) */
-  .w-hero-cta, .w-final-btn { position: relative; overflow: hidden; }
-  .w-hero-cta::after, .w-final-btn::after { content:""; position:absolute; top:0; left:-120%; width:60%; height:100%; background: linear-gradient(115deg, transparent, rgba(255,255,255,0.35), transparent); transform: skewX(-18deg); transition: left .6s ease; pointer-events: none; }
-  .w-hero-cta:hover::after, .w-final-btn:hover::after { left: 140%; }
-  @media (hover: none){ .w-hero-cta::after, .w-final-btn::after { display: none; } }
-  @media (prefers-reduced-motion: reduce){ .w-hero-cta::after, .w-final-btn::after { display: none; } }
-
-  /* Mobile: stack the gift hero, re-center copy */
-  @media (max-width: 720px){
-    .w-hero-gift, .w-hero-gift .w-hero-content { min-height: auto; }
-    .w-gift-hero { flex-direction: column; text-align: center; gap: 28px; }
-    .w-gift-copy { flex: 1 1 100%; max-width: 100%; }
-    .w-hero p.w-hero-sub { margin-left: auto; margin-right: auto; }
-    .w-gift-copy .w-hero-trust { justify-content: center; }
-    .w-giftcard { width: min(320px, 84vw); }
-  }
 
   /* ============================================================
      WOGO VISUAL PASS — motion layer (JS-gated, reduced-motion safe).
@@ -509,6 +424,104 @@
     html.wg-js .wg-hero-anim > * { opacity: 1 !important; transform: none !important; }
     html.wg-js .wg-routeline path { stroke-dashoffset: 0 !important; }
   }
+
+  /* ============================================================
+     V3 MOTION TOP-UP — route-hero enrichment + premium micro-interactions
+     (DESIGN-V3-SPEC §2A/§7c, mirrored from the rebuilt rotterdam/ hub).
+     Page-scoped, outside the shared nav/footer fences. Transform/opacity
+     only; everything below is decorative and reduced-motion safe.
+     ============================================================ */
+
+  /* Slow Ken-Burns drift on the hero photo — GPU transform only; starts at
+     scale(1.06) so the pan never reveals an edge */
+  .w-hero-video { animation: wgHeroPan 22s ease-in-out infinite alternate; will-change: transform; }
+  @keyframes wgHeroPan { from { transform: scale(1.06) translate3d(0,0,0); } to { transform: scale(1.12) translate3d(-1.5%, -1.2%, 0); } }
+
+  /* Richer directional espresso overlay — anchors the copy, deepens legibility
+     (overrides the flat scrim declared in the shared visual system above) */
+  .w-hero-overlay {
+    background:
+      linear-gradient(180deg, rgba(26,20,16,0.30) 0%, rgba(26,20,16,0.20) 40%, rgba(26,20,16,0.78) 100%),
+      radial-gradient(120% 80% at 15% 90%, rgba(92,42,20,0.55) 0%, rgba(92,42,20,0) 60%);
+  }
+
+  /* Unified premium tap-press on the route cards */
+  .w-citycard:active { transform: scale(.99); }
+
+  /* One-shot CTA sheen on the primary buttons (transform-only, hover devices only) */
+  .w-hero-cta, .w-book-btn { position: relative; overflow: hidden; }
+  .w-hero-cta::after, .w-book-btn::after { content:""; position:absolute; top:0; left:-120%; width:60%; height:100%;
+    background: linear-gradient(115deg, transparent, rgba(255,255,255,0.35), transparent); transform: skewX(-18deg); transition: left .6s ease; }
+  .w-hero-cta:hover::after, .w-book-btn:hover::after { left: 140%; }
+  @media (hover: none){ .w-hero-cta::after, .w-book-btn::after { display:none; } }
+
+  /* Reduced-motion: kill the pan + sheen explicitly (belt over the global net) */
+  @media (prefers-reduced-motion: reduce) {
+    .w-hero-video { animation: none; transform: none; }
+    .w-hero-cta::after, .w-book-btn::after { display: none; }
+  }
+
+  /* ============================================================
+     ★ ROUTE HERO v5 — groups-quality photo hero + the signature
+       "TICKETS INCLUDE" card. Brand palette ONLY (canonical tokens):
+       blush #ffe5d9 · cream #fffaf6 · espresso #3f2b21 · ink #201611 ·
+       salmon #ffaa81 · brown #643e2b · brown-soft #7e5541.
+       Salmon is a spice: the price roundel accent only. CTA = espresso
+       fill (primary). NO ACW red/orange anywhere in these blocks.
+       Left-aligned: identity (white over photo) + a blush ticket panel
+       sitting LEFT over the route photo. Reused by all 6 route pages.
+     ============================================================ */
+  .w-hero-route { min-height: 640px; }
+  .w-hero-route .w-hero-content { min-height: 640px; align-items: flex-start; text-align: left; max-width: 1120px; padding: 118px 24px 56px; }
+  .w-hero-route .w-hero-brand, .w-hero-route .w-crumbs, .w-hero-route .w-eyebrow.w-hero-kicker, .w-hero-route h1 { text-align: left; }
+  .w-hero-route .w-hero-trust { justify-content: flex-start; }
+  .w-hero-lead { max-width: 560px; }
+  /* V5 lean hero: one salmon subline (≤10 words), replaces the old descriptive paragraph */
+  .w-hero-route .w-hero-sub { font-size: clamp(14.5px, 1.6vw, 20px); font-weight: 800; color: #ffaa81; line-height: 1.3; max-width: 22ch; margin: -2px 0 18px; opacity: 1; text-shadow: 0 2px 12px rgba(0,0,0,0.42); }
+  /* Left-weighted espresso wash so the blush ticket card + white text stay legible.
+     More specific than the V3 .w-hero-overlay rule, so it wins regardless of order. */
+  .w-hero-route .w-hero-overlay {
+    background:
+      linear-gradient(96deg, rgba(32,22,17,0.74) 0%, rgba(32,22,17,0.46) 48%, rgba(32,22,17,0.30) 100%),
+      linear-gradient(180deg, rgba(32,22,17,0.34) 0%, rgba(32,22,17,0) 34%, rgba(32,22,17,0.42) 100%);
+  }
+
+  /* The signature "Tickets include" card — rounded blush panel */
+  .w-ticket { margin-top: 24px; width: 100%; max-width: 460px; background: rgba(255,229,217,0.97); border: 1px solid rgba(63,43,33,0.12); border-radius: 20px; padding: 20px 22px 22px; box-shadow: 0 20px 46px rgba(32,22,17,0.38); color: #3f2b21; }
+  .w-ticket-head { font-size: 11px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #7e5541; margin-bottom: 15px; }
+  .w-ticket-rows { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 11px 16px; margin-bottom: 20px; }
+  .w-ticket-row { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 700; color: #3f2b21; line-height: 1.2; }
+  .w-ticket-ico { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; background: #fffaf6; display: flex; align-items: center; justify-content: center; font-size: 15px; box-shadow: 0 2px 6px rgba(32,22,17,0.12); }
+  .w-ticket-foot { display: flex; align-items: center; gap: 14px; }
+  .w-ticket-price { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 90px; height: 90px; border-radius: 50%; background: #ffaa81; box-shadow: 0 8px 18px rgba(242,144,92,0.5); }
+  .w-ticket-price b { font-size: 19px; font-weight: 900; line-height: 1; letter-spacing: -0.01em; color: #3f2b21; }
+  .w-ticket-price small { font-size: 8.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; margin-top: 3px; color: #643e2b; }
+  .w-ticket-cta { flex: 1 1 auto; text-align: center; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 15px 18px; border-radius: 999px; font-size: 13.5px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform .2s, background .2s; }
+  .w-ticket-cta:hover { background: var(--wogo-cta-bg-hover); color: var(--wogo-cta-ink); transform: translateY(-2px); }
+  .w-ticket-cta:active { transform: scale(0.97); }
+
+  /* Description section — blush background brings the palette in (feedback #7) */
+  .w-sec-blush { background: #ffe5d9; }
+  .w-desc-wrap { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 1.08fr 0.92fr; gap: 44px; align-items: center; }
+  .w-eyebrow-brand { color: #7e5541; text-align: left; margin-bottom: 10px; }
+  .w-desc-h2 { font-size: clamp(24px, 3.2vw, 36px); font-weight: 900; letter-spacing: -0.01em; text-transform: uppercase; color: #201611; line-height: 1.08; margin-bottom: 16px; }
+  .w-desc-p { font-size: 15px; line-height: 1.72; color: #3f2b21; margin-bottom: 14px; max-width: 56ch; }
+  .w-desc-incl { list-style: none; display: flex; flex-direction: column; gap: 13px; margin-top: 24px; }
+  .w-desc-inc { display: flex; gap: 13px; align-items: flex-start; font-size: 14px; font-weight: 600; color: #3f2b21; line-height: 1.5; }
+  .w-desc-inc-ico { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 50%; background: #fffaf6; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 2px 8px rgba(32,22,17,0.10); }
+  .w-desc-figure { margin: 0; border-radius: 18px; overflow: hidden; box-shadow: 0 18px 42px rgba(32,22,17,0.22); aspect-ratio: 4/5; }
+  .w-desc-figure img { width: 100%; height: 100%; object-fit: cover; }
+
+  @media (max-width: 720px) {
+    .w-hero-route, .w-hero-route .w-hero-content { min-height: auto; }
+    .w-hero-route .w-hero-content { padding: 100px 18px 40px; }
+    .w-ticket { max-width: 100%; margin-top: 20px; padding: 18px 18px 20px; }
+    .w-ticket-foot { gap: 12px; }
+    .w-ticket-price { width: 82px; height: 82px; }
+    .w-desc-wrap { grid-template-columns: 1fr; gap: 22px; }
+    .w-desc-figure { aspect-ratio: 3/2; order: -1; }
+  }
+  @media (max-width: 360px) { .w-ticket-rows { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -531,7 +544,7 @@
     <!-- Desktop links -->
     <ul class="w-nav-links">
       <li class="w-nav-drop">
-        <a href="#cities" class="w-scroll" data-i18n="nav_routes" aria-haspopup="true">Routes</a>
+        <a href="../#cities" class="w-navlink" data-i18n="nav_routes" aria-haspopup="true">Routes</a>
         <span class="w-nav-caret" aria-hidden="true">▾</span>
         <!-- Routes popover — populated from the WOGO_ROUTES data in JS (the four
              internal city hubs, BASE-prefixed), so new countries/cities are a
@@ -540,7 +553,7 @@
       </li>
       <li><a href="../how-it-works/" class="w-navlink" data-i18n="nav_how">How it works</a></li>
       <li><a href="../groups/" class="w-navlink" data-i18n="nav_groups">Groups</a></li>
-      <li><a href="#tiers" class="w-scroll" data-i18n="nav_gift" aria-current="page">Gift cards</a></li>
+      <li><a href="../gift-cards/" class="w-navlink" data-i18n="nav_gift">Gift cards</a></li>
     </ul>
 
     <!-- Right cluster: EN/NL toggle + primary CTA + mobile burger.
@@ -550,7 +563,7 @@
          the real #book section and keep "Book now" / "Boek nu". -->
     <div class="w-nav-right">
       <div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"></ul></div>
-      <a href="../#cities" class="w-nav-cta w-navlink" data-i18n="nav_cta">View dates</a>
+      <a href="../#cities" class="w-nav-cta" data-i18n="nav_cta">Book your walk</a>
       <button class="w-nav-burger" id="wNavBurger" aria-label="Open menu" aria-controls="wNavOverlay" aria-expanded="false"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -558,251 +571,49 @@
   <!-- Mobile full-screen menu -->
   <div class="w-nav-overlay" id="wNavOverlay" aria-hidden="true">
     <ul class="w-nav-overlay-links">
-      <li><a href="#cities" class="w-scroll w-nav-ov-link" data-i18n="nav_routes">Routes</a></li>
+      <li><a href="../#cities" class="w-navlink w-nav-ov-link" data-i18n="nav_routes">Routes</a></li>
       <!-- City chips populated from WOGO_ROUTES (see JS) -->
       <li class="w-nav-ov-cities" id="wNavOvCities"></li>
       <li><a href="../how-it-works/" class="w-navlink w-nav-ov-link" data-i18n="nav_how">How it works</a></li>
       <li><a href="../groups/" class="w-navlink w-nav-ov-link" data-i18n="nav_groups">Groups</a></li>
-      <li><a href="#tiers" class="w-scroll w-nav-ov-link" data-i18n="nav_gift" aria-current="page">Gift cards</a></li>
+      <li><a href="../gift-cards/" class="w-navlink w-nav-ov-link" data-i18n="nav_gift">Gift cards</a></li>
       <li><a href="../about/" class="w-navlink w-nav-ov-link" data-i18n="nav_about">About</a></li>
       <li><a href="../faq/" class="w-navlink w-nav-ov-link" data-i18n="foot_faq">FAQ</a></li>
       <li><a href="../blog/" class="w-navlink w-nav-ov-link" data-i18n="foot_blog">Blog</a></li>
       <li><a href="../contact/" class="w-navlink w-nav-ov-link" data-i18n="foot_contact">Contact</a></li>
       <li class="w-nav-ov-lang"><div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"></ul></div></li>
     </ul>
-    <a href="../#cities" class="w-nav-cta w-navlink" data-i18n="nav_cta">View dates</a>
+    <a href="../#cities" class="w-nav-cta" data-i18n="nav_cta">Book your walk</a>
   </div>
 </nav>
 <!-- ===== /WOGO SHARED NAV v4 ===== -->
 <main id="wMain" tabindex="-1">
-
-<!-- ============================================================
-     SECTION: HERO — PAGE-EDIT
-     Funnel page: the hero CTA goes straight to the existing Wix
-     gift-card checkout (target=_top; Stripe replaces this later).
-     ============================================================ -->
-<section class="w-hero w-hero-flat w-hero-gift">
-  <div class="w-hero-content w-gift-hero wg-hero-anim">
-    <div class="w-gift-copy">
-      <div class="w-hero-overline" data-i18n="hero_eyebrow">The perfect gift</div>
-      <h1 data-i18n="hero_h1">Give a Cocktail Walk Gift Card</h1>
-      <!-- Dash-free punch under the SEO h1 (§1a: the "—" ban) -->
-      <p class="w-hero-sub" data-i18n="hero_sub">A night out they'll remember. In their inbox in minutes.</p>
-      <a href="#tiers" class="w-hero-cta w-scroll" data-i18n="hero_cta">Buy a gift card →</a>
-    </div>
-    <div class="w-gift-cardwrap">
-      <!-- Pure CSS gift-card mock — no image asset. Espresso + peach, WOGO
-           wordmark, EMV-style chip, subtle recurring sheen. role="img" so a
-           screen reader announces one label, not the decorative inner text. -->
-      <div class="w-giftcard" role="img" aria-label="WOGO gift card">
-        <div class="w-giftcard-sheen" aria-hidden="true"></div>
-        <div class="w-giftcard-top">
-          <span class="w-giftcard-word">WOGO</span>
-          <span class="w-giftcard-chip" aria-hidden="true"></span>
-        </div>
-        <div class="w-giftcard-mid" data-i18n="gc_label">Gift Card</div>
-        <div class="w-giftcard-foot">
-          <span data-i18n="gc_sub">The Cocktail Walk</span>
-          <span class="w-giftcard-cities">AMS · RTM · UTR · GRO</span>
-        </div>
-      </div>
-    </div>
+<style>
+  .conf-sec{background:var(--wogo-cream,#fffaf6);min-height:78vh;display:flex;align-items:center;padding:140px 20px 80px;}
+  .conf-wrap{max-width:640px;margin:0 auto;width:100%;text-align:center;}
+  .conf-emoji{font-size:56px;line-height:1;margin:0 0 14px;}
+  .conf-sec h1{font-size:clamp(26px,5vw,38px);font-weight:900;color:var(--wogo-ink,#201611);margin:0 0 10px;line-height:1.15;}
+  .conf-sec p{font-size:16px;line-height:1.6;color:var(--wogo-espresso,#3f2b21);margin:0 auto 18px;max-width:520px;}
+  .conf-email{background:var(--wogo-blush,#ffe5d9);border-radius:14px;padding:16px 18px;font-size:14px;line-height:1.55;color:var(--wogo-espresso,#3f2b21);max-width:520px;margin:0 auto 26px;text-align:left;}
+  .conf-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+  .conf-cta a{text-decoration:none;}
+  .conf-ghost{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:11px 22px;border-radius:999px;font-weight:800;font-size:13px;border:2px solid var(--wogo-espresso,#3f2b21);color:var(--wogo-espresso,#3f2b21);}
+</style>
+<!-- Deliberately STATIC — no session_id lookup, no polling. The actual gift
+     card (code + value) is delivered by EMAIL to the recipient the moment the
+     webhook mints it (src/webhook.js:handleGiftCardPurchaseCompleted); this
+     page only needs to confirm the payment went through. See the head
+     comment for why a lookup endpoint was deliberately NOT built for v1. -->
+<section class="conf-sec"><div class="conf-wrap">
+  <div class="conf-emoji">🎁</div>
+  <h1 data-i18n="gc_h1">Your gift card is on its way!</h1>
+  <p data-i18n="gc_p">Thank you — your payment went through. We've emailed the WOGO Gift Card straight to your recipient's inbox, with their code and how to use it.</p>
+  <div class="conf-email" data-i18n="gc_email">📬 You'll also get a short confirmation by email for your own records. Don't see it within a few minutes? Check your spam or promotions folder.</div>
+  <div class="conf-cta">
+    <a href="../" class="w-nav-cta" data-i18n="conf_cta_home">Back to home</a>
+    <a href="../gift-cards/" class="conf-ghost" data-i18n="gc_cta_another">Buy another gift card</a>
   </div>
-</section>
-
-<!-- ============================================================
-     SECTION: AMOUNT TIERS + ORDER FORM (#tiers) — PAGE-EDIT
-     Stripe self-serve, live: €30 / €60 / €100 ("most popular" on €60) or a
-     custom amount (€10–€500). Picking a tile selects the amount and scrolls
-     to the order form below, which POSTs to POST /api/giftcard/checkout on
-     the same Worker the booking widget uses (see the foot script's
-     WOGO_GIFT_API), then redirects to Stripe Checkout. The gift card itself
-     (code + balance) is minted by the webhook once payment completes — see
-     backend/src/webhook.js's metadata.type==='giftcard' branch — and emailed
-     straight to the recipient; nothing here talks to D1 directly. -->
-<section class="w-section w-pad" id="tiers">
-  <div class="w-head">
-    <div class="w-eyebrow" data-i18n="tiers_eyebrow">Choose an amount</div>
-    <h2 data-i18n="tiers_h2">Three amounts, zero guesswork</h2>
-    <p data-i18n="tiers_p">Every card works on every route in every city. They pick the walk.</p>
-  </div>
-  <div class="w-tiers wg-stagger" id="wGcTiers">
-    <div class="w-tier" data-tier="3000">
-      <div class="w-tier-amt">€30</div>
-      <div class="w-tier-sub" data-i18n="tier1_sub">Gift card</div>
-      <div class="w-tier-benefit"><span aria-hidden="true">✨</span><span data-i18n="tier1_b">Toward a walk</span></div>
-      <button type="button" class="w-tier-btn" data-i18n="tier_btn">Buy this card →</button>
-    </div>
-    <div class="w-tier" data-tier="6000">
-      <span class="w-tier-popular" data-i18n="tier2_popular">Most popular</span>
-      <div class="w-tier-amt">€60</div>
-      <div class="w-tier-sub" data-i18n="tier2_sub">Gift card</div>
-      <div class="w-tier-benefit"><span aria-hidden="true">🍸</span><span data-i18n="tier2_b">A cocktail walk for one</span></div>
-      <button type="button" class="w-tier-btn" data-i18n="tier_btn">Buy this card →</button>
-    </div>
-    <div class="w-tier" data-tier="10000">
-      <div class="w-tier-amt">€100</div>
-      <div class="w-tier-sub" data-i18n="tier3_sub">Gift card</div>
-      <div class="w-tier-benefit"><span aria-hidden="true">👥</span><span data-i18n="tier3_b">A night out for two</span></div>
-      <button type="button" class="w-tier-btn" data-i18n="tier_btn">Buy this card →</button>
-    </div>
-    <!-- CUSTOM AMOUNT tile — 4th in the grid. Any value €10–€500 (matches the
-         server's GIFT_CARD_CUSTOM_MIN_CENTS/MAX_CENTS in backend/src/config.js). -->
-    <div class="w-tier w-tier-custom" data-tier="custom">
-      <div class="w-tier-amt" aria-hidden="true">€ …</div>
-      <div class="w-tier-sub" data-i18n="tierc_sub">Your amount</div>
-      <div class="w-tier-benefit"><span aria-hidden="true">🎁</span><span data-i18n="tierc_b">Any value you like</span></div>
-      <label class="w-tier-input"><span>€</span>
-        <input type="number" id="wGcCustomAmount" min="10" max="500" step="5" inputmode="numeric" placeholder="50" aria-label="Custom gift amount in euros">
-      </label>
-      <button type="button" class="w-tier-btn" data-i18n="tierc_btn">Choose this amount →</button>
-    </div>
-  </div>
-  <p class="w-tiers-note" data-i18n="tiers_note">One gift card per order, with a personal message at checkout. It lands in their inbox within minutes — no shipping, no wrapping.</p>
-  <p class="w-tiers-note" data-i18n="tiers_anchor">A walk is €29,95 per person. €30 covers most of a walk, €60 is a full walk for one, and €100 makes it a night out for two. Prefer an exact number? Choose your own amount above.</p>
-
-  <!-- ORDER FORM — always present (progressive: works the moment a tile is
-       picked, no modal/JS-only gate). POSTs JSON to the Worker; on success
-       redirects to the returned Stripe Checkout url. -->
-  <div class="gc-order" id="wGcOrder">
-    <div class="gc-order-amt" id="wGcOrderAmt" data-i18n="gc_order_amt_empty">Pick an amount above to get started.</div>
-    <form id="wGcForm" novalidate>
-      <div class="gc-error" id="wGcError" role="alert"></div>
-      <label class="gc-field gc-full"><span data-i18n="gc_buyer_name">Your name</span>
-        <input type="text" name="buyer_name" autocomplete="name" required></label>
-      <label class="gc-field gc-full"><span data-i18n="gc_buyer_email">Your email</span>
-        <input type="email" name="buyer_email" autocomplete="email" required></label>
-      <label class="gc-field"><span data-i18n="gc_recipient_name">Recipient's name</span>
-        <input type="text" name="recipient_name" autocomplete="off" required></label>
-      <label class="gc-field"><span data-i18n="gc_recipient_email">Recipient's email</span>
-        <input type="email" name="recipient_email" autocomplete="off" required></label>
-      <label class="gc-field gc-full"><span data-i18n="gc_message">Personal message (optional)</span>
-        <textarea name="message" rows="3" maxlength="500"></textarea></label>
-      <button type="submit" class="w-hero-cta" id="wGcSubmit" data-i18n="gc_submit" disabled>Choose an amount first</button>
-      <p class="gc-note" data-i18n="gc_note">You'll pay securely via Stripe. The gift card is emailed straight to your recipient the moment payment completes.</p>
-    </form>
-  </div>
-</section>
-
-<!-- ============================================================
-     SECTION: HOW GIFTING WORKS (#how) — PAGE-EDIT
-     Redemption copy matches today's REAL Wix mechanism: the code
-     is entered at checkout when booking any walk.
-     ============================================================ -->
-<section class="w-section brown w-pad" id="how">
-  <div class="w-head">
-    <div class="w-eyebrow" data-i18n="how_eyebrow">How it works</div>
-    <h2 data-i18n="how_h2">From your inbox to their night out</h2>
-    <p data-i18n="how_p">Three steps. The planning is our job, not theirs.</p>
-  </div>
-  <div class="w-steps-wrap wg-stagger">
-
-    <div class="w-stepcard">
-      <div class="w-stepcard-num" aria-hidden="true">1</div>
-      <div class="w-stepcard-body">
-        <h3><span class="w-stepcard-ico" aria-hidden="true">💳</span><span data-i18n="g1_h">Choose an amount</span></h3>
-        <p data-i18n="g1_p">Pick €30, €60, €100 or your own amount.</p>
-      </div>
-    </div>
-
-    <div class="w-stepcard">
-      <div class="w-stepcard-num" aria-hidden="true">2</div>
-      <div class="w-stepcard-body">
-        <h3><span class="w-stepcard-ico" aria-hidden="true">✍️</span><span data-i18n="g2_h">Add a message, check out</span></h3>
-        <p data-i18n="g2_p">Write a personal note and pay securely in seconds.</p>
-      </div>
-    </div>
-
-    <div class="w-stepcard">
-      <div class="w-stepcard-num" aria-hidden="true">3</div>
-      <div class="w-stepcard-body">
-        <h3><span class="w-stepcard-ico" aria-hidden="true">📧</span><span data-i18n="g3_h">They get a code by email</span></h3>
-        <p data-i18n="g3_p">Delivered in minutes — redeemable on any route, any city.</p>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-<!-- ============================================================
-     SECTION: PERFECT FOR — occasion chip row (leaner than the old
-     3-card grid; reuses the shared .w-chip pill).
-     ============================================================ -->
-<section class="w-section peach w-pad">
-  <div class="w-head"><div class="w-eyebrow" data-i18n="occ_eyebrow">Any occasion</div><h2 data-i18n="occ_h2">The right gift, right on time</h2></div>
-  <div class="w-chips wg-stagger" role="list" aria-label="Occasions a WOGO gift card suits">
-    <span class="w-chip" role="listitem" data-i18n="occ_birthdays">🎂 Birthdays</span>
-    <span class="w-chip" role="listitem" data-i18n="occ_anniv">💍 Anniversaries</span>
-    <span class="w-chip" role="listitem" data-i18n="occ_thanks">💐 Thank-yous</span>
-    <span class="w-chip" role="listitem" data-i18n="occ_xmas">🎄 Christmas</span>
-    <span class="w-chip" role="listitem" data-i18n="occ_justbc">✨ Just because</span>
-  </div>
-</section>
-
-<!-- ============================================================
-     SECTION: MINI FAQ — redemption / validity / partial cover.
-     Deliberately small; everything else lives at ../faq/ (which
-     owns the FAQPage markup — none duplicated here).
-     TODO (validity): see the head comment — once the Wix expiry
-     setting is confirmed ≥ the Dutch 2-year statutory minimum,
-     replace fq2_b (EN + NL) with the plain validity trust point.
-     ============================================================ -->
-<section class="w-section brown w-pad">
-  <div class="w-head wg-reveal"><h2 data-i18n="faq_h2">Gift card questions</h2></div>
-  <div class="w-faq-wrap w-faq">
-    <details>
-      <summary data-i18n="fq1_s">How does redeeming a gift card work?</summary>
-      <div class="w-faq-body" data-i18n="fq1_b">The gift card arrives by email with a unique code. When the lucky one books any walk on our site, they enter the code at checkout and the amount is deducted from the total. That's it — no account, no app.</div>
-    </details>
-    <details>
-      <summary data-i18n="fq2_s">How long is a gift card valid?</summary>
-      <div class="w-faq-body" data-i18n="fq2_b">The exact validity is shown on the gift card itself when it arrives by email. Sitting on a card and not sure where you stand? Email us at <a href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a> and we'll check it for you.</div>
-    </details>
-    <details>
-      <summary data-i18n="fq3_s">Can a card cover part of a bigger or group booking?</summary>
-      <div class="w-faq-body" data-i18n="fq3_b">Yes — a gift card doesn't have to cover the whole amount. Enter the code at checkout and pay the remainder as usual. Planning a walk for 7 or more? Head to <a href="../groups/">group bookings</a> and mention your code when you get in touch — we'll sort it together.</div>
-    </details>
-  </div>
-  <div style="text-align:center;margin-top:26px;"><a href="../faq/" data-i18n="faq_more" style="display:inline-block;font-size:13px;font-weight:800;color:#ffaa81;text-decoration:underline;text-underline-offset:3px;">Everything else — see the full FAQ →</a></div>
-</section>
-
-<!-- ============================================================
-     SECTION: CITY HUB CARDS (#cities) — internal links to all four
-     city hubs: this is where the card gets spent.
-     ============================================================ -->
-<section class="w-section alt" id="cities">
-  <div class="w-head w-pad"><h2 data-i18n="cities_h2">Where they'll spend it</h2><p data-i18n="cities_p">6 routes · 4 cities · from €29,95 per person</p></div>
-  <div class="w-cityhub w-pad wg-stagger">
-    <a class="w-cityhub-card" href="../amsterdam/">
-      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="../amsterdam/amsterdam-hero.jpg" alt="Amsterdam cocktail walk"></div>
-      <div class="w-cityhub-body"><div class="w-cityhub-name">Amsterdam</div><div class="w-cityhub-sub" data-i18n="chs_ams">Thu–Sat · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Explore this city →</div></div>
-    </a>
-    <a class="w-cityhub-card" href="../rotterdam/">
-      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="../rotterdam/hidden-gems/hidden-gems-hero.jpg" alt="Rotterdam cocktail walk"></div>
-      <div class="w-cityhub-body"><div class="w-cityhub-name">Rotterdam</div><div class="w-cityhub-sub" data-i18n="chs_rot">3 routes · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Explore this city →</div></div>
-    </a>
-    <a class="w-cityhub-card" href="../utrecht/">
-      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="../utrecht/utrecht-hero.jpg" alt="Utrecht cocktail walk"></div>
-      <div class="w-cityhub-body"><div class="w-cityhub-name">Utrecht</div><div class="w-cityhub-sub" data-i18n="chs_utr">Daily · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Explore this city →</div></div>
-    </a>
-    <a class="w-cityhub-card" href="../groningen/">
-      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="../groningen/gin-walk-hero.jpg" alt="Groningen cocktail walk"></div>
-      <div class="w-cityhub-body"><div class="w-cityhub-name">Groningen</div><div class="w-cityhub-sub" data-i18n="chs_gro">Wed–Sat · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Explore this city →</div></div>
-    </a>
-  </div>
-  <div class="w-pad" style="text-align:center;margin-top:18px;"><span data-i18n="route_reassure" style="display:inline-block;font-size:12.5px;font-weight:700;color:#3f2b21;letter-spacing:0.01em;">✓ Reservations &amp; route map included &nbsp;·&nbsp; ✓ Mocktail option on every route &nbsp;·&nbsp; ✓ Questions? <a class="w-mail" href="mailto:info@wogoamsterdam.com">Write us</a></span></div>
-</section>
-
-<!-- ============================================================
-     SECTION: FINAL CTA — PAGE-EDIT (hard: straight to the Wix
-     gift-card checkout).
-     ============================================================ -->
-<section class="w-section dark w-pad w-final">
-  <h2 class="wg-reveal" data-i18n="final_h2">Give a night, not a thing</h2>
-  <p class="wg-reveal" data-i18n="final_p">Delivered by email in minutes — even if the birthday is today.</p>
-  <a href="#tiers" class="w-final-btn w-scroll" data-i18n="final_btn">Buy a gift card →</a>
-</section>
-
+</div></section>
 </main>
 <!-- ===== WOGO SHARED FOOTER v4 (copied verbatim onto every page — keep IDENTICAL.
      Discover links point at the internal pages on every page (incl. the homepage);
@@ -875,10 +686,9 @@
 </footer>
 <!-- ===== /WOGO SHARED FOOTER v4 ===== -->
 
-<!-- Sticky mobile buy bar (funnel page per SITE-PLAN — block + JS copied from the
-     homepage; hides while the tier cards are on screen so it never stacks on the
-     real Buy buttons). -->
-<div class="w-sticky-cta" id="wStickyCta"><a href="#tiers" class="w-sticky-cta-btn w-scroll" data-i18n="sticky_cta">Buy a gift card · from €30</a></div>
+<!-- Sticky mobile bottom CTA — standalone mode only; scrolls to the in-page
+     #book block, which holds the one real Book button for this route. -->
+<div class="w-sticky-cta" id="wStickyCta"><a href="book/" class="w-sticky-cta-btn" data-i18n="sticky_cta">View dates · €29,95</a></div>
 
 <script>
 (function () {
@@ -896,89 +706,20 @@
     if (Object.keys(carry).length) window.__wogoCarry = carry;
   })();
 
-  /* ===== COMPLETE NL DICTIONARY — every data-i18n key on this page.
-     Keys shared with the homepage (nav_*, foot_*, group_*, route_reassure,
-     trust items, chs_*, explore, cities_p) keep the homepage's exact NL text.
-     rev_q / rev_name deliberately swap to Esther's REAL Dutch review
-     (verbatim from the Wix homepage) — not a translation, not fabricated. ===== */
+  /* ===== NL DICTIONARY — every data-i18n key actually present on THIS page
+     (gc_ keys for the confirmation copy, plus the shared nav_ and foot_ keys
+     the nav+footer chrome always needs). Unlike the route-page template this
+     was cloned from, there's no hero/ticket/story/book/sibling-routes content
+     here to translate — this page is 3 sentences, not a landing page. ===== */
   var NL = {
-    /* --- hero --- */
-    hero_eyebrow: "Het perfecte cadeau",
-    hero_h1: "Geef een Cocktail Walk cadeaubon",
-    hero_sub: "Een avond uit die bijblijft. Binnen minuten in de inbox.",
-    hero_cta: "Koop een cadeaubon →",
-    /* gift-card mock face */
-    gc_label: "Cadeaubon",
-    gc_sub: "The Cocktail Walk",
-    /* --- amount tiers --- */
-    tiers_eyebrow: "Kies een bedrag",
-    tiers_h2: "Drie bedragen, geen gedoe",
-    tiers_p: "Elke bon werkt op elke route in elke stad. Zij kiezen de walk.",
-    tier1_sub: "Cadeaubon",
-    tier2_sub: "Cadeaubon",
-    tier3_sub: "Cadeaubon",
-    tier1_b: "Bijna een hele walk",
-    tier2_b: "Een Cocktail Walk voor één",
-    tier2_popular: "Meest gekozen",
-    tier3_b: "Een avond uit voor twee",
-    tier_btn: "Koop deze bon →",
-    tierc_sub: "Eigen bedrag",
-    tierc_b: "Elk bedrag dat je wilt",
-    tierc_btn: "Kies dit bedrag →",
-    tiers_note: "Eén cadeaubon per bestelling, met een persoonlijk bericht bij het afrekenen. Binnen een paar minuten in de inbox — geen verzending, geen inpakpapier.",
-    tiers_anchor: "Een walk is €29,95 per persoon. €30 dekt bijna een hele walk, €60 is een volledige walk voor één en €100 maakt er een avond uit voor twee van. Liever een exact bedrag? Kies hierboven je eigen bedrag.",
-    /* --- order form --- */
-    gc_order_amt_empty: "Kies hierboven een bedrag om te beginnen.",
-    gc_buyer_name: "Jouw naam",
-    gc_buyer_email: "Jouw e-mailadres",
-    gc_recipient_name: "Naam van de ontvanger",
-    gc_recipient_email: "E-mailadres van de ontvanger",
-    gc_message: "Persoonlijk bericht (optioneel)",
-    gc_submit: "Kies eerst een bedrag",
-    gc_note: "Je betaalt veilig via Stripe. De cadeaubon wordt direct na betaling naar je ontvanger gemaild.",
-    /* --- how gifting works --- */
-    how_eyebrow: "Zo werkt het",
-    how_h2: "Van jouw inbox naar hun avond uit",
-    how_p: "Drie stappen. Het regelwerk doen wij, niet zij.",
-    g1_h: "Kies een bedrag",
-    g1_p: "Kies €30, €60, €100 of je eigen bedrag.",
-    g2_h: "Voeg een bericht toe, reken af",
-    g2_p: "Schrijf een persoonlijk bericht en betaal veilig in seconden.",
-    g3_h: "Zij krijgen een code per e-mail",
-    g3_p: "Binnen enkele minuten geleverd — in te wisselen op elke route, elke stad.",
-    /* --- perfect for (occasion chips) --- */
-    occ_eyebrow: "Elke gelegenheid",
-    occ_h2: "Het juiste cadeau, precies op tijd",
-    occ_birthdays: "🎂 Verjaardagen",
-    occ_anniv: "💍 Jubilea",
-    occ_thanks: "💐 Bedankjes",
-    occ_xmas: "🎄 Kerst",
-    occ_justbc: "✨ Zomaar",
-    /* --- mini FAQ --- */
-    faq_h2: "Vragen over cadeaubonnen",
-    fq1_s: "Hoe werkt het inwisselen van een cadeaubon?",
-    fq1_b: "De cadeaubon komt per e-mail binnen met een unieke code. Wanneer de gelukkige een walk boekt op onze site, vult die de code in bij het afrekenen en gaat het bedrag van het totaal af. Dat is alles — geen account, geen app.",
-    fq2_s: "Hoe lang is een cadeaubon geldig?",
-    fq2_b: "De precieze geldigheid staat op de cadeaubon zelf wanneer die per e-mail binnenkomt. Heb je nog een bon liggen en weet je niet meer hoelang hij nog geldig is? Mail ons via <a href=\"mailto:info@wogoamsterdam.com\">info@wogoamsterdam.com</a> en we zoeken het voor je uit.",
-    fq3_s: "Kan een bon een deel van een grotere of groepsboeking dekken?",
-    fq3_b: "Ja — een cadeaubon hoeft niet het hele bedrag te dekken. Vul de code in bij het afrekenen en betaal de rest zoals gebruikelijk. Plan je een walk voor 7 of meer? Kijk bij <a href=\"../groups/\">groepsboekingen</a> en noem je code als je contact opneemt — dan regelen we het samen.",
-    faq_more: "Alle andere vragen — bekijk de volledige FAQ →",
-    /* --- city cards --- */
-    cities_h2: "Waar ze hem verzilveren",
-    cities_p: "6 routes · 4 steden · vanaf €29,95 per persoon",
-    chs_ams: "do–za · vanaf €29,95",
-    chs_rot: "3 routes · vanaf €29,95",
-    chs_utr: "Dagelijks · vanaf €29,95",
-    chs_gro: "wo–za · vanaf €29,95",
-    explore: "Ontdek deze stad →",
-    route_reassure: "✓ Reserveringen &amp; routekaart inbegrepen &nbsp;·&nbsp; ✓ Mocktail-optie op elke route &nbsp;·&nbsp; ✓ Vragen? <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">Stuur ons een berichtje</a>",
-    /* --- final CTA + sticky --- */
-    final_h2: "Geef een avond, geen cadeau dat stof vangt",
-    final_p: "Binnen een paar minuten per e-mail geleverd — ook als de verjaardag vandaag is.",
-    final_btn: "Koop een cadeaubon →",
-    sticky_cta: "Koop een cadeaubon · vanaf €30",
+    gc_h1: "Je cadeaubon is onderweg!",
+    gc_p: "Bedankt — je betaling is gelukt. We hebben de WOGO Cadeaubon rechtstreeks naar de inbox van je ontvanger gestuurd, met hun code en hoe ze hem gebruiken.",
+    gc_email: "📬 Je ontvangt ook zelf een korte bevestiging per e-mail. Zie je hem niet binnen een paar minuten? Check je spam- of reclamemap.",
+    gc_cta_another: "Koop nog een cadeaubon",
+    conf_cta_home: "Terug naar home",
     /* --- nav --- */
-    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_about: "Over WOGO", nav_cta: "Bekijk data",
+    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_about: "Over WOGO", nav_cta: "Boek je walk", gallery_h2: "Een voorproefje van de avond",
+    crumb_home: "Home",
     /* --- footer --- */
     foot_tag: "Drie bars die je nooit zelf had gevonden. Eén avond die je altijd bijblijft.",
     foot_c1_h: "Routes", foot_c2_h: "Ontdek",
@@ -996,7 +737,7 @@
 
   /* ===== SHARED NAV/FOOTER v4 wiring =====
      BASE — this page's relative prefix back to the repo root: '' at the root,
-     '../' one folder deep, '../../' two folders deep. Every internal URL in
+     '../' one folder deep, '../' two folders deep. Every internal URL in
      WOGO_ROUTES below is written from the repo root and BASE-prefixed at
      render time, so the routes data + render code stay byte-identical on
      every page — only this one line changes per folder depth. */
@@ -1092,6 +833,7 @@
   try { saved = localStorage.getItem('wogoLang'); } catch (e) {}
   var auto = (navigator.language || '').toLowerCase().indexOf('nl') === 0 || /\/(nl)(\/|$|\?)/.test(document.referrer || '');
   setLang(saved || (auto ? 'nl' : 'en'));
+  window.__wogoSetLang = setLang;  // lets the confirmation script switch to the customer's booked language
   // Reveal the body — the tiny anti-flicker script in <head> hides it for Dutch
   // visitors so they never see the English copy flash before translation.
   document.body.style.visibility = 'visible';
@@ -1165,7 +907,8 @@
   })();
 
   /* ===== Smooth-scroll anchors (embedded-in-Wix fallback kept so this page keeps
-     working if it's ever iframed like the homepage) ===== */
+     working if it's ever iframed like the homepage). Only same-page #anchors get
+     the w-scroll class — cross-page links like ../#cities stay plain links. ===== */
   var EMBEDDED = window.self !== window.top;
   if (EMBEDDED) {
     document.documentElement.style.overflowY = 'hidden';
@@ -1186,14 +929,17 @@
       }
     });
   });
-  document.querySelectorAll('.w-cityhub-img img').forEach(function (im) { im.onerror = function () { this.style.display = 'none'; }; });
+  document.querySelectorAll('.w-citycard-img-inner').forEach(function (im) { im.onerror = function () { this.style.display = 'none'; }; });
 
-  /* ===== FAQ accordion (one open at a time) ===== */
-  var faqItems = document.querySelectorAll('.w-faq details');
-  faqItems.forEach(function (d) {
-    d.addEventListener('toggle', function () {
-      if (d.open) { faqItems.forEach(function (o) { if (o !== d) o.open = false; }); }
-      reportHeight();
+  /* ===== Card scroller arrows (sibling routes) ===== */
+  document.querySelectorAll('.w-arrow').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var sc = document.getElementById(btn.getAttribute('data-target')); if (!sc) return;
+      var cards = sc.querySelectorAll('.w-citycard, .w-review');
+      var card = null;
+      for (var i = 0; i < cards.length; i++) { if (cards[i].offsetParent !== null) { card = cards[i]; break; } }
+      var step = card ? card.getBoundingClientRect().width + 16 : 300;
+      sc.scrollBy({ left: btn.classList.contains('w-arrow-left') ? -step : step, behavior: 'smooth' });
     });
   });
 
@@ -1203,19 +949,31 @@
     try { window.parent.postMessage(msg, '*'); } catch (e) {}
     try { if (window.top && window.top !== window.parent) window.top.postMessage(msg, '*'); } catch (e2) {}
   }
+  // Route label for GA, derived from a "…/book/" href (own-route CTAs link to a bare
+  // "book/" with no route segment, so fall back to the current page path in that case) —
+  // replaces the old /booking-calendar/ split now that CTAs point at internal book/ pages.
+  function wogoRouteLabel(href) {
+    var clean = (href || '').replace(/^(\.\.\/)+/, '').replace(/\/?book\/?$/, '');
+    if (!clean) clean = location.pathname.replace(/^\/+/, '').replace(/\/?book\/?$/, '');
+    return clean.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean).join('-');
+  }
   document.addEventListener('click', function (e) {
     var el = e.target && e.target.closest ? e.target.closest('a, button') : null;
     if (!el) return;
-    // Strip query/hash so GA labels group cleanly, not per ad click-id.
+    // Strip query/hash so GA labels group cleanly by route, not per ad click-id.
     var href = (el.getAttribute('href') || '').split('?')[0].split('#')[0];
-    if (el.classList.contains('w-cityhub-card')) {
-      wogoTrack('city_hub', href);
-    } else if (href.indexOf('gift-cards') !== -1 && (el.classList.contains('w-tier-btn') || el.classList.contains('w-hero-cta') || el.classList.contains('w-final-btn') || el.classList.contains('w-sticky-cta-btn') || el.classList.contains('w-nav-cta'))) {
-      wogoTrack('giftcard_buy', href);
+    if (el.classList.contains('w-book-btn') || el.classList.contains('w-ticket-cta')) {
+      wogoTrack('book_now', wogoRouteLabel(href));
+    } else if (el.classList.contains('w-citycard-btn-primary')) {
+      wogoTrack('book_now', wogoRouteLabel(href));
+    } else if (el.classList.contains('w-citycard-btn-secondary')) {
+      wogoTrack('info', href);
+    } else if (el.classList.contains('w-scroll')) {
+      wogoTrack('to_book_block');
+    } else if (el.classList.contains('w-gift-btn')) {
+      wogoTrack('giftcard');
     } else if (el.classList.contains('w-group-btn')) {
       wogoTrack('group');
-    } else if (el.classList.contains('w-scroll')) {
-      wogoTrack('choose_route');
     }
   }, true);
 
@@ -1228,17 +986,17 @@
   window.addEventListener('scroll', navScrollState, { passive: true });
   navScrollState();
 
-  /* Sticky mobile bottom CTA — standalone mode only (copied from the homepage).
-     Shows once the visitor has scrolled past the hero, hides while the tier
-     cards (#tiers) are on screen so it never stacks on the real Buy buttons. */
+  /* Sticky mobile bottom CTA — standalone mode only. Shows once the visitor has
+     scrolled past the hero, hides while the #book block is on screen so it never
+     stacks on top of the real Book button. */
   if (!EMBEDDED) {
     var wSticky = document.getElementById('wStickyCta');
-    var wTiersSec = document.getElementById('tiers');
+    var wBookSec = document.getElementById('book');
     var stickyState = function () {
       if (!wSticky) return;
       var show = (window.pageYOffset || window.scrollY || 0) > 500;
-      if (show && wTiersSec) {
-        var r = wTiersSec.getBoundingClientRect();
+      if (show && wBookSec) {
+        var r = wBookSec.getBoundingClientRect();
         if (r.top < window.innerHeight && r.bottom > 0) show = false;
       }
       var wf = document.querySelector('.w-final, .w-footer');
@@ -1568,7 +1326,7 @@
       btn_customize:"Customize",
       btn_save:     "Save my choices",
       modal_title:  "Cookie preferences",
-      modal_intro:  "Choose which cookies WOGO may use. You can change this anytime via “Cookie settings” in the footer.",
+      modal_intro:  "Choose which cookies WOGO may use. You can change this anytime via \"Cookie settings\" in the footer.",
       close_label:  "Close cookie preferences",
       always_on:    "Always on",
       cat_necessary_h: "Necessary",
@@ -1588,7 +1346,7 @@
       btn_customize:"Zelf instellen",
       btn_save:     "Mijn keuze opslaan",
       modal_title:  "Cookievoorkeuren",
-      modal_intro:  "Kies welke cookies WOGO mag gebruiken. Je past dit altijd aan via “Cookie-instellingen” in de footer.",
+      modal_intro:  "Kies welke cookies WOGO mag gebruiken. Je past dit altijd aan via \"Cookie-instellingen\" in de footer.",
       close_label:  "Cookievoorkeuren sluiten",
       always_on:    "Altijd aan",
       cat_necessary_h: "Noodzakelijk",
@@ -1596,7 +1354,7 @@
       cat_analytics_h: "Analytics",
       cat_analytics_d: "Anonieme statistieken over hoe de site gebruikt wordt, zodat we hem kunnen verbeteren.",
       cat_functional_h: "Functioneel",
-      cat_functional_d: "Extra gemak zoals ingesloten kaarten, video’s of chat, mocht dat er komen.",
+      cat_functional_d: "Extra gemak zoals ingesloten kaarten, video's of chat, mocht dat er komen.",
       cat_marketing_h: "Marketing",
       cat_marketing_d: "Hiermee meten we onze advertenties (Meta Pixel), zodat we ze aan de juiste mensen tonen en minder budget verspillen."
     }
@@ -1807,116 +1565,10 @@
 </style>
 <!-- ===== /WOGO WHATSAPP FLOAT ===== -->
 
-<!-- Gift-card self-serve order form — POST /api/giftcard/checkout, then
-     redirect to the returned Stripe Checkout url. Same Worker base as the
-     booking widget (backend/widget/wogo-calendar.js's WOGO_API). -->
-<script>
-(function(){
-  var API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
-  var TIERS = document.getElementById('wGcTiers');
-  var customInput = document.getElementById('wGcCustomAmount');
-  var orderAmt = document.getElementById('wGcOrderAmt');
-  var order = document.getElementById('wGcOrder');
-  var form = document.getElementById('wGcForm');
-  var submitBtn = document.getElementById('wGcSubmit');
-  var errBox = document.getElementById('wGcError');
-  var selectedCents = null;
+<!-- TODO (v2): this page has no consent-gated Meta Pixel Purchase event, unlike
+     booking-confirmed/ — that would need session_id-keyed knowledge of the
+     amount, which means a lookup endpoint this v1 deliberately doesn't build
+     (see the head comment). Wire one up if gift-card ad attribution matters. -->
 
-  function lang(){ return document.documentElement.lang === 'nl' ? 'nl' : 'en'; }
-  var STR = {
-    en: {
-      pick: function(eur){ return 'You’re buying a €' + eur + ' gift card.'; },
-      ready: 'Continue to payment →',
-      busy: 'Redirecting…',
-      choose: 'Choose an amount first',
-      err: 'Something went wrong. Please try again, or email us at info@wogoamsterdam.com.',
-      errAmount: 'Please choose an amount between €10 and €500.'
-    },
-    nl: {
-      pick: function(eur){ return 'Je koopt een cadeaubon van €' + eur + '.'; },
-      ready: 'Ga naar betalen →',
-      busy: 'Bezig…',
-      choose: 'Kies eerst een bedrag',
-      err: 'Er ging iets mis. Probeer het nog eens, of mail ons op info@wogoamsterdam.com.',
-      errAmount: 'Kies een bedrag tussen €10 en €500.'
-    }
-  };
-
-  function euro(cents){ return (cents / 100).toFixed(0); }
-
-  function selectAmount(cents, tileEl){
-    selectedCents = cents;
-    Array.prototype.forEach.call(TIERS.querySelectorAll('.w-tier'), function (t) { t.classList.toggle('is-selected', t === tileEl); });
-    var t = STR[lang()];
-    orderAmt.textContent = t.pick(euro(cents));
-    submitBtn.disabled = false;
-    submitBtn.textContent = t.ready;
-    order.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  TIERS.querySelectorAll('.w-tier').forEach(function (tile) {
-    var tierAttr = tile.getAttribute('data-tier');
-    var btn = tile.querySelector('.w-tier-btn');
-    if (!btn) return;
-    if (tierAttr === 'custom') {
-      btn.addEventListener('click', function () {
-        var eur = parseInt(customInput.value, 10);
-        if (!eur || eur < 10 || eur > 500) {
-          customInput.focus();
-          errBox.textContent = STR[lang()].errAmount;
-          errBox.classList.add('show');
-          return;
-        }
-        errBox.classList.remove('show');
-        selectAmount(eur * 100, tile);
-      });
-      // Typing a custom amount and pressing Enter behaves the same as clicking the button.
-      customInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); btn.click(); } });
-    } else {
-      btn.addEventListener('click', function () { selectAmount(parseInt(tierAttr, 10), tile); });
-    }
-  });
-
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    var t = STR[lang()];
-    errBox.classList.remove('show');
-    if (!selectedCents) { errBox.textContent = t.choose; errBox.classList.add('show'); return; }
-
-    var fd = new FormData(form);
-    var payload = {
-      amount_cents: selectedCents,
-      buyer_name: String(fd.get('buyer_name') || '').trim(),
-      buyer_email: String(fd.get('buyer_email') || '').trim(),
-      recipient_name: String(fd.get('recipient_name') || '').trim(),
-      recipient_email: String(fd.get('recipient_email') || '').trim(),
-      message: String(fd.get('message') || '').trim(),
-      locale: lang()
-    };
-
-    submitBtn.disabled = true;
-    var original = submitBtn.textContent;
-    submitBtn.textContent = t.busy;
-
-    fetch(API + '/api/giftcard/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-      .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
-      .then(function (res) {
-        if (res.ok && res.body.url) { window.location.href = res.body.url; return; }
-        submitBtn.disabled = false; submitBtn.textContent = original;
-        errBox.textContent = (res.body && res.body.message) || t.err;
-        errBox.classList.add('show');
-      })
-      .catch(function () {
-        submitBtn.disabled = false; submitBtn.textContent = original;
-        errBox.textContent = t.err;
-        errBox.classList.add('show');
-      });
-  });
-})();
-</script>
 </body>
 </html>

@@ -163,6 +163,15 @@
   addBooking("amsterdam", day(1), "18:30", 4, "confirmed",
     { name: "Hugo Verbeek", email: "hugo.verbeek@example.com", phone: "+31687654321", source: "manual", payment_status: "paid_invoice" });
 
+  /* ---- gift cards (migrations/0018/0019) — a handful of sample cards
+     across every status, so the admin preview shows the full picture. ---- */
+  const giftCards = [
+    { id: "gc_1", code: "WOGO-7F3K-9QRT", initial_cents: 6000, balance_cents: 6000, currency: "EUR", status: "active", buyer_name: "Sophie Bakker", buyer_email: "sophie.bakker@example.com", recipient_name: "Anna de Vries", recipient_email: "anna@example.com", message: "Happy birthday! Enjoy a night out.", stripe_session: "cs_mock_gift_1", locale: "en", created_at: day(-6) },
+    { id: "gc_2", code: "WOGO-4M2X-P8WD", initial_cents: 10000, balance_cents: 4010, currency: "EUR", status: "active", buyer_name: "Tom Jansen", buyer_email: "tom.jansen@example.com", recipient_name: "Hugo Verbeek", recipient_email: "hugo.verbeek@example.com", message: "", stripe_session: "cs_mock_gift_2", locale: "nl", created_at: day(-19) },
+    { id: "gc_3", code: "WOGO-QW5T-2NBH", initial_cents: 3000, balance_cents: 0, currency: "EUR", status: "depleted", buyer_name: "Lotte Smit", buyer_email: "lotte.smit@example.com", recipient_name: "Maartje Willems", recipient_email: "maartje@example.com", message: "Cheers to us!", stripe_session: "cs_mock_gift_3", locale: "nl", created_at: day(-33) },
+    { id: "gc_4", code: "WOGO-8YV3-HK6C", initial_cents: 3000, balance_cents: 3000, currency: "EUR", status: "void", buyer_name: "Bram de Groot", buyer_email: "bram@example.com", recipient_name: "Els Peeters", recipient_email: "els@example.com", message: "", stripe_session: "cs_mock_gift_4", locale: "en", created_at: day(-40) }
+  ];
+
   /* ---- customers: derived from bookings (mirrors logic.js:aggregateCustomers) ---- */
   function bookingSpendCents(b) {
     if (!(b.status === "confirmed" || b.status === "confirmed_conflict")) return 0;
@@ -413,6 +422,19 @@
       const esc = (v) => { v = v == null ? "" : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
       const csv = [cols.join(",")].concat(list.map((b) => cols.map((c) => esc(b[c])).join(","))).join("\n");
       return Promise.resolve(new Response(csv, { status: 200, headers: { "Content-Type": "text/csv; charset=utf-8" } }));
+    }
+
+    // gift cards (migrations/0018/0019)
+    if (path === "/admin/api/gift-cards" && method === "GET") {
+      const sorted = giftCards.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+      return json({ gift_cards: sorted });
+    }
+    if ((m = match(path, /^\/admin\/api\/gift-cards\/([^/]+)\/void$/)) && method === "POST") {
+      const code = decodeURIComponent(m[1]);
+      const card = giftCards.find((c) => c.code === code);
+      if (!card || card.status !== "active") return json({ error: "not_found" }, 404);
+      card.status = "void";
+      return json({ ok: true });
     }
 
     return json({ error: "not_found", message: "mock: no handler for " + method + " " + path }, 404);
