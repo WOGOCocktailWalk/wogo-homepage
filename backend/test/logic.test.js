@@ -25,6 +25,8 @@ import {
   isValidCurrencyCode,
   zonedDateTimeToUtc,
   utcToZonedHHMM,
+  isSlotPastCutoff,
+  computeRateLimitRetryAfterSeconds,
 } from '../src/logic.js';
 
 describe('addMinutesToSlot', () => {
@@ -883,5 +885,98 @@ describe('computeBarArrivals — timezone-aware (route.timezone, migrations/0011
     ];
     const result = computeBarArrivals(londonRoute, routesBars, overrides, booking);
     assert.deepEqual(result.map((b) => b.arrival_time), ['18:00', '19:00']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isSlotPastCutoff (audit item 1 — same-day booking cutoff)
+// ---------------------------------------------------------------------------
+
+describe('isSlotPastCutoff', () => {
+  test('a slot well outside the cutoff window is bookable', () => {
+    const now = new Date('2026-08-06T14:00:00.000Z'); // 16:00 CEST local
+    // 18:00 local is 2h away — well past the 60-minute cutoff window.
+    assert.equal(isSlotPastCutoff('2026-08-06', '18:00', 'Europe/Amsterdam', 60, now), false);
+  });
+
+  test('a slot inside the cutoff window (not yet started) is rejected', () => {
+    const now = new Date('2026-08-06T14:00:00.000Z'); // 16:00 CEST local
+    // 16:30 local is 30 minutes away — inside the 60-minute cutoff.
+    assert.equal(isSlotPastCutoff('2026-08-06', '16:30', 'Europe/Amsterdam', 60, now), true);
+  });
+
+  test('a slot that has already started is rejected', () => {
+    const now = new Date('2026-08-06T14:00:00.000Z'); // 16:00 CEST local
+    assert.equal(isSlotPastCutoff('2026-08-06', '15:30', 'Europe/Amsterdam', 60, now), true);
+  });
+
+  test('boundary: exactly cutoffMinutes away is still bookable (not strictly less)', () => {
+    const now = new Date('2026-08-06T14:00:00.000Z'); // 16:00 CEST local
+    assert.equal(isSlotPastCutoff('2026-08-06', '17:00', 'Europe/Amsterdam', 60, now), false);
+    // One minute inside the boundary flips to rejected.
+    assert.equal(isSlotPastCutoff('2026-08-06', '16:59', 'Europe/Amsterdam', 60, now), true);
+  });
+
+  test('a FUTURE date is never past cutoff, no matter the slot time', () => {
+    const now = new Date('2026-08-06T14:00:00.000Z'); // 16:00 CEST local
+    // Same clock time tomorrow — nowhere near "now", but would trip a buggy
+    // same-calendar-date-only check.
+    assert.equal(isSlotPastCutoff('2026-08-07', '16:05', 'Europe/Amsterdam', 60, now), false);
+  });
+
+  test('DST-safe: the CEST->CET fall-back date (Europe/Amsterdam, last Sunday of Oct 2026) is judged correctly', () => {
+    // Clocks fall back at 03:00 CEST -> 02:00 CET on 2026-10-25 (01:00 UTC).
+    // `now` here is 21:00 CET local (after the transition) — a naive
+    // same-day-minutes calculation that ignored the offset change would be
+    // off by up to an hour depending on which side of the transition the
+    // slot and "now" landed on; isSlotPastCutoff must agree with the real
+    // elapsed wall-clock minutes regardless.
+    const now = new Date('2026-10-25T20:00:00.000Z'); // 21:00 CET local
+    assert.equal(isSlotPastCutoff('2026-10-25', '23:30', 'Europe/Amsterdam', 60, now), false, '2.5h away — bookable');
+    assert.equal(isSlotPastCutoff('2026-10-25', '21:30', 'Europe/Amsterdam', 60, now), true, '30 min away — inside cutoff');
+    assert.equal(isSlotPastCutoff('2026-10-25', '20:30', 'Europe/Amsterdam', 60, now), true, 'already started');
+    assert.equal(isSlotPastCutoff('2026-10-26', '03:00', 'Europe/Amsterdam', 60, now), false, 'a future date, never affected');
+  });
+
+  test('defaults to Europe/Amsterdam when no timezone is given', () => {
+    const now = new Date('2026-08-06T14:00:00.000Z');
+    assert.equal(
+      isSlotPastCutoff('2026-08-06', '16:30', undefined, 60, now),
+      isSlotPastCutoff('2026-08-06', '16:30', 'Europe/Amsterdam', 60, now)
+    );
+  });
+
+  test('a route in a DIFFERENT timezone (London) is judged against ITS OWN local clock, not Amsterdam\'s', () => {
+    // 17:30 UTC = 18:30 Amsterdam (CEST) but 18:30 London (BST) too in August
+    // (both UTC+1/+2 respectively) — use a case where the offsets actually
+    // differ in wall-clock terms: America/New_York (EST, UTC-5) in January.
+    const now = new Date('2026-01-15T23:30:00.000Z'); // 18:30 EST New York
+    // 19:00 local NY is 30 min away — inside cutoff for NY, even though the
+    // same UTC instant is already 00:30 the NEXT calendar day in Amsterdam.
+    assert.equal(isSlotPastCutoff('2026-01-15', '19:00', 'America/New_York', 60, now), true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computeRateLimitRetryAfterSeconds (audit item 3 — 429 Retry-After math)
+// ---------------------------------------------------------------------------
+
+describe('computeRateLimitRetryAfterSeconds', () => {
+  test('returns seconds remaining until the oldest event ages out of the window', () => {
+    const now = '2026-08-06 12:10:00';
+    const oldest = '2026-08-06 12:05:00'; // 5 minutes ago
+    // 10-minute window: oldest ages out at 12:15:00 -> 5 minutes = 300s left.
+    assert.equal(computeRateLimitRetryAfterSeconds(oldest, 10, now), 300);
+  });
+
+  test('never returns less than 1 second, even if the oldest event is already stale', () => {
+    const now = '2026-08-06 12:20:00';
+    const oldest = '2026-08-06 12:05:00'; // already outside a 10-minute window
+    assert.equal(computeRateLimitRetryAfterSeconds(oldest, 10, now), 1);
+  });
+
+  test('falls back to the full window length when no oldest event is known', () => {
+    assert.equal(computeRateLimitRetryAfterSeconds(null, 10, '2026-08-06 12:00:00'), 600);
+    assert.equal(computeRateLimitRetryAfterSeconds(undefined, 5, '2026-08-06 12:00:00'), 300);
   });
 });

@@ -14,6 +14,11 @@ export async function createCheckoutSession(env, booking, route) {
   body.set('success_url', `${SITE_URL}/booking-confirmed/?session_id={CHECKOUT_SESSION_ID}`);
   body.set('cancel_url', `${SITE_URL}${routePathFor(route)}`);
   body.set('allow_promotion_codes', 'true');
+  // Checkout's own UI language — without this, Stripe defaults to English
+  // (or browser-inferred 'auto') even for a Dutch-language booking. Stripe
+  // accepts 'nl' | 'en' | ... | 'auto'; booking.locale is already normalized
+  // to exactly 'nl' or 'en' by guest_api.js before createHold.
+  body.set('locale', booking.locale === 'nl' ? 'nl' : 'en');
   const expiresAt = Math.floor(Date.now() / 1000) + STRIPE_EXPIRES_MINUTES * 60;
   body.set('expires_at', String(expiresAt));
   body.set('metadata[booking_id]', booking.id);
@@ -38,9 +43,10 @@ export async function createCheckoutSession(env, booking, route) {
   // still goes through this exact path: Stripe supports a €0-total Checkout
   // Session when a 100%-off coupon is applied (no payment method is
   // collected, and `checkout.session.completed` still fires normally) — see
-  // Stripe's "no-cost orders" docs. This is the one piece of this feature
-  // that hasn't been exercised against a real Stripe test-mode key; verify
-  // before go-live.
+  // Stripe's "no-cost orders" docs. VERIFIED 28 Sep 2026 against a real
+  // Stripe test-mode key: Checkout shows a €0.00 "Complete order" session and
+  // completes it with no payment method collected; the webhook fires
+  // normally. No longer an open item.
   const giftApplied = Number(booking.gift_applied_cents) || 0;
   if (giftApplied > 0) {
     body.delete('allow_promotion_codes');
@@ -121,6 +127,7 @@ export async function createGiftCardCheckoutSession(env, gift) {
   body.set('metadata[recipient_email]', gift.recipient_email);
   body.set('metadata[message]', (gift.message || '').slice(0, 490));
   body.set('metadata[locale]', gift.locale === 'nl' ? 'nl' : 'en');
+  body.set('locale', gift.locale === 'nl' ? 'nl' : 'en');
   ['card', 'ideal', 'klarna'].forEach((t, i) => body.set(`payment_method_types[${i}]`, t));
   body.set('line_items[0][quantity]', '1');
   // WOGO gift cards are EUR-only today (matches every live route) — see

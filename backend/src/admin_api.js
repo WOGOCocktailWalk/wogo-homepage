@@ -951,6 +951,18 @@ export async function handleListGiftCards(request, env) {
   return json({ gift_cards });
 }
 
+// ---------------------------------------------------------------------------
+// Contact + group-booking inquiries (migrations/0021, audit item 9)
+// ---------------------------------------------------------------------------
+
+/** GET /admin/api/inquiries — session-guarded like every /admin/api/* route
+ * (index.js). Read-only list for now; the admin UI to mark one read/replied
+ * is a follow-up (SETUP.md notes this as the next step). */
+export async function handleListInquiries(request, env) {
+  const inquiries = await db.listInquiries(env.DB);
+  return json({ inquiries });
+}
+
 /** POST /admin/api/gift-cards/:code/void — owner cancels an active card (e.g.
  * a refunded purchase). Already-depleted/void cards are left untouched. */
 export async function handleVoidGiftCard(request, env, params) {

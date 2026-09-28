@@ -616,6 +616,90 @@ Cloudflare Transform Rules, already documented in `CLOUDFLARE-SETUP.md`.
 
 ---
 
+## 17. Contact + group booking form — `POST /api/contact` (2026-09-28)
+
+New backend for the site's **Contact** form and **Group booking request**
+form (`migrations/0021_inquiries.sql`, `src/guest_api.js:handleContact`).
+This is a lead inbox — it does NOT create a booking hold and doesn't touch
+routes/bookings at all, so the frontend can wire it up independently of the
+booking widget. Whoever builds the actual `<form>` HTML (the frontend
+agent, or Maroussia by hand) needs this contract:
+
+**Endpoint:** `POST https://<your-worker>.workers.dev/api/contact`
+(same base URL the booking widget already uses — `WOGO_API` in
+`widget/wogo-calendar.js`). CORS is the same allowlist as every other guest
+endpoint (`isAllowedOrigin`, `src/config.js`).
+
+**Request body** (JSON):
+
+```json
+{
+  "kind": "contact",           // or "group" — REQUIRED, exactly one of these two strings
+  "name": "Anna Guest",        // REQUIRED
+  "email": "anna@example.com", // REQUIRED, valid email
+  "phone": "+31 6 12345678",   // optional
+  "city": "Utrecht",           // optional — meaningful for kind:"group" only
+  "date": "mid November",      // optional, FREE TEXT (not a strict date — a group
+                                // request doesn't always have a fixed date yet)
+  "party_size": 18,            // optional, positive integer — kind:"group" only
+  "message": "We'd like a private walk for a work outing.", // REQUIRED
+  "locale": "en",              // "en" or "nl" — decides which language the guest's
+                                // auto-reply is sent in; defaults to "en" if omitted
+  "website": ""                // HONEYPOT — a real visitor never sees this field.
+                                // Hide it with CSS (NOT type="hidden", a bot can see
+                                // that) e.g. absolutely positioned off-screen. MUST be
+                                // submitted empty by real users.
+}
+```
+
+Use `kind:"contact"` for the plain contact form (city/date/party_size
+omitted or ignored) and `kind:"group"` for the group-booking-request form.
+
+**Success response** — `200 {"ok": true, "id": "inq_..."}`. The guest then
+gets an automatic email acknowledgement ("we got your message, we reply
+within 1 working day") in their own language; the owner gets a notification
+at info@wogoamsterdam.com with reply-to set to the guest, so replying in the
+inbox goes straight back to them.
+
+**Error responses** — same shape as the rest of the guest API
+(`{"error": "<code>", "message": "<human text>"}`):
+- `400 bad_request` — a required field is missing/invalid (check
+  `message` for which one).
+- `403 forbidden` — request Origin isn't on the allowlist (shouldn't happen
+  from the real site; only matters if testing from an unlisted domain).
+- `429 rate_limited` — too many submissions from this visitor's IP in a
+  10-minute window; body includes `retry_after_seconds`, and the response
+  also carries a standard `Retry-After` header — show the guest a "please
+  wait a moment and try again" message, ideally using that number.
+
+**A filled honeypot is NOT an error** — it still gets `200 {"ok": true}` (so
+a bot has no signal to react to) but nothing is actually stored or emailed.
+Don't treat a 200 as proof the message reached anyone if you're debugging a
+suspiciously-quiet form — check `GET /admin/api/inquiries` (admin session
+required) to see what's actually landed.
+
+**No admin UI for this yet** — `GET /admin/api/inquiries` lists everything
+newest-first, but there's no dashboard tab to mark one read/replied/closed.
+Today the owner works from the notification emails; a dashboard tab is a
+natural follow-up whenever the admin UI gets touched next.
+
+### Side note for the frontend: same-day slots can now show as "Sold out" near/after their start time
+
+Unrelated to the contact form, but worth knowing if you're touching the
+booking widget around the same time: as of 2026-09-28, `GET /api/slots` and
+`GET /api/availability` report `seats_left: 0` for any TODAY slot that's
+already started, or starts within `SAME_DAY_CUTOFF_MINUTES` (60 minutes,
+`src/config.js`) — reusing the widget's existing "Sold out" / disabled
+rendering (`soldout = s.seats_left <= 0` in `wogo-calendar.js`), so no
+widget code changed for this. It's a correct fix (a guest could otherwise
+"book" a walk that already started), but the label reads as "Sold out"
+which isn't quite accurate for a slot that's simply too late in the day.
+Backend-only fix for now; if you want a friendlier "Past" label instead of
+"Sold out" for same-day slots, that's a small widget-side follow-up (compare
+the slot's clock time to "now" client-side) — not required, just noted.
+
+---
+
 ## Moving to another host later
 
 Nothing here locks you into Cloudflare forever — see

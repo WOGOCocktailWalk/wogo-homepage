@@ -134,6 +134,28 @@ export function computeLoginLockout(failTimestamps, nowStr, opts = {}) {
 }
 
 /**
+ * Retry-After math for a sliding-window rate limit (SPEC.md §15.1,
+ * src/guest_api.js's `book` bucket). Given the SQLite-shaped timestamp of the
+ * OLDEST event still inside the window (db.js:oldestRateEventSince), returns
+ * how many seconds until that event ages out and the window has room again —
+ * the same "escalation-free sliding window" shape as HOLD_ATTEMPT_WINDOW_MINUTES
+ * elsewhere in this codebase, just without computeLoginLockout's escalation
+ * (a booking rate limit isn't a brute-force lockout; it just needs to say
+ * "try again in about N seconds").
+ *
+ * @param oldestEventStr  the earliest counted event's timestamp, or null/undefined
+ *                        if unknown (falls back to the full window length).
+ * @param windowMinutes   the sliding window's length (HOLD_ATTEMPT_WINDOW_MINUTES).
+ * @param nowStr          same format (logic.js:nowSqlite()).
+ */
+export function computeRateLimitRetryAfterSeconds(oldestEventStr, windowMinutes, nowStr) {
+  if (!oldestEventStr) return windowMinutes * 60;
+  const remainingMs =
+    parseSqliteDatetime(oldestEventStr) + windowMinutes * MS_PER_MINUTE - parseSqliteDatetime(nowStr);
+  return Math.max(1, Math.ceil(remainingMs / 1000));
+}
+
+/**
  * True only for a syntactically valid AND calendar-real 'YYYY-MM-DD' date —
  * '2026-02-30' and '2026-13-01' pass a bare regex but fail the round-trip.
  */
@@ -330,6 +352,20 @@ export function todayInTimezone(timeZone = DEFAULT_TIMEZONE, nowDate = new Date(
   }).formatToParts(nowDate);
   const p = Object.fromEntries(parts.map((x) => [x.type, x.value]));
   return `${p.year}-${p.month}-${p.day}`;
+}
+
+/**
+ * True when a route-local slot start (`date` + "HH:MM" `slot`, in `timeZone`)
+ * is already less than `cutoffMinutes` away from `nowDate` — i.e. it has
+ * already started, or starts too soon to realistically book (SAME_DAY_CUTOFF_MINUTES,
+ * config.js). Naturally false for any FUTURE date, whose slot start is always
+ * far more than a few hours away — callers don't need a separate "is this
+ * today?" branch first; the same-day cutoff falls straight out of this one
+ * comparison against the real UTC instant (zonedDateTimeToUtc, above).
+ */
+export function isSlotPastCutoff(date, slot, timeZone, cutoffMinutes, nowDate = new Date()) {
+  const slotStartUtc = zonedDateTimeToUtc(date, slot, timeZone || DEFAULT_TIMEZONE);
+  return slotStartUtc.getTime() - nowDate.getTime() < cutoffMinutes * MS_PER_MINUTE;
 }
 
 // ---------------------------------------------------------------------------

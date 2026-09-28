@@ -8,10 +8,17 @@ import {
   MAX_ACTIVE_HOLDS_PER_IP,
   HOLD_ATTEMPTS_PER_WINDOW,
   HOLD_ATTEMPT_WINDOW_MINUTES,
+  SAME_DAY_CUTOFF_MINUTES,
   posterUrlFor,
   GIFT_CARD_TIERS_CENTS,
   GIFT_CARD_CUSTOM_MIN_CENTS,
   GIFT_CARD_CUSTOM_MAX_CENTS,
+  OWNER_NOTIFY_EMAIL,
+  CONTACT_NAME_MAX_LENGTH,
+  CONTACT_MESSAGE_MAX_LENGTH,
+  CONTACT_CITY_MAX_LENGTH,
+  CONTACT_DATE_MAX_LENGTH,
+  CONTACT_PARTY_SIZE_MAX,
 } from './config.js';
 import {
   computeHoldExpiry,
@@ -19,14 +26,19 @@ import {
   buildSlotsForDate,
   isDateBookable,
   isValidDateStr,
+  isSlotPastCutoff,
   validateNotes,
   isoWeekday,
   addDaysToDateStr,
   sqliteMinutesAgo,
+  nowSqlite,
   todayInTimezone,
+  computeRateLimitRetryAfterSeconds,
 } from './logic.js';
 import * as db from './db.js';
 import { createCheckoutSession, createGiftCardCheckoutSession } from './stripe.js';
+import { sendTransactional } from './brevo.js';
+import { renderInquiryOwnerNotification, renderInquiryAutoAck } from './emails.js';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH_RE = /^\d{4}-\d{2}$/;
@@ -59,6 +71,31 @@ function json(data, status, request) {
 
 function errorJson(code, message, status, request) {
   return json({ error: code, message: message || code }, status, request);
+}
+
+/**
+ * A 429 with the shape a well-behaved client can actually act on: a machine
+ * code, a human message, AND how long to back off — both in the JSON body
+ * (`retry_after_seconds`) and the standard `Retry-After` header (audit item
+ * 3). Used by the sliding-window booking-attempt rate limit; the separate
+ * active-hold-cap check keeps its own existing 'too_many_requests' shape.
+ */
+function rateLimitedJson(retryAfterSeconds, message, request) {
+  return new Response(
+    JSON.stringify({
+      error: 'rate_limited',
+      message: message || 'too many booking attempts — please try again in a few minutes',
+      retry_after_seconds: retryAfterSeconds,
+    }),
+    {
+      status: 429,
+      headers: {
+        'Content-Type': 'application/json',
+        'Retry-After': String(retryAfterSeconds),
+        ...corsHeaders(request),
+      },
+    }
+  );
 }
 
 export function handleOptions(request) {
@@ -311,17 +348,7 @@ export async function handleBook(request, env) {
     return errorJson('bad_request', notesCheck.message, 400, request);
   }
 
-  // Layer 1 — per-IP attempt rate limit (SPEC.md §15.1, sliding window,
-  // D1-backed). Record first, then count: the current attempt is included,
-  // so `> limit` means "this is at least attempt limit+1 inside the window".
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-  await db.recordRateEvent(env.DB, 'book', ip);
-  const attempts = await db.countRateEventsSince(
-    env.DB, 'book', ip, sqliteMinutesAgo(HOLD_ATTEMPT_WINDOW_MINUTES)
-  );
-  if (attempts > HOLD_ATTEMPTS_PER_WINDOW) {
-    return errorJson('too_many_requests', 'too many booking attempts — please try again in a few minutes', 429, request);
-  }
 
   const route = await db.getRoute(env.DB, route_id);
   if (!route || !route.active) return errorJson('route_not_found', null, 404, request);
@@ -349,6 +376,32 @@ export async function handleBook(request, env) {
   }
   if (!buildSlotsForDate(route, overridesForDate, date).some((s) => s.slot === slot)) {
     return errorJson('route_closed', 'this date is not bookable', 409, request);
+  }
+
+  // Same-day cutoff (audit item 1, SAME_DAY_CUTOFF_MINUTES): a slot that has
+  // already started, or starts too soon to realistically book, is rejected
+  // outright — judged against the ROUTE's own timezone, same as the horizon
+  // check above. isSlotPastCutoff is false for every future date, so this is
+  // a no-op for anything but "today".
+  if (isSlotPastCutoff(date, slot, route.timezone, SAME_DAY_CUTOFF_MINUTES)) {
+    return errorJson('slot_passed', 'this time slot has already started or is starting too soon to book', 409, request);
+  }
+
+  // Layer 1 — per-IP attempt rate limit (SPEC.md §15.1, sliding window,
+  // D1-backed). Recorded AFTER every validation check above (basic field
+  // shape, route existence, horizon, party size, weekday/slot legitimacy,
+  // same-day cutoff) — a request that was always going to be rejected as
+  // malformed or out-of-bounds no longer burns part of the genuine guest's
+  // attempt budget (audit item 3). Record first, then count: the current
+  // attempt is included, so `> limit` means "this is at least attempt
+  // limit+1 inside the window".
+  await db.recordRateEvent(env.DB, 'book', ip);
+  const since = sqliteMinutesAgo(HOLD_ATTEMPT_WINDOW_MINUTES);
+  const attempts = await db.countRateEventsSince(env.DB, 'book', ip, since);
+  if (attempts > HOLD_ATTEMPTS_PER_WINDOW) {
+    const oldest = await db.oldestRateEventSince(env.DB, 'book', ip, since);
+    const retryAfterSeconds = computeRateLimitRetryAfterSeconds(oldest, HOLD_ATTEMPT_WINDOW_MINUTES, nowSqlite());
+    return rateLimitedJson(retryAfterSeconds, 'too many booking attempts — please try again in a few minutes', request);
   }
 
   // Layer 2 — active-hold caps per email AND per IP (SPEC.md §15.1): even
@@ -518,4 +571,138 @@ export async function handleGiftCardCheckout(request, env) {
   }
 
   return json({ url: session.url }, 200, request);
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/contact — contact form + group booking request (migrations/0021,
+// audit item 9). A lead inbox, not a booking flow: no route, no date/slot
+// validation against a real calendar, no seat hold. Validates, rate-limits
+// (own 'contact' bucket — a burst of contact-form spam must never eat into
+// the booking widget's abuse budget, same reasoning as the gift-card
+// checkout's own bucket above), stores one `inquiries` row, emails the owner
+// with reply-to set to the guest, and sends the guest a short
+// auto-acknowledgement in their own locale. See SETUP.md for the full
+// request/response contract the frontend integrates against.
+// ---------------------------------------------------------------------------
+
+const CONTACT_KINDS = new Set(['contact', 'group']);
+
+/** SHA-256 hex of the submitter's IP — never the raw IP (migrations/0021's
+ * doc comment / migrations/0005's IP-minimization posture). Web Crypto only
+ * (Workers-safe, no Node `crypto` — PORTABILITY.md), same primitive
+ * src/meta.js already uses for Meta CAPI's hashed email. */
+async function sha256Hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export async function handleContact(request, env) {
+  const origin = request.headers.get('Origin');
+  if (origin && !isAllowedOrigin(origin)) {
+    return errorJson('forbidden', null, 403, request);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return errorJson('bad_request', 'invalid JSON body', 400, request);
+  }
+
+  const { kind, name, email, phone, city, date, party_size, message, locale, website } = body || {};
+
+  // Honeypot: a real visitor never sees or fills this field (hidden by CSS on
+  // the form). A filled one is a bot — absorb it silently with a normal-
+  // looking 200 so the bot has no signal to react to, but do nothing: no row,
+  // no email, no rate-limit event spent.
+  if (website !== undefined && website !== null && String(website).trim() !== '') {
+    return json({ ok: true }, 200, request);
+  }
+
+  if (!kind || !CONTACT_KINDS.has(kind)) {
+    return errorJson('bad_request', "kind must be 'contact' or 'group'", 400, request);
+  }
+  if (!name || typeof name !== 'string' || name.trim() === '' || name.length > CONTACT_NAME_MAX_LENGTH) {
+    return errorJson('bad_request', 'name is required', 400, request);
+  }
+  if (!email || typeof email !== 'string' || email.length > 254 || !EMAIL_RE.test(email)) {
+    return errorJson('bad_request', 'a valid email is required', 400, request);
+  }
+  if (phone !== undefined && phone !== null && phone !== '' && (typeof phone !== 'string' || phone.length > 50)) {
+    return errorJson('bad_request', 'invalid phone', 400, request);
+  }
+  if (city !== undefined && city !== null && city !== '' && (typeof city !== 'string' || city.length > CONTACT_CITY_MAX_LENGTH)) {
+    return errorJson('bad_request', 'invalid city', 400, request);
+  }
+  // `date` is deliberately free text ("mid November", "flexible") — a group
+  // request doesn't always have a fixed date yet — so this is a length cap
+  // only, not a calendar-format check (unlike POST /api/book's `date`).
+  if (date !== undefined && date !== null && date !== '' && (typeof date !== 'string' || date.length > CONTACT_DATE_MAX_LENGTH)) {
+    return errorJson('bad_request', 'invalid date', 400, request);
+  }
+  let partySize = null;
+  if (party_size !== undefined && party_size !== null && party_size !== '') {
+    if (!Number.isInteger(party_size) || party_size < 1 || party_size > CONTACT_PARTY_SIZE_MAX) {
+      return errorJson('bad_request', `party_size must be a positive integer up to ${CONTACT_PARTY_SIZE_MAX}`, 400, request);
+    }
+    partySize = party_size;
+  }
+  if (!message || typeof message !== 'string' || message.trim() === '' || message.length > CONTACT_MESSAGE_MAX_LENGTH) {
+    return errorJson('bad_request', `message is required (max ${CONTACT_MESSAGE_MAX_LENGTH} characters)`, 400, request);
+  }
+
+  // Rate limit AFTER validation, same reasoning as the /api/book fix (audit
+  // item 3): a request that was always going to be rejected as malformed
+  // never burns part of the genuine guest's attempt budget. Own bucket
+  // ('contact', not 'book' or 'giftcard') so this form can't be starved by,
+  // or starve, the other two.
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  await db.recordRateEvent(env.DB, 'contact', ip);
+  const since = sqliteMinutesAgo(HOLD_ATTEMPT_WINDOW_MINUTES);
+  const attempts = await db.countRateEventsSince(env.DB, 'contact', ip, since);
+  if (attempts > HOLD_ATTEMPTS_PER_WINDOW) {
+    const oldest = await db.oldestRateEventSince(env.DB, 'contact', ip, since);
+    const retryAfterSeconds = computeRateLimitRetryAfterSeconds(oldest, HOLD_ATTEMPT_WINDOW_MINUTES, nowSqlite());
+    return rateLimitedJson(retryAfterSeconds, 'too many attempts — please try again in a few minutes', request);
+  }
+
+  const inquiry = await db.createInquiry(env.DB, {
+    id: `inq_${crypto.randomUUID()}`,
+    kind,
+    name: name.trim(),
+    email,
+    phone: phone || null,
+    city: city || null,
+    date: date || null,
+    party_size: partySize,
+    message: message.trim(),
+    locale: locale === 'nl' ? 'nl' : 'en',
+    ip_hash: ip === 'unknown' ? null : await sha256Hex(ip),
+  });
+
+  // Owner notification (reply-to the guest, so replying in the inbox goes
+  // straight to them) and the guest's own auto-acknowledgement. Both go
+  // through sendTransactional, so both respect EMAIL_TEST_REDIRECT
+  // automatically like every other mail in this codebase. A mail failure
+  // must not turn a successfully-stored inquiry into a 500 for the guest —
+  // the row is already saved either way.
+  try {
+    const ownerMail = renderInquiryOwnerNotification(inquiry);
+    await sendTransactional(env, {
+      to: OWNER_NOTIFY_EMAIL,
+      subject: ownerMail.subject,
+      htmlContent: ownerMail.html,
+      replyTo: { email: inquiry.email, name: inquiry.name },
+    });
+  } catch (err) {
+    console.error('inquiry_owner_email_failed', err);
+  }
+  try {
+    const ackMail = renderInquiryAutoAck(inquiry);
+    await sendTransactional(env, { to: inquiry.email, subject: ackMail.subject, htmlContent: ackMail.html });
+  } catch (err) {
+    console.error('inquiry_ack_email_failed', err);
+  }
+
+  return json({ ok: true, id: inquiry.id }, 200, request);
 }

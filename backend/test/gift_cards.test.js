@@ -20,7 +20,7 @@ import * as realDb from '../src/db.js';
 import { toPositional, getBooking } from '../src/db.js';
 import { handleGiftCardCheckout, handleBook } from '../src/guest_api.js';
 import { handleWebhook, handleGiftCardPurchaseCompleted, applyGiftCardRedemption } from '../src/webhook.js';
-import { generateGiftCardCode } from '../src/logic.js';
+import { generateGiftCardCode, addDaysToDateStr } from '../src/logic.js';
 import worker from '../src/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -51,6 +51,13 @@ function seedRoute(db, overrides = {}) {
 }
 
 const TODAY = new Date().toISOString().slice(0, 10);
+// A handleBook (POST /api/book) call goes through the same-day cutoff
+// (SAME_DAY_CUTOFF_MINUTES, config.js — audit item 1): a fixed slot on TODAY
+// would intermittently fail depending on the wall-clock time the suite runs
+// at. Tests that actually exercise handleBook use this safely-future date
+// instead; tests that only build a booking ROW directly (no handleBook call)
+// still use TODAY, since those never touch the cutoff.
+const BOOKABLE_DATE = addDaysToDateStr(TODAY, 5);
 
 let db;
 beforeEach(() => { db = makeTestDb(schemaSql); });
@@ -235,6 +242,26 @@ describe('handleGiftCardCheckout', () => {
     assert.equal(capturedBody.get('line_items[0][price_data][currency]'), 'eur');
   });
 
+  test('locale "nl" is passed through to Stripe Checkout as locale=nl', async () => {
+    const env = { DB: db, STRIPE_SECRET_KEY: 'sk_test_x' };
+    const res = await handleGiftCardCheckout(new Request('https://api.example.com/api/giftcard/checkout', {
+      method: 'POST', body: JSON.stringify(validBody({ locale: 'nl' })),
+      headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '10.2.2.9', Origin: 'http://localhost:8000' },
+    }), env);
+    assert.equal(res.status, 200);
+    assert.equal(capturedBody.get('locale'), 'nl');
+  });
+
+  test('no locale (or an unrecognized one) defaults to Stripe locale=en', async () => {
+    const env = { DB: db, STRIPE_SECRET_KEY: 'sk_test_x' };
+    const res = await handleGiftCardCheckout(new Request('https://api.example.com/api/giftcard/checkout', {
+      method: 'POST', body: JSON.stringify(validBody()),
+      headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '10.2.2.10', Origin: 'http://localhost:8000' },
+    }), env);
+    assert.equal(res.status, 200);
+    assert.equal(capturedBody.get('locale'), 'en');
+  });
+
   test('a valid custom amount (between the tiers) is accepted', async () => {
     const env = { DB: db, STRIPE_SECRET_KEY: 'sk_test_x' };
     const res = await handleGiftCardCheckout(new Request('https://api.example.com/api/giftcard/checkout', {
@@ -280,7 +307,7 @@ describe('handleGiftCardCheckout', () => {
     const bookRes = await handleBook(new Request('https://api.example.com/api/book', {
       method: 'POST',
       body: JSON.stringify({
-        route_id: 'testroute', date: TODAY, slot: '18:00', party: 1,
+        route_id: 'testroute', date: BOOKABLE_DATE, slot: '18:00', party: 1,
         name: 'Anna', email: 'anna@example.com', locale: 'en', marketing_opt_in: false,
       }),
       headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip, Origin: 'http://localhost:8000' },
@@ -310,7 +337,7 @@ describe('handleBook — gift_code redemption', () => {
 
   function bookBody(overrides = {}) {
     return {
-      route_id: 'testroute', date: TODAY, slot: '18:00', party: 2,
+      route_id: 'testroute', date: BOOKABLE_DATE, slot: '18:00', party: 2,
       name: 'Anna', email: 'anna@example.com', locale: 'en', marketing_opt_in: false,
       ...overrides,
     };
@@ -559,7 +586,7 @@ describe('end-to-end — gift card redeemed through the full webhook confirm pat
     const bookRes = await handleBook(new Request('https://api.example.com/api/book', {
       method: 'POST',
       body: JSON.stringify({
-        route_id: 'testroute', date: TODAY, slot: '18:00', party: 2,
+        route_id: 'testroute', date: BOOKABLE_DATE, slot: '18:00', party: 2,
         name: 'Anna', email: 'anna@example.com', locale: 'en', marketing_opt_in: false,
         gift_code: card.code,
       }),

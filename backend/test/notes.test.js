@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 import { makeTestDb } from './sqlite-d1-adapter.js';
-import { computeHoldExpiry, validateNotes, MAX_NOTES_LENGTH } from '../src/logic.js';
+import { computeHoldExpiry, validateNotes, MAX_NOTES_LENGTH, addDaysToDateStr } from '../src/logic.js';
 import {
   createHold,
   confirmBooking,
@@ -70,11 +70,18 @@ function seedRoute(db, overrides = {}) {
 // Today, so requests always sit inside the booking horizon (route is open all
 // 7 weekdays, so any "today" works).
 const TODAY = new Date().toISOString().slice(0, 10);
+// handleBook goes through the same-day cutoff (SAME_DAY_CUTOFF_MINUTES,
+// config.js — audit item 1): a fixed slot on TODAY would intermittently fail
+// depending on the wall-clock time the suite runs at, so bookRequest() below
+// (used by every handleBook call in this file) books a safely-future date
+// instead. Manual-booking / CSV / GDPR fixtures further down that insert
+// rows directly (never through handleBook) keep using TODAY.
+const BOOKABLE_DATE = addDaysToDateStr(TODAY, 5);
 
 function bookRequest(bodyOverrides = {}, headers = {}) {
   const body = {
     route_id: 'testroute',
-    date: TODAY,
+    date: BOOKABLE_DATE,
     slot: '18:00',
     party: 2,
     name: 'Anna',
