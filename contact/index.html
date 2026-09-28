@@ -16,6 +16,11 @@
      ========================================================================= -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="../site.webmanifest">
+<meta name="theme-color" content="#ffaa81">
 <!-- PAGE-EDIT: title + description + canonical -->
 <title>Contact · Talk to a Human at WOGO | WOGO</title>
 <meta name="robots" content="noindex"> <!-- REMOVE at cutover -->
@@ -26,13 +31,13 @@
 <meta property="og:title" content="Contact WOGO">
 <meta property="og:description" content="Questions about a booking, a group plan or press? Reach the WOGO team by email, phone or the contact form. We reply within one working day.">
 <meta property="og:url" content="https://www.wogococktailwalk.com/contact/">
-<meta property="og:image" content="https://static.wixstatic.com/media/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg">
+<meta property="og:image" content="https://www.wogococktailwalk.com/og/wogo-default.jpg">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Contact WOGO">
 <meta name="twitter:description" content="Questions about a booking, a group plan or press? Reach the WOGO team by email, phone or the contact form. We reply within one working day.">
-<meta name="twitter:image" content="https://static.wixstatic.com/media/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg">
+<meta name="twitter:image" content="https://www.wogococktailwalk.com/og/wogo-default.jpg">
 <!-- PAGE-EDIT: structured data — light ContactPage with the real org details. -->
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"ContactPage","name":"Contact WOGO",
@@ -93,7 +98,7 @@
   .w-hero { position: relative; width: 100%; min-height: 440px; overflow: hidden; background: linear-gradient(160deg, var(--wogo-espresso) 0%, var(--wogo-ink) 100%); color: var(--wogo-blush); }
   /* V3 hero: real photo (same pattern as the city hubs — one hero language
      sitewide). The reused homepage poster keeps this page asset-free. */
-  .w-hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  .w-hero-video { position: absolute; inset: 0; width: 100%; max-width: 100%; height: 100%; object-fit: cover; z-index: 0; }
   .w-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(26,20,16,0.40) 0%, rgba(26,20,16,0.72) 100%); z-index: 1; }
   /* ── Language dropdown: trigger pill + expandable menu (data-driven — see WOGO_LANGS in the foot script; scales beyond EN/NL) ── */
   .w-lang { position: relative; display: inline-flex; }
@@ -116,6 +121,10 @@
   .w-hero h1 { font-size: clamp(28px, 4.6vw, 48px); font-weight: 900; line-height: 1.05; letter-spacing: -0.015em; margin-bottom: 14px; max-width: 20ch; text-shadow: 0 2px 16px rgba(0,0,0,0.45); }
   .w-hero p { font-size: clamp(14px, 1.3vw, 18px); font-weight: 500; line-height: 1.5; max-width: 560px; margin-bottom: 22px; opacity: 0.95; }
   .w-hero-cta { display: inline-block; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 15px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform 0.2s, background 0.2s; }
+  /* The submit button reuses the .w-hero-cta skin, which was written for <a>.
+     A <button> also needs the UA chrome removed or it renders with a system
+     border, system font and no pointer cursor. */
+  button.w-hero-cta { border: 0; font-family: inherit; cursor: pointer; -webkit-appearance: none; appearance: none; }
   .w-hero-cta:active, .w-gift-btn:active, .w-group-btn:active, .w-final-btn:active { transform: scale(0.96); }
   .w-mail { color: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
   .w-hero-cta:hover { background: var(--wogo-cta-bg-hover); color: var(--wogo-cta-ink); transform: translateY(-2px); }
@@ -155,6 +164,15 @@
   .ct-field input:focus, .ct-field select:focus, .ct-field textarea:focus { outline: none; border-color: var(--wogo-salmon-deep); box-shadow: 0 0 0 3px rgba(242,144,92,0.18); }
   .ct-form .w-hero-cta { align-self: flex-start; margin-top: 4px; }
   .ct-note { font-size: 12.5px; color: var(--wogo-brown-soft); font-weight: 500; line-height: 1.5; }
+  /* Honeypot — visually gone for humans, still a real focusable field for bots.
+     Not display:none and not type="hidden": both are trivial for a bot to skip. */
+  .ct-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  /* Inline submit result */
+  .ct-status { font-size: 14px; font-weight: 700; line-height: 1.5; padding: 12px 14px; border-radius: 12px; margin-top: 2px; }
+  .ct-status.is-ok  { background: #e7f6ef; color: #17693f; }
+  .ct-status.is-err { background: #fdecea; color: #a3231a; }
+  .ct-form input[aria-invalid="true"], .ct-form textarea[aria-invalid="true"] { border-color: #c8551a; }
+  .w-hero-cta[disabled] { opacity: 0.6; cursor: progress; }
   .ct-details { background: var(--wogo-cream); border: 1px solid var(--wogo-line-soft); border-radius: 16px; padding: 26px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 8px 24px var(--wogo-shadow); }
   .ct-detail { display: flex; flex-direction: column; gap: 3px; }
   .ct-detail-l { font-size: 10.5px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--wogo-brown-soft); }
@@ -461,7 +479,9 @@
   </div>
 
   <div class="ct-grid">
-    <!-- FORM (front-end only; opens the email app pre-filled) -->
+    <!-- FORM — posts to the Worker's POST /api/contact (see backend/SETUP.md §17).
+         The guest gets an auto-acknowledgement; info@ gets the lead with
+         reply-to set to them. The mailto link below stays as a fallback. -->
     <form class="ct-form wg-reveal" id="wContactForm" novalidate>
       <label class="ct-field"><span data-i18n="ct_name">Your name</span>
         <input type="text" name="name" autocomplete="name" required></label>
@@ -473,13 +493,22 @@
           <option value="Group booking" data-i18n="ct_t2">Group booking</option>
           <option value="Gift cards" data-i18n="ct_t3">Gift cards</option>
           <option value="Press &amp; partnerships" data-i18n="ct_t4">Press &amp; partnerships</option>
+          <option value="Utrecht waitlist" data-i18n="ct_t6">Utrecht waitlist</option>
+          <option value="London launch" data-i18n="ct_t7">London launch list</option>
           <option value="Something else" data-i18n="ct_t5">Something else</option>
         </select></label>
       <label class="ct-field"><span data-i18n="ct_msg">Message</span>
         <textarea name="message" rows="5" required></textarea></label>
-      <button type="submit" class="w-hero-cta" data-i18n="ct_send">Send message →</button>
+      <!-- Honeypot: off-screen, not type="hidden" (a bot reads that). A real
+           visitor never focuses it, so it must arrive empty. -->
+      <div class="ct-hp" aria-hidden="true">
+        <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+      </div>
+      <button type="submit" class="w-hero-cta" id="wContactSend" data-i18n="ct_send">Send message →</button>
+      <!-- Inline result, announced to screen readers. Hidden until there is something to say. -->
+      <p class="ct-status" id="wContactStatus" role="status" aria-live="polite" hidden></p>
       <p class="ct-note" id="wContactNote" data-i18n="ct_fallback">
-        This opens your email app with everything filled in. Prefer to write us directly?
+        We reply within one working day. Prefer to write us directly?
         <a class="w-mail" href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a></p>
     </form>
 
@@ -646,9 +675,9 @@
     ct_p: "Een vraag over je boeking, een groepsboeking of een persverzoek. We lezen elk bericht en reageren binnen één werkdag.",
     ct_name: "Je naam", ct_email: "E-mail", ct_topic: "Waar gaat het over?",
     ct_t1: "Boekingsvraag", ct_t2: "Groepsboeking", ct_t3: "Cadeaubonnen",
-    ct_t4: "Pers &amp; samenwerkingen", ct_t5: "Iets anders",
+    ct_t4: "Pers &amp; samenwerkingen", ct_t5: "Iets anders", ct_t6: "Wachtlijst Utrecht", ct_t7: "Lanceerlijst Londen",
     ct_msg: "Bericht", ct_send: "Verstuur bericht →",
-    ct_fallback: "Dit opent je e-mailapp met alles alvast ingevuld. Liever direct mailen? <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">info@wogoamsterdam.com</a>",
+    ct_fallback: "We reageren binnen 1 werkdag. Liever direct mailen? <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">info@wogoamsterdam.com</a>",
     ct_d_email: "E-mail", ct_d_phone: "Telefoon", ct_d_hours: "Openingstijden",
     ct_hours: "Maandag t/m vrijdag, 10:00 – 18:00",
     /* --- groups & gift cards (homepage wording) --- */
@@ -704,7 +733,9 @@
      country heading appears automatically now there is more than one country.
      Replace the London routes below with the real ones at launch. */
   { code:'gb', name:{en:'United Kingdom',nl:'Verenigd Koninkrijk'}, cities: [
-    { name:'London', hub:'london/', routes:[ {name:'London Soho', url:'london/soho/'} ] }
+    /* London has no bookable route yet, so it carries NO footer route link —
+       only the city hub in the nav. Add its routes here at launch. */
+    { name:'London', hub:'london/', routes:[] }
   ] } ] };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function renderRoutes(lang) {
@@ -716,10 +747,14 @@
     var navHTML = '', ovHTML = '', footHTML = '';
     countries.forEach(function (c) {
       var cname = esc((c.name && (c.name[lang] || c.name.en)) || '');
+      // A country with no bookable routes (London pre-launch) still gets its city
+      // hub in the nav, but no FOOTER heading — a heading with no links under it
+      // reads as a broken list.
+      var hasRoutes = c.cities.some(function (city) { return (city.routes || []).length; });
       if (multi) {
         navHTML += '<li class="w-nav-country" aria-hidden="true">' + cname + '</li>';
         ovHTML += '<span class="w-nav-ov-country">' + cname + '</span>';
-        footHTML += '<span class="w-footer-country">' + cname + '</span>';
+        if (hasRoutes) footHTML += '<span class="w-footer-country">' + cname + '</span>';
       }
       c.cities.forEach(function (city) {
         // Nav dropdown + mobile overlay chips: one link per CITY -> its internal hub.
@@ -770,6 +805,10 @@
     document.documentElement.lang = lang;
     document.querySelectorAll('.w-lang').forEach(function (w) { var c = w.querySelector('.w-lang-code'); if (c) c.textContent = lang.toUpperCase(); var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-label', 'Change language (' + lang.toUpperCase() + ')'); w.querySelectorAll('.w-lang-opt').forEach(function (o) { o.setAttribute('aria-selected', o.getAttribute('data-lang') === lang ? 'true' : 'false'); }); });
     try { localStorage.setItem('wogoLang', lang); } catch (e) {}
+    // Tell any mounted component (the booking calendar widget) that the page
+    // language changed, so it re-renders its own strings instead of staying
+    // in whatever language it happened to mount in.
+    try { document.dispatchEvent(new CustomEvent('wogo:langchange', { detail: { lang: lang } })); } catch (e) {}
   }
   var saved = null;
   try { saved = localStorage.getItem('wogoLang'); } catch (e) {}
@@ -968,15 +1007,97 @@
 (function () {
   var f = document.getElementById('wContactForm'); if (!f) return;
   function val(n) { var el = f.elements[n]; return el && el.value ? el.value.trim() : ''; }
-  f.addEventListener('submit', function (e) {
+  /* Deep link: ?topic=utrecht-waitlist preselects the matching option, so a CTA
+     elsewhere on the site (e.g. the paused Utrecht card) can drop the guest
+     straight into the right conversation instead of making them pick. Matching
+     is on the option's value, slugified — language-independent. */
+  (function () {
+    try {
+      var want = new URLSearchParams(location.search).get('topic');
+      if (!want) return;
+      var slug = function (s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); };
+      var sel = f.elements['topic']; if (!sel) return;
+      want = slug(want);
+      for (var i = 0; i < sel.options.length; i++) {
+        if (slug(sel.options[i].value) === want) { sel.selectedIndex = i; break; }
+      }
+    } catch (e) { /* a deep link must never break the form */ }
+  })();
+  var API = 'https://wogo-booking-backend.purple-glitter-720e.workers.dev';
+  var btn = document.getElementById('wContactSend');
+  var statusEl = document.getElementById('wContactStatus');
+  function lang() { return document.documentElement.lang === 'nl' ? 'nl' : 'en'; }
+  var MSG = {
+    en: {
+      ok: "Thanks — we've got your request and reply within 1 working day.",
+      missing: 'Please fill in your name, a valid email and a message.',
+      rate: 'Too many attempts — please wait a few minutes and try again.',
+      rateIn: 'Too many attempts — please try again in about %m minute(s).',
+      net: "We couldn't send that just now. Please try again, or email info@wogoamsterdam.com.",
+      sending: 'Sending…'
+    },
+    nl: {
+      ok: 'Bedankt — we hebben je bericht ontvangen en reageren binnen 1 werkdag.',
+      missing: 'Vul je naam, een geldig e-mailadres en een bericht in.',
+      rate: 'Te veel pogingen — wacht een paar minuten en probeer het opnieuw.',
+      rateIn: 'Te veel pogingen — probeer het over ongeveer %m minuut(en) opnieuw.',
+      net: 'Versturen lukte even niet. Probeer het opnieuw, of mail info@wogoamsterdam.com.',
+      sending: 'Versturen…'
+    }
+  };
+  function say(kind, text) {
+    statusEl.hidden = false;
+    statusEl.className = 'ct-status ' + (kind === 'ok' ? 'is-ok' : 'is-err');
+    statusEl.textContent = text;
+  }
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+  f.addEventListener('submit', async function (e) {
     e.preventDefault();
+    var L = MSG[lang()];
     var name = val('name'), email = val('email'), topic = val('topic'), msg = val('message');
-    if (!name || !email || !msg) { if (f.reportValidity) f.reportValidity(); return; }
-    var subject = 'WOGO — ' + topic + ' (' + name + ')';
-    var body = 'Name: ' + name + '\nEmail: ' + email + '\nTopic: ' + topic + '\n\n' + msg;
-    window.location.href = 'mailto:info@wogoamsterdam.com'
-      + '?subject=' + encodeURIComponent(subject)
-      + '&body=' + encodeURIComponent(body);
+    // Mark the offending fields as well as saying what's wrong.
+    var bad = !name || !EMAIL_RE.test(email) || !msg;
+    f.elements['name'].setAttribute('aria-invalid', name ? 'false' : 'true');
+    f.elements['email'].setAttribute('aria-invalid', EMAIL_RE.test(email) ? 'false' : 'true');
+    f.elements['message'].setAttribute('aria-invalid', msg ? 'false' : 'true');
+    if (bad) { say('err', L.missing); return; }
+
+    var original = btn.textContent;
+    btn.disabled = true; btn.textContent = L.sending;
+    statusEl.hidden = true;
+    try {
+      // The topic select has no backend field of its own, so it rides along at
+      // the top of the message — that is what the owner reads in the inbox.
+      var res = await fetch(API + '/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'contact', name: name, email: email,
+          message: '[' + topic + ']\n\n' + msg,
+          locale: lang(),
+          website: val('website')        // honeypot — must be empty
+        })
+      });
+      var data = await res.json().catch(function () { return {}; });
+      if (res.ok && data.ok) {
+        f.reset();
+        say('ok', L.ok);
+        btn.disabled = false; btn.textContent = original;
+        return;
+      }
+      if (res.status === 429) {
+        var secs = Number(data.retry_after_seconds || 0);
+        say('err', secs > 0 ? L.rateIn.replace('%m', String(Math.max(1, Math.ceil(secs / 60)))) : L.rate);
+      } else if (res.status === 400) {
+        say('err', L.missing);
+      } else {
+        say('err', L.net);
+      }
+    } catch (err) {
+      say('err', L.net);
+    }
+    btn.disabled = false; btn.textContent = original;
   });
 })();
 </script>
@@ -1478,7 +1599,14 @@
 .w-wa{position:fixed;right:18px;bottom:22px;z-index:65;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(37,211,102,.45),0 2px 6px rgba(0,0,0,.2);transition:transform .18s ease,box-shadow .18s ease;}
 .w-wa:hover{transform:scale(1.07);box-shadow:0 10px 26px rgba(37,211,102,.55),0 2px 6px rgba(0,0,0,.22);}
 .w-wa:focus-visible{outline:3px solid #128C3E;outline-offset:3px;}
-@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}}
+@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}
+/* The float is fixed in the bottom-right, so it would otherwise sit on top of
+   whatever the page ends with. Reserve room below the last block of content
+   (footer, and the booking widget section) so nothing is trapped under it at
+   rest. 86px offset already clears the sticky CTA bar. */
+.w-footer{padding-bottom:144px;}
+.w-calsec{padding-bottom:104px;}
+.wogo-calendar,.w-paused{margin-bottom:24px;}}
 @media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
 </style>
 <!-- ===== /WOGO WHATSAPP FLOAT ===== -->

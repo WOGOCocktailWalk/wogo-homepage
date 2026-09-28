@@ -15,6 +15,11 @@
      ========================================================================= -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="../site.webmanifest">
+<meta name="theme-color" content="#ffaa81">
 <!-- PAGE-EDIT: title + description + canonical -->
 <title>About WOGO | Born in Amsterdam, One Cocktail at a Time</title>
 <meta name="robots" content="noindex"> <!-- REMOVE at cutover -->
@@ -25,13 +30,13 @@
 <meta property="og:title" content="About WOGO · born in Amsterdam, one cocktail at a time">
 <meta property="og:description" content="WOGO began because friends kept asking where to go for cocktails. A new way of going out that lets you explore your own city, one hand-picked bar at a time.">
 <meta property="og:url" content="https://www.wogococktailwalk.com/about/">
-<meta property="og:image" content="https://static.wixstatic.com/media/2a3b9e_99fbb075fa914c2fbb49e09e2301db3d~mv2.jpg/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_99fbb075fa914c2fbb49e09e2301db3d~mv2.jpg">
+<meta property="og:image" content="https://www.wogococktailwalk.com/og/wogo-groups.jpg">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="About WOGO · born in Amsterdam, one cocktail at a time">
 <meta name="twitter:description" content="WOGO began because friends kept asking where to go for cocktails. A new way of going out that lets you explore your own city, one hand-picked bar at a time.">
-<meta name="twitter:image" content="https://static.wixstatic.com/media/2a3b9e_99fbb075fa914c2fbb49e09e2301db3d~mv2.jpg/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_99fbb075fa914c2fbb49e09e2301db3d~mv2.jpg">
+<meta name="twitter:image" content="https://www.wogococktailwalk.com/og/wogo-groups.jpg">
 <!-- PAGE-EDIT: structured data — the About page carries the site's fullest
      Organization markup (slogan, description, founding location). Deliberately
      NOT TouristAttraction (that belongs to city pages) and no FAQPage here. -->
@@ -60,6 +65,8 @@
      One shared primary-CTA colour — warm salmon→coral, the single high-converting
      action colour — plus the canonical palette tokens the V5 sections reference. */
   :root{
+    /* shared WOGO palette tokens — keep in sync with index.html :root */
+    --wogo-salmon: #ffaa81;
     --wogo-cta-bg:       linear-gradient(135deg, #ffaa81 0%, #f2905c 100%); /* salmon → salmon-deep */
     --wogo-cta-bg-hover: linear-gradient(135deg, #f2905c 0%, #f2905c 100%); /* solid salmon-deep */
     --wogo-cta-ink:      #3f2b21;   /* espresso text — AA on the salmon range */
@@ -680,7 +687,7 @@
     </a>
     <a class="w-cityhub-card" href="../groningen/">
       <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="../groningen/gin-walk-hero.jpg" alt="Groningen cocktail walk"></div>
-      <div class="w-cityhub-body"><div class="w-cityhub-name">Groningen</div><div class="w-cityhub-sub" data-i18n="chs_gro">Wed–Sat · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Pick this city →</div></div>
+      <div class="w-cityhub-body"><div class="w-cityhub-name">Groningen</div><div class="w-cityhub-sub" data-i18n="chs_gro">Thu–Sat · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Pick this city →</div></div>
     </a>
   </div>
   <div class="w-pad" style="text-align:center;margin-top:18px;"><span data-i18n="route_reassure" style="display:inline-block;font-size:12.5px;font-weight:700;color:#ffe5d9;letter-spacing:0.01em;">✓ Reservations &amp; route map included &nbsp;·&nbsp; ✓ Mocktail option on every route &nbsp;·&nbsp; ✓ Questions? <a class="w-mail" href="mailto:info@wogoamsterdam.com">Write us</a></span></div>
@@ -830,7 +837,7 @@
     chs_ams: "do–za · vanaf €29,95",
     chs_rot: "3 routes · vanaf €29,95",
     chs_utr: "Dagelijks · vanaf €29,95",
-    chs_gro: "wo–za · vanaf €29,95",
+    chs_gro: "do–za · vanaf €29,95",
     explore: "Kies deze stad →",
     route_reassure: "✓ Reserveringen &amp; routekaart inbegrepen &nbsp;·&nbsp; ✓ Mocktail-optie op elke route &nbsp;·&nbsp; ✓ Vragen? <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">Stuur ons een berichtje</a>",
     /* --- nav --- */
@@ -877,7 +884,9 @@
      country heading appears automatically now there is more than one country.
      Replace the London routes below with the real ones at launch. */
   { code:'gb', name:{en:'United Kingdom',nl:'Verenigd Koninkrijk'}, cities: [
-    { name:'London', hub:'london/', routes:[ {name:'London Soho', url:'london/soho/'} ] }
+    /* London has no bookable route yet, so it carries NO footer route link —
+       only the city hub in the nav. Add its routes here at launch. */
+    { name:'London', hub:'london/', routes:[] }
   ] } ] };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function renderRoutes(lang) {
@@ -889,10 +898,14 @@
     var navHTML = '', ovHTML = '', footHTML = '';
     countries.forEach(function (c) {
       var cname = esc((c.name && (c.name[lang] || c.name.en)) || '');
+      // A country with no bookable routes (London pre-launch) still gets its city
+      // hub in the nav, but no FOOTER heading — a heading with no links under it
+      // reads as a broken list.
+      var hasRoutes = c.cities.some(function (city) { return (city.routes || []).length; });
       if (multi) {
         navHTML += '<li class="w-nav-country" aria-hidden="true">' + cname + '</li>';
         ovHTML += '<span class="w-nav-ov-country">' + cname + '</span>';
-        footHTML += '<span class="w-footer-country">' + cname + '</span>';
+        if (hasRoutes) footHTML += '<span class="w-footer-country">' + cname + '</span>';
       }
       c.cities.forEach(function (city) {
         // Nav dropdown + mobile overlay chips: one link per CITY -> its internal hub.
@@ -943,6 +956,10 @@
     document.documentElement.lang = lang;
     document.querySelectorAll('.w-lang').forEach(function (w) { var c = w.querySelector('.w-lang-code'); if (c) c.textContent = lang.toUpperCase(); var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-label', 'Change language (' + lang.toUpperCase() + ')'); w.querySelectorAll('.w-lang-opt').forEach(function (o) { o.setAttribute('aria-selected', o.getAttribute('data-lang') === lang ? 'true' : 'false'); }); });
     try { localStorage.setItem('wogoLang', lang); } catch (e) {}
+    // Tell any mounted component (the booking calendar widget) that the page
+    // language changed, so it re-renders its own strings instead of staying
+    // in whatever language it happened to mount in.
+    try { document.dispatchEvent(new CustomEvent('wogo:langchange', { detail: { lang: lang } })); } catch (e) {}
   }
   var saved = null;
   try { saved = localStorage.getItem('wogoLang'); } catch (e) {}
@@ -1634,7 +1651,14 @@
 .w-wa{position:fixed;right:18px;bottom:22px;z-index:65;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(37,211,102,.45),0 2px 6px rgba(0,0,0,.2);transition:transform .18s ease,box-shadow .18s ease;}
 .w-wa:hover{transform:scale(1.07);box-shadow:0 10px 26px rgba(37,211,102,.55),0 2px 6px rgba(0,0,0,.22);}
 .w-wa:focus-visible{outline:3px solid #128C3E;outline-offset:3px;}
-@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}}
+@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}
+/* The float is fixed in the bottom-right, so it would otherwise sit on top of
+   whatever the page ends with. Reserve room below the last block of content
+   (footer, and the booking widget section) so nothing is trapped under it at
+   rest. 86px offset already clears the sticky CTA bar. */
+.w-footer{padding-bottom:144px;}
+.w-calsec{padding-bottom:104px;}
+.wogo-calendar,.w-paused{margin-bottom:24px;}}
 @media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
 </style>
 <!-- ===== /WOGO WHATSAPP FLOAT ===== -->

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="WOGO">
+  <!-- WOGO mark: the stacked WOGO wordmark is unreadable at 16px, so the favicon
+       uses the brand's salmon gradient tile with a single espresso W. Colours are
+       the site tokens: wogo-salmon #ffaa81 to wogo-salmon-deep #f2905c, with
+       wogo-espresso #3f2b21 ink. (No double hyphens here: illegal in XML comments.) -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffaa81"/>
+      <stop offset="1" stop-color="#f2905c"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#g)"/>
+  <path d="M12 20 L20.5 44 L28.5 27.5 L36.5 44 L45 20"
+        fill="none" stroke="#3f2b21" stroke-width="6.5"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

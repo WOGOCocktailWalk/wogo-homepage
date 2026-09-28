@@ -42,6 +42,11 @@
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/delft/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
 
   <!-- Rotterdam route pages -->
   <url>
@@ -58,6 +63,47 @@
     <loc>https://www.wogococktailwalk.com/rotterdam/premium-gin-walk/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+
+  <!-- Booking pages — the conversion endpoint for each route. london/soho/book/
+       is deliberately EXCLUDED: London is still noindex + pre-launch, and a
+       noindexed URL does not belong in a sitemap. utrecht/book/ stays listed —
+       the route is paused until spring 2027, not withdrawn, and the page now
+       carries a waitlist CTA worth ranking. -->
+  <url>
+    <loc>https://www.wogococktailwalk.com/rotterdam/witte-de-with/book/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/rotterdam/hidden-gems/book/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/rotterdam/premium-gin-walk/book/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/amsterdam/book/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/delft/book/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/groningen/book/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/utrecht/book/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
 
   <!-- Funnel support pages -->
@@ -122,11 +168,6 @@
   </url>
   <url>
     <loc>https://www.wogococktailwalk.com/blog/rotterdam-premium-gin-walk-launch/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://www.wogococktailwalk.com/blog/summer-cocktail-recipes/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>

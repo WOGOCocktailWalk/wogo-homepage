@@ -9,6 +9,11 @@
      ========================================================================= -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="../site.webmanifest">
+<meta name="theme-color" content="#ffaa81">
 <!-- PAGE-EDIT: title + description + canonical -->
 <title>Complaints Procedure | WOGO</title>
 <meta name="robots" content="noindex"> <!-- REMOVE at cutover -->
@@ -19,13 +24,13 @@
 <meta property="og:title" content="Complaints Procedure | WOGO">
 <meta property="og:description" content="How to file a complaint about your WOGO cocktail walk, how quickly we respond, and your options if we can't resolve it together.">
 <meta property="og:url" content="https://www.wogococktailwalk.com/complaints/">
-<meta property="og:image" content="https://static.wixstatic.com/media/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg">
+<meta property="og:image" content="https://www.wogococktailwalk.com/og/wogo-default.jpg">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Complaints Procedure | WOGO">
 <meta name="twitter:description" content="How to file a complaint about your WOGO cocktail walk, how quickly we respond, and your options if we can't resolve it together.">
-<meta name="twitter:image" content="https://static.wixstatic.com/media/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg">
+<meta name="twitter:image" content="https://www.wogococktailwalk.com/og/wogo-default.jpg">
 <!-- PAGE-EDIT: structured data — Home > Complaints Procedure -->
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.wogococktailwalk.com/"},{"@type":"ListItem","position":2,"name":"Complaints Procedure","item":"https://www.wogococktailwalk.com/complaints/"}]}
@@ -81,7 +86,7 @@
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; } }
   .w-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   .w-hero { position: relative; width: 100%; min-height: 440px; overflow: hidden; background: linear-gradient(160deg, var(--wogo-espresso) 0%, var(--wogo-ink) 100%); color: var(--wogo-blush); }
-  .w-hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  .w-hero-video { position: absolute; inset: 0; width: 100%; max-width: 100%; height: 100%; object-fit: cover; z-index: 0; }
   .w-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(26,20,16,0.40) 0%, rgba(26,20,16,0.72) 100%); z-index: 1; }
   /* ── Language dropdown: trigger pill + expandable menu (data-driven — see WOGO_LANGS in the foot script; scales beyond EN/NL) ── */
   .w-lang { position: relative; display: inline-flex; }
@@ -365,7 +370,7 @@
     <!-- Desktop links -->
     <ul class="w-nav-links">
       <li class="w-nav-drop">
-        <a href="#cities" class="w-scroll" data-i18n="nav_routes" aria-haspopup="true">Routes</a>
+        <a href="../#cities" class="w-navlink" data-i18n="nav_routes" aria-haspopup="true">Routes</a>
         <span class="w-nav-caret" aria-hidden="true">▾</span>
         <!-- Routes popover — populated from the WOGO_ROUTES data in JS (the four
              internal city hubs, BASE-prefixed), so new countries/cities are a
@@ -392,7 +397,7 @@
   <!-- Mobile full-screen menu -->
   <div class="w-nav-overlay" id="wNavOverlay" aria-hidden="true">
     <ul class="w-nav-overlay-links">
-      <li><a href="#cities" class="w-scroll w-nav-ov-link" data-i18n="nav_routes">Routes</a></li>
+      <li><a href="../#cities" class="w-navlink w-nav-ov-link" data-i18n="nav_routes">Routes</a></li>
       <!-- City chips populated from WOGO_ROUTES (see JS) -->
       <li class="w-nav-ov-cities" id="wNavOvCities"></li>
       <li><a href="../how-it-works/" class="w-navlink w-nav-ov-link" data-i18n="nav_how">How it works</a></li>
@@ -444,7 +449,7 @@
     <p data-i18n="p_2">We read and acknowledge every complaint within 5 business days. Most complaints are resolved within 14 days of that acknowledgement. If a complaint needs more time, for example because we're checking details with one of our partner bars, we'll let you know and keep you updated until it's settled.</p>
 
     <h2 data-i18n="h2_3">If we can't resolve it together</h2>
-    <p data-i18n="p_3">We'd always rather sort things out directly, and most complaints get resolved that way. If we genuinely can't reach an agreement and you're a consumer based in the EU, you can submit your complaint through the European Commission's Online Dispute Resolution (ODR) platform at <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener">ec.europa.eu/consumers/odr</a>. If you're a consumer in the Netherlands, you can also bring the matter before the competent Dutch court.</p>
+    <p data-i18n="p_3">We'd always rather sort things out directly, and most complaints get resolved that way. If we genuinely can't reach an agreement and you're a consumer based in the EU, you can submit your complaint through the European Commission’s consumer redress platform at <a href="https://consumer-redress.ec.europa.eu/" target="_blank" rel="noopener">consumer-redress.ec.europa.eu</a>. If you're a consumer in the Netherlands, you can also bring the matter before the competent Dutch court.</p>
   </div>
 </section>
 
@@ -570,7 +575,7 @@
     h2_2: "Wat er daarna gebeurt",
     p_2: "We lezen en bevestigen elke klacht binnen 5 werkdagen. De meeste klachten zijn binnen 14 dagen na die bevestiging opgelost. Heeft een klacht meer tijd nodig, bijvoorbeeld omdat we details natrekken bij een van onze partnerbars, dan laten we dat weten en houden we je op de hoogte tot het is opgelost.",
     h2_3: "Als we er samen niet uitkomen",
-    p_3: "We lossen het liefst altijd rechtstreeks met je op, en dat lukt in de meeste gevallen ook. Komen we er echt niet uit en ben je consument binnen de EU, dan kun je je klacht indienen via het Online Dispute Resolution (ODR)-platform van de Europese Commissie op <a href=\"https://ec.europa.eu/consumers/odr\" target=\"_blank\" rel=\"noopener\">ec.europa.eu/consumers/odr</a>. Ben je consument in Nederland, dan kun je de zaak ook voorleggen aan de bevoegde Nederlandse rechter.",
+    p_3: "We lossen het liefst altijd rechtstreeks met je op, en dat lukt in de meeste gevallen ook. Komen we er echt niet uit en ben je consument binnen de EU, dan kun je je klacht indienen via het consumentenplatform van de Europese Commissie op <a href=\"https://consumer-redress.ec.europa.eu/\" target=\"_blank\" rel=\"noopener\">consumer-redress.ec.europa.eu</a>. Ben je consument in Nederland, dan kun je de zaak ook voorleggen aan de bevoegde Nederlandse rechter.",
     /* --- closing strip --- */
     help_eyebrow: "Voordat je schrijft",
     help_h2: "Kijk eerst in de FAQ",
@@ -617,7 +622,9 @@
      country heading appears automatically now there is more than one country.
      Replace the London routes below with the real ones at launch. */
   { code:'gb', name:{en:'United Kingdom',nl:'Verenigd Koninkrijk'}, cities: [
-    { name:'London', hub:'london/', routes:[ {name:'London Soho', url:'london/soho/'} ] }
+    /* London has no bookable route yet, so it carries NO footer route link —
+       only the city hub in the nav. Add its routes here at launch. */
+    { name:'London', hub:'london/', routes:[] }
   ] } ] };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function renderRoutes(lang) {
@@ -629,10 +636,14 @@
     var navHTML = '', ovHTML = '', footHTML = '';
     countries.forEach(function (c) {
       var cname = esc((c.name && (c.name[lang] || c.name.en)) || '');
+      // A country with no bookable routes (London pre-launch) still gets its city
+      // hub in the nav, but no FOOTER heading — a heading with no links under it
+      // reads as a broken list.
+      var hasRoutes = c.cities.some(function (city) { return (city.routes || []).length; });
       if (multi) {
         navHTML += '<li class="w-nav-country" aria-hidden="true">' + cname + '</li>';
         ovHTML += '<span class="w-nav-ov-country">' + cname + '</span>';
-        footHTML += '<span class="w-footer-country">' + cname + '</span>';
+        if (hasRoutes) footHTML += '<span class="w-footer-country">' + cname + '</span>';
       }
       c.cities.forEach(function (city) {
         // Nav dropdown + mobile overlay chips: one link per CITY -> its internal hub.
@@ -683,6 +694,10 @@
     document.documentElement.lang = lang;
     document.querySelectorAll('.w-lang').forEach(function (w) { var c = w.querySelector('.w-lang-code'); if (c) c.textContent = lang.toUpperCase(); var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-label', 'Change language (' + lang.toUpperCase() + ')'); w.querySelectorAll('.w-lang-opt').forEach(function (o) { o.setAttribute('aria-selected', o.getAttribute('data-lang') === lang ? 'true' : 'false'); }); });
     try { localStorage.setItem('wogoLang', lang); } catch (e) {}
+    // Tell any mounted component (the booking calendar widget) that the page
+    // language changed, so it re-renders its own strings instead of staying
+    // in whatever language it happened to mount in.
+    try { document.dispatchEvent(new CustomEvent('wogo:langchange', { detail: { lang: lang } })); } catch (e) {}
   }
   var saved = null;
   try { saved = localStorage.getItem('wogoLang'); } catch (e) {}
@@ -1361,7 +1376,14 @@
 .w-wa{position:fixed;right:18px;bottom:22px;z-index:65;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(37,211,102,.45),0 2px 6px rgba(0,0,0,.2);transition:transform .18s ease,box-shadow .18s ease;}
 .w-wa:hover{transform:scale(1.07);box-shadow:0 10px 26px rgba(37,211,102,.55),0 2px 6px rgba(0,0,0,.22);}
 .w-wa:focus-visible{outline:3px solid #128C3E;outline-offset:3px;}
-@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}}
+@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}
+/* The float is fixed in the bottom-right, so it would otherwise sit on top of
+   whatever the page ends with. Reserve room below the last block of content
+   (footer, and the booking widget section) so nothing is trapped under it at
+   rest. 86px offset already clears the sticky CTA bar. */
+.w-footer{padding-bottom:144px;}
+.w-calsec{padding-bottom:104px;}
+.wogo-calendar,.w-paused{margin-bottom:24px;}}
 @media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
 </style>
 <!-- ===== /WOGO WHATSAPP FLOAT ===== -->

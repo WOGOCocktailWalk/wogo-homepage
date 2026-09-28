@@ -1,0 +1,16 @@
+{
+  "name": "WOGO Cocktail Walk",
+  "short_name": "WOGO",
+  "description": "Self-guided cocktail walks: three hand-picked bars, three cocktails, tables reserved.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffe5d9",
+  "theme_color": "#ffaa81",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

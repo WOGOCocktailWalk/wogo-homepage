@@ -56,6 +56,8 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       err_soldout: "Sorry, that time just sold out. Please pick another.",
       err_gift_invalid: "That gift card code wasn't found, or has no balance left.",
       err_gift_currency: "That gift card can't be used on this route.",
+      err_gift_format: "That doesn't look like a gift card code. It looks like WOGO-XXXX-XXXX.",
+      err_rate_limit: "Too many attempts — please wait a few minutes and try again.",
       retry: "Try again",
       status_month: "Showing availability for %s.",
       status_slots: "%s selected. Choose a time below.",
@@ -100,6 +102,8 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       err_soldout: "Helaas, die tijd is net uitverkocht. Kies een andere.",
       err_gift_invalid: "Die cadeaubon-code is niet gevonden, of heeft geen saldo meer.",
       err_gift_currency: "Die cadeaubon kan niet worden gebruikt voor deze route.",
+      err_gift_format: "Dat lijkt geen cadeaubon-code. Een code ziet eruit als WOGO-XXXX-XXXX.",
+      err_rate_limit: "Te veel pogingen — wacht een paar minuten en probeer het opnieuw.",
       retry: "Opnieuw proberen",
       status_month: "Beschikbaarheid voor %s.",
       status_slots: "%s geselecteerd. Kies hieronder een tijd.",
@@ -157,6 +161,18 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
     return `${f.symbol}${amount}`;
   };
 
+  /* Resolve the language to use right now: an explicit data-lang on the mount
+     wins, otherwise whatever <html lang> currently says. Called at mount, on
+     every language change, and again at submit. */
+  function currentLang(mount, fallback) {
+    const raw = ((mount && mount.getAttribute("data-lang")) ||
+      document.documentElement.lang || fallback || "en").slice(0, 2).toLowerCase();
+    return STRINGS[raw] ? raw : "en";
+  }
+
+  /* Every mounted widget, so a page-level language change can reach them all. */
+  const INSTANCES = [];
+
   /* ---- the widget --------------------------------------------------------- */
   class WogoCalendar {
     constructor(mount, opts) {
@@ -165,9 +181,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       this.api = (opts.api != null ? opts.api : WOGO_API).replace(/\/$/, "");
       this._fetch = opts.fetchImpl || ((...a) => fetch(...a));
       this.routeId = mount.getAttribute("data-route") || opts.route;
-      const lang = (mount.getAttribute("data-lang") ||
-        document.documentElement.lang || "en").slice(0, 2).toLowerCase();
-      this.lang = STRINGS[lang] ? lang : "en";
+      this.lang = currentLang(mount, "en");
       this.t = STRINGS[this.lang];
 
       this.hideTitle = mount.getAttribute("data-hide-title") === "1";
@@ -180,6 +194,58 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       this.selectedSlot = null;
       this.slots = [];          // [{slot, capacity, seats_left}]
       this.party = 2;
+    }
+
+    /* ---- language ---------------------------------------------------------
+       The host page's setLang() runs AFTER this widget has mounted, so the
+       widget has to be told when the guest flips EN↔NL — otherwise the
+       calendar stays in the language it happened to mount in. Re-rendering is
+       destructive, so everything the guest has already done (chosen day, time,
+       party size, typed name/email/phone/notes/gift code, opt-in) is snapshotted
+       and put back afterwards.                                                */
+    relang(lang) {
+      const next = STRINGS[lang] ? lang : "en";
+      if (next === this.lang) return;
+      this.lang = next;
+      this.t = STRINGS[next];
+      if (!this.card || !this.route) return;                 // nothing drawn yet
+      if (this.route._placeholder) { this.renderPlaceholder(); return; }
+
+      const date = this.selectedDate, slot = this.selectedSlot, party = this.party;
+      const form = this._formSnapshot();
+
+      this.renderCalendar();                                  // resets step + hosts
+      this.selectedDate = date; this.selectedSlot = slot; this.party = party;
+
+      if (date) {
+        const cell = this.card.querySelector('.wc-day[data-date="' + date + '"]');
+        if (cell) { cell.setAttribute("aria-pressed", "true"); this._dayCell = cell; }
+        this.renderSlots();
+        this.setStep(1);
+      }
+      if (slot) {
+        const sb = this.slotHost && this.slotHost.querySelector('.wc-slot[data-slot="' + slot.slot + '"]');
+        if (sb) sb.setAttribute("aria-pressed", "true");
+        this.renderForm();
+        this._formRestore(form);
+        this.setStep(2);
+      }
+    }
+
+    _formSnapshot() {
+      const v = (f) => (f && f.el ? f.el.value : "");
+      return {
+        name: v(this.nameInput), email: v(this.emailInput), phone: v(this.phoneInput),
+        notes: v(this.notesInput), gift: v(this.giftInput),
+        optIn: this.optIn ? !!this.optIn.checked : false,
+      };
+    }
+    _formRestore(s) {
+      if (!s) return;
+      const set = (f, val) => { if (f && f.el && val) f.el.value = val; };
+      set(this.nameInput, s.name); set(this.emailInput, s.email); set(this.phoneInput, s.phone);
+      set(this.notesInput, s.notes); set(this.giftInput, s.gift);
+      if (this.optIn) this.optIn.checked = s.optIn;
     }
 
     /* ---- lifecycle -------------------------------------------------------- */
@@ -430,6 +496,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       }
       const cell = el("button", "wc-day wc-day--" + state);
       cell.type = "button";
+      cell.setAttribute("data-date", ds); // lets relang() re-find the chosen day after a re-render
       cell.appendChild(document.createTextNode(String(day)));
       if (ymd(today) === ds) cell.classList.add("wc-day--today");
 
@@ -506,6 +573,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       const soldout = s.seats_left <= 0;
       const btn = el("button", "wc-slot" + (soldout ? " wc-slot--soldout" : ""));
       btn.type = "button";
+      btn.setAttribute("data-slot", s.slot); // lets relang() re-find the chosen time after a re-render
       btn.appendChild(el("span", "wc-slot-time", s.slot));
       let seatsTxt, low = false;
       if (soldout) seatsTxt = this.t.soldout;
@@ -706,7 +774,10 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
         route_id: this.routeId, date: this.selectedDate, slot: this.selectedSlot.slot,
         party: this.party, name, email, phone: this.phoneInput.el.value.trim(),
         notes: this.notesInput ? this.notesInput.el.value.trim() : "",
-        locale: this.lang, marketing_opt_in: !!this.optIn.checked,
+        // Locale is read at SUBMIT time, not at mount time: the guest may have
+        // switched language mid-booking, and this value decides which language
+        // their confirmation email and confirmation page come back in.
+        locale: currentLang(this.mount, this.lang), marketing_opt_in: !!this.optIn.checked,
       };
       if (giftCode) payload.gift_code = giftCode;
       try {
@@ -728,11 +799,28 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
           this.flashError(t.err_soldout);
           return;
         }
+        // Rate limiter: "too many attempts" is a wait-and-retry situation, not a
+        // failure the guest can fix by re-typing — so it gets its own honest
+        // message instead of the generic "something went wrong".
+        if (res.status === 429) {
+          book.disabled = false; book.textContent = original;
+          this.flashError(t.err_rate_limit);
+          this.announce(t.err_rate_limit);
+          return;
+        }
         // A bad/typo'd gift code shouldn't read as a mystery "something went
         // wrong" — surface it on the gift field itself, same as name/email.
-        if (res.status === 400 && (data.error === "invalid_gift_card" || data.error === "gift_card_currency_mismatch") && this.giftInput) {
+        // Three server shapes land here: a malformed code (bad_request +
+        // "gift card code" in the message), an unknown/empty card, and a
+        // currency mismatch.
+        const giftFormatErr = data.error === "bad_request" &&
+          String(data.message || "").toLowerCase().indexOf("gift card code") !== -1;
+        if (res.status === 400 && this.giftInput &&
+            (giftFormatErr || data.error === "invalid_gift_card" || data.error === "gift_card_currency_mismatch")) {
           book.disabled = false; book.textContent = original;
-          const msg = data.error === "invalid_gift_card" ? t.err_gift_invalid : t.err_gift_currency;
+          const msg = giftFormatErr ? t.err_gift_format
+            : data.error === "invalid_gift_card" ? t.err_gift_invalid
+            : t.err_gift_currency;
           setErr(this.giftInput, msg);
           this.announce(msg);
           return;
@@ -820,10 +908,38 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
     } catch (e) { /* a CTA rewrite must never break the page */ }
   }
 
+  /* ---- language changes on the host page ---------------------------------
+     Two triggers, because booking pages and the preview shell differ:
+       1. `wogo:langchange` — dispatched by each page's own setLang().
+       2. a MutationObserver on <html lang> — the safety net, so any host that
+          only flips the attribute still re-renders the widget.
+     Both funnel into the same idempotent relang(): it no-ops when the language
+     has not actually changed, so the two firing together is harmless.        */
+  function applyLang(lang) {
+    INSTANCES.forEach((inst) => {
+      try { inst.relang(currentLang(inst.mount, lang)); } catch (e) { /* never break the page */ }
+    });
+  }
+
+  let langWired = false;
+  function wireLangChanges() {
+    if (langWired) return;
+    langWired = true;
+    document.addEventListener("wogo:langchange", (e) => {
+      applyLang((e && e.detail && e.detail.lang) || document.documentElement.lang);
+    });
+    try {
+      new MutationObserver(() => applyLang(document.documentElement.lang))
+        .observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
+    } catch (e) { /* observer unavailable — the event listener above still works */ }
+  }
+
   /* ---- public API + auto-init -------------------------------------------- */
   function mount(node, opts) {
     const inst = new WogoCalendar(node, opts);
+    INSTANCES.push(inst);
     wireKeyboard(inst);
+    wireLangChanges();
     inst.init();
     return inst;
   }

@@ -17,6 +17,11 @@
      ========================================================================= -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="../site.webmanifest">
+<meta name="theme-color" content="#ffaa81">
 <title>Privacy Policy | WOGO</title>
 <meta name="robots" content="noindex"> <!-- REMOVE at cutover -->
 <link rel="canonical" href="https://www.wogococktailwalk.com/privacy/">
@@ -26,13 +31,13 @@
 <meta property="og:title" content="Privacy Policy | WOGO">
 <meta property="og:description" content="How WOGO collects, uses and protects your personal data, in plain, GDPR-compliant terms. We never sell your data.">
 <meta property="og:url" content="https://www.wogococktailwalk.com/privacy/">
-<meta property="og:image" content="https://static.wixstatic.com/media/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg">
+<meta property="og:image" content="https://www.wogococktailwalk.com/og/wogo-default.jpg">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Privacy Policy | WOGO">
 <meta name="twitter:description" content="How WOGO collects, uses and protects your personal data, in plain, GDPR-compliant terms. We never sell your data.">
-<meta name="twitter:image" content="https://static.wixstatic.com/media/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_5e94db8083ed4eb98c2bc918ba16b41f~mv2.jpg">
+<meta name="twitter:image" content="https://www.wogococktailwalk.com/og/wogo-default.jpg">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebPage","name":"Privacy Policy","url":"https://www.wogococktailwalk.com/privacy/","isPartOf":{"@type":"WebSite","name":"WOGO Cocktail Walk","url":"https://www.wogococktailwalk.com/"},"about":{"@type":"Organization","name":"WOGO Cocktail Walk","legalName":"WOGO Amsterdam B.V."}}
 </script>
@@ -60,6 +65,10 @@
 
   /* ===== WOGO SHARED VISUAL SYSTEM (copied from /faq/ — keep in sync) ===== */
   :root {
+    /* Salmon-family text that actually passes WCAG AA. The display salmon
+       (--wogo-salmon-deep #f2905c) is only 2.3:1 on cream — fine as a BACKGROUND,
+       never as text. Use this for inline links and small labels instead. */
+    --wogo-salmon-ink: #a34a12;
     --wogo-blush: #ffe5d9;
     --wogo-brown-soft: #7e5541;
     --wogo-brown: #643e2b;
@@ -86,7 +95,7 @@
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; } }
   .w-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   .w-hero { position: relative; width: 100%; min-height: 440px; overflow: hidden; background: linear-gradient(160deg, var(--wogo-espresso) 0%, var(--wogo-ink) 100%); color: var(--wogo-blush); }
-  .w-hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  .w-hero-video { position: absolute; inset: 0; width: 100%; max-width: 100%; height: 100%; object-fit: cover; z-index: 0; }
   .w-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(26,20,16,0.40) 0%, rgba(26,20,16,0.72) 100%); z-index: 1; }
   /* ── Language dropdown: trigger pill + expandable menu (data-driven — see WOGO_LANGS in the foot script; scales beyond EN/NL) ── */
   .w-lang { position: relative; display: inline-flex; }
@@ -147,7 +156,7 @@
   .bl-post h2 { font-size:clamp(22px,3vw,30px); font-weight:900; color:var(--wogo-ink); text-transform:none; letter-spacing:-0.01em; margin:34px 0 12px; }
   .bl-post h2::after { content:""; display:block; width:44px; height:3px; margin-top:10px; border-radius:2px; background:var(--wogo-cta-bg); }
   .bl-post ul { margin:0 0 18px 20px; } .bl-post li { font-size:16px; line-height:1.7; margin-bottom:8px; }
-  .bl-post a { color:var(--wogo-salmon-deep); font-weight:700; text-decoration:underline; text-underline-offset:3px; }
+  .bl-post a { color:var(--wogo-salmon-ink, #a34a12); font-weight:700; text-decoration:underline; text-underline-offset:3px; }
   .bl-hook { max-width:720px; margin:2px auto 22px; font-size:18px; font-weight:700; color:var(--wogo-brown); line-height:1.4; }
   .bl-meta { max-width:720px; margin:0 auto 6px; font-size:13px; font-weight:700; color:var(--wogo-brown-soft); }
   .bl-cta-band { margin:30px auto 0; max-width:720px; padding:26px; border-radius:16px; background:var(--wogo-surface-tint); text-align:center; }
@@ -746,7 +755,9 @@
      country heading appears automatically now there is more than one country.
      Replace the London routes below with the real ones at launch. */
   { code:'gb', name:{en:'United Kingdom',nl:'Verenigd Koninkrijk'}, cities: [
-    { name:'London', hub:'london/', routes:[ {name:'London Soho', url:'london/soho/'} ] }
+    /* London has no bookable route yet, so it carries NO footer route link —
+       only the city hub in the nav. Add its routes here at launch. */
+    { name:'London', hub:'london/', routes:[] }
   ] } ] };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function renderRoutes(lang) {
@@ -758,10 +769,14 @@
     var navHTML = '', ovHTML = '', footHTML = '';
     countries.forEach(function (c) {
       var cname = esc((c.name && (c.name[lang] || c.name.en)) || '');
+      // A country with no bookable routes (London pre-launch) still gets its city
+      // hub in the nav, but no FOOTER heading — a heading with no links under it
+      // reads as a broken list.
+      var hasRoutes = c.cities.some(function (city) { return (city.routes || []).length; });
       if (multi) {
         navHTML += '<li class="w-nav-country" aria-hidden="true">' + cname + '</li>';
         ovHTML += '<span class="w-nav-ov-country">' + cname + '</span>';
-        footHTML += '<span class="w-footer-country">' + cname + '</span>';
+        if (hasRoutes) footHTML += '<span class="w-footer-country">' + cname + '</span>';
       }
       c.cities.forEach(function (city) {
         // Nav dropdown + mobile overlay chips: one link per CITY -> its internal hub.
@@ -808,6 +823,10 @@
     document.documentElement.lang = lang;
     document.querySelectorAll('.w-lang').forEach(function (w) { var c = w.querySelector('.w-lang-code'); if (c) c.textContent = lang.toUpperCase(); var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-label', 'Change language (' + lang.toUpperCase() + ')'); w.querySelectorAll('.w-lang-opt').forEach(function (o) { o.setAttribute('aria-selected', o.getAttribute('data-lang') === lang ? 'true' : 'false'); }); });
     try { localStorage.setItem('wogoLang', lang); } catch (e) {}
+    // Tell any mounted component (the booking calendar widget) that the page
+    // language changed, so it re-renders its own strings instead of staying
+    // in whatever language it happened to mount in.
+    try { document.dispatchEvent(new CustomEvent('wogo:langchange', { detail: { lang: lang } })); } catch (e) {}
   }
   var saved = null;
   try { saved = localStorage.getItem('wogoLang'); } catch (e) {}
@@ -1471,7 +1490,14 @@
 .w-wa{position:fixed;right:18px;bottom:22px;z-index:65;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(37,211,102,.45),0 2px 6px rgba(0,0,0,.2);transition:transform .18s ease,box-shadow .18s ease;}
 .w-wa:hover{transform:scale(1.07);box-shadow:0 10px 26px rgba(37,211,102,.55),0 2px 6px rgba(0,0,0,.22);}
 .w-wa:focus-visible{outline:3px solid #128C3E;outline-offset:3px;}
-@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}}
+@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}
+/* The float is fixed in the bottom-right, so it would otherwise sit on top of
+   whatever the page ends with. Reserve room below the last block of content
+   (footer, and the booking widget section) so nothing is trapped under it at
+   rest. 86px offset already clears the sticky CTA bar. */
+.w-footer{padding-bottom:144px;}
+.w-calsec{padding-bottom:104px;}
+.wogo-calendar,.w-paused{margin-bottom:24px;}}
 @media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
 </style>
 <!-- ===== /WOGO WHATSAPP FLOAT ===== -->

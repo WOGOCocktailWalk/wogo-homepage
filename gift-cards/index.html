@@ -25,6 +25,11 @@
      ========================================================================= -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="../site.webmanifest">
+<meta name="theme-color" content="#ffaa81">
 <!-- PAGE-EDIT: title + description + canonical -->
 <title>Cocktail Walk Gift Cards · From €30 | WOGO</title>
 <meta name="robots" content="noindex"> <!-- REMOVE at cutover -->
@@ -35,19 +40,19 @@
 <meta property="og:title" content="Cocktail Walk Gift Cards · From €30 | WOGO">
 <meta property="og:description" content="Give a WOGO cocktail walk gift card — from €30, valid on any city or route, delivered by email in seconds.">
 <meta property="og:url" content="https://www.wogococktailwalk.com/gift-cards/">
-<meta property="og:image" content="https://static.wixstatic.com/media/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png">
+<meta property="og:image" content="https://www.wogococktailwalk.com/og/wogo-gift-cards.jpg">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="WOGO Gift Cards · Give a Cocktail Walk">
 <meta name="twitter:description" content="Any route, any city, redeemable on all our walks. From €30, delivered by email.">
-<meta name="twitter:image" content="https://static.wixstatic.com/media/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png">
+<meta name="twitter:image" content="https://www.wogococktailwalk.com/og/wogo-gift-cards.jpg">
 <!-- PAGE-EDIT: structured data — gift cards carry Product + AggregateOffer
      (lowPrice 30 / highPrice 100 EUR — the real Stripe self-serve tiers, a
      custom amount up to €500 is also offered on-page but not claimed here),
      plus the site-wide light Organization block shared by all content pages. -->
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Product","name":"WOGO Gift Card","description":"A WOGO Cocktail Walk gift card, redeemable on all WOGO self-guided cocktail walks in Amsterdam, Rotterdam, Utrecht and Groningen. Choose an amount, add a personalized message, delivered by email.","image":"https://static.wixstatic.com/media/2a3b9e_7ea6269a8e1543bd8faad18af520cf9e~mv2.png","brand":{"@type":"Brand","name":"WOGO Cocktail Walk"},"offers":{"@type":"AggregateOffer","priceCurrency":"EUR","lowPrice":"30","highPrice":"100","offerCount":"3","availability":"https://schema.org/InStock","url":"https://www.wogococktailwalk.com/gift-cards"}}
+{"@context":"https://schema.org","@type":"Product","name":"WOGO Gift Card","description":"A WOGO Cocktail Walk gift card, redeemable on all WOGO self-guided cocktail walks in Amsterdam, Rotterdam, Utrecht and Groningen. Choose an amount, add a personalized message, delivered by email.","image":"https://www.wogococktailwalk.com/og/wogo-gift-cards.jpg","brand":{"@type":"Brand","name":"WOGO Cocktail Walk"},"offers":{"@type":"AggregateOffer","priceCurrency":"EUR","lowPrice":"30","highPrice":"100","offerCount":"3","availability":"https://schema.org/InStock","url":"https://www.wogococktailwalk.com/gift-cards"}}
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Organization","name":"WOGO Cocktail Walk","url":"https://www.wogococktailwalk.com/","logo":"https://www.wogococktailwalk.com/wogo-logo.png","email":"info@wogoamsterdam.com","telephone":"+31202101168","address":{"@type":"PostalAddress","addressLocality":"Amsterdam","addressCountry":"NL"},"sameAs":["https://www.instagram.com/wogococktailwalk/","https://www.tiktok.com/@wogococktailwalk","https://www.facebook.com/wogoamsterdam/"]}
@@ -74,6 +79,15 @@
      action colour (BRAND.md lists salmon for warm CTAs; #f2905c is canonical
      salmon-deep, not terracotta). Drives every primary button on this page. ===== */
   :root{
+    /* shared WOGO palette tokens — keep in sync with index.html :root */
+    --wogo-blush: #ffe5d9;
+    --wogo-brown-soft: #7e5541;
+    --wogo-brown: #643e2b;
+    --wogo-espresso: #3f2b21;
+    --wogo-ink: #201611;
+    --wogo-salmon: #ffaa81;
+    --wogo-cream: #fffaf6;
+    --wogo-salmon-deep: #f2905c;
     --wogo-cta-bg:       linear-gradient(135deg, #ffaa81 0%, #f2905c 100%);
     --wogo-cta-bg-hover: linear-gradient(135deg, #f2905c 0%, #f2905c 100%);
     --wogo-cta-ink:      #3f2b21;
@@ -115,6 +129,10 @@
   .w-hero h1 { font-size: clamp(28px, 4.6vw, 48px); font-weight: 900; line-height: 1.05; letter-spacing: -0.015em; margin-bottom: 14px; max-width: 20ch; text-shadow: 0 2px 16px rgba(0,0,0,0.45); }
   .w-hero p { font-size: clamp(14px, 1.3vw, 18px); font-weight: 500; line-height: 1.5; max-width: 560px; margin-bottom: 22px; opacity: 0.95; }
   .w-hero-cta { display: inline-block; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 15px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform 0.2s, background 0.2s; }
+  /* The submit button reuses the .w-hero-cta skin, which was written for <a>.
+     A <button> also needs the UA chrome removed or it renders with a system
+     border, system font and no pointer cursor. */
+  button.w-hero-cta { border: 0; font-family: inherit; cursor: pointer; -webkit-appearance: none; appearance: none; }
   .w-hero-cta:active, .w-gift-btn:active, .w-group-btn:active, .w-final-btn:active, .w-tier-btn:active, .w-sticky-cta-btn:active { transform: scale(0.96); }
   .w-mail { color: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
   .w-hero-cta:hover { background: var(--wogo-cta-bg-hover); color: var(--wogo-cta-ink); transform: translateY(-2px); }
@@ -603,7 +621,7 @@
         <div class="w-giftcard-mid" data-i18n="gc_label">Gift Card</div>
         <div class="w-giftcard-foot">
           <span data-i18n="gc_sub">The Cocktail Walk</span>
-          <span class="w-giftcard-cities">AMS · RTM · UTR · GRO</span>
+          <span class="w-giftcard-cities">AMS · RTM · DEL · GRO · UTR</span>
         </div>
       </div>
     </div>
@@ -787,7 +805,7 @@
     </a>
     <a class="w-cityhub-card" href="../groningen/">
       <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="../groningen/gin-walk-hero.jpg" alt="Groningen cocktail walk"></div>
-      <div class="w-cityhub-body"><div class="w-cityhub-name">Groningen</div><div class="w-cityhub-sub" data-i18n="chs_gro">Wed–Sat · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Explore this city →</div></div>
+      <div class="w-cityhub-body"><div class="w-cityhub-name">Groningen</div><div class="w-cityhub-sub" data-i18n="chs_gro">Thu–Sat · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Explore this city →</div></div>
     </a>
   </div>
   <div class="w-pad" style="text-align:center;margin-top:18px;"><span data-i18n="route_reassure" style="display:inline-block;font-size:12.5px;font-weight:700;color:#3f2b21;letter-spacing:0.01em;">✓ Reservations &amp; route map included &nbsp;·&nbsp; ✓ Mocktail option on every route &nbsp;·&nbsp; ✓ Questions? <a class="w-mail" href="mailto:info@wogoamsterdam.com">Write us</a></span></div>
@@ -909,7 +927,7 @@
     hero_cta: "Koop een cadeaubon →",
     /* gift-card mock face */
     gc_label: "Cadeaubon",
-    gc_sub: "The Cocktail Walk",
+    gc_sub: "De Cocktail Walk",
     /* --- amount tiers --- */
     tiers_eyebrow: "Kies een bedrag",
     tiers_h2: "Drie bedragen, geen gedoe",
@@ -969,7 +987,7 @@
     chs_ams: "do–za · vanaf €29,95",
     chs_rot: "3 routes · vanaf €29,95",
     chs_utr: "Dagelijks · vanaf €29,95",
-    chs_gro: "wo–za · vanaf €29,95",
+    chs_gro: "do–za · vanaf €29,95",
     explore: "Ontdek deze stad →",
     route_reassure: "✓ Reserveringen &amp; routekaart inbegrepen &nbsp;·&nbsp; ✓ Mocktail-optie op elke route &nbsp;·&nbsp; ✓ Vragen? <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">Stuur ons een berichtje</a>",
     /* --- final CTA + sticky --- */
@@ -1021,7 +1039,9 @@
      country heading appears automatically now there is more than one country.
      Replace the London routes below with the real ones at launch. */
   { code:'gb', name:{en:'United Kingdom',nl:'Verenigd Koninkrijk'}, cities: [
-    { name:'London', hub:'london/', routes:[ {name:'London Soho', url:'london/soho/'} ] }
+    /* London has no bookable route yet, so it carries NO footer route link —
+       only the city hub in the nav. Add its routes here at launch. */
+    { name:'London', hub:'london/', routes:[] }
   ] } ] };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function renderRoutes(lang) {
@@ -1033,10 +1053,14 @@
     var navHTML = '', ovHTML = '', footHTML = '';
     countries.forEach(function (c) {
       var cname = esc((c.name && (c.name[lang] || c.name.en)) || '');
+      // A country with no bookable routes (London pre-launch) still gets its city
+      // hub in the nav, but no FOOTER heading — a heading with no links under it
+      // reads as a broken list.
+      var hasRoutes = c.cities.some(function (city) { return (city.routes || []).length; });
       if (multi) {
         navHTML += '<li class="w-nav-country" aria-hidden="true">' + cname + '</li>';
         ovHTML += '<span class="w-nav-ov-country">' + cname + '</span>';
-        footHTML += '<span class="w-footer-country">' + cname + '</span>';
+        if (hasRoutes) footHTML += '<span class="w-footer-country">' + cname + '</span>';
       }
       c.cities.forEach(function (city) {
         // Nav dropdown + mobile overlay chips: one link per CITY -> its internal hub.
@@ -1087,6 +1111,10 @@
     document.documentElement.lang = lang;
     document.querySelectorAll('.w-lang').forEach(function (w) { var c = w.querySelector('.w-lang-code'); if (c) c.textContent = lang.toUpperCase(); var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-label', 'Change language (' + lang.toUpperCase() + ')'); w.querySelectorAll('.w-lang-opt').forEach(function (o) { o.setAttribute('aria-selected', o.getAttribute('data-lang') === lang ? 'true' : 'false'); }); });
     try { localStorage.setItem('wogoLang', lang); } catch (e) {}
+    // Tell any mounted component (the booking calendar widget) that the page
+    // language changed, so it re-renders its own strings instead of staying
+    // in whatever language it happened to mount in.
+    try { document.dispatchEvent(new CustomEvent('wogo:langchange', { detail: { lang: lang } })); } catch (e) {}
   }
   var saved = null;
   try { saved = localStorage.getItem('wogoLang'); } catch (e) {}
@@ -1802,7 +1830,14 @@
 .w-wa{position:fixed;right:18px;bottom:22px;z-index:65;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(37,211,102,.45),0 2px 6px rgba(0,0,0,.2);transition:transform .18s ease,box-shadow .18s ease;}
 .w-wa:hover{transform:scale(1.07);box-shadow:0 10px 26px rgba(37,211,102,.55),0 2px 6px rgba(0,0,0,.22);}
 .w-wa:focus-visible{outline:3px solid #128C3E;outline-offset:3px;}
-@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}}
+@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}
+/* The float is fixed in the bottom-right, so it would otherwise sit on top of
+   whatever the page ends with. Reserve room below the last block of content
+   (footer, and the booking widget section) so nothing is trapped under it at
+   rest. 86px offset already clears the sticky CTA bar. */
+.w-footer{padding-bottom:144px;}
+.w-calsec{padding-bottom:104px;}
+.wogo-calendar,.w-paused{margin-bottom:24px;}}
 @media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
 </style>
 <!-- ===== /WOGO WHATSAPP FLOAT ===== -->
