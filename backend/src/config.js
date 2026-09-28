@@ -75,6 +75,15 @@ export const META_PIXEL_ID = '652971109400692';
 export const DEFAULT_CAPACITY = 10;
 export const DEFAULT_MAX_PARTY = 6;
 
+// Same-day booking cutoff (audit item 1): a slot whose start time is already
+// within this many minutes — or has already passed — is no longer offered as
+// bookable (GET /api/slots, GET /api/availability) and is rejected outright
+// by POST /api/book (409 slot_passed). Judged against the ROUTE's own
+// timezone via logic.js:isSlotPastCutoff, so a guest can't book a 17:00
+// Amsterdam slot at 16:30 local time, nor a same-day London slot inside its
+// own last hour.
+export const SAME_DAY_CUTOFF_MINUTES = 60;
+
 export const HOLD_MINUTES = 15;
 export const STRIPE_EXPIRES_MINUTES = 30; // Stripe's minimum for Checkout Session expires_at
 export const BOOKING_HORIZON_DAYS = 90;
@@ -158,11 +167,22 @@ export const GIFT_CARD_TIERS_CENTS = [3000, 6000, 10000]; // €30 / €60 / €
 export const GIFT_CARD_CUSTOM_MIN_CENTS = 1000;  // €10
 export const GIFT_CARD_CUSTOM_MAX_CENTS = 50000; // €500
 
+// --- Contact + group-booking inquiries (migrations/0021, POST /api/contact) --
+// Field length caps, kept here (not hardcoded in guest_api.js) so the
+// contact/group forms and the server's validation can never silently drift —
+// same pattern as the gift-card tiers above.
+export const CONTACT_NAME_MAX_LENGTH = 200;
+export const CONTACT_MESSAGE_MAX_LENGTH = 5000;
+export const CONTACT_CITY_MAX_LENGTH = 100;
+export const CONTACT_DATE_MAX_LENGTH = 100; // free text ("mid November"), not a strict YYYY-MM-DD
+export const CONTACT_PARTY_SIZE_MAX = 500;
+
 // route slug -> public route page path, used for Stripe cancel_url / Meta event_source_url
 export const ROUTE_PATHS = {
   amsterdam: '/amsterdam/',
   utrecht: '/utrecht/',
   groningen: '/groningen/',
+  delft: '/delft/',
   'rotterdam-witte-de-with': '/rotterdam/witte-de-with/',
   'rotterdam-hidden-gems': '/rotterdam/hidden-gems/',
   'rotterdam-premium-gin': '/rotterdam/premium-gin-walk/',

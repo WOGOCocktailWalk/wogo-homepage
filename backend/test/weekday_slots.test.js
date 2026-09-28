@@ -59,10 +59,15 @@ function seedRoute(db, overrides = {}) {
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
-/** The next date (from TODAY, inclusive) whose ISO weekday (Mon=1..Sun=7)
- * equals `targetIso` — stays well within the 90-day booking horizon. */
+/** The next date STRICTLY AFTER TODAY whose ISO weekday (Mon=1..Sun=7) equals
+ * `targetIso` — stays well within the 90-day booking horizon. Deliberately
+ * starts from TOMORROW, not TODAY: this file's handleBook/handleSlots/
+ * handleAvailability tests would otherwise intermittently hit the same-day
+ * cutoff (SAME_DAY_CUTOFF_MINUTES, config.js — audit item 1) whenever the
+ * suite happens to run on the matching weekday, which is not what these
+ * tests are about. */
 function nextIsoWeekday(targetIso) {
-  let d = TODAY;
+  let d = addDaysToDateStr(TODAY, 1);
   for (let i = 0; i < 8; i++) {
     if (isoWeekday(d) === targetIso) return d;
     d = addDaysToDateStr(d, 1);

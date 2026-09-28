@@ -556,7 +556,10 @@ export function renderBarNotification(bar, booking, route) {
     subject: `WOGO reservation · ${bar.arrival_time} · ${booking.party} guests · ${booking.date}`,
     html: layout({
       preheader: `Hold a table for ${booking.party} at ${bar.arrival_time}.`,
-      hero: { badge: 'New WOGO reservation', title: `Table for ${booking.party} at ${bar.arrival_time}`, chip: `${escapeHtml(bar.bar_name)} · ${route.city}` },
+      // hero.chip is escaped once by heroBand() itself (src/emails.js ~122) —
+      // pre-escaping bar.bar_name here would double-escape it (e.g. an
+      // apostrophe in "Let's Meat" would render as "Let&#39;s Meat").
+      hero: { badge: 'New WOGO reservation', title: `Table for ${booking.party} at ${bar.arrival_time}`, chip: `${bar.bar_name} · ${route.city}` },
       posterRoute: route,
       heading: `Hi ${bar.bar_name},`,
       intro: 'A WOGO Cocktail Walk group is on the way to you. Here is everything you need.',
@@ -588,7 +591,9 @@ export function renderOwnerConflict(booking, route) {
       or refund via the Stripe dashboard.
     </p>`;
   return {
-    subject: `&#9888; Double-booked — ${booking.id}`,
+    // Subject is plain text (no HTML entities decoded by a mail client's
+    // subject line) — use the real character, not an HTML entity.
+    subject: `⚠ Double-booked — ${booking.id}`,
     html: layout({
       preheader: 'A paid booking could not be seated — resolve by hand.',
       hero: { badge: 'Action needed', title: 'Double-booked', chip: `${route.city} · ${booking.date} ${booking.slot}` },
@@ -756,7 +761,9 @@ export function renderBarReschedule(bar, booking, route, opts = {}) {
     subject: `WOGO reservation MOVED · now ${bar.arrival_time} · ${booking.date} · ${booking.party} guests`,
     html: layout({
       preheader: `Moved: now hold a table for ${booking.party} at ${bar.arrival_time}.`,
-      hero: { badge: 'Reservation moved', title: `New time ${bar.arrival_time}`, chip: `${escapeHtml(bar.bar_name)} · ${route.city}` },
+      // hero.chip is escaped once by heroBand() — see the doc comment above
+      // the identical pattern in the bar-arrival email, ~line 559.
+      hero: { badge: 'Reservation moved', title: `New time ${bar.arrival_time}`, chip: `${bar.bar_name} · ${route.city}` },
       posterRoute: route,
       heading: `Hi ${bar.bar_name},`,
       intro: 'A WOGO reservation has been rescheduled. Here is the new arrival time.',
@@ -820,7 +827,9 @@ export function renderBarCancellation(bar, booking, route) {
     subject: `WOGO reservation CANCELLED · ${booking.date} ${bar.arrival_time} · ${booking.party} guests`,
     html: layout({
       preheader: `Cancelled: you can release the ${bar.arrival_time} table for ${booking.party}.`,
-      hero: { badge: 'Reservation cancelled', title: 'Table released', chip: `${escapeHtml(bar.bar_name)} · ${route.city}` },
+      // hero.chip is escaped once by heroBand() — see the doc comment above
+      // the identical pattern in the bar-arrival email, ~line 559.
+      hero: { badge: 'Reservation cancelled', title: 'Table released', chip: `${bar.bar_name} · ${route.city}` },
       heading: `Hi ${bar.bar_name},`,
       intro: 'A WOGO reservation has been cancelled — here are the details so you can free the table.',
       contentHtml: content,
@@ -985,13 +994,122 @@ export function renderGiftCardRedemptionAlert(booking, result) {
       Please reconcile the gift card balance by hand.
     </p>`;
   return {
-    subject: `&#9888; Gift card redemption needs attention — ${booking.id}`,
+    // Subject is plain text — see the doc comment on the double-booked
+    // subject above.
+    subject: `⚠ Gift card redemption needs attention — ${booking.id}`,
     html: layout({
       preheader: 'A paid booking needs its gift card balance reconciled by hand.',
-      hero: { badge: 'Action needed', title: 'Gift card redemption issue', chip: `${escapeHtml(booking.date)} ${escapeHtml(booking.slot)}` },
+      // hero.chip is escaped once by heroBand() — see the doc comment above
+      // the identical pattern in the bar-arrival email, ~line 559.
+      hero: { badge: 'Action needed', title: 'Gift card redemption issue', chip: `${booking.date} ${booking.slot}` },
       heading: 'Gift card redemption needs attention',
       intro: 'A guest paid with a gift card discount, but the balance could not be automatically deducted.',
       contentHtml: content,
+    }),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 10 & 11. Contact / group-booking inquiries (migrations/0021, audit item 9)
+//   10. OWNER notification — the whole inquiry at a glance; reply-to is set
+//       to the guest by the caller (src/guest_api.js), not rendered here.
+//   11. GUEST auto-acknowledgement — EN/NL, short: "we got it, 1 working day".
+// ---------------------------------------------------------------------------
+
+/** 10. OWNER notification for a new contact/group inquiry. EN only, like
+ * every other internal mail in this file. Subject shape matches SETUP.md's
+ * documented contract exactly: a 'group' inquiry leads with the trip details
+ * (city/date/party — the thing the owner scans for first), a plain 'contact'
+ * message leads with who it's from. */
+export function renderInquiryOwnerNotification(inquiry) {
+  const isGroup = inquiry.kind === 'group';
+  const subject = isGroup
+    ? `Group booking request · ${inquiry.city || 'unknown city'} · ${inquiry.date || 'no date'} · ${inquiry.party_size != null ? inquiry.party_size + 'p' : '?p'}`
+    : `Contact form · ${inquiry.name}`;
+
+  const rows = [
+    ['Kind', escapeHtml(isGroup ? 'Group booking request' : 'Contact message')],
+    ['Name', escapeHtml(inquiry.name)],
+    ['Email', `<a href="mailto:${escapeHtml(inquiry.email)}" style="color:${C.salmonDeep};text-decoration:none;">${escapeHtml(inquiry.email)}</a>`],
+  ];
+  if (inquiry.phone) rows.push(['Phone', escapeHtml(inquiry.phone)]);
+  if (isGroup) {
+    if (inquiry.city) rows.push(['City', escapeHtml(inquiry.city)]);
+    if (inquiry.date) rows.push(['Date', escapeHtml(inquiry.date)]);
+    if (inquiry.party_size != null) rows.push(['Party size', escapeHtml(String(inquiry.party_size))]);
+  }
+  rows.push(['Language', escapeHtml((inquiry.locale || 'en').toUpperCase())]);
+
+  const content = `
+    ${detailPanel(rows, C.salmonDeep)}
+    <h2 style="margin:26px 0 10px;font-size:15px;font-weight:800;color:${C.ink};">Message</h2>
+    <p style="margin:0 0 22px;font-size:14.5px;line-height:1.6;color:${C.ink};">${notesToHtml(inquiry.message)}</p>
+    <p style="margin:0;font-size:13.5px;line-height:1.55;color:${C.brown};">
+      Reply directly to this email — it goes straight to <strong>${escapeHtml(inquiry.name)}</strong>.
+    </p>`;
+
+  return {
+    subject,
+    html: layout({
+      preheader: isGroup
+        ? `New group request: ${inquiry.city || ''} · ${inquiry.date || ''}`
+        : `New contact message from ${inquiry.name}`,
+      hero: {
+        badge: isGroup ? 'Group booking request' : 'Contact form',
+        title: isGroup ? (inquiry.city || 'New group request') : inquiry.name,
+        chip: isGroup && inquiry.party_size != null
+          ? `${inquiry.date || 'no date given'} · ${inquiry.party_size} guests`
+          : inquiry.email,
+      },
+      heading: isGroup ? 'New group booking request' : 'New contact message',
+      intro: 'Came in through the website form.',
+      contentHtml: content,
+    }),
+  };
+}
+
+const INQUIRY_ACK_STRINGS = {
+  en: {
+    subject: 'We got your message — WOGO Cocktail Walk',
+    heading: (name) => `Thanks${name ? ', ' + name : ''} — we've got it!`,
+    intro: "We got your message and we'll reply within 1 working day.",
+    body: 'In the meantime, feel free to browse our routes and cities on the website.',
+    signoff: 'Talk soon — the WOGO team',
+    footer: 'This is an automatic confirmation — no need to reply unless you have more to add.',
+  },
+  nl: {
+    subject: 'We hebben je bericht ontvangen — WOGO Cocktail Walk',
+    heading: (name) => `Bedankt${name ? ', ' + name : ''} — we hebben het ontvangen!`,
+    intro: 'We hebben je bericht ontvangen en reageren binnen 1 werkdag.',
+    body: 'Kijk in de tussentijd gerust rond op onze website voor onze routes en steden.',
+    signoff: 'Tot snel — het WOGO-team',
+    footer: 'Dit is een automatische bevestiging — je hoeft niet te reageren tenzij je nog iets wilt toevoegen.',
+  },
+};
+
+/** 11. GUEST auto-acknowledgement, sent immediately after a contact/group
+ * form submission (src/guest_api.js:handleContact) — the guest's OWN
+ * confirmation that their message arrived, separate from the owner
+ * notification above. EN/NL via inquiry.locale, same pattern as every
+ * guest-facing mail in this file. */
+export function renderInquiryAutoAck(inquiry) {
+  const lang = loc(inquiry.locale);
+  const t = INQUIRY_ACK_STRINGS[lang];
+  const firstName = inquiry.name ? String(inquiry.name).trim().split(/\s+/)[0] : '';
+
+  const content = `
+    <p style="margin:0 0 4px;font-size:15px;line-height:1.6;color:${C.brown};">${escapeHtml(t.body)}</p>
+    <p style="margin:22px 0 0;font-size:16px;line-height:1.5;font-weight:800;color:${C.ink};">${escapeHtml(t.signoff)}</p>`;
+
+  return {
+    subject: t.subject,
+    html: layout({
+      preheader: t.intro,
+      hero: { chip: lang === 'nl' ? 'Bericht ontvangen' : 'Message received' },
+      heading: t.heading(firstName),
+      intro: t.intro,
+      contentHtml: content,
+      footerHtml: `<p style="margin:0;font-size:13px;line-height:1.5;color:${C.brown};">${escapeHtml(t.footer)}</p>`,
     }),
   };
 }

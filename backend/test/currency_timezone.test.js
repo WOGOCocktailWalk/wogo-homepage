@@ -15,8 +15,10 @@ import path from 'node:path';
 import { makeTestDb } from './sqlite-d1-adapter.js';
 import { toPositional, getRoute } from '../src/db.js';
 import { createCheckoutSession } from '../src/stripe.js';
+import { ROUTE_PATHS, routePathFor, SITE_URL } from '../src/config.js';
 import { handleCreateRoute, handleUpdateRoute } from '../src/admin_api.js';
 import { handleListRoutes, handleAvailability, handleSlots, handleBook } from '../src/guest_api.js';
+import { addDaysToDateStr } from '../src/logic.js';
 import { renderGuestConfirmation, renderOwnerNotification } from '../src/emails.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -50,6 +52,12 @@ function seedRoute(db, overrides = {}) {
 }
 
 const TODAY = new Date().toISOString().slice(0, 10);
+// A handleBook (POST /api/book) call goes through the same-day cutoff
+// (SAME_DAY_CUTOFF_MINUTES, config.js — audit item 1): a fixed slot on TODAY
+// would intermittently fail depending on the wall-clock time the suite runs
+// at, so the one test here that actually calls handleBook uses this
+// safely-future date instead.
+const BOOKABLE_DATE = addDaysToDateStr(TODAY, 5);
 
 let db;
 beforeEach(() => { db = makeTestDb(schemaSql); });
@@ -118,6 +126,34 @@ describe('createCheckoutSession — currency per route', () => {
     const route = { id: 'nyc', name: 'WOGO New York', price_cents: 3995, currency: 'USD' };
     await createCheckoutSession(env, booking, route);
     assert.equal(capturedBody.get('line_items[0][price_data][currency]'), 'usd');
+  });
+
+  test('Delft has a ROUTE_PATHS entry and cancel_url resolves to it (not the "/" fallback)', async () => {
+    assert.equal(ROUTE_PATHS.delft, '/delft/');
+    const route = { id: 'delft', name: 'WOGO Delft', city: 'Delft', price_cents: 2995, currency: 'EUR' };
+    assert.equal(routePathFor(route), '/delft/');
+    await createCheckoutSession(env, booking, route);
+    assert.equal(capturedBody.get('cancel_url'), `${SITE_URL}/delft/`);
+  });
+
+  test('a booking with locale "nl" checks out with Stripe locale=nl', async () => {
+    const route = { id: 'amsterdam', name: 'WOGO Amsterdam', price_cents: 2995, currency: 'EUR' };
+    await createCheckoutSession(env, { ...booking, locale: 'nl' }, route);
+    assert.equal(capturedBody.get('locale'), 'nl');
+  });
+
+  test('a booking with locale "en" checks out with Stripe locale=en', async () => {
+    const route = { id: 'amsterdam', name: 'WOGO Amsterdam', price_cents: 2995, currency: 'EUR' };
+    await createCheckoutSession(env, { ...booking, locale: 'en' }, route);
+    assert.equal(capturedBody.get('locale'), 'en');
+  });
+
+  test('a booking with no locale (or an unrecognized one) defaults to en', async () => {
+    const route = { id: 'amsterdam', name: 'WOGO Amsterdam', price_cents: 2995, currency: 'EUR' };
+    await createCheckoutSession(env, booking, route);
+    assert.equal(capturedBody.get('locale'), 'en');
+    await createCheckoutSession(env, { ...booking, locale: 'fr' }, route);
+    assert.equal(capturedBody.get('locale'), 'en');
   });
 });
 
@@ -281,7 +317,7 @@ describe('guest_api.js — currency/timezone served, NL behaviour unchanged', ()
       const res = await handleBook(new Request('https://api.example.com/api/book', {
         method: 'POST',
         body: JSON.stringify({
-          route_id: 'testroute', date: TODAY, slot: '18:00', party: 2,
+          route_id: 'testroute', date: BOOKABLE_DATE, slot: '18:00', party: 2,
           name: 'Anna', email: 'anna@example.com', locale: 'en', marketing_opt_in: false,
         }),
         headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '10.1.1.1', Origin: 'http://localhost:8000' },

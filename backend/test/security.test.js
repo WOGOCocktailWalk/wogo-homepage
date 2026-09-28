@@ -369,6 +369,49 @@ describe('POST /api/book — per-IP attempt rate limit (sliding window)', () => 
     );
     assert.equal(res.status, 200, 'stale attempts outside the window must not count toward the limit');
   });
+
+  // audit item 3: a 429 from THIS limiter (not the hold-cap limiter above)
+  // returns a machine-actionable body + Retry-After header.
+  test('the 429 body is {error:"rate_limited", message, retry_after_seconds} with a Retry-After header', async () => {
+    const env = { DB: db };
+    let last;
+    for (let i = 0; i < HOLD_ATTEMPTS_PER_WINDOW + 1; i++) {
+      last = await handleBook(
+        bookRequest({ email: `rl2-${i}@example.com` }, { Origin: 'http://localhost:8000', 'CF-Connecting-IP': '10.0.0.99' }),
+        env
+      );
+    }
+    assert.equal(last.status, 429);
+    const body = await last.json();
+    assert.equal(body.error, 'rate_limited');
+    assert.equal(typeof body.message, 'string');
+    assert.ok(Number.isInteger(body.retry_after_seconds) && body.retry_after_seconds > 0);
+    assert.equal(last.headers.get('Retry-After'), String(body.retry_after_seconds));
+  });
+
+  // audit item 3: server-rejected attempts (fail basic/business validation)
+  // must not consume part of the genuine guest's attempt budget.
+  test('requests rejected by validation (bad_request/route_closed) do NOT count toward the rate limit', async () => {
+    const env = { DB: db };
+    const ip = '10.0.0.100';
+    // One MORE than the window allows, but every single one is invalid
+    // (nonexistent slot -> 409 route_closed) — none of them should be
+    // recorded as a counted rate-limit attempt.
+    for (let i = 0; i < HOLD_ATTEMPTS_PER_WINDOW + 3; i++) {
+      const res = await handleBook(
+        bookRequest({ slot: '03:00', email: `bad${i}@example.com` }, { Origin: 'http://localhost:8000', 'CF-Connecting-IP': ip }),
+        env
+      );
+      assert.equal(res.status, 409, 'every one of these is an invalid slot, not a rate-limit rejection');
+    }
+    // A genuinely valid request from the SAME ip right after must still go
+    // through — none of the invalid attempts above used up the budget.
+    const res = await handleBook(
+      bookRequest({ email: 'finally-valid@example.com' }, { Origin: 'http://localhost:8000', 'CF-Connecting-IP': ip }),
+      env
+    );
+    assert.equal(res.status, 200, 'the rate limit must not have been tripped by requests that failed validation');
+  });
 });
 
 describe('POST /api/book — origin check (defense in depth beyond CORS)', () => {
