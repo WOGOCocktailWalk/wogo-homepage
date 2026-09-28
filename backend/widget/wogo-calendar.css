@@ -257,7 +257,10 @@
 /* ---- Text inputs --------------------------------------------------------- */
 .wc-input {
   width: 100%; padding: 12px 14px; border: 1.5px solid var(--wc-line);
-  border-radius: 12px; background: #fff; font-family: inherit; font-size: 15px;
+  border-radius: 12px; background: #fff; font-family: inherit;
+  /* 16px is the floor: iOS Safari auto-zooms into any field below it, which
+     throws the guest out of the booking card mid-form. */
+  font-size: 16px;
   font-weight: 600; color: var(--wc-ink);
 }
 .wc-input::placeholder { color: rgba(63, 43, 33, 0.4); font-weight: 500; }

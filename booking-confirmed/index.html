@@ -31,41 +31,32 @@
      ========================================================================= -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- ROUTE-EDIT: title + description + canonical.
-     Pattern: {Official Name} — {Theme} Cocktail Walk | WOGO. The official name
-     is the HOMEPAGE ROUTE-CARD name (c1..c7): "Utrecht City Centre" — the
-     theme ("Hidden gems") is the subtitle, never dash-glued into the name. -->
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="../site.webmanifest">
+<meta name="theme-color" content="#ffaa81">
+<!-- This is the post-payment confirmation page. It is route-agnostic: the booking
+     details are fetched client-side from /api/booking?session_id=…, so nothing
+     here may name a single city. (It was originally copied from the Delft route
+     page — those leftovers were removed 2026-09.) noindex + no JSON-LD on
+     purpose: a private receipt has nothing to offer a search engine. -->
 <title>You're booked | WOGO Cocktail Walk</title>
-<meta name="robots" content="noindex"> <!-- REMOVE at cutover -->
-<link rel="canonical" href="https://www.wogococktailwalk.com/delft/">
-<meta name="description" content="Delft's self-guided cocktail walk: 3 hand-picked bars, 3 cocktails, tables reserved, 7 days a week. From €29,95pp.">
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://www.wogococktailwalk.com/booking-confirmed/">
+<meta name="description" content="Your WOGO Cocktail Walk is confirmed. Your booking details and route map are on their way to your inbox.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="WOGO Cocktail Walk">
-<meta property="og:title" content="Delft Cocktail Walk · 3 bars, 3 cocktails, 1 night">
-<meta property="og:description" content="Delft's self-guided cocktail walk: 3 hand-picked bars, 3 cocktails, tables reserved, 7 days a week. From €29,95 per person.">
-<meta property="og:url" content="https://www.wogococktailwalk.com/delft/">
-<!-- og:image must be an absolute URL — points at this page's self-hosted hero
-     on the production domain (update only if the domain ever changes). -->
-<meta property="og:image" content="https://www.wogococktailwalk.com/delft/delft-hero.jpg">
+<meta property="og:title" content="You're booked | WOGO Cocktail Walk">
+<meta property="og:description" content="Your WOGO Cocktail Walk is confirmed. Your booking details and route map are on their way to your inbox.">
+<meta property="og:url" content="https://www.wogococktailwalk.com/booking-confirmed/">
+<meta property="og:image" content="https://www.wogococktailwalk.com/og/wogo-default.jpg">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Delft Cocktail Walk · 3 bars, 3 cocktails, 1 night">
-<meta name="twitter:description" content="3 hand-picked Delft bars, 3 cocktails, tables reserved. 7 days a week from €29,95 per person.">
-<meta name="twitter:image" content="https://www.wogococktailwalk.com/delft/delft-hero.jpg">
-<!-- ROUTE-EDIT: structured data — route pages use TouristTrip + Offer (price!)
-     + BreadcrumbList (Home > City > Route). "name" is the OFFICIAL route-card
-     name ("Utrecht City Centre"); "alternateName" carries the theme. Offer.url =
-     the EXISTING Wix booking calendar. Route pages carry NO review node. -->
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"TouristTrip","name":"Delft City Centre","alternateName":"Hidden Gems Cocktail Walk","description":"Self-guided cocktail walk through Delft's historic centre: three hidden-gem cocktail bars, three signature cocktails or mocktails, tables reserved at every stop. Bookable 7 days a week, around 1 hour between stops.","url":"https://www.wogococktailwalk.com/delft/","image":"https://www.wogococktailwalk.com/delft/delft-hero.jpg","touristType":["Couples","Friends","Colleagues"],"itinerary":{"@type":"ItemList","numberOfItems":3,"itemListElement":[{"@type":"ListItem","position":1,"name":"A characterful bar in the heart of historic Delft"},{"@type":"ListItem","position":2,"name":"A botanical cocktail bar tucked off the canals"},{"@type":"ListItem","position":3,"name":"A stylish waterside spot for the final round"}]},"provider":{"@type":"Organization","name":"WOGO Cocktail Walk","telephone":"+31202101168","email":"info@wogoamsterdam.com","url":"https://www.wogococktailwalk.com/"},"offers":{"@type":"Offer","price":"29.95","priceCurrency":"EUR","availability":"https://schema.org/InStock","url":"https://www.wogococktailwalk.com/delft/book/"}}
-</script>
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.wogococktailwalk.com/"},{"@type":"ListItem","position":2,"name":"Delft","item":"https://www.wogococktailwalk.com/delft/"}]}
-</script>
-<!-- Static hero (no video on route pages): preload the self-hosted REAL route
-     photo so it paints fast. Never stock photography. -->
-<link rel="preload" as="image" fetchpriority="high" href="delft-hero.jpg">
+<meta name="twitter:title" content="You're booked | WOGO Cocktail Walk">
+<meta name="twitter:description" content="Your WOGO Cocktail Walk is confirmed. Your booking details and route map are on their way to your inbox.">
+<meta name="twitter:image" content="https://www.wogococktailwalk.com/og/wogo-default.jpg">
 <!-- Anti-flicker for Dutch visitors: the page is authored in English and translated by
      the script at the foot of the body, so briefly hide the body ONLY when Dutch is about
      to be shown (setLang reveals it; a 2.5s timeout is the safety net). -->
@@ -88,6 +79,10 @@
      Warm salmon→coral gradient, espresso ink (AA on salmon-deep). Drives every
      primary CTA on this page. Page CSS, outside the shared nav/footer fences. ===== */
   :root{
+    /* shared WOGO palette tokens — keep in sync with index.html :root */
+    --wogo-brown-soft: #7e5541;
+    --wogo-brown: #643e2b;
+    --wogo-salmon-deep: #f2905c;
     --wogo-cta-bg:       linear-gradient(135deg, #ffaa81 0%, #f2905c 100%);
     --wogo-cta-bg-hover: linear-gradient(135deg, #f2905c 0%, #f2905c 100%);
     --wogo-cta-ink:      #3f2b21;
@@ -110,7 +105,7 @@
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; } }
   .w-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   .w-hero { position: relative; width: 100%; min-height: 440px; overflow: hidden; background: #1a1410; color: #fff; }
-  .w-hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  .w-hero-video { position: absolute; inset: 0; width: 100%; max-width: 100%; height: 100%; object-fit: cover; z-index: 0; }
   .w-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(26,20,16,0.40) 0%, rgba(26,20,16,0.72) 100%); z-index: 1; }
   /* ── Language dropdown: trigger pill + expandable menu (data-driven — see WOGO_LANGS in the foot script; scales beyond EN/NL) ── */
   .w-lang { position: relative; display: inline-flex; }
@@ -166,13 +161,13 @@
   .w-head .w-hint { font-size: 12px; color: #8a7066; margin-top: 6px; font-weight: 500; }
   .w-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #3f2b21; margin-bottom: 10px; text-align: center; }
   .w-scroller-wrap { position: relative; }
-  .w-scroller { display: flex; justify-content: safe center; gap: 16px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 4px 24px 18px; }
+  .w-scroller { display: flex; justify-content: safe center; gap: 16px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-padding-inline: 24px; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 4px 24px 18px; }
   .w-scroller::-webkit-scrollbar { display: none; }
   .w-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: #3f2b21; color: #ffe5d9; border: none; cursor: pointer; font-size: 24px; line-height: 1; display: flex; align-items: center; justify-content: center; z-index: 6; box-shadow: 0 4px 14px rgba(0,0,0,0.22); transition: background 0.2s, transform 0.15s; }
   .w-arrow:hover { background: #1a1410; }
   .w-arrow:active { transform: translateY(-50%) scale(0.92); }
-  .w-arrow-left { left: -4px; }
-  .w-arrow-right { right: -4px; }
+  .w-arrow-left { left: 0; }
+  .w-arrow-right { right: 0; }   /* was -4px: overflowed the viewport by 4px */
   .w-citycard { flex: 0 0 290px; scroll-snap-align: start; display: flex; flex-direction: column; background: #fff; border-radius: 14px; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 14px rgba(0,0,0,0.05); }
   .w-citycard:hover { transform: translateY(-4px); box-shadow: 0 14px 28px rgba(0,0,0,0.12); }
   .w-citycard:hover .w-citycard-img-inner { transform: scale(1.05); }
@@ -630,7 +625,10 @@
   .conf-sec{background:var(--wogo-cream,#fffaf6);min-height:78vh;display:flex;align-items:center;padding:140px 20px 80px;}
   .conf-wrap{max-width:780px;margin:0 auto;width:100%;text-align:center;}
   .conf-emoji{font-size:56px;line-height:1;margin:0 0 14px;}
-  .conf-sec h1{font-size:clamp(26px,5vw,38px);font-weight:900;color:var(--wogo-ink,#201611);margin:0 0 10px;line-height:1.15;}
+  /* h1 and h2 render identically: only ONE state is visible at a time, and only
+     the resolved booking view (#conf-ok) owns the page's single <h1>. The
+     transient loading + fallback states use <h2> so three <h1>s never coexist. */
+  .conf-sec h1, .conf-sec h2{font-size:clamp(26px,5vw,38px);font-weight:900;color:var(--wogo-ink,#201611);margin:0 0 10px;line-height:1.15;}
   .conf-sec p{font-size:16px;line-height:1.6;color:var(--wogo-espresso,#3f2b21);margin:0 auto 18px;max-width:520px;}
   .conf-card{background:#fff;border:1px solid rgba(63,43,33,0.12);border-radius:16px;box-shadow:0 8px 26px rgba(26,20,16,0.08);padding:6px 22px;margin:22px auto 22px;max-width:440px;text-align:left;}
   .conf-row{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid rgba(63,43,33,0.08);font-size:14.5px;}
@@ -653,7 +651,7 @@
 <section class="conf-sec"><div class="conf-wrap">
   <div id="conf-loading">
     <div class="conf-emoji">🍸</div>
-    <h1 data-i18n="conf_loading_h">You're booked — thank you!</h1>
+    <h2 data-i18n="conf_loading_h">You're booked — thank you!</h2>
     <p data-i18n="conf_loading_p">One moment while we pull up your booking details…</p>
     <div class="conf-spin" aria-hidden="true"></div>
   </div>
@@ -673,7 +671,7 @@
   </div>
   <div id="conf-fallback" hidden>
     <div class="conf-emoji">✅</div>
-    <h1 data-i18n="conf_fb_h">Thank you — your payment went through</h1>
+    <h2 data-i18n="conf_fb_h">Thank you — your payment went through</h2>
     <p data-i18n="conf_fb_p">Your confirmation email with your route map is on its way. Any questions? Email us at <a class="w-mail" href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a>.</p>
     <div class="conf-cta"><a href="../" class="w-nav-cta" data-i18n="conf_cta_home">Back to home</a></div>
   </div>
@@ -752,7 +750,9 @@
 
 <!-- Sticky mobile bottom CTA — standalone mode only; scrolls to the in-page
      #book block, which holds the one real Book button for this route. -->
-<div class="w-sticky-cta" id="wStickyCta"><a href="book/" class="w-sticky-cta-btn" data-i18n="sticky_cta">View dates · €29,95</a></div>
+<!-- The guest has already paid, so the sticky bar cross-sells the other cities
+     instead of a booking calendar (the old href="book/" 404d from this folder). -->
+<div class="w-sticky-cta" id="wStickyCta"><a href="../#cities" class="w-sticky-cta-btn" data-i18n="sticky_cta">Explore more cities</a></div>
 
 <script>
 (function () {
@@ -783,7 +783,7 @@
     conf_cta_home: "Terug naar home",
     conf_cta_more: "Ontdek meer steden",
     conf_fb_h: "Bedankt — je betaling is gelukt",
-    conf_fb_p: "Je bevestigingsmail met je routekaart is onderweg. Vragen? Mail ons op <a class="w-mail" href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a>.",
+    conf_fb_p: "Je bevestigingsmail met je routekaart is onderweg. Vragen? Mail ons op <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">info@wogoamsterdam.com</a>.",
     /* --- nav --- */
     nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_about: "Over WOGO", nav_cta: "Boek je walk", gallery_h2: "Een voorproefje van de avond",
     /* --- hero + breadcrumbs --- */
@@ -829,7 +829,7 @@
     rc2_route: "Rotterdam Route 2", rc2_theme: "★ Thema: Verborgen parels", rc2_day: "📅 do–za · start 18.00–20.30", rc2_urgency: "🔥 Onze meest geboekte route",
     sib_all: "Bekijk alle Rotterdam-routes →",
     /* --- sticky mobile CTA --- */
-    sticky_cta: "Bekijk data · €29,95",
+    sticky_cta: "Ontdek meer steden",
     /* --- footer --- */
     foot_tag: "Drie bars die je nooit zelf had gevonden. Eén avond die je altijd bijblijft.",
     foot_c1_h: "Routes", foot_c2_h: "Ontdek",
@@ -872,7 +872,9 @@
      country heading appears automatically now there is more than one country.
      Replace the London routes below with the real ones at launch. */
   { code:'gb', name:{en:'United Kingdom',nl:'Verenigd Koninkrijk'}, cities: [
-    { name:'London', hub:'london/', routes:[ {name:'London Soho', url:'london/soho/'} ] }
+    /* London has no bookable route yet, so it carries NO footer route link —
+       only the city hub in the nav. Add its routes here at launch. */
+    { name:'London', hub:'london/', routes:[] }
   ] } ] };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function renderRoutes(lang) {
@@ -884,10 +886,14 @@
     var navHTML = '', ovHTML = '', footHTML = '';
     countries.forEach(function (c) {
       var cname = esc((c.name && (c.name[lang] || c.name.en)) || '');
+      // A country with no bookable routes (London pre-launch) still gets its city
+      // hub in the nav, but no FOOTER heading — a heading with no links under it
+      // reads as a broken list.
+      var hasRoutes = c.cities.some(function (city) { return (city.routes || []).length; });
       if (multi) {
         navHTML += '<li class="w-nav-country" aria-hidden="true">' + cname + '</li>';
         ovHTML += '<span class="w-nav-ov-country">' + cname + '</span>';
-        footHTML += '<span class="w-footer-country">' + cname + '</span>';
+        if (hasRoutes) footHTML += '<span class="w-footer-country">' + cname + '</span>';
       }
       c.cities.forEach(function (city) {
         // Nav dropdown + mobile overlay chips: one link per CITY -> its internal hub.
@@ -938,6 +944,10 @@
     document.documentElement.lang = lang;
     document.querySelectorAll('.w-lang').forEach(function (w) { var c = w.querySelector('.w-lang-code'); if (c) c.textContent = lang.toUpperCase(); var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-label', 'Change language (' + lang.toUpperCase() + ')'); w.querySelectorAll('.w-lang-opt').forEach(function (o) { o.setAttribute('aria-selected', o.getAttribute('data-lang') === lang ? 'true' : 'false'); }); });
     try { localStorage.setItem('wogoLang', lang); } catch (e) {}
+    // Tell any mounted component (the booking calendar widget) that the page
+    // language changed, so it re-renders its own strings instead of staying
+    // in whatever language it happened to mount in.
+    try { document.dispatchEvent(new CustomEvent('wogo:langchange', { detail: { lang: lang } })); } catch (e) {}
   }
   var saved = null;
   try { saved = localStorage.getItem('wogoLang'); } catch (e) {}
@@ -1670,7 +1680,14 @@
 .w-wa{position:fixed;right:18px;bottom:22px;z-index:65;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(37,211,102,.45),0 2px 6px rgba(0,0,0,.2);transition:transform .18s ease,box-shadow .18s ease;}
 .w-wa:hover{transform:scale(1.07);box-shadow:0 10px 26px rgba(37,211,102,.55),0 2px 6px rgba(0,0,0,.22);}
 .w-wa:focus-visible{outline:3px solid #128C3E;outline-offset:3px;}
-@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}}
+@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}
+/* The float is fixed in the bottom-right, so it would otherwise sit on top of
+   whatever the page ends with. Reserve room below the last block of content
+   (footer, and the booking widget section) so nothing is trapped under it at
+   rest. 86px offset already clears the sticky CTA bar. */
+.w-footer{padding-bottom:144px;}
+.w-calsec{padding-bottom:104px;}
+.wogo-calendar,.w-paused{margin-bottom:24px;}}
 @media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
 </style>
 <!-- ===== /WOGO WHATSAPP FLOAT ===== -->
@@ -1683,8 +1700,8 @@
   function $(id){ return document.getElementById(id); }
   function show(which){ ['conf-loading','conf-ok','conf-fallback'].forEach(function(id){ var el=$(id); if(el) el.hidden=(id!==which); }); }
   function lang(){ return document.documentElement.lang === 'nl' ? 'nl' : 'en'; }
-  var LABELS = { en:{exp:'Experience',date:'Date',time:'Start time',guests:'Guests',total:'Total paid',g1:'guest',gN:'guests'},
-                 nl:{exp:'Ervaring',date:'Datum',time:'Starttijd',guests:'Gasten',total:'Totaal betaald',g1:'gast',gN:'gasten'} };
+  var LABELS = { en:{exp:'Experience',date:'Date',time:'Start time',guests:'Guests',gift:'Gift card',total:'Total paid',g1:'guest',gN:'guests'},
+                 nl:{exp:'Ervaring',date:'Datum',time:'Starttijd',guests:'Gasten',gift:'Cadeaubon',total:'Totaal betaald',g1:'gast',gN:'gasten'} };
   function money(c,cur){ try{ return new Intl.NumberFormat(lang()==='nl'?'nl-NL':'en-GB',{style:'currency',currency:cur||'EUR'}).format((c||0)/100); }catch(e){ return ((c||0)/100).toFixed(2)+' '+(cur||'EUR'); } }
   function niceDate(d){ try{ return new Intl.DateTimeFormat(lang()==='nl'?'nl-NL':'en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date(d+'T12:00:00')); }catch(e){ return d; } }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
@@ -1711,7 +1728,14 @@
       var nm=b.first_name?(', '+b.first_name):'';
       var t=$('conf-title'); if(t){ t.textContent=(lang()==='nl'?'Je boeking is bevestigd':"You're booked")+nm+'! 🍸'; }
       var pw=b.party===1?L.g1:L.gN, card=$('conf-card');
-      if(card) card.innerHTML = rowH(esc(L.exp),esc(b.route_name))+rowH(esc(L.date),esc(niceDate(b.date)))+rowH(esc(L.time),esc(b.slot))+rowH(esc(L.guests),esc(b.party+' '+pw))+rowH(esc(L.total),esc(money(b.amount_cents,b.currency)));
+      // Gift card, when one was redeemed: shown as its own line ABOVE "Total paid"
+      // so the guest can see why the total is lower than the ticket price.
+      // (amount_cents from the API is already net of the gift card.)
+      var giftRow='';
+      if(b.gift_applied_cents>0){
+        giftRow=rowH(esc(L.gift), esc(b.gift_code||'')+' · −'+esc(money(b.gift_applied_cents,b.currency)));
+      }
+      if(card) card.innerHTML = rowH(esc(L.exp),esc(b.route_name))+rowH(esc(L.date),esc(niceDate(b.date)))+rowH(esc(L.time),esc(b.slot))+rowH(esc(L.guests),esc(b.party+' '+pw))+giftRow+rowH(esc(L.total),esc(money(b.amount_cents,b.currency)));
       var pi=$('conf-poster-img'); if(pi){ if(b.poster_url){ pi.src=b.poster_url; pi.alt=b.route_name||'WOGO Cocktail Walk'; } else if(pi.parentNode){ pi.parentNode.style.display='none'; } }
     }catch(e){}
     try{ trackPurchase(b); }catch(e){}

@@ -18,6 +18,11 @@
      ========================================================================= -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="../site.webmanifest">
+<meta name="theme-color" content="#ffaa81">
 <title>The WOGO Journal · Cocktail Culture &amp; City Guides | WOGO</title>
 <meta name="robots" content="noindex"> <!-- REMOVE at cutover -->
 <link rel="canonical" href="https://www.wogococktailwalk.com/blog/">
@@ -66,6 +71,10 @@
      bg=blush · surface=cream · text=espresso · headings=ink · muted=brown-soft ·
      accent=salmon (spice, not base; text on salmon = espresso; on-dark text = blush). ===== */
   :root {
+    /* Salmon-family text that actually passes WCAG AA. The display salmon
+       (--wogo-salmon-deep #f2905c) is only 2.3:1 on cream — fine as a BACKGROUND,
+       never as text. Use this for inline links and small labels instead. */
+    --wogo-salmon-ink: #a34a12;
     --wogo-blush: #ffe5d9;        /* lightest — page background, soft fills   */
     --wogo-brown-soft: #7e5541;   /* muted text, captions                     */
     --wogo-brown: #643e2b;        /* secondary text, borders                  */
@@ -93,7 +102,7 @@
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; } }
   .w-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   .w-hero { position: relative; width: 100%; min-height: 420px; overflow: hidden; background: linear-gradient(160deg, var(--wogo-espresso) 0%, var(--wogo-ink) 100%); color: var(--wogo-blush); }
-  .w-hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  .w-hero-video { position: absolute; inset: 0; width: 100%; max-width: 100%; height: 100%; object-fit: cover; z-index: 0; }
   .w-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(26,20,16,0.40) 0%, rgba(26,20,16,0.72) 100%); z-index: 1; }
   /* ── Language dropdown: trigger pill + expandable menu (data-driven — see WOGO_LANGS in the foot script; scales beyond EN/NL) ── */
   .w-lang { position: relative; display: inline-flex; }
@@ -156,7 +165,7 @@
   .bl-card-img { aspect-ratio:16/10; overflow:hidden; }
   .bl-card-img img { width:100%; height:100%; object-fit:cover; transition:transform .5s; }
   .bl-card-body { padding:18px 20px 22px; display:flex; flex-direction:column; gap:8px; }
-  .bl-cat { font-size:10.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--wogo-salmon-deep); }
+  .bl-cat { font-size:10.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--wogo-brown, #643e2b); }
   .bl-card h3 { font-size:19px; font-weight:900; color:var(--wogo-ink); line-height:1.2; }
   .bl-card p { font-size:14px; line-height:1.55; color:var(--wogo-espresso); font-weight:500; }
   .bl-meta { font-size:12px; font-weight:700; color:var(--wogo-brown-soft); margin-top:2px; }
@@ -447,10 +456,10 @@
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../rotterdam/hidden-gems/hidden-gems-hero.jpg" alt="New cocktail bars in Rotterdam"></div>
       <div class="bl-card-body">
-        <span class="bl-cat">City guide</span>
-        <h3>New bars in Rotterdam to add to your night out</h3>
-        <p>The freshest openings worth building a night around.</p>
-        <span class="bl-meta">4 min read</span>
+        <span class="bl-cat" data-i18n="bl_c_city">City guide</span>
+        <h3 data-i18n="bl_p3_t">New bars in Rotterdam to add to your night out</h3>
+        <p data-i18n="bl_p3_x">The freshest openings worth building a night around.</p>
+        <span class="bl-meta" data-i18n="bl_p3_m">4 min read</span>
       </div>
     </a>
 
@@ -458,10 +467,10 @@
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../rotterdam/premium-gin-walk/premium-gin-walk-hero.jpg" alt="Rotterdam premium gin cocktail walk"></div>
       <div class="bl-card-body">
-        <span class="bl-cat">News</span>
-        <h3>Rotterdam's new premium cocktail walk with Bobby's Gin</h3>
-        <p>A more elevated route through Rotterdam's high-end bars.</p>
-        <span class="bl-meta">4 min read</span>
+        <span class="bl-cat" data-i18n="bl_c_news">News</span>
+        <h3 data-i18n="bl_p4_t">Rotterdam's new premium cocktail walk with Bobby's Gin</h3>
+        <p data-i18n="bl_p4_x">A more elevated route through Rotterdam's high-end bars.</p>
+        <span class="bl-meta" data-i18n="bl_p4_m">4 min read</span>
       </div>
     </a>
 
@@ -469,10 +478,10 @@
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../utrecht/utrecht-hero.jpg" alt="Cocktail bars in Utrecht"></div>
       <div class="bl-card-body">
-        <span class="bl-cat">City guide</span>
-        <h3>Top 7 bars in Utrecht to visit for a great night out</h3>
-        <p>The Utrecht bars our guests come back for, in one list.</p>
-        <span class="bl-meta">6 min read</span>
+        <span class="bl-cat" data-i18n="bl_c_city">City guide</span>
+        <h3 data-i18n="bl_p5_t">Top 7 bars in Utrecht to visit for a great night out</h3>
+        <p data-i18n="bl_p5_x">The Utrecht bars our guests come back for, in one list.</p>
+        <span class="bl-meta" data-i18n="bl_p5_m">6 min read</span>
       </div>
     </a>
 
@@ -480,10 +489,10 @@
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../utrecht/friends-cocktails-lounge.jpg" alt="A night out in Utrecht"></div>
       <div class="bl-card-body">
-        <span class="bl-cat">City guide</span>
-        <h3>An ultimate night out in Utrecht, one cocktail at a time</h3>
-        <p>How to turn an evening in Utrecht into a proper cocktail walk.</p>
-        <span class="bl-meta">5 min read</span>
+        <span class="bl-cat" data-i18n="bl_c_city">City guide</span>
+        <h3 data-i18n="bl_p6_t">An ultimate night out in Utrecht, one cocktail at a time</h3>
+        <p data-i18n="bl_p6_x">How to turn an evening in Utrecht into a proper cocktail walk.</p>
+        <span class="bl-meta" data-i18n="bl_p6_m">5 min read</span>
       </div>
     </a>
 
@@ -491,10 +500,10 @@
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../amsterdam/amsterdam-hero.jpg" alt="Amsterdam Cocktail Week bars"></div>
       <div class="bl-card-body">
-        <span class="bl-cat">City guide</span>
-        <h3>The ultimate guide to Amsterdam Cocktail Week bars</h3>
-        <p>Where to go during Amsterdam Cocktail Week, and beyond.</p>
-        <span class="bl-meta">6 min read</span>
+        <span class="bl-cat" data-i18n="bl_c_city">City guide</span>
+        <h3 data-i18n="bl_p7_t">The ultimate guide to Amsterdam Cocktail Week bars</h3>
+        <p data-i18n="bl_p7_x">Where to go during Amsterdam Cocktail Week, and beyond.</p>
+        <span class="bl-meta" data-i18n="bl_p7_m">6 min read</span>
       </div>
     </a>
 
@@ -645,6 +654,22 @@
     bl_p2_t: "De beste cocktailbars in Rotterdam",
     bl_p2_x: "Waar Rotterdam écht drinkt: de buurten, de sfeer, en hoe je er in één avond het beste van proeft.",
     bl_p2_m: "7 min lezen",
+    bl_c_news: "Nieuws",
+    bl_p3_t: "Nieuwe bars in Rotterdam voor je avondje uit",
+    bl_p3_x: "De verste openingen waar je een hele avond omheen wilt bouwen.",
+    bl_p3_m: "4 min lezen",
+    bl_p4_t: "Rotterdams nieuwe premium cocktailwandeling met Bobby's Gin",
+    bl_p4_x: "Een verfijndere route langs de high-end bars van Rotterdam.",
+    bl_p4_m: "4 min lezen",
+    bl_p5_t: "Top 7 bars in Utrecht voor een geweldig avondje uit",
+    bl_p5_x: "De Utrechtse bars waar onze gasten voor terugkomen, in één lijst.",
+    bl_p5_m: "6 min lezen",
+    bl_p6_t: "Het ultieme avondje uit in Utrecht, cocktail voor cocktail",
+    bl_p6_x: "Hoe je van een avond in Utrecht een echte cocktailwandeling maakt.",
+    bl_p6_m: "5 min lezen",
+    bl_p7_t: "De ultieme gids voor de bars van Amsterdam Cocktail Week",
+    bl_p7_x: "Waar je heen moet tijdens Amsterdam Cocktail Week, en daarna.",
+    bl_p7_m: "6 min lezen",
     group_eyebrow: "Voor groepen", group_h2: "Vrijgezellenfeesten, verjaardagen &amp; teamuitjes",
     group_p: "Wij regelen de bars, de tijden en de tafels. Jullie nemen het gezelschap mee. Groepen van 6 tot 30, gepersonaliseerde routes mogelijk.",
     group_btn: "Plan jullie groepswandeling →",
@@ -686,7 +711,9 @@
      country heading appears automatically now there is more than one country.
      Replace the London routes below with the real ones at launch. */
   { code:'gb', name:{en:'United Kingdom',nl:'Verenigd Koninkrijk'}, cities: [
-    { name:'London', hub:'london/', routes:[ {name:'London Soho', url:'london/soho/'} ] }
+    /* London has no bookable route yet, so it carries NO footer route link —
+       only the city hub in the nav. Add its routes here at launch. */
+    { name:'London', hub:'london/', routes:[] }
   ] } ] };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function renderRoutes(lang) {
@@ -698,10 +725,14 @@
     var navHTML = '', ovHTML = '', footHTML = '';
     countries.forEach(function (c) {
       var cname = esc((c.name && (c.name[lang] || c.name.en)) || '');
+      // A country with no bookable routes (London pre-launch) still gets its city
+      // hub in the nav, but no FOOTER heading — a heading with no links under it
+      // reads as a broken list.
+      var hasRoutes = c.cities.some(function (city) { return (city.routes || []).length; });
       if (multi) {
         navHTML += '<li class="w-nav-country" aria-hidden="true">' + cname + '</li>';
         ovHTML += '<span class="w-nav-ov-country">' + cname + '</span>';
-        footHTML += '<span class="w-footer-country">' + cname + '</span>';
+        if (hasRoutes) footHTML += '<span class="w-footer-country">' + cname + '</span>';
       }
       c.cities.forEach(function (city) {
         // Nav dropdown + mobile overlay chips: one link per CITY -> its internal hub.
@@ -750,6 +781,10 @@
     document.documentElement.lang = lang;
     document.querySelectorAll('.w-lang').forEach(function (w) { var c = w.querySelector('.w-lang-code'); if (c) c.textContent = lang.toUpperCase(); var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-label', 'Change language (' + lang.toUpperCase() + ')'); w.querySelectorAll('.w-lang-opt').forEach(function (o) { o.setAttribute('aria-selected', o.getAttribute('data-lang') === lang ? 'true' : 'false'); }); });
     try { localStorage.setItem('wogoLang', lang); } catch (e) {}
+    // Tell any mounted component (the booking calendar widget) that the page
+    // language changed, so it re-renders its own strings instead of staying
+    // in whatever language it happened to mount in.
+    try { document.dispatchEvent(new CustomEvent('wogo:langchange', { detail: { lang: lang } })); } catch (e) {}
   }
   var saved = null;
   try { saved = localStorage.getItem('wogoLang'); } catch (e) {}
@@ -1420,7 +1455,14 @@
 .w-wa{position:fixed;right:18px;bottom:22px;z-index:65;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(37,211,102,.45),0 2px 6px rgba(0,0,0,.2);transition:transform .18s ease,box-shadow .18s ease;}
 .w-wa:hover{transform:scale(1.07);box-shadow:0 10px 26px rgba(37,211,102,.55),0 2px 6px rgba(0,0,0,.22);}
 .w-wa:focus-visible{outline:3px solid #128C3E;outline-offset:3px;}
-@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}}
+@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}
+/* The float is fixed in the bottom-right, so it would otherwise sit on top of
+   whatever the page ends with. Reserve room below the last block of content
+   (footer, and the booking widget section) so nothing is trapped under it at
+   rest. 86px offset already clears the sticky CTA bar. */
+.w-footer{padding-bottom:144px;}
+.w-calsec{padding-bottom:104px;}
+.wogo-calendar,.w-paused{margin-bottom:24px;}}
 @media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
 </style>
 <!-- ===== /WOGO WHATSAPP FLOAT ===== -->

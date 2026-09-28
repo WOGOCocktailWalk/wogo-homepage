@@ -5,7 +5,7 @@
      WOGO CONTENT PAGE — /groups/ — built from the /how-it-works/ reference
      template (see that file's header for the copy-a-folder instructions).
      This is the group-bookings funnel page: it publishes the group price
-     (€32,95pp — the biggest documented gap in the old funnel) and hands the
+     (€29,95pp — the biggest documented gap in the old funnel) and hands the
      visitor to the EXISTING live Wix enquiry form. It is an inquiry handoff,
      NOT a checkout — the on-site Apps Script form is a later phase.
      ========================================================================= -->
@@ -13,29 +13,33 @@
      PRE-PUBLISH FLAGS for Maroussia — resolve BEFORE cutover:
      1) MINIMUM GROUP SIZE — resolved 2026-07-06: every page sitewide now
         says 6 to 30, matching the minimum the live Wix enquiry form accepts.
-     2) CONFIRM THE RATE — €32,95 per person (excl. snacks) is taken from
-        the live Wix group-bookings page. Confirm it's still current:
-        this is the first time WOGO publishes the group price anywhere.
+     2) RATE — resolved 2026-09-28: €29,95 per person, matching the rest of
+        the site. Groups pay the standard per-person price.
      ============================================================ -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="../site.webmanifest">
+<meta name="theme-color" content="#ffaa81">
 <!-- PAGE-EDIT: title + description + canonical -->
 <title>Group Cocktail Walks · Bachelorettes &amp; Team Outings | WOGO</title>
 <meta name="robots" content="noindex"> <!-- REMOVE at cutover -->
 <link rel="canonical" href="https://www.wogococktailwalk.com/groups/">
-<meta name="description" content="Group cocktail walks for bachelorette parties, birthdays & team outings — 6–30 people, Amsterdam & Rotterdam. €32,95pp, quote within one working day.">
+<meta name="description" content="Group cocktail walks for bachelorette parties, birthdays & team outings — 6–30 people, Amsterdam & Rotterdam. €29,95pp, quote within one working day.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="WOGO Cocktail Walk">
 <meta property="og:title" content="Cocktail Walks for Groups of 6–30 | WOGO">
-<meta property="og:description" content="Bachelorette, birthday or team outing: 3 reserved bars, 3 cocktails per person, personalized routes possible. €32,95pp in Amsterdam & Rotterdam — get your quote within one working day.">
+<meta property="og:description" content="Bachelorette, birthday or team outing: 3 reserved bars, 3 cocktails per person, personalized routes possible. €29,95pp in Amsterdam & Rotterdam — get your quote within one working day.">
 <meta property="og:url" content="https://www.wogococktailwalk.com/groups/">
-<meta property="og:image" content="https://static.wixstatic.com/media/2a3b9e_99fbb075fa914c2fbb49e09e2301db3d~mv2.jpg/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_99fbb075fa914c2fbb49e09e2301db3d~mv2.jpg">
+<meta property="og:image" content="https://www.wogococktailwalk.com/og/wogo-groups.jpg">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Cocktail Walks for Groups of 6–30 | WOGO">
-<meta name="twitter:description" content="3 reserved bars, 3 cocktails per person, personalized routes possible. €32,95pp in Amsterdam & Rotterdam — get your quote within one working day.">
-<meta name="twitter:image" content="https://static.wixstatic.com/media/2a3b9e_99fbb075fa914c2fbb49e09e2301db3d~mv2.jpg/v1/fill/w_1200,h_630,al_c,q_85,enc_auto/2a3b9e_99fbb075fa914c2fbb49e09e2301db3d~mv2.jpg">
+<meta name="twitter:description" content="3 reserved bars, 3 cocktails per person, personalized routes possible. €29,95pp in Amsterdam & Rotterdam — get your quote within one working day.">
+<meta name="twitter:image" content="https://www.wogococktailwalk.com/og/wogo-groups.jpg">
 <!-- PAGE-EDIT: structured data — content pages carry LIGHT Organization markup only.
      The FAQ page owns FAQPage markup; the mini FAQ below is a UI element, not
      schema (Google penalises duplicated FAQPage blocks across pages). -->
@@ -97,7 +101,7 @@
      (fast, zero assets to swap when this template is copied). */
   .w-hero-flat { min-height: 360px; background: linear-gradient(160deg, var(--wogo-ink) 0%, var(--wogo-espresso) 100%); }
   /* Photo hero (V3): a real WOGO group shot behind the copy, same language as the city hubs. */
-  .w-hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  .w-hero-video { position: absolute; inset: 0; width: 100%; max-width: 100%; height: 100%; object-fit: cover; z-index: 0; }
   .w-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(26,20,16,0.40) 0%, rgba(26,20,16,0.72) 100%); z-index: 1; }
   /* ── Language dropdown: trigger pill + expandable menu (data-driven — see WOGO_LANGS in the foot script; scales beyond EN/NL) ── */
   .w-lang { position: relative; display: inline-flex; }
@@ -148,7 +152,14 @@
   /* bespoke children on this page's dark bands: checklist flips to cream;
      text inside the cream form card stays dark (it sits on its own light surface) */
   .w-section.brown .w-incl-list li { color: var(--wogo-cream); }
-  .w-section.brown .w-form-note { color: var(--wogo-brown); }
+  /* The enquiry form sits on the DARK espresso band, so the status line has to be
+     light — it was --wogo-brown (#643e2b) on #3f2b21, about 1.5:1 and unreadable. */
+  .w-section.brown .w-form-note { color: var(--wogo-blush); }
+  .w-section.brown .w-form-note.is-ok  { color: #9fe3bd; }
+  .w-section.brown .w-form-note.is-err { color: #ffb9ab; }
+  /* Honeypot — gone for humans, still a real field for bots (not display:none). */
+  .w-form-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .w-form-submit[disabled] { opacity: 0.6; cursor: progress; }
   .w-pad { padding-left: 24px; padding-right: 24px; }
   .w-head { text-align: center; margin-bottom: 28px; }
   .w-head h2 { font-size: clamp(26px, 3.4vw, 38px); font-weight: 900; letter-spacing: -0.01em; text-transform: uppercase; margin-bottom: 6px; }
@@ -612,7 +623,7 @@
     </div>
     <div class="w-group-col">
       <div class="w-eyebrow" data-i18n="cont_eyebrow">What a group walk contains</div>
-      <h2 data-i18n="cont_h2">Everything sorted, from €32,95 per person</h2>
+      <h2 data-i18n="cont_h2">Everything sorted, from €29,95 per person</h2>
       <ul class="w-incl-list wg-stagger">
         <li data-i18n="cont_1">3 signature cocktails each — one at every bar</li>
         <li data-i18n="cont_2">3 hand-picked bars, tables reserved for the whole group</li>
@@ -660,7 +671,8 @@
     <p data-i18n="form_p">One short form. We'll get back to you within one working day with dates and a quote.</p>
   </div>
 
-  <!-- FRONT-END ONLY — no backend yet. novalidate so our own handler owns validation. -->
+  <!-- Posts to the Worker's POST /api/contact with kind:"group" (backend/SETUP.md §17).
+       novalidate so our own handler owns validation and messaging. -->
   <form class="w-form" id="wGroupForm" novalidate>
     <div class="w-form-grid">
       <label class="w-field"><span data-i18n="form_name">Name</span><input name="name" autocomplete="name" required></label>
@@ -669,7 +681,7 @@
       <label class="w-field"><span data-i18n="form_city">City</span>
         <select name="city">
           <option value="" data-i18n="form_city_ph">Choose a city</option>
-          <option>Utrecht</option><option>Rotterdam</option><option>Amsterdam</option><option>Groningen</option>
+          <option>Rotterdam</option><option>Amsterdam</option><option>Delft</option><option>Groningen</option><option>Utrecht</option>
         </select></label>
       <label class="w-field"><span data-i18n="form_size">Group size</span><input type="number" min="6" name="size" placeholder="e.g. 12"></label>
       <label class="w-field"><span data-i18n="form_date">Preferred date</span><input type="date" name="date"></label>
@@ -686,7 +698,11 @@
       <label class="w-field w-field-wide"><span data-i18n="form_notes">Special requests</span>
         <textarea name="notes" rows="3" placeholder="Dietary needs, timings, group splits…"></textarea></label>
     </div>
-    <button type="submit" class="w-form-submit" data-i18n="form_submit">Get your quote →</button>
+    <!-- Honeypot: off-screen, not type="hidden" (a bot reads that). Must arrive empty. -->
+    <div class="w-form-hp" aria-hidden="true">
+      <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+    </div>
+    <button type="submit" class="w-form-submit" id="wGroupSubmit" data-i18n="form_submit">Get your quote →</button>
     <p class="w-form-note" data-i18n="form_note" role="status" aria-live="polite"></p>
   </form>
   <p class="w-form-tiny" data-i18n="form_tiny">Prefer to talk it through? Call or WhatsApp <a href="tel:+31202101168" class="w-mail">+31 20 210 1168</a> — weekdays 10:00–18:00.</p>
@@ -834,7 +850,7 @@
     occ_link: "Vertel ons jullie plan →",
     /* --- what a group walk contains --- */
     cont_eyebrow: "Wat een groepswandeling bevat",
-    cont_h2: "Alles geregeld, vanaf €32,95 per persoon",
+    cont_h2: "Alles geregeld, vanaf €29,95 per persoon",
     cont_1: "3 signature cocktails per persoon — één bij elke bar",
     cont_2: "3 zorgvuldig gekozen bars, tafels gereserveerd voor de hele groep",
     cont_3: "Groepen van 6 tot 30 — één contactpersoon, één simpel plan",
@@ -929,7 +945,9 @@
      country heading appears automatically now there is more than one country.
      Replace the London routes below with the real ones at launch. */
   { code:'gb', name:{en:'United Kingdom',nl:'Verenigd Koninkrijk'}, cities: [
-    { name:'London', hub:'london/', routes:[ {name:'London Soho', url:'london/soho/'} ] }
+    /* London has no bookable route yet, so it carries NO footer route link —
+       only the city hub in the nav. Add its routes here at launch. */
+    { name:'London', hub:'london/', routes:[] }
   ] } ] };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function renderRoutes(lang) {
@@ -941,10 +959,14 @@
     var navHTML = '', ovHTML = '', footHTML = '';
     countries.forEach(function (c) {
       var cname = esc((c.name && (c.name[lang] || c.name.en)) || '');
+      // A country with no bookable routes (London pre-launch) still gets its city
+      // hub in the nav, but no FOOTER heading — a heading with no links under it
+      // reads as a broken list.
+      var hasRoutes = c.cities.some(function (city) { return (city.routes || []).length; });
       if (multi) {
         navHTML += '<li class="w-nav-country" aria-hidden="true">' + cname + '</li>';
         ovHTML += '<span class="w-nav-ov-country">' + cname + '</span>';
-        footHTML += '<span class="w-footer-country">' + cname + '</span>';
+        if (hasRoutes) footHTML += '<span class="w-footer-country">' + cname + '</span>';
       }
       c.cities.forEach(function (city) {
         // Nav dropdown + mobile overlay chips: one link per CITY -> its internal hub.
@@ -995,6 +1017,10 @@
     document.documentElement.lang = lang;
     document.querySelectorAll('.w-lang').forEach(function (w) { var c = w.querySelector('.w-lang-code'); if (c) c.textContent = lang.toUpperCase(); var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-label', 'Change language (' + lang.toUpperCase() + ')'); w.querySelectorAll('.w-lang-opt').forEach(function (o) { o.setAttribute('aria-selected', o.getAttribute('data-lang') === lang ? 'true' : 'false'); }); });
     try { localStorage.setItem('wogoLang', lang); } catch (e) {}
+    // Tell any mounted component (the booking calendar widget) that the page
+    // language changed, so it re-renders its own strings instead of staying
+    // in whatever language it happened to mount in.
+    try { document.dispatchEvent(new CustomEvent('wogo:langchange', { detail: { lang: lang } })); } catch (e) {}
   }
   var saved = null;
   try { saved = localStorage.getItem('wogoLang'); } catch (e) {}
@@ -1106,64 +1132,103 @@
     });
   });
 
-  /* ===== GROUP ENQUIRY FORM — FRONT-END ONLY =====================================
-     There is NO backend yet. Until Formspree / Netlify Forms is wired up, on submit
-     we (a) show a friendly confirmation and (b) build a mailto: to
-     info@wogoamsterdam.com and open it, so NO lead is lost pre-backend. We never
-     fake a network call or imply the data was stored on a server.
-     BACKEND HOOKUP LATER: replace the mailto block with a fetch() POST to the form
-     endpoint (keep the mailto as the no-JS / failed-request fallback).
+  /* ===== GROUP ENQUIRY FORM — posts to the Worker ================================
+     Submits to POST /api/contact with kind:"group" (backend/SETUP.md §17). The
+     guest gets an auto-acknowledgement in their own language; info@ gets the lead
+     with reply-to set to them. Only a real 200 {ok:true} shows the success state —
+     we never fake it. On a network/server failure the guest is given the mailto as
+     a fallback so no lead is lost. 'website' is a honeypot and must arrive empty.
      ============================================================================= */
   var wForm = document.getElementById('wGroupForm');
   if (wForm) {
     var noteEl = wForm.querySelector('.w-form-note');
+    var submitBtn = document.getElementById('wGroupSubmit');
+    var GROUP_API = 'https://wogo-booking-backend.purple-glitter-720e.workers.dev';
     var FORM_TXT = {
       en: {
-        need: 'Please add your name and email so we can reply.',
-        ok: function (n) { return 'Thanks' + (n ? ' ' + n : '') + ' — got it! We’ll come back with dates and a quote within one working day.'; },
-        fallback: ' Didn’t your email app open? ',
-        link: 'Email us directly →'
+        need: 'Please add your name and a valid email so we can reply.',
+        sending: 'Sending…',
+        ok: function (n) { return 'Thanks' + (n ? ' ' + n : '') + ' — we’ve got your request and reply within 1 working day.'; },
+        rate: 'Too many attempts — please wait a few minutes and try again.',
+        rateIn: 'Too many attempts — please try again in about %m minute(s).',
+        net: 'We couldn’t send that just now. Please try again, or email ',
+        mail: 'info@wogoamsterdam.com'
       },
       nl: {
-        need: 'Vul je naam en e-mail in, dan kunnen we je antwoorden.',
-        ok: function (n) { return 'Bedankt' + (n ? ' ' + n : '') + ' — helemaal genoteerd! We reageren binnen één werkdag met data en een offerte.'; },
-        fallback: ' Ging je e-mailprogramma niet open? ',
-        link: 'Mail ons rechtstreeks →'
+        need: 'Vul je naam en een geldig e-mailadres in, dan kunnen we je antwoorden.',
+        sending: 'Versturen…',
+        ok: function (n) { return 'Bedankt' + (n ? ' ' + n : '') + ' — we hebben je aanvraag ontvangen en reageren binnen 1 werkdag.'; },
+        rate: 'Te veel pogingen — wacht een paar minuten en probeer het opnieuw.',
+        rateIn: 'Te veel pogingen — probeer het over ongeveer %m minuut(en) opnieuw.',
+        net: 'Versturen lukte even niet. Probeer het opnieuw, of mail ',
+        mail: 'info@wogoamsterdam.com'
       }
     };
-    wForm.addEventListener('submit', function (e) {
+    var GROUP_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    function note(kind, html) {
+      noteEl.className = 'w-form-note' + (kind ? ' is-' + kind : '');
+      noteEl.innerHTML = html;
+    }
+    wForm.addEventListener('submit', async function (e) {
       e.preventDefault();
       var t = FORM_TXT[document.documentElement.lang === 'nl' ? 'nl' : 'en'];
       var f = wForm.elements;
       var name = (f.name.value || '').trim();
       var email = (f.email.value || '').trim();
-      if (!name || !email) {
-        noteEl.textContent = t.need;
+      if (!name || !GROUP_EMAIL_RE.test(email)) {
+        note('err', esc(t.need));
         try { (name ? f.email : f.name).focus(); } catch (_) {}
         return;
       }
       var city = f.city.value || '';
-      var size = f.size.value || '';
-      var subject = 'Group enquiry — ' + (city || 'city TBC') + ' · ' + (size || '?') + ' guests';
-      var body = [
-        'Name: ' + name,
-        'Email: ' + email,
-        'Phone: ' + (f.phone.value || ''),
-        'City: ' + city,
-        'Group size: ' + size,
-        'Preferred date: ' + (f.date.value || ''),
-        'Occasion: ' + (f.occasion.value || ''),
-        '',
-        'Special requests:',
-        (f.notes.value || '')
-      ].join('\n');
-      var mailto = 'mailto:info@wogoamsterdam.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-      // Friendly confirmation + a manual fallback link (never a fake server "success").
-      noteEl.innerHTML = esc(t.ok(name)) + '<br>' + t.fallback + '<a href="' + mailto + '">' + t.link + '</a>';
-      wogoTrack('group_enquiry_submit', city);
+      var size = parseInt(f.size.value, 10);
+      // Occasion and special requests have no dedicated backend fields, so they
+      // ride in the message — that is what the owner reads in the notification.
+      var message = [
+        f.occasion.value ? 'Occasion: ' + f.occasion.value : '',
+        (f.notes.value || '').trim()
+      ].filter(Boolean).join('\n\n') || 'Group booking request.';
+
+      var original = submitBtn.textContent;
+      submitBtn.disabled = true; submitBtn.textContent = t.sending;
+      note('', '');
+      try {
+        var res = await fetch(GROUP_API + '/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            kind: 'group', name: name, email: email,
+            phone: (f.phone.value || '').trim(),
+            city: city,
+            date: (f.date.value || ''),           // free text server-side
+            party_size: (size > 0 ? size : undefined),
+            message: message,
+            locale: document.documentElement.lang === 'nl' ? 'nl' : 'en',
+            website: (f.website && f.website.value) || ''   // honeypot
+          })
+        });
+        var data = await res.json().catch(function () { return {}; });
+        if (res.ok && data.ok) {
+          wForm.reset();
+          note('ok', esc(t.ok(name)));
+          wogoTrack('group_enquiry_submit', city);
+          reportHeight();
+          submitBtn.disabled = false; submitBtn.textContent = original;
+          return;
+        }
+        if (res.status === 429) {
+          var secs = Number(data.retry_after_seconds || 0);
+          note('err', esc(secs > 0 ? t.rateIn.replace('%m', String(Math.max(1, Math.ceil(secs / 60)))) : t.rate));
+        } else if (res.status === 400) {
+          note('err', esc(t.need));
+        } else {
+          note('err', esc(t.net) + '<a class="w-mail" href="mailto:info@wogoamsterdam.com">' + t.mail + '</a>');
+        }
+      } catch (err) {
+        note('err', esc(t.net) + '<a class="w-mail" href="mailto:info@wogoamsterdam.com">' + t.mail + '</a>');
+      }
+      submitBtn.disabled = false; submitBtn.textContent = original;
       reportHeight();
-      // Open the visitor's email app so the enquiry actually reaches the inbox today.
-      try { window.location.href = mailto; } catch (_) {}
     });
   }
 
@@ -1774,7 +1839,14 @@
 .w-wa{position:fixed;right:18px;bottom:22px;z-index:65;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(37,211,102,.45),0 2px 6px rgba(0,0,0,.2);transition:transform .18s ease,box-shadow .18s ease;}
 .w-wa:hover{transform:scale(1.07);box-shadow:0 10px 26px rgba(37,211,102,.55),0 2px 6px rgba(0,0,0,.22);}
 .w-wa:focus-visible{outline:3px solid #128C3E;outline-offset:3px;}
-@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}}
+@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}
+/* The float is fixed in the bottom-right, so it would otherwise sit on top of
+   whatever the page ends with. Reserve room below the last block of content
+   (footer, and the booking widget section) so nothing is trapped under it at
+   rest. 86px offset already clears the sticky CTA bar. */
+.w-footer{padding-bottom:144px;}
+.w-calsec{padding-bottom:104px;}
+.wogo-calendar,.w-paused{margin-bottom:24px;}}
 @media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
 </style>
 <!-- ===== /WOGO WHATSAPP FLOAT ===== -->

@@ -24,6 +24,11 @@
      ========================================================================= -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="../site.webmanifest">
+<meta name="theme-color" content="#ffaa81">
 <!-- ============================================================================
      EXAMPLE — replace with real London routes.
      This whole /london/ folder is a WORKING PLACEHOLDER that proves the
@@ -37,7 +42,7 @@
 <title>Cocktail Walk London | 3 Bars, 1 Night | WOGO</title>
 <meta name="robots" content="noindex"> <!-- EXAMPLE placeholder — REMOVE at London launch -->
 <link rel="canonical" href="https://www.wogococktailwalk.com/london/">
-<meta name="description" content="London's self-guided cocktail walk: 3 hand-picked bars, 3 cocktails, tables reserved. From £34.95pp. Just show up. Pick your route.">
+<meta name="description" content="WOGO's self-guided cocktail walk is coming to London: 3 hand-picked Soho bars, 3 cocktails, tables reserved. Join the launch list.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="WOGO Cocktail Walk">
 <meta property="og:title" content="London Cocktail Walk · 3 bars, 3 cocktails, 1 night">
@@ -84,6 +89,15 @@
      Warm salmon→coral gradient, espresso ink (AA), on-brand (BRAND.md lists
      salmon for warm CTAs). Page CSS, outside the shared nav/footer fences. ===== */
   :root{
+    /* shared WOGO palette tokens — keep in sync with index.html :root */
+    --wogo-blush: #ffe5d9;
+    --wogo-brown-soft: #7e5541;
+    --wogo-brown: #643e2b;
+    --wogo-espresso: #3f2b21;
+    --wogo-ink: #201611;
+    --wogo-salmon: #ffaa81;
+    --wogo-cream: #fffaf6;
+    --wogo-salmon-deep: #f2905c;
     --wogo-cta-bg:       linear-gradient(135deg, #ffaa81 0%, #f2905c 100%);
     --wogo-cta-bg-hover: linear-gradient(135deg, #f2905c 0%, #f2905c 100%);
     --wogo-cta-ink:      #3f2b21;
@@ -99,7 +113,7 @@
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; } }
   .w-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   .w-hero { position: relative; width: 100%; min-height: 440px; overflow: hidden; background: #201611; color: #fff; }
-  .w-hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  .w-hero-video { position: absolute; inset: 0; width: 100%; max-width: 100%; height: 100%; object-fit: cover; z-index: 0; }
   .w-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(26,20,16,0.40) 0%, rgba(26,20,16,0.72) 100%); z-index: 1; }
   /* ── Language dropdown: trigger pill + expandable menu (data-driven — see WOGO_LANGS in the foot script; scales beyond EN/NL) ── */
   .w-lang { position: relative; display: inline-flex; }
@@ -142,19 +156,20 @@
   .w-head .w-hint { font-size: 12px; color: #7e5541; margin-top: 6px; font-weight: 500; }
   .w-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #3f2b21; margin-bottom: 10px; text-align: center; }
   .w-scroller-wrap { position: relative; }
-  .w-scroller { display: flex; justify-content: safe center; gap: 16px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 4px 24px 18px; }
+  .w-scroller { display: flex; justify-content: safe center; gap: 16px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-padding-inline: 24px; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 4px 24px 18px; }
   .w-scroller::-webkit-scrollbar { display: none; }
   .w-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: #3f2b21; color: #ffe5d9; border: none; cursor: pointer; font-size: 24px; line-height: 1; display: flex; align-items: center; justify-content: center; z-index: 6; box-shadow: 0 4px 14px rgba(0,0,0,0.22); transition: background 0.2s, transform 0.15s; }
   .w-arrow:hover { background: #201611; }
   .w-arrow:active { transform: translateY(-50%) scale(0.92); }
-  .w-arrow-left { left: -4px; }
-  .w-arrow-right { right: -4px; }
+  .w-arrow-left { left: 0; }
+  .w-arrow-right { right: 0; }   /* was -4px: overflowed the viewport by 4px */
   .w-citycard { flex: 0 0 290px; scroll-snap-align: start; display: flex; flex-direction: column; background: #fffaf6; border-radius: 14px; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 14px rgba(0,0,0,0.05); }
   .w-citycard:hover { transform: translateY(-4px); box-shadow: 0 14px 28px rgba(0,0,0,0.12); }
   .w-citycard:hover .w-citycard-img-inner { transform: scale(1.05); }
   .w-citycard-img { position: relative; aspect-ratio: 16/10; overflow: hidden; background: linear-gradient(135deg, #ffe5d9 0%, #3f2b21 100%); }
   .w-citycard-img-inner { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; color: transparent; font-size: 0; }
   .w-citycard-badge { position: absolute; bottom: 12px; left: 12px; background: #ffe5d9; color: #201611; padding: 5px 11px; border-radius: 999px; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; z-index: 2; }
+  .w-citycard-flag[data-i18n="flag_soon"] { background:#7c6455; color:#fff; }   /* Coming soon — muted, matches the homepage */
   .w-citycard-flag { position: absolute; top: 10px; right: 10px; background: #3f2b21; color: #ffe5d9; font-size: 9.5px; font-weight: 800; letter-spacing: 0.06em; padding: 5px 9px; border-radius: 999px; text-transform: uppercase; z-index: 3; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
   .w-citycard-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.35) 100%); z-index: 1; }
   .w-citycard-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 5px; flex: 1 1 auto; }
@@ -415,7 +430,7 @@
          the real #book section and keep "Book now" / "Boek nu". -->
     <div class="w-nav-right">
       <div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"></ul></div>
-      <a href="#routes" class="w-nav-cta w-scroll" data-i18n="nav_cta">View dates</a>
+      <a href="#routes" class="w-nav-cta w-scroll" data-i18n="nav_cta">See the route</a>
       <button class="w-nav-burger" id="wNavBurger" aria-label="Open menu" aria-controls="wNavOverlay" aria-expanded="false"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -435,7 +450,7 @@
       <li><a href="../contact/" class="w-navlink w-nav-ov-link" data-i18n="foot_contact">Contact</a></li>
       <li class="w-nav-ov-lang"><div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"></ul></div></li>
     </ul>
-    <a href="#routes" class="w-nav-cta w-scroll" data-i18n="nav_cta">View dates</a>
+    <a href="#routes" class="w-nav-cta w-scroll" data-i18n="nav_cta">See the route</a>
   </div>
 </nav>
 <!-- ===== /WOGO SHARED NAV v4 ===== -->
@@ -459,7 +474,7 @@
     <div class="w-hero-cities">London · Soho</div>
     <h1 data-i18n="hero_h1">London Cocktail Walk</h1>
     <p class="w-hero-sub" data-i18n="hero_sub">Three bars. Three cocktails. One unforgettable night.</p>
-    <a href="#routes" class="w-hero-cta w-scroll" data-i18n="hero_cta">View dates →</a>
+    <a href="#routes" class="w-hero-cta w-scroll" data-i18n="hero_cta">See the route →</a>
   </div>
 </section>
 
@@ -479,7 +494,7 @@
     <button class="w-arrow w-arrow-right" data-target="routesScroller" aria-label="Scroll right">&#8250;</button>
     <div class="w-scroller wg-stagger" id="routesScroller">
       <!-- EXAMPLE London route — Soho. Replace with the real London route(s) at launch. -->
-      <div class="w-citycard"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="../hero-poster-1600.webp" alt="London Soho — hidden-gem cocktail bars"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">Soho</div><div class="w-citycard-flag" data-i18n="flag_new">New</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="rc1_route">London Soho</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="rc1_theme">★ Theme: Hidden gems</div><div class="w-citycard-row" data-i18n="rc1_loc">📍 Starts in the heart of Soho</div><div class="w-citycard-row" data-i18n="rc1_day">📅 Thu–Sat · start 6pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-price">£34.95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="soho/book/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book Now</a><a href="soho/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
+      <div class="w-citycard"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="../hero-poster-1600.webp" alt="London Soho — hidden-gem cocktail bars"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">Soho</div><div class="w-citycard-flag" data-i18n="flag_soon">Coming soon</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="rc1_route">London Soho</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="rc1_theme">★ Theme: Hidden gems</div><div class="w-citycard-row" data-i18n="rc1_loc">📍 Starts in the heart of Soho</div><div class="w-citycard-row" data-i18n="rc1_day">📅 Thu–Sat · start 6pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-price">£34.95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="../contact/?topic=london-launch" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Join the launch list</a><a href="soho/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
     </div>
   </div>
   <div class="w-pad" style="text-align:center;margin-top:18px;"><span data-i18n="route_reassure" style="display:inline-block;font-size:12.5px;font-weight:700;color:#3f2b21;letter-spacing:0.01em;">✓ Reservations &amp; route map included &nbsp;·&nbsp; ✓ Mocktail option on every route &nbsp;·&nbsp; ✓ Questions? <a class="w-mail" href="mailto:info@wogoamsterdam.com">Write us</a></span></div>
@@ -569,7 +584,7 @@
 
 <!-- Sticky mobile bottom CTA — standalone mode only; scrolls to the route cards,
      so per the CTA-honesty rule it says "View dates", not "Book". -->
-<div class="w-sticky-cta" id="wStickyCta"><a href="#routes" class="w-sticky-cta-btn w-scroll" data-i18n="sticky_cta">View dates · from £34.95</a></div>
+<div class="w-sticky-cta" id="wStickyCta"><a href="#routes" class="w-sticky-cta-btn w-scroll" data-i18n="sticky_cta">See the route · from £34.95</a></div>
 
 <script>
 (function () {
@@ -596,14 +611,14 @@
        hero trust strip removed in V5) --- */
     hero_h1: "London Cocktail Walk",
     hero_sub: "Drie bars. Drie cocktails. Eén onvergetelijke avond.",
-    hero_cta: "Bekijk data →",
+    hero_cta: "Bekijk de route →",
     /* --- routes --- */
     routes_h2: "Kies je London-route",
     routes_p: "Vanaf £34.95 per persoon",
     route_reassure: "✓ Reserveringen &amp; routekaart inbegrepen &nbsp;·&nbsp; ✓ Mocktail-optie op elke route &nbsp;·&nbsp; ✓ Vragen? <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">Stuur ons een bericht</a>",
-    per_person: "per persoon", book: "Boek nu", info: "Bekijk route",
+    per_person: "per persoon", book: "Zet me op de lanceerlijst", info: "Bekijk route",
     time34: "🕐 3–4 uur",
-    flag_new: "Nieuw",
+    flag_soon: "Binnenkort",
     rc1_route: "London Soho", rc1_theme: "★ Thema: Verborgen parels", rc1_loc: "📍 Start in hartje Soho", rc1_day: "📅 do–za · start 18.00",
     /* --- spotlight review REMOVED in V3 (reviews live on the homepage only);
        how-it-works / cross-city / groups / gift-card strips + FAQ accordion +
@@ -611,8 +626,8 @@
     /* --- FAQ link line (the full FAQ lives at /faq/) --- */
     faq_more: "Vragen? Bekijk de volledige FAQ →",
     /* --- nav --- */
-    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_about: "Over WOGO", nav_cta: "Bekijk data",
-    sticky_cta: "Bekijk data · vanaf £34.95",
+    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_about: "Over WOGO", nav_cta: "Bekijk de route",
+    sticky_cta: "Bekijk de route · vanaf £34.95",
     /* --- footer --- */
     foot_tag: "Drie bars die je nooit zelf had gevonden. Eén avond die je altijd bijblijft.",
     foot_c1_h: "Routes", foot_c2_h: "Ontdek",
@@ -655,7 +670,9 @@
      country heading appears automatically now there is more than one country.
      Replace the London routes below with the real ones at launch. */
   { code:'gb', name:{en:'United Kingdom',nl:'Verenigd Koninkrijk'}, cities: [
-    { name:'London', hub:'london/', routes:[ {name:'London Soho', url:'london/soho/'} ] }
+    /* London has no bookable route yet, so it carries NO footer route link —
+       only the city hub in the nav. Add its routes here at launch. */
+    { name:'London', hub:'london/', routes:[] }
   ] } ] };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function renderRoutes(lang) {
@@ -667,10 +684,14 @@
     var navHTML = '', ovHTML = '', footHTML = '';
     countries.forEach(function (c) {
       var cname = esc((c.name && (c.name[lang] || c.name.en)) || '');
+      // A country with no bookable routes (London pre-launch) still gets its city
+      // hub in the nav, but no FOOTER heading — a heading with no links under it
+      // reads as a broken list.
+      var hasRoutes = c.cities.some(function (city) { return (city.routes || []).length; });
       if (multi) {
         navHTML += '<li class="w-nav-country" aria-hidden="true">' + cname + '</li>';
         ovHTML += '<span class="w-nav-ov-country">' + cname + '</span>';
-        footHTML += '<span class="w-footer-country">' + cname + '</span>';
+        if (hasRoutes) footHTML += '<span class="w-footer-country">' + cname + '</span>';
       }
       c.cities.forEach(function (city) {
         // Nav dropdown + mobile overlay chips: one link per CITY -> its internal hub.
@@ -721,6 +742,10 @@
     document.documentElement.lang = lang;
     document.querySelectorAll('.w-lang').forEach(function (w) { var c = w.querySelector('.w-lang-code'); if (c) c.textContent = lang.toUpperCase(); var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-label', 'Change language (' + lang.toUpperCase() + ')'); w.querySelectorAll('.w-lang-opt').forEach(function (o) { o.setAttribute('aria-selected', o.getAttribute('data-lang') === lang ? 'true' : 'false'); }); });
     try { localStorage.setItem('wogoLang', lang); } catch (e) {}
+    // Tell any mounted component (the booking calendar widget) that the page
+    // language changed, so it re-renders its own strings instead of staying
+    // in whatever language it happened to mount in.
+    try { document.dispatchEvent(new CustomEvent('wogo:langchange', { detail: { lang: lang } })); } catch (e) {}
   }
   var saved = null;
   try { saved = localStorage.getItem('wogoLang'); } catch (e) {}
@@ -1445,7 +1470,14 @@
 .w-wa{position:fixed;right:18px;bottom:22px;z-index:65;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(37,211,102,.45),0 2px 6px rgba(0,0,0,.2);transition:transform .18s ease,box-shadow .18s ease;}
 .w-wa:hover{transform:scale(1.07);box-shadow:0 10px 26px rgba(37,211,102,.55),0 2px 6px rgba(0,0,0,.22);}
 .w-wa:focus-visible{outline:3px solid #128C3E;outline-offset:3px;}
-@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}}
+@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}
+/* The float is fixed in the bottom-right, so it would otherwise sit on top of
+   whatever the page ends with. Reserve room below the last block of content
+   (footer, and the booking widget section) so nothing is trapped under it at
+   rest. 86px offset already clears the sticky CTA bar. */
+.w-footer{padding-bottom:144px;}
+.w-calsec{padding-bottom:104px;}
+.wogo-calendar,.w-paused{margin-bottom:24px;}}
 @media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
 </style>
 <!-- ===== /WOGO WHATSAPP FLOAT ===== -->

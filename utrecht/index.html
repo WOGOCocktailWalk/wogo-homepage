@@ -30,6 +30,11 @@
      ========================================================================= -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="../site.webmanifest">
+<meta name="theme-color" content="#ffaa81">
 <!-- ROUTE-EDIT: title + description + canonical.
      Pattern: {Official Name} — {Theme} Cocktail Walk | WOGO. The official name
      is the HOMEPAGE ROUTE-CARD name (c1..c7): "Utrecht City Centre" — the
@@ -37,11 +42,11 @@
 <title>Cocktail Walk Utrecht | 3 Bars, 1 Night | WOGO</title>
 <meta name="robots" content="noindex"> <!-- REMOVE at cutover -->
 <link rel="canonical" href="https://www.wogococktailwalk.com/utrecht/">
-<meta name="description" content="Utrecht's self-guided cocktail walk: 3 hand-picked bars, 3 cocktails, tables reserved, daily departures. From €29,95pp.">
+<meta name="description" content="The Utrecht cocktail walk is paused until spring 2027. Join the waitlist and hear first when our three hidden-gem bars reopen.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="WOGO Cocktail Walk">
 <meta property="og:title" content="Utrecht Cocktail Walk · 3 bars, 3 cocktails, 1 night">
-<meta property="og:description" content="Utrecht's self-guided cocktail walk: 3 hand-picked bars, 3 cocktails, tables reserved, daily departures. From €29,95 per person.">
+<meta property="og:description" content="The Utrecht cocktail walk is paused until spring 2027. Join the waitlist and hear first when our three hidden-gem bars reopen.">
 <meta property="og:url" content="https://www.wogococktailwalk.com/utrecht/">
 <!-- og:image must be an absolute URL — points at this page's self-hosted hero
      on the production domain (update only if the domain ever changes). -->
@@ -50,14 +55,14 @@
 <meta property="og:locale:alternate" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Utrecht Cocktail Walk · 3 bars, 3 cocktails, 1 night">
-<meta name="twitter:description" content="3 hand-picked Utrecht bars, 3 cocktails, tables reserved. Daily departures from €29,95 per person.">
+<meta name="twitter:description" content="The Utrecht cocktail walk is paused until spring 2027. Join the waitlist to hear first when it reopens.">
 <meta name="twitter:image" content="https://www.wogococktailwalk.com/utrecht/utrecht-hero.jpg">
 <!-- ROUTE-EDIT: structured data — route pages use TouristTrip + Offer (price!)
      + BreadcrumbList (Home > City > Route). "name" is the OFFICIAL route-card
      name ("Utrecht City Centre"); "alternateName" carries the theme. Offer.url =
      the EXISTING Wix booking calendar. Route pages carry NO review node. -->
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"TouristTrip","name":"Utrecht City Centre","alternateName":"Hidden Gems Cocktail Walk","description":"Self-guided cocktail walk through Utrecht's city centre: three hidden-gem cocktail bars, three signature cocktails or mocktails, tables reserved at every stop. Bookable every night, start 5.30pm, 3–4 hours.","url":"https://www.wogococktailwalk.com/utrecht/","image":"https://www.wogococktailwalk.com/utrecht/utrecht-hero.jpg","touristType":["Couples","Friends","Colleagues"],"itinerary":{"@type":"ItemList","numberOfItems":3,"itemListElement":[{"@type":"ListItem","position":1,"name":"A bar at the heart of Utrecht's creative cocktail culture"},{"@type":"ListItem","position":2,"name":"A vibrant social hotspot in the city centre"},{"@type":"ListItem","position":3,"name":"A cozy tasting-journey bar inspired by travel and storytelling"}]},"provider":{"@type":"Organization","name":"WOGO Cocktail Walk","telephone":"+31202101168","email":"info@wogoamsterdam.com","url":"https://www.wogococktailwalk.com/"},"offers":{"@type":"Offer","price":"29.95","priceCurrency":"EUR","availability":"https://schema.org/InStock","url":"https://www.wogococktailwalk.com/utrecht/book/"}}
+{"@context":"https://schema.org","@type":"TouristTrip","name":"Utrecht City Centre","alternateName":"Hidden Gems Cocktail Walk","description":"Self-guided cocktail walk through Utrecht's city centre: three hidden-gem cocktail bars, three signature cocktails or mocktails, tables reserved at every stop. Paused until spring 2027.","url":"https://www.wogococktailwalk.com/utrecht/","image":"https://www.wogococktailwalk.com/utrecht/utrecht-hero.jpg","touristType":["Couples","Friends","Colleagues"],"itinerary":{"@type":"ItemList","numberOfItems":3,"itemListElement":[{"@type":"ListItem","position":1,"name":"A bar at the heart of Utrecht's creative cocktail culture"},{"@type":"ListItem","position":2,"name":"A vibrant social hotspot in the city centre"},{"@type":"ListItem","position":3,"name":"A cozy tasting-journey bar inspired by travel and storytelling"}]},"provider":{"@type":"Organization","name":"WOGO Cocktail Walk","telephone":"+31202101168","email":"info@wogoamsterdam.com","url":"https://www.wogococktailwalk.com/"},"offers":{"@type":"Offer","price":"29.95","priceCurrency":"EUR","availability":"https://schema.org/SoldOut","url":"https://www.wogococktailwalk.com/utrecht/"}}
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.wogococktailwalk.com/"},{"@type":"ListItem","position":2,"name":"Utrecht","item":"https://www.wogococktailwalk.com/utrecht/"}]}
@@ -87,6 +92,10 @@
      Warm salmon→coral gradient, espresso ink (AA on salmon-deep). Drives every
      primary CTA on this page. Page CSS, outside the shared nav/footer fences. ===== */
   :root{
+    /* shared WOGO palette tokens — keep in sync with index.html :root */
+    --wogo-brown-soft: #7e5541;
+    --wogo-brown: #643e2b;
+    --wogo-salmon-deep: #f2905c;
     --wogo-cta-bg:       linear-gradient(135deg, #ffaa81 0%, #f2905c 100%);
     --wogo-cta-bg-hover: linear-gradient(135deg, #f2905c 0%, #f2905c 100%);
     --wogo-cta-ink:      #3f2b21;
@@ -109,7 +118,7 @@
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; } }
   .w-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   .w-hero { position: relative; width: 100%; min-height: 440px; overflow: hidden; background: #1a1410; color: #fff; }
-  .w-hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  .w-hero-video { position: absolute; inset: 0; width: 100%; max-width: 100%; height: 100%; object-fit: cover; z-index: 0; }
   .w-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(26,20,16,0.40) 0%, rgba(26,20,16,0.72) 100%); z-index: 1; }
   /* ── Language dropdown: trigger pill + expandable menu (data-driven — see WOGO_LANGS in the foot script; scales beyond EN/NL) ── */
   .w-lang { position: relative; display: inline-flex; }
@@ -165,13 +174,13 @@
   .w-head .w-hint { font-size: 12px; color: #8a7066; margin-top: 6px; font-weight: 500; }
   .w-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #3f2b21; margin-bottom: 10px; text-align: center; }
   .w-scroller-wrap { position: relative; }
-  .w-scroller { display: flex; justify-content: safe center; gap: 16px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 4px 24px 18px; }
+  .w-scroller { display: flex; justify-content: safe center; gap: 16px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-padding-inline: 24px; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 4px 24px 18px; }
   .w-scroller::-webkit-scrollbar { display: none; }
   .w-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: #3f2b21; color: #ffe5d9; border: none; cursor: pointer; font-size: 24px; line-height: 1; display: flex; align-items: center; justify-content: center; z-index: 6; box-shadow: 0 4px 14px rgba(0,0,0,0.22); transition: background 0.2s, transform 0.15s; }
   .w-arrow:hover { background: #1a1410; }
   .w-arrow:active { transform: translateY(-50%) scale(0.92); }
-  .w-arrow-left { left: -4px; }
-  .w-arrow-right { right: -4px; }
+  .w-arrow-left { left: 0; }
+  .w-arrow-right { right: 0; }   /* was -4px: overflowed the viewport by 4px */
   .w-citycard { flex: 0 0 290px; scroll-snap-align: start; display: flex; flex-direction: column; background: #fff; border-radius: 14px; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 14px rgba(0,0,0,0.05); }
   .w-citycard:hover { transform: translateY(-4px); box-shadow: 0 14px 28px rgba(0,0,0,0.12); }
   .w-citycard:hover .w-citycard-img-inner { transform: scale(1.05); }
@@ -663,11 +672,11 @@
       <nav class="w-crumbs" aria-label="Breadcrumb"><a href="../" data-i18n="crumb_home">Home</a><span class="w-crumb-sep" aria-hidden="true">›</span><span aria-current="page">Utrecht</span></nav>
       <!-- Genuine flag — mirrors the homepage flag_new + this route's true
            every-night availability. No numbers, no fake scarcity. -->
-      <div class="w-hero-flag" data-i18n="hero_flag">New · bookable every night</div>
+      <div class="w-hero-flag" data-i18n="hero_flag">Paused · back in spring 2027</div>
       <!-- Eyebrow carries CITY · THEME; H1 is the city walk name -->
       <div class="w-eyebrow w-hero-kicker" data-i18n="hero_kicker">Utrecht · Hidden Gems</div>
       <h1 data-i18n="hero_h1">Utrecht Cocktail Walk</h1>
-      <p class="w-hero-sub" data-i18n="hero_p">The only WOGO route that runs every single night.</p>
+      <p class="w-hero-sub" data-i18n="hero_p">This route is taking a winter break. Leave your email and you will hear first when it reopens.</p>
     </div>
 
     <!-- ============================================================
@@ -685,11 +694,11 @@
         <li class="w-ticket-row"><span class="w-ticket-ico" aria-hidden="true">🍸</span><span data-i18n="ticket_r1">3 cocktails</span></li>
         <li class="w-ticket-row"><span class="w-ticket-ico" aria-hidden="true">🍹</span><span data-i18n="ticket_r2">3 bars</span></li>
         <li class="w-ticket-row"><span class="w-ticket-ico" aria-hidden="true">🗺️</span><span data-i18n="ticket_r3">Digital map</span></li>
-        <li class="w-ticket-row"><span class="w-ticket-ico" aria-hidden="true">📅</span><span data-i18n="ticket_r4">Daily</span></li>
+        <li class="w-ticket-row"><span class="w-ticket-ico" aria-hidden="true">📅</span><span data-i18n="ticket_r4">Back spring 2027</span></li>
       </ul>
       <div class="w-ticket-foot">
         <div class="w-ticket-price"><b>€29,95</b><small data-i18n="per_person">per person</small></div>
-        <a href="book/" class="w-ticket-cta w-navlink" data-i18n="hero_cta">Book your walk →</a>
+        <a href="../contact/?topic=utrecht-waitlist" class="w-ticket-cta w-navlink" data-i18n="hero_cta">Join the waitlist →</a>
       </div>
     </aside>
   </div>
@@ -767,9 +776,9 @@
   <div class="w-eyebrow wg-reveal" data-i18n="book_eyebrow">Book your walk</div>
   <h2 class="wg-reveal" data-i18n="book_h2">Utrecht City Centre</h2>
   <div class="w-book-price">€29,95 <small data-i18n="per_person">per person</small></div>
-  <p class="w-book-deal" data-i18n="book_deal">Bookable every night · 3 cocktails · 3 tables reserved · you just show up</p>
-  <a href="book/" class="w-book-btn w-navlink" data-i18n="book_btn">Book your walk → €29,95</a>
-  <p class="w-book-fine" data-i18n="book_fine">You'll pick your date and start time in the booking calendar. Plans change? Get in touch at <a class="w-mail" href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a> — we'll see what's possible.</p>
+  <p class="w-book-deal" data-i18n="book_deal">The Utrecht walk is paused until spring 2027 · leave your email and we will tell you first when it reopens</p>
+  <a href="../contact/?topic=utrecht-waitlist" class="w-book-btn w-navlink" data-i18n="book_btn">Join the waitlist</a>
+  <p class="w-book-fine" data-i18n="book_fine">Our Utrecht bars are on a winter break, so there are no dates to book right now. Prefer to email? Reach us at <a class="w-mail" href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a>.</p>
 </section>
 
 <!-- ============================================================
@@ -895,17 +904,17 @@
     nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_about: "Over WOGO", nav_cta: "Boek je walk", gallery_h2: "Een voorproefje van de avond",
     /* --- hero + breadcrumbs --- */
     crumb_home: "Home",
-    hero_flag: "Nieuw · elke avond te boeken",
+    hero_flag: "Gepauzeerd · terug in het voorjaar van 2027",
     hero_kicker: "Utrecht · Verborgen parels",
     hero_h1: "Utrecht Cocktail Walk",
-    hero_p: "De enige WOGO-route die elke avond van de week loopt.",
-    hero_cta: "Boek je walk →",
+    hero_p: "Deze route heeft even winterpauze. Laat je e-mail achter en je hoort het als eerste zodra we weer opengaan.",
+    hero_cta: "Zet me op de wachtlijst →",
     /* --- tickets-include card (mirrors the live route ticket graphic) --- */
     ticket_head: "Je ticket bevat",
     ticket_r1: "3 cocktails",
     ticket_r2: "3 bars",
     ticket_r3: "Digitale kaart",
-    ticket_r4: "Dagelijks",
+    ticket_r4: "Terug voorjaar 2027",
     /* --- quick facts (complement the ticket card, never repeat it) --- */
     fact_1: "📍 Centrum van Utrecht",
     fact_2: "🕐 Start 17.30 · 3–4 uur",
@@ -920,12 +929,12 @@
     inc_2: "Loop de route in volgorde (bar 1 → bar 2 → bar 3) — je tafels zijn al gereserveerd.",
     inc_3: "Kies bij elke stop één signature cocktail van het exclusieve WOGO-menu — inbegrepen in je ticket. Mocktails beschikbaar.",
     /* --- book block --- */
-    book_eyebrow: "Boek je walk",
+    book_eyebrow: "Wachtlijst",
     book_h2: "Utrecht Centrum",
     per_person: "per persoon",
-    book_deal: "Elke avond te boeken · 3 cocktails · 3 tafels gereserveerd · jij hoeft alleen op te dagen",
-    book_btn: "Boek je walk → €29,95",
-    book_fine: "Je kiest je datum en starttijd in de boekingskalender. Plannen gewijzigd? Neem contact op via <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">info@wogoamsterdam.com</a> — dan kijken we wat mogelijk is.",
+    book_deal: "De Utrecht-walk is gepauzeerd tot het voorjaar van 2027 · laat je e-mail achter en je hoort het als eerste zodra we weer opengaan",
+    book_btn: "Zet me op de wachtlijst",
+    book_fine: "Onze Utrechtse bars hebben winterpauze, dus er zijn nu geen data om te boeken. Liever mailen? Je bereikt ons op <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">info@wogoamsterdam.com</a>.",
     /* --- next-city routes (homepage card names, verbatim) --- */
     sib_h2: "Volgende stad: Rotterdam",
     sib_p: "Utrecht al gelopen? In Rotterdam lopen drie routes. Andere bars, dezelfde formule.",
@@ -979,7 +988,9 @@
      country heading appears automatically now there is more than one country.
      Replace the London routes below with the real ones at launch. */
   { code:'gb', name:{en:'United Kingdom',nl:'Verenigd Koninkrijk'}, cities: [
-    { name:'London', hub:'london/', routes:[ {name:'London Soho', url:'london/soho/'} ] }
+    /* London has no bookable route yet, so it carries NO footer route link —
+       only the city hub in the nav. Add its routes here at launch. */
+    { name:'London', hub:'london/', routes:[] }
   ] } ] };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function renderRoutes(lang) {
@@ -991,10 +1002,14 @@
     var navHTML = '', ovHTML = '', footHTML = '';
     countries.forEach(function (c) {
       var cname = esc((c.name && (c.name[lang] || c.name.en)) || '');
+      // A country with no bookable routes (London pre-launch) still gets its city
+      // hub in the nav, but no FOOTER heading — a heading with no links under it
+      // reads as a broken list.
+      var hasRoutes = c.cities.some(function (city) { return (city.routes || []).length; });
       if (multi) {
         navHTML += '<li class="w-nav-country" aria-hidden="true">' + cname + '</li>';
         ovHTML += '<span class="w-nav-ov-country">' + cname + '</span>';
-        footHTML += '<span class="w-footer-country">' + cname + '</span>';
+        if (hasRoutes) footHTML += '<span class="w-footer-country">' + cname + '</span>';
       }
       c.cities.forEach(function (city) {
         // Nav dropdown + mobile overlay chips: one link per CITY -> its internal hub.
@@ -1045,6 +1060,10 @@
     document.documentElement.lang = lang;
     document.querySelectorAll('.w-lang').forEach(function (w) { var c = w.querySelector('.w-lang-code'); if (c) c.textContent = lang.toUpperCase(); var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-label', 'Change language (' + lang.toUpperCase() + ')'); w.querySelectorAll('.w-lang-opt').forEach(function (o) { o.setAttribute('aria-selected', o.getAttribute('data-lang') === lang ? 'true' : 'false'); }); });
     try { localStorage.setItem('wogoLang', lang); } catch (e) {}
+    // Tell any mounted component (the booking calendar widget) that the page
+    // language changed, so it re-renders its own strings instead of staying
+    // in whatever language it happened to mount in.
+    try { document.dispatchEvent(new CustomEvent('wogo:langchange', { detail: { lang: lang } })); } catch (e) {}
   }
   var saved = null;
   try { saved = localStorage.getItem('wogoLang'); } catch (e) {}
@@ -1776,7 +1795,14 @@
 .w-wa{position:fixed;right:18px;bottom:22px;z-index:65;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(37,211,102,.45),0 2px 6px rgba(0,0,0,.2);transition:transform .18s ease,box-shadow .18s ease;}
 .w-wa:hover{transform:scale(1.07);box-shadow:0 10px 26px rgba(37,211,102,.55),0 2px 6px rgba(0,0,0,.22);}
 .w-wa:focus-visible{outline:3px solid #128C3E;outline-offset:3px;}
-@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}}
+@media (max-width:720px){.w-wa{bottom:86px;right:14px;width:52px;height:52px;}
+/* The float is fixed in the bottom-right, so it would otherwise sit on top of
+   whatever the page ends with. Reserve room below the last block of content
+   (footer, and the booking widget section) so nothing is trapped under it at
+   rest. 86px offset already clears the sticky CTA bar. */
+.w-footer{padding-bottom:144px;}
+.w-calsec{padding-bottom:104px;}
+.wogo-calendar,.w-paused{margin-bottom:24px;}}
 @media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
 </style>
 <!-- ===== /WOGO WHATSAPP FLOAT ===== -->
