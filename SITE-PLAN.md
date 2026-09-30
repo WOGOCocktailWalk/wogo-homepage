@@ -23,8 +23,8 @@ English is the default (no prefix). Dutch mirrors live under `/nl/` with Dutch s
 | `/amsterdam/` | `/nl/amsterdam/` | City page (organic; ads paused there) | SEO |
 | `/groningen/` | `/nl/groningen/` | City page, can stay thin | SEO |
 | `/rotterdam/city-centre/`* | `/nl/rotterdam/…` | Route 1 product page → Book button | Funnel |
-| `/rotterdam/hidden-gems/`* | `/nl/rotterdam/verborgen-parels/` | Route 2 (best-seller) product page | Funnel |
-| `/rotterdam/premium-gin-walk/`* | `/nl/rotterdam/…` | Premium Bobby's Gin Walk (€34,95) | Funnel |
+| `/rotterdam/route-2/`* | `/nl/rotterdam/verborgen-parels/` | Route 2 (best-seller) product page | Funnel |
+| `/rotterdam/route-3-premium/`* | `/nl/rotterdam/…` | Premium Bobby's Gin Walk (€34,95) | Funnel |
 | `/utrecht/city-centre/`* | `/nl/utrecht/…` | Utrecht route page | Funnel |
 | `/amsterdam/noord-city-centre/`* | `/nl/amsterdam/…` | Amsterdam route page | Funnel |
 | `/groningen/gin-walk/`* | `/nl/groningen/…` | Groningen route page | Funnel |
@@ -155,7 +155,7 @@ A version number in the comment makes drift visible; a change = one find-and-rep
 
 ### How Dutch works (this is a real change from today)
 
-Today "Dutch" is a JavaScript text-swap on the same URL — Google only ever sees the English page, so Dutch searches can't find Dutch content. **Fix: every page becomes two physical files** — `/rotterdam/hidden-gems/index.html` (EN) and `/nl/rotterdam/verborgen-parels/index.html` (NL) — each with its language baked into the actual HTML, plus reciprocal hreflang tags (`en`, `nl`, `x-default`→EN). The EN/NL toggle button stays but now **navigates to the twin URL** instead of rewriting text in place. Not a rebuild: both languages' copy already exists in the current file's i18n dictionary — it's a split-and-paste job done once per template.
+Today "Dutch" is a JavaScript text-swap on the same URL — Google only ever sees the English page, so Dutch searches can't find Dutch content. **Fix: every page becomes two physical files** — `/rotterdam/route-2/index.html` (EN) and `/nl/rotterdam/verborgen-parels/index.html` (NL) — each with its language baked into the actual HTML, plus reciprocal hreflang tags (`en`, `nl`, `x-default`→EN). The EN/NL toggle button stays but now **navigates to the twin URL** instead of rewriting text in place. Not a rebuild: both languages' copy already exists in the current file's i18n dictionary — it's a split-and-paste job done once per template.
 
 ### Adding London later (the recipe)
 
@@ -221,7 +221,7 @@ Google Apps Script: verify Stripe signature → Sheet row → guest route email 
 ## 6. OWNER DECISIONS NEEDED
 
 1. **Stripe or Mollie?** → **Default: Stripe.** Ten-minute check first: any existing/dormant Mollie account? Absent one, Stripe's feature set (quantity, date dropdowns, promo codes for gift cards, GBP later) wins.
-2. **Real route slugs.** Are the neighbourhood-based guesses right (`/rotterdam/hidden-gems/`, `/rotterdam/city-centre/`, `/rotterdam/premium-gin-walk/`, `/utrecht/city-centre/`, `/amsterdam/noord-city-centre/`, `/groningen/gin-walk/`)? → **Default: name each route after its actual bar-cluster neighbourhood** — real place names beat theme words in local search. Needed before Phase 1 folders are created (renaming later = redirect mess).
+2. **Real route slugs.** Are the neighbourhood-based guesses right (`/rotterdam/route-2/`, `/rotterdam/city-centre/`, `/rotterdam/route-3-premium/`, `/utrecht/city-centre/`, `/amsterdam/noord-city-centre/`, `/groningen/gin-walk/`)? → **Default: name each route after its actual bar-cluster neighbourhood** — real place names beat theme words in local search. Needed before Phase 1 folders are created (renaming later = redirect mess).
 3. **Dutch slugs: localized or translated?** → **Default: localized** (`/nl/hoe-het-werkt/`, `/nl/cadeaubonnen/`, `/nl/rotterdam/verborgen-parels/`) — ranks better for Dutch searches; the cost is maintaining two slug sets by hand, acceptable at ~20 pages.
 4. **Google Search Console access** for wogococktailwalk.com, to export the full historical URL list for the redirect map. → If no property exists, verify one while the site is still on Wix.
 5. **Bar notification emails.** One reservation inbox per bar, per route — the exact list the webhook needs (Phase 2). → Copy whatever Wix currently uses.

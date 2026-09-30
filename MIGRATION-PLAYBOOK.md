@@ -352,9 +352,9 @@ while read old new; do code=$(curl -s -o /dev/null -w '%{http_code}' -L "https:/
 | `/` | `/` |
 | `/nl` and `/nl/*` | `/nl/` mirror (build) — fallback `/nl/{slug}` → EN twin |
 | `/utrecht` | `/utrecht/` |
-| `/rotterdam-cocktail-walk-route1` | `/rotterdam/witte-de-with/` |
-| `/rotterdam-cocktail-walk-route-2` | `/rotterdam/hidden-gems/` |
-| `/rotterdam-premium-cocktail-walk` | `/rotterdam/premium-gin-walk/` |
+| `/rotterdam-cocktail-walk-route1` | `/rotterdam/route-1/` |
+| `/rotterdam-cocktail-walk-route-2` | `/rotterdam/route-2/` |
+| `/rotterdam-premium-cocktail-walk` | `/rotterdam/route-3-premium/` |
 | `/amsterdam-cocktailwalk-route1` | `/amsterdam/` |
 | `/amsterdam-cocktailwalk-route2-premium` | `/amsterdam/` (decision) |
 | `/groningen-cocktail-walk` | `/groningen/` |
@@ -372,14 +372,14 @@ while read old new; do code=$(curl -s -o /dev/null -w '%{http_code}' -L "https:/
 | `/experiences`, `/experience-details`, `/book-online`, `/reservations`, `/bars`, `/plans-pricing`, `/search`, `/copy-of-home` | `/` |
 | `/booking-form` | `/` |
 | `/booking-calendar/utrecht-cocktail-walk` | `/utrecht/book/` |
-| `/booking-calendar/wogo-rotterdam-cocktail-walk`, `/booking-calendar/wogo-cocktail-walk-route-1` | `/rotterdam/witte-de-with/book/` |
-| `/booking-calendar/rotterdam-cocktail-walk-route-2` | `/rotterdam/hidden-gems/book/` |
-| `/booking-calendar/rotterdam-premium-cocktail-walk` | `/rotterdam/premium-gin-walk/book/` |
+| `/booking-calendar/wogo-rotterdam-cocktail-walk`, `/booking-calendar/wogo-cocktail-walk-route-1` | `/rotterdam/route-1/book/` |
+| `/booking-calendar/rotterdam-cocktail-walk-route-2` | `/rotterdam/route-2/book/` |
+| `/booking-calendar/rotterdam-premium-cocktail-walk` | `/rotterdam/route-3-premium/book/` |
 | `/booking-calendar/groningen-cocktail-walk` | `/groningen/book/` |
 | `/booking-calendar/*` (any other) | `/` |
-| `/service-page/wogo-rotterdam-cocktail-walk-route1`, `/service-page/wogo-cocktail-walk-route-1` | `/rotterdam/witte-de-with/` |
-| `/service-page/rotterdam-cocktail-walk-route-2` | `/rotterdam/hidden-gems/` |
-| `/service-page/rotterdam-premium-cocktail-walk`, `/service-page/wogo-cocktail-walk-route-2-premium` | `/rotterdam/premium-gin-walk/` |
+| `/service-page/wogo-rotterdam-cocktail-walk-route1`, `/service-page/wogo-cocktail-walk-route-1` | `/rotterdam/route-1/` |
+| `/service-page/rotterdam-cocktail-walk-route-2` | `/rotterdam/route-2/` |
+| `/service-page/rotterdam-premium-cocktail-walk`, `/service-page/wogo-cocktail-walk-route-2-premium` | `/rotterdam/route-3-premium/` |
 | `/service-page/utrecht-cocktail-walk` | `/utrecht/` |
 | `/service-page/groningen-cocktail-walk` | `/groningen/` |
 | `/service-page/delft-cocktail-walk` | `/delft/` |

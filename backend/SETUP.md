@@ -264,7 +264,7 @@ const WOGO_API = "https://wogo-booking-backend.<your-subdomain>.workers.dev";
 ```
 
 That's the **only** file that controls whether the calendar is on or off —
-it's already wired into `rotterdam/hidden-gems/index.html` (see that
+it's already wired into `rotterdam/route-2/index.html` (see that
 page's "OPTIONAL: WOGO SELF-HOSTED GUEST CALENDAR" comment block for
 exactly what was added and how to copy it onto the other 5 route pages).
 The moment this one line has a real URL in it, the calendar activates on
@@ -354,7 +354,7 @@ be pointed at your real Worker. Use the real route page instead, either:
   ```bash
   python3 -m http.server 8000
   ```
-  then open `http://localhost:8000/rotterdam/hidden-gems/` — `localhost` is
+  then open `http://localhost:8000/rotterdam/route-2/` — `localhost` is
   already on the Worker's allowed-origins list (`src/config.js`), so this
   works without any extra setup. (Opening the HTML file directly by
   double-clicking it, i.e. a `file://` address, will NOT work here — the
