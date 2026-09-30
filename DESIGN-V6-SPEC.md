@@ -512,7 +512,7 @@ Sequence: Hero (dark) → post grid (blush) → Gift/Groups strips → Final (da
 
     <a class="bl-card" href="best-cocktail-bars-in-rotterdam/">
       <div class="bl-card-img"><img loading="lazy" decoding="async"
-        src="../rotterdam/hidden-gems/hidden-gems-hero.jpg" alt="A cocktail bar in Rotterdam"></div>
+        src="../rotterdam/route-2/hidden-gems-hero.jpg" alt="A cocktail bar in Rotterdam"></div>
       <div class="bl-card-body">
         <span class="bl-cat" data-i18n="bl_c_city">City guide</span>
         <h3 data-i18n="bl_p2_t">The best cocktail bars in Rotterdam</h3>
@@ -605,7 +605,7 @@ Outline:
 - **H2 · How to taste the best of it in one night.** This is where WOGO fits: three hand-picked bars, tables reserved, a route that walks 5–15 min between stops — no research, no queueing, the surprise is the point. Link to `/rotterdam/`.
 - **bl-cta-band:** "See it for yourself — the Rotterdam Cocktail Walk, from €29,95." → button to `/rotterdam/`.
 - **Close:** the best bar in Rotterdam is the next one on your route.
-- Internal links: `/rotterdam/`, `/rotterdam/witte-de-with/`, `/rotterdam/hidden-gems/`, `/#cities`. Keyword: *best cocktail bars in Rotterdam* in H1, intro, one H2, meta.
+- Internal links: `/rotterdam/`, `/rotterdam/route-1/`, `/rotterdam/route-2/`, `/#cities`. Keyword: *best cocktail bars in Rotterdam* in H1, intro, one H2, meta.
 
 > Full Dutch translations for both posts go in each post's NL dict. Because posts are long-form, translate the whole body (not just labels); keep numbers/prices identical.
 
@@ -629,9 +629,9 @@ The footer Routes column currently shows internal nicknames ("Witte de With", "H
 ```js
 var WOGO_ROUTES = { countries: [ { code:'nl', name:{en:'Netherlands',nl:'Nederland'}, cities: [
   { name:'Rotterdam', hub:'rotterdam/', routes:[
-      {name:'Rotterdam Route 1', url:'rotterdam/witte-de-with/'},
-      {name:'Rotterdam Route 2', url:'rotterdam/hidden-gems/'},
-      {name:'Rotterdam Premium', url:'rotterdam/premium-gin-walk/'} ] },
+      {name:'Rotterdam Route 1', url:'rotterdam/route-1/'},
+      {name:'Rotterdam Route 2', url:'rotterdam/route-2/'},
+      {name:'Rotterdam Premium', url:'rotterdam/route-3-premium/'} ] },
   { name:'Utrecht',   hub:'utrecht/',   routes:[ {name:'Utrecht',           url:'utrecht/city-centre/'} ] },
   { name:'Amsterdam', hub:'amsterdam/', routes:[ {name:'Amsterdam Route 1', url:'amsterdam/ndsm-noord/'} ] },
   { name:'Groningen', hub:'groningen/', routes:[ {name:'Groningen',         url:'groningen/gin-walk/'} ] }

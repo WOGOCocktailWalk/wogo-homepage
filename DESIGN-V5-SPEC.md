@@ -68,7 +68,7 @@ Spacing between hero elements: eyebrow `mb 10px`, H1 `mb 14px`, subline `mb 20px
 then the CTA / ticket card. Hero min-height and overlay stay as they are per page.
 
 ### Three variants (visually unified — same scale, same overlay, same CTA)
-1. **Route** (`/rotterdam/hidden-gems/`, `/witte-de-with/`, `/premium-gin-walk/`,
+1. **Route** (`/rotterdam/route-2/`, `/witte-de-with/`, `/premium-gin-walk/`,
    `/utrecht/city-centre/`, `/groningen/gin-walk/`, `/amsterdam/ndsm-noord/`):
    LEFT-aligned. breadcrumbs → eyebrow (`CITY · THEME`) → H1 (route name) →
    subline → **ticket card** (price + Book button = the action). Keep `hero_flag`

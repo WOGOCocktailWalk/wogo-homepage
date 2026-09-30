@@ -183,9 +183,9 @@ export const ROUTE_PATHS = {
   utrecht: '/utrecht/',
   groningen: '/groningen/',
   delft: '/delft/',
-  'rotterdam-witte-de-with': '/rotterdam/witte-de-with/',
-  'rotterdam-hidden-gems': '/rotterdam/hidden-gems/',
-  'rotterdam-premium-gin': '/rotterdam/premium-gin-walk/',
+  'rotterdam-witte-de-with': '/rotterdam/route-1/',
+  'rotterdam-hidden-gems': '/rotterdam/route-2/',
+  'rotterdam-premium-gin': '/rotterdam/route-3-premium/',
 };
 
 export function routePathFor(route) {

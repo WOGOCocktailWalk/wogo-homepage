@@ -15,7 +15,7 @@ This spec is **implementable as written**: exact headlines (EN + NL), exact CSS,
 | `index.html` (home) | video/photo hero, good | **NONE (`wg-js` absent)** | 4 hardcoded review cards in a manual scroller | `hero_p` yes |
 | `rotterdam/` `utrecht/` `amsterdam/` `groningen/` (hubs) | **real photo hero** (`.w-hero` + `<img class="w-hero-video">`), but **static** (`w-hero-content`, no `wg-hero-anim`) | **NONE** | **YES — remove** (`.w-reviews` band, solo review) | **YES — remove** ("City Cocktail Walk — 3 Bars, 3 Cocktails, 1 Night") |
 | `groups/` `gift-cards/` `about/` | **`.w-hero-flat`** — espresso gradient, **no photo** ← the "sloppy static" ones | present (`wg-js`, `wg-hero-anim`) | groups: **remove**; others n/a | some `hero_p` |
-| route pages (`rotterdam/hidden-gems/` etc.) | photo hero | present | none (correct) | `hero_p` dashes yes |
+| route pages (`rotterdam/route-2/` etc.) | photo hero | present | none (correct) | `hero_p` dashes yes |
 
 **Design consequence:** two different hero fixes are needed — (A) **enrich** the hubs' existing photo heroes (motion + gradient + dash-free copy), and (B) **replace** the flat photo-less heroes on groups/gift-cards/about with real photo heroes. Plus a **sitewide dash sweep** and a **motion-floor top-up** on the homepage + hubs.
 
@@ -64,8 +64,8 @@ Replace the em dash with a full stop. Exact edits (EN markup **and** NL dict):
 | `utrecht/city-centre/` | `runs every single night — three hidden-gem bars` | `runs every single night. Three hidden-gem bars` |
 | `amsterdam/ndsm-noord/` | `cocktail bars — from an industrial-chic … NDSM wharf to the city centre.` | `cocktail bars, from an industrial-chic … NDSM wharf to the city centre.` |
 | `groningen/gin-walk/` | `clubbing street — a signature Bobby's Gin` | `clubbing street. A signature Bobby's Gin` |
-| `rotterdam/premium-gin-walk/` | `at each stop — and a skybar` | `at each stop, and a skybar` |
-| `rotterdam/hidden-gems/` | `from playful to refined — bold cocktails` | `from playful to refined. Bold cocktails,` |
+| `rotterdam/route-3-premium/` | `at each stop — and a skybar` | `at each stop, and a skybar` |
+| `rotterdam/route-2/` | `from playful to refined — bold cocktails` | `from playful to refined. Bold cocktails,` |
 
 NL dict equivalents: apply the same period/comma swap to each `hero_p:` string (the Dutch strings carry the identical `—`).
 
@@ -534,7 +534,7 @@ Reordered to the research: hero (photo + rating + price + CTA above fold) → va
 
 **`about/`** — replace flat hero with photo hero (§2B); first-person founder story + photo slot + signature (§5a); premium partner wordmarks (§5b); **new "Work with WOGO"** section + keys (§5c); dash-free `h1`+`hero_sub`.
 
-**Route pages** (`rotterdam/witte-de-with/`, `hidden-gems/`, `premium-gin-walk/`, `utrecht/city-centre/`, `amsterdam/ndsm-noord/`, `groningen/gin-walk/`) — dash-free `hero_p` only (§1b); confirm no `.w-review` sections exist (they don't).
+**Route pages** (`rotterdam/route-1/`, `hidden-gems/`, `premium-gin-walk/`, `utrecht/city-centre/`, `amsterdam/ndsm-noord/`, `groningen/gin-walk/`) — dash-free `hero_p` only (§1b); confirm no `.w-review` sections exist (they don't).
 
 ---
 

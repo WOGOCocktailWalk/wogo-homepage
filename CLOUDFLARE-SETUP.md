@@ -244,9 +244,9 @@ the move, per `SITE-PLAN.md` §4.
    |---|---|
    | `/` | `/` (no change) |
    | `/utrecht` | `/utrecht/` |
-   | `/rotterdam-cocktail-walk-route1` | `/rotterdam/witte-de-with/` *(best guess — Route 1; confirm against real Wix page content before going live)* |
-   | `/rotterdam-cocktail-walk-route-2` | `/rotterdam/hidden-gems/` *(best guess — Route 2, the best-seller; confirm before going live)* |
-   | `/rotterdam-premium-cocktail-walk` | `/rotterdam/premium-gin-walk/` |
+   | `/rotterdam-cocktail-walk-route1` | `/rotterdam/route-1/` *(best guess — Route 1; confirm against real Wix page content before going live)* |
+   | `/rotterdam-cocktail-walk-route-2` | `/rotterdam/route-2/` *(best guess — Route 2, the best-seller; confirm before going live)* |
+   | `/rotterdam-premium-cocktail-walk` | `/rotterdam/route-3-premium/` |
    | `/amsterdam-cocktailwalk-route1` | `/amsterdam/` |
    | `/groningen-cocktail-walk` | `/groningen/` |
    | `/groupbookings` | `/groups/` |
