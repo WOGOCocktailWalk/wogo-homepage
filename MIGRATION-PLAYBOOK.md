@@ -367,9 +367,10 @@ while read old new; do code=$(curl -s -o /dev/null -w '%{http_code}' -L "https:/
 | `/how-it-works` | `/how-it-works/` |
 | `/faq` | `/faq/` |
 | `/about` | `/about/` |
-| `/workwithus` | `/about/` (or `/contact/`) |
+| `/workwithus` | `/for-bars/` (**built** — was `/about/`) |
+| `/bars` | `/for-bars/` (**built** — was in the catch-all row below) |
 | `/blog` | `/blog/` |
-| `/experiences`, `/experience-details`, `/book-online`, `/reservations`, `/bars`, `/plans-pricing`, `/search`, `/copy-of-home` | `/` |
+| `/experiences`, `/experience-details`, `/book-online`, `/reservations`, `/plans-pricing`, `/search`, `/copy-of-home` | `/` |
 | `/booking-form` | `/` |
 | `/booking-calendar/utrecht-cocktail-walk` | `/utrecht/book/` |
 | `/booking-calendar/wogo-rotterdam-cocktail-walk`, `/booking-calendar/wogo-cocktail-walk-route-1` | `/rotterdam/route-1/book/` |
