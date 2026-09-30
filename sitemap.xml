@@ -184,6 +184,11 @@
 
   <!-- Legal (all six match the footer legal links and resolve on disk) -->
   <url>
+    <loc>https://www.wogococktailwalk.com/for-bars/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://www.wogococktailwalk.com/privacy/</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
