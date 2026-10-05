@@ -37,31 +37,37 @@
     // keeps the normal 10.
     { id: "utrecht", name: "WOGO Cocktail Walk Utrecht", city: "Utrecht", price_cents: 2995, capacity: 10, max_party: 6, open_days: "[1,2,3,4,5,6,7]", slots: '{"1":["17:30","18:30","19:30"],"2":["17:30","18:30","19:30"],"3":["17:30","18:30","19:30"],"4":["17:30","18:30","19:30"],"5":["17:30","18:30","19:30"],"6":["13:00","14:00","17:30","18:30","19:30"],"7":["13:00","14:00","17:30","18:30","19:30"]}', weekday_capacity: '{"6":6}', map_url: "https://www.wogococktailwalk.com/maps/utrecht-en.pdf", map_url_nl: "https://www.wogococktailwalk.com/maps/utrecht-nl.pdf", active: 1, created_at: "2024-11-01" },
     { id: "groningen", name: "WOGO Cocktail Walk Groningen", city: "Groningen", price_cents: 2995, capacity: 10, max_party: 6, open_days: "[3,4,5,6]", slots: '["17:00","17:30","18:00","18:30","19:00","19:30"]', map_url: null, active: 1, created_at: "2024-11-01" },
-    { id: "rotterdam-witte-de-with", name: "Rotterdam Route 1 · Witte de With", city: "Rotterdam", price_cents: 2995, capacity: 10, max_party: 6, open_days: "[4,5,6]", slots: '["17:00","18:00"]', map_url: null, active: 1, created_at: "2024-11-01" },
+    // migrations/0023: display names cleaned up to the owner's final set —
+    // the guest-facing name is just "Rotterdam Route N[, Premium]", no
+    // sub-neighbourhood or marketing label.
+    { id: "rotterdam-witte-de-with", name: "Rotterdam Route 1", city: "Rotterdam", price_cents: 2995, capacity: 10, max_party: 6, open_days: "[4,5,6]", slots: '["17:00","18:00"]', map_url: null, active: 1, created_at: "2024-11-01" },
     // slot_capacity demonstrates the per-timeslot capacity feature (migrations/0003):
     // this route defaults to 10 seats/departure, but its 20:00 slot only ever has 6
     // (the last bar on this route gets busy at that hour) — every other slot is
     // untouched. See also the 'slot_capacity_override' date override below, which
     // caps 20:00 further still for one specific Saturday.
-    { id: "rotterdam-hidden-gems", name: "Rotterdam Route 2 · Hidden Gems (best seller)", city: "Rotterdam", price_cents: 2995, capacity: 10, max_party: 6, open_days: "[4,5,6]", slots: '["18:00","18:30","19:00","19:30","20:00"]', slot_capacity: '{"20:00":6}', map_url: "https://maps.wogo/rtm-hidden", active: 1, created_at: "2024-11-01" },
-    { id: "rotterdam-premium-gin", name: "Rotterdam Premium · High-end Bars", city: "Rotterdam", price_cents: 3495, capacity: 8, max_party: 6, open_days: "[2,3,4,5,6]", slots: '["18:00","19:00","20:00"]', map_url: null, active: 0, created_at: "2025-02-01" }
+    { id: "rotterdam-hidden-gems", name: "Rotterdam Route 2", city: "Rotterdam", price_cents: 2995, capacity: 10, max_party: 6, open_days: "[4,5,6]", slots: '["18:00","18:30","19:00","19:30","20:00"]', slot_capacity: '{"20:00":6}', map_url: "https://maps.wogo/rtm-hidden", active: 1, created_at: "2024-11-01" },
+    { id: "rotterdam-premium-gin", name: "Rotterdam Route 3 Premium", city: "Rotterdam", price_cents: 3495, capacity: 8, max_party: 6, open_days: "[2,3,4,5,6]", slots: '["18:00","19:00","20:00"]', map_url: null, active: 0, created_at: "2025-02-01" }
   ];
 
   const bars = {
+    // locale (migrations/0022): which language this bar's reservation/move/
+    // cancel mail renders in. Every seeded bar here is Dutch ("nl"); a
+    // London bar (once that route is seeded) gets "en".
     amsterdam: [
-      { id: 1, route_id: "amsterdam", ord: 1, bar_name: "Van de Werf (NDSM wharf)", bar_email: "hi@vandewerf.nl", minutes_offset: 0 },
-      { id: 2, route_id: "amsterdam", ord: 2, bar_name: "Pllek", bar_email: "reserve@pllek.nl", minutes_offset: 75 },
-      { id: 3, route_id: "amsterdam", ord: 3, bar_name: "Bar 3 (TBD — set real name/email)", bar_email: "bookings@wogoamsterdam.com", minutes_offset: 150 }
+      { id: 1, route_id: "amsterdam", ord: 1, bar_name: "Van de Werf (NDSM wharf)", bar_email: "hi@vandewerf.nl", minutes_offset: 0, locale: "nl" },
+      { id: 2, route_id: "amsterdam", ord: 2, bar_name: "Pllek", bar_email: "reserve@pllek.nl", minutes_offset: 75, locale: "nl" },
+      { id: 3, route_id: "amsterdam", ord: 3, bar_name: "Bar 3 (TBD — set real name/email)", bar_email: "bookings@wogoamsterdam.com", minutes_offset: 150, locale: "nl" }
     ],
     // weekday demonstrates the per-weekday bar-set feature (migrations/0015):
     // the DEFAULT set (weekday: null) runs every open day except Saturday,
     // which has its own recurring set below — a standing rule, distinct from
     // the one-off per-date "Alt bars" override demoed on rotterdam-hidden-gems.
     utrecht: [
-      { id: 4, route_id: "utrecht", ord: 1, bar_name: "Café Olivier", bar_email: "info@caféolivier.nl", minutes_offset: 0, weekday: null },
-      { id: 5, route_id: "utrecht", ord: 2, bar_name: "Bar 2 (TBD)", bar_email: "bookings@wogoamsterdam.com", minutes_offset: 75, weekday: null },
-      { id: 6, route_id: "utrecht", ord: 1, bar_name: "Kalff (Saturday route)", bar_email: "hi@kalff.nl", minutes_offset: 0, weekday: 6 },
-      { id: 7, route_id: "utrecht", ord: 2, bar_name: "Bar 2 (TBD)", bar_email: "bookings@wogoamsterdam.com", minutes_offset: 75, weekday: 6 }
+      { id: 4, route_id: "utrecht", ord: 1, bar_name: "Café Olivier", bar_email: "info@caféolivier.nl", minutes_offset: 0, weekday: null, locale: "nl" },
+      { id: 5, route_id: "utrecht", ord: 2, bar_name: "Bar 2 (TBD)", bar_email: "bookings@wogoamsterdam.com", minutes_offset: 75, weekday: null, locale: "nl" },
+      { id: 6, route_id: "utrecht", ord: 1, bar_name: "Kalff (Saturday route)", bar_email: "hi@kalff.nl", minutes_offset: 0, weekday: 6, locale: "nl" },
+      { id: 7, route_id: "utrecht", ord: 2, bar_name: "Bar 2 (TBD)", bar_email: "bookings@wogoamsterdam.com", minutes_offset: 75, weekday: 6, locale: "nl" }
     ]
   };
 

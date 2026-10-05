@@ -933,7 +933,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .bar-list { display: grid; gap: 8px; }
 .bar-item {
   display: grid;
-  grid-template-columns: 30px 1.4fr 1.6fr 90px auto;
+  grid-template-columns: 30px 1.4fr 1.6fr 90px 64px auto;
   gap: 10px;
   align-items: center;
   padding: 10px 12px;

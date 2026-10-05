@@ -1583,10 +1583,22 @@
         const nameI = el("input", { type: "text", value: bar.bar_name, placeholder: "Bar name", oninput: (e) => bar.bar_name = e.target.value });
         const mailI = el("input", { type: "email", value: bar.bar_email, placeholder: "email@bar.nl", oninput: (e) => bar.bar_email = e.target.value });
         const offI = el("input", { type: "number", min: "0", step: "5", value: bar.minutes_offset, style: "width:64px", oninput: (e) => bar.minutes_offset = parseInt(e.target.value, 10) || 0 });
+        // Bar email language (migrations/0022) — which language this bar's
+        // reservation/move/cancel mails render in. Defaults "nl" (every bar
+        // today is Dutch); London bars get "en".
+        const localeSel = el("select", {
+          "aria-label": "Bar email language",
+          oninput: (e) => bar.locale = e.target.value,
+        }, [
+          el("option", { value: "nl", text: "NL" }),
+          el("option", { value: "en", text: "EN" }),
+        ]);
+        localeSel.value = bar.locale === "en" ? "en" : "nl";
         listEl.appendChild(el("div", { class: "bar-item" }, [
           el("div", { class: "bar-ord", text: i + 1 }),
           nameI, mailI,
           el("div", { class: "bar-offset" }, [offI, el("span", { text: "min" })]),
+          localeSel,
           el("button", { class: "icon-btn", "aria-label": "Remove bar", text: "×", onclick: () => { S.routesUI.bars[stateKey].splice(i, 1); paint(); } })
         ]));
       });
@@ -1596,13 +1608,13 @@
     else { listEl.appendChild(skeletonRows(3)); loadBars(r); }
 
     wrap.appendChild(el("div", { class: "rc-actions" }, [
-      el("button", { class: "btn btn-quiet", text: "+ Add bar", onclick: () => { (S.routesUI.bars[stateKey] = S.routesUI.bars[stateKey] || []).push({ bar_name: "", bar_email: "bookings@wogoamsterdam.com", minutes_offset: (S.routesUI.bars[stateKey].length) * 75 }); paint(); } }),
+      el("button", { class: "btn btn-quiet", text: "+ Add bar", onclick: () => { (S.routesUI.bars[stateKey] = S.routesUI.bars[stateKey] || []).push({ bar_name: "", bar_email: "bookings@wogoamsterdam.com", minutes_offset: (S.routesUI.bars[stateKey].length) * 75, locale: "nl" }); paint(); } }),
       el("div", { class: "grow" }),
       el("button", {
         class: "btn btn-primary", text: mode === "perday" ? "Save " + DOW_FULL[weekday - 1] + "'s bars" : "Save bars", onclick: async (ev) => {
           const btn = ev.currentTarget; btn.disabled = true;
           try {
-            const bars = (S.routesUI.bars[stateKey] || []).map((b, i) => ({ ord: i + 1, bar_name: b.bar_name, bar_email: b.bar_email, minutes_offset: b.minutes_offset }));
+            const bars = (S.routesUI.bars[stateKey] || []).map((b, i) => ({ ord: i + 1, bar_name: b.bar_name, bar_email: b.bar_email, minutes_offset: b.minutes_offset, locale: b.locale === "en" ? "en" : "nl" }));
             const body = mode === "perday" ? { bars, weekday } : { bars };
             await api("/admin/api/routes/" + r.id + "/bars", { method: "PUT", body });
             toast("Bar list saved", "ok");
@@ -1619,7 +1631,7 @@
       const byKey = {};
       (d.bars || []).slice().sort((a, b) => a.ord - b.ord).forEach((b) => {
         const key = r.id + "|" + (b.weekday == null ? "default" : "wd" + b.weekday);
-        (byKey[key] = byKey[key] || []).push({ bar_name: b.bar_name, bar_email: b.bar_email, minutes_offset: b.minutes_offset });
+        (byKey[key] = byKey[key] || []).push({ bar_name: b.bar_name, bar_email: b.bar_email, minutes_offset: b.minutes_offset, locale: b.locale === "en" ? "en" : "nl" });
       });
       Object.keys(byKey).forEach((key) => { S.routesUI.bars[key] = byKey[key]; });
       if (!S.routesUI.bars[r.id + "|default"]) S.routesUI.bars[r.id + "|default"] = [];

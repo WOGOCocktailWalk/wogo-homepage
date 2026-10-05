@@ -28,6 +28,7 @@ const schemaSql = [
   '0008_failed_email.sql', '0009_webhook_processing_status.sql', '0010_booking_notes.sql',
   '0011_currency_timezone.sql', '0012_map_url_nl.sql',
   '0014_weekday_capacity.sql', '0015_weekday_bars.sql',
+  '0022_bar_locale.sql',
 ].map((n) => readFileSync(path.join(__dirname, `../migrations/${n}`), 'utf8')).join('\n');
 
 function exec(db_, sql, params = {}) {
@@ -60,14 +61,18 @@ function seedRoute(db_, overrides = {}) {
 }
 
 function seedBar(db_, routeId, overrides = {}) {
+  // locale defaults to 'en' here (not the DB column's own 'nl' default) —
+  // every test in this file asserts on English subject words ("moved" /
+  // "cancelled"), so the fixture is pinned English on purpose. NL rendering
+  // is covered separately by test/bar_locale.test.js.
   const bar = {
-    route_id: routeId, ord: 1, bar_name: 'Bar A', bar_email: 'bara@example.com', minutes_offset: 0,
+    route_id: routeId, ord: 1, bar_name: 'Bar A', bar_email: 'bara@example.com', minutes_offset: 0, locale: 'en',
     ...overrides,
   };
   exec(
     db_,
-    `INSERT INTO routes_bars (route_id, ord, bar_name, bar_email, minutes_offset)
-     VALUES (:route_id, :ord, :bar_name, :bar_email, :minutes_offset)`,
+    `INSERT INTO routes_bars (route_id, ord, bar_name, bar_email, minutes_offset, locale)
+     VALUES (:route_id, :ord, :bar_name, :bar_email, :minutes_offset, :locale)`,
     bar
   );
   return bar;

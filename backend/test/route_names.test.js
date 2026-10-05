@@ -56,3 +56,52 @@ describe('migrations/0020_route_names — cleans the "(best seller)" label off r
     }
   });
 });
+
+describe('migrations/0023_route_names_simple — Rotterdam routes drop their sub-neighbourhood/marketing suffixes', () => {
+  function applyUpTo0023(db) {
+    db._raw.exec(readFileSync(path.join(__dirname, '../migrations/0002_seed_routes.sql'), 'utf8'));
+    db._raw.exec(readFileSync(path.join(__dirname, '../migrations/0020_route_names.sql'), 'utf8'));
+    db._raw.exec(readFileSync(path.join(__dirname, '../migrations/0023_route_names_simple.sql'), 'utf8'));
+  }
+
+  test('applying 0023 on top of 0002 -> 0020 lands the three final Rotterdam names', async () => {
+    const db = makeTestDb(schemaSql);
+    applyUpTo0023(db);
+
+    assert.equal((await getRoute(db, 'rotterdam-witte-de-with')).name, 'Rotterdam Route 1');
+    assert.equal((await getRoute(db, 'rotterdam-hidden-gems')).name, 'Rotterdam Route 2');
+    assert.equal((await getRoute(db, 'rotterdam-premium-gin')).name, 'Rotterdam Route 3 Premium');
+  });
+
+  test('every other seeded route name is untouched by 0023', async () => {
+    const db = makeTestDb(schemaSql);
+    const before = {};
+    db._raw.exec(readFileSync(path.join(__dirname, '../migrations/0002_seed_routes.sql'), 'utf8'));
+    db._raw.exec(readFileSync(path.join(__dirname, '../migrations/0020_route_names.sql'), 'utf8'));
+    for (const r of await listAllRoutes(db)) {
+      if (!['rotterdam-witte-de-with', 'rotterdam-hidden-gems', 'rotterdam-premium-gin'].includes(r.id)) before[r.id] = r.name;
+    }
+    db._raw.exec(readFileSync(path.join(__dirname, '../migrations/0023_route_names_simple.sql'), 'utf8'));
+    for (const r of await listAllRoutes(db)) {
+      if (r.id in before) assert.equal(r.name, before[r.id], `route "${r.id}" name must be untouched by 0023`);
+    }
+  });
+
+  test('is idempotent — re-applying does not change the already-updated names or throw', async () => {
+    const db = makeTestDb(schemaSql);
+    applyUpTo0023(db);
+    db._raw.exec(readFileSync(path.join(__dirname, '../migrations/0023_route_names_simple.sql'), 'utf8')); // must not throw
+
+    assert.equal((await getRoute(db, 'rotterdam-witte-de-with')).name, 'Rotterdam Route 1');
+    assert.equal((await getRoute(db, 'rotterdam-hidden-gems')).name, 'Rotterdam Route 2');
+    assert.equal((await getRoute(db, 'rotterdam-premium-gin')).name, 'Rotterdam Route 3 Premium');
+  });
+
+  test('applying 0023 directly on the raw 0002 seed (no 0020) still lands the final names — order-independent', async () => {
+    const db = makeTestDb(schemaSql);
+    db._raw.exec(readFileSync(path.join(__dirname, '../migrations/0002_seed_routes.sql'), 'utf8'));
+    db._raw.exec(readFileSync(path.join(__dirname, '../migrations/0023_route_names_simple.sql'), 'utf8'));
+
+    assert.equal((await getRoute(db, 'rotterdam-hidden-gems')).name, 'Rotterdam Route 2');
+  });
+});

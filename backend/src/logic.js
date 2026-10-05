@@ -407,7 +407,13 @@ export function computeBarArrivals(route, routesBars, dateOverridesForDate, book
           new Date(zonedDateTimeToUtc(booking.date, booking.slot, timeZone).getTime() + offsetMinutes * MS_PER_MINUTE),
           timeZone
         );
-    return { bar_name: b.bar_name, bar_email: b.bar_email, arrival_time };
+    // migrations/0022: bar.locale drives which language renderBarNotification/
+    // Reschedule/Cancellation render in. Normal routesBars rows carry it from
+    // the DB (defaulted 'nl' there); a one-off 'alternate_bars' date-override
+    // payload (admin-authored JSON, no DB column) won't have it, so it falls
+    // back to 'nl' here too — every override written so far is a Dutch bar.
+    const locale = b.locale === 'en' ? 'en' : 'nl';
+    return { bar_name: b.bar_name, bar_email: b.bar_email, arrival_time, locale };
   });
 }
 

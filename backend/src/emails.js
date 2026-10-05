@@ -10,7 +10,10 @@
 //
 // PURE + Workers-safe: string building only, no `env`, no `fetch`, no Node APIs.
 // Every render function returns { subject, html }. Guest-facing copy is EN/NL
-// (booking.locale); internal (owner/bar) mails are EN only.
+// (booking.locale). Bar-facing mails (renderBarNotification/Reschedule/
+// Cancellation) are also EN/NL, driven by the bar's OWN language
+// (routes_bars.locale, migrations/0022 — defaults 'nl', since every bar is
+// Dutch today). Owner mails stay EN only — Maroussia reads English.
 //
 // Design language (2026-08-29 redesign):
 //   * Every email opens with the REAL salmon WOGO logo on a dark espresso band,
@@ -92,6 +95,20 @@ export function formatLongDate(dateStr, locale = 'en') {
 
 function loc(locale) {
   return locale === 'nl' ? 'nl' : 'en';
+}
+
+/** 'YYYY-MM-DD' -> '10 October 2026' (en) / '10 oktober 2026' (nl) — the
+ * same day/month/year numbers as formatLongDate, just without the weekday.
+ * Used in the bar-facing NL subject lines (migrations/0022), which name a
+ * short human date rather than the raw ISO string the EN subjects keep
+ * (unchanged, for backward compatibility with existing callers/tests). */
+function formatShortDate(dateStr, locale = 'en') {
+  const lang = locale === 'nl' ? 'nl' : 'en';
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateStr || ''));
+  if (!m) return String(dateStr || '');
+  const day = Number(m[3]);
+  const monthName = MONTHS[lang][Number(m[2]) - 1];
+  return `${day} ${monthName} ${m[1]}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -253,18 +270,23 @@ function notesToHtml(notes) {
   return escapeHtml(String(notes)).replace(/\r?\n/g, '<br>');
 }
 
+const ALLERGIES_LABEL = { en: 'Allergies / notes:', nl: 'Allergieën / opmerkingen:' };
+
 /**
  * The "⚠️ Allergies / notes" callout for the BAR and OWNER emails
  * (migrations/0010). Deliberately loud — amber panel, bold label — because
  * this is where "nut allergy" has to reach the person mixing the drinks.
  * Returns '' when the guest left the field blank: no notes, no block, no
- * empty label anywhere.
+ * empty label anywhere. `lang` (migrations/0022, additive — defaults 'en')
+ * only localizes the label; the OWNER call site never passes it, so the
+ * owner mail (EN-only) is byte-for-byte unchanged.
  */
-function allergiesNotesBlock(notes) {
+function allergiesNotesBlock(notes, lang = 'en') {
   if (!notes || !String(notes).trim()) return '';
+  const label = ALLERGIES_LABEL[lang] || ALLERGIES_LABEL.en;
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.amberBg};border:1px solid ${C.amberLine};border-left:5px solid ${C.amberEdge};border-radius:12px;margin:0 0 22px;">
     <tr><td style="padding:14px 16px;">
-      <div style="font-size:13px;font-weight:800;letter-spacing:.02em;color:${C.amberInk};">&#9888;&#65039; Allergies / notes:</div>
+      <div style="font-size:13px;font-weight:800;letter-spacing:.02em;color:${C.amberInk};">&#9888;&#65039; ${label}</div>
       <div style="margin-top:6px;font-size:14.5px;font-weight:700;line-height:1.5;color:${C.ink};">${notesToHtml(notes)}</div>
     </td></tr>
   </table>`;
@@ -509,12 +531,49 @@ export function renderOwnerNotification(booking, route, opts = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// 3. BAR notification — EN. ONE bar, its concrete staggered arrival time.
-//    Branded top band, but ruthlessly efficient: allergies flagged loudly
-//    ABOVE everything, then this bar's OWN arrival time as a big hero.
+// 3. BAR notification — EN/NL (migrations/0022: bar.locale). ONE bar, its
+//    concrete staggered arrival time. Branded top band, but ruthlessly
+//    efficient: allergies flagged loudly ABOVE everything, then this bar's
+//    OWN arrival time as a big hero. EN copy is verbatim unchanged from
+//    before 0022; NL is the bar's own language, same warm/professional
+//    "je/jullie" tone as the guest NL emails, written for bar staff.
 // ---------------------------------------------------------------------------
 
+const BAR_NOTIFICATION_STRINGS = {
+  en: {
+    badge: 'New WOGO reservation',
+    heroTitle: (party, time) => `Table for ${party} at ${time}`,
+    heading: (barName) => `Hi ${barName},`,
+    intro: 'A WOGO Cocktail Walk group is on the way to you. Here is everything you need.',
+    preheader: (party, time) => `Hold a table for ${party} at ${time}.`,
+    subject: (time, party, date) => `WOGO reservation · ${time} · ${party} guests · ${date}`,
+    arrivalLabel: 'Arrival time',
+    tableCaption: (party, dateLong) => `Table for ${party} · ${dateLong}`,
+    labels: { party: 'Party', route: 'Route', guestName: 'Guest name', guestContact: 'Guest contact' },
+    guestWord: (p) => (p === 1 ? 'guest' : 'guests'),
+    closing: (party, time) =>
+      `Please hold a table for <strong>${party}</strong> at <strong>${time}</strong>. This is part of a WOGO Cocktail Walk — the group moves between bars on a staggered schedule across the evening, so this is <strong>your</strong> arrival time for them. Need to reach the guests? Use the contact details above.`,
+  },
+  nl: {
+    badge: 'Nieuwe WOGO-reservering',
+    heroTitle: (party, time) => `Tafel voor ${party} om ${time}`,
+    heading: (barName) => `Hoi ${barName},`,
+    intro: 'Er komt een WOGO Cocktail Walk groep naar jullie toe. Hier is alles wat je nodig hebt.',
+    preheader: (party, time) => `Reserveer een tafel voor ${party} om ${time}.`,
+    subject: (time, party, dateShortNl) => `WOGO reservering · ${time} · ${party} gasten · ${dateShortNl}`,
+    arrivalLabel: 'Aankomsttijd',
+    tableCaption: (party, dateLong) => `Tafel voor ${party} · ${dateLong}`,
+    labels: { party: 'Gezelschap', route: 'Route', guestName: 'Naam gast', guestContact: 'Contact gast' },
+    guestWord: (p) => (p === 1 ? 'gast' : 'gasten'),
+    closing: (party, time) =>
+      `Reserveer alsjeblieft een tafel voor <strong>${party}</strong> om <strong>${time}</strong>. Dit is onderdeel van een WOGO Cocktail Walk: de groep bezoekt de bars volgens een vast schema, dus dit is <strong>jullie</strong> aankomsttijd. Wil je de gasten bereiken? Gebruik de contactgegevens hierboven.`,
+  },
+};
+
 export function renderBarNotification(bar, booking, route) {
+  const lang = bar.locale === 'en' ? 'en' : 'nl';
+  const t = BAR_NOTIFICATION_STRINGS[lang];
+
   // Direct guest contact so the bar can reach the group that evening:
   // always the email, plus the phone when the guest left one.
   const guestContact =
@@ -522,47 +581,48 @@ export function renderBarNotification(bar, booking, route) {
     (booking.phone ? ` &middot; ${escapeHtml(booking.phone)}` : '');
 
   // The arrival time is the hero — a big, unmissable number. The label
-  // "Arrival time" lives here (bar detail label the tests pin).
+  // "Arrival time"/"Aankomsttijd" lives here (bar detail label the tests pin).
   const arrivalHero = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.blush};border:1px solid ${C.line};border-radius:16px;margin:0 0 22px;">
     <tr><td style="padding:22px 24px;text-align:center;">
-      <div style="font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:${C.brown};">Arrival time</div>
+      <div style="font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:${C.brown};">${escapeHtml(t.arrivalLabel)}</div>
       <div style="margin-top:6px;font-size:46px;line-height:1;font-weight:800;color:${C.salmonDeep};font-variant-numeric:tabular-nums;">${escapeHtml(bar.arrival_time)}</div>
-      <div style="margin-top:10px;font-size:14px;font-weight:700;color:${C.ink};">Table for ${escapeHtml(String(booking.party))} · ${escapeHtml(formatLongDate(booking.date, 'en'))}</div>
+      <div style="margin-top:10px;font-size:14px;font-weight:700;color:${C.ink};">${escapeHtml(t.tableCaption(String(booking.party), formatLongDate(booking.date, lang)))}</div>
     </td></tr>
   </table>`;
 
   const rows = [
-    ['Party', `${escapeHtml(String(booking.party))} ${booking.party === 1 ? 'guest' : 'guests'}`],
-    ['Route', escapeHtml(route.name)],
-    ['Guest name', escapeHtml(booking.name)],
-    ['Guest contact', guestContact],
+    [t.labels.party, `${escapeHtml(String(booking.party))} ${t.guestWord(booking.party)}`],
+    [t.labels.route, escapeHtml(route.name)],
+    [t.labels.guestName, escapeHtml(booking.name)],
+    [t.labels.guestContact, guestContact],
   ];
 
   // The allergies/notes block goes FIRST — above even the arrival hero — so
   // bar staff scanning the email can't miss "nut allergy" (the entire reason
   // this field exists). Empty notes ⇒ no block at all.
   const content = `
-    ${allergiesNotesBlock(booking.notes)}${arrivalHero}
+    ${allergiesNotesBlock(booking.notes, lang)}${arrivalHero}
     ${detailPanel(rows, C.salmonDeep)}
     <p style="margin:0;font-size:13.5px;line-height:1.55;color:${C.brown};">
-      Please hold a table for <strong>${escapeHtml(String(booking.party))}</strong> at
-      <strong>${escapeHtml(bar.arrival_time)}</strong>. This is part of a WOGO Cocktail Walk —
-      the group moves between bars on a staggered schedule across the evening, so this is
-      <strong>your</strong> arrival time for them. Need to reach the guests? Use the contact
-      details above.
+      ${t.closing(escapeHtml(String(booking.party)), escapeHtml(bar.arrival_time))}
     </p>`;
 
   return {
-    subject: `WOGO reservation · ${bar.arrival_time} · ${booking.party} guests · ${booking.date}`,
+    // EN subject keeps the raw ISO booking.date, unchanged since before 0022.
+    // NL uses a short human date (migrations/0022 — matches the owner's spec,
+    // "10 oktober 2026" rather than the raw ISO string).
+    subject: lang === 'nl'
+      ? t.subject(bar.arrival_time, booking.party, formatShortDate(booking.date, 'nl'))
+      : t.subject(bar.arrival_time, booking.party, booking.date),
     html: layout({
-      preheader: `Hold a table for ${booking.party} at ${bar.arrival_time}.`,
+      preheader: t.preheader(booking.party, bar.arrival_time),
       // hero.chip is escaped once by heroBand() itself (src/emails.js ~122) —
       // pre-escaping bar.bar_name here would double-escape it (e.g. an
       // apostrophe in "Let's Meat" would render as "Let&#39;s Meat").
-      hero: { badge: 'New WOGO reservation', title: `Table for ${booking.party} at ${bar.arrival_time}`, chip: `${bar.bar_name} · ${route.city}` },
+      hero: { badge: t.badge, title: t.heroTitle(booking.party, bar.arrival_time), chip: `${bar.bar_name} · ${route.city}` },
       posterRoute: route,
-      heading: `Hi ${bar.bar_name},`,
-      intro: 'A WOGO Cocktail Walk group is on the way to you. Here is everything you need.',
+      heading: t.heading(bar.bar_name),
+      intro: t.intro,
       contentHtml: content,
     }),
   };
@@ -726,47 +786,88 @@ export function renderGuestReschedule(booking, route, opts = {}) {
   };
 }
 
-// --- 5b. BAR reschedule (EN) -----------------------------------------------
+// --- 5b. BAR reschedule (EN/NL — migrations/0022: bar.locale) --------------
 // bar.arrival_time = the NEW arrival time. opts.previous = { date, arrival_time }
 // is this bar's OLD slot, so staff know which table to release.
+
+const BAR_RESCHEDULE_STRINGS = {
+  en: {
+    badge: 'Reservation moved',
+    heroTitle: (time) => `New time ${time}`,
+    heading: (barName) => `Hi ${barName},`,
+    intro: 'A WOGO reservation has been rescheduled. Here is the new arrival time.',
+    preheader: (party, time) => `Moved: now hold a table for ${party} at ${time}.`,
+    subject: (time, date, party) => `WOGO reservation MOVED · now ${time} · ${date} · ${party} guests`,
+    arrivalLabel: 'New arrival time',
+    tableCaption: (party, dateLong) => `Table for ${party} · ${dateLong}`,
+    labels: { party: 'Party', route: 'Route', guestName: 'Guest name', guestContact: 'Guest contact' },
+    guestWord: (p) => (p === 1 ? 'guest' : 'guests'),
+    wasLabel: 'Was:',
+    wasSuffix: '— please release that table.',
+    closing: 'This WOGO reservation has <strong>moved</strong>. Please release the earlier table and hold the new one shown above. Need to reach the guests? Use the contact details above.',
+  },
+  nl: {
+    badge: 'Reservering verplaatst',
+    heroTitle: (time) => `Nieuwe tijd ${time}`,
+    heading: (barName) => `Hoi ${barName},`,
+    intro: 'Een WOGO-reservering is verzet. Hier is de nieuwe aankomsttijd.',
+    preheader: (party, time) => `Verplaatst: reserveer nu een tafel voor ${party} om ${time}.`,
+    subject: (time, dateShortNl) => `WOGO reservering VERPLAATST · nu ${time} · ${dateShortNl}`,
+    arrivalLabel: 'Nieuwe aankomsttijd',
+    tableCaption: (party, dateLong) => `Tafel voor ${party} · ${dateLong}`,
+    labels: { party: 'Gezelschap', route: 'Route', guestName: 'Naam gast', guestContact: 'Contact gast' },
+    guestWord: (p) => (p === 1 ? 'gast' : 'gasten'),
+    wasLabel: 'Was:',
+    wasSuffix: 'je mag die tafel vrijgeven.',
+    closing: 'Deze WOGO-reservering is <strong>verplaatst</strong>. Maak de eerdere tafel vrij en reserveer de nieuwe tafel hierboven. Wil je de gasten bereiken? Gebruik de contactgegevens hierboven.',
+  },
+};
+
 export function renderBarReschedule(bar, booking, route, opts = {}) {
+  const lang = bar.locale === 'en' ? 'en' : 'nl';
+  const t = BAR_RESCHEDULE_STRINGS[lang];
+
   const guestContact =
     `<a href="mailto:${escapeHtml(booking.email)}" style="color:${C.salmonDeep};text-decoration:none;">${escapeHtml(booking.email)}</a>` +
     (booking.phone ? ` &middot; ${escapeHtml(booking.phone)}` : '');
   const prev = opts.previous || {};
   const wasLine = (prev.date || prev.arrival_time)
-    ? `<p style="margin:0 0 14px;font-size:13.5px;color:${C.muted};"><strong style="color:${C.ink};">Was:</strong> <span style="text-decoration:line-through;">${escapeHtml(formatLongDate(prev.date || booking.date, 'en'))}${prev.arrival_time ? ' · ' + escapeHtml(prev.arrival_time) : ''}</span> — please release that table.</p>`
+    ? `<p style="margin:0 0 14px;font-size:13.5px;color:${C.muted};"><strong style="color:${C.ink};">${escapeHtml(t.wasLabel)}</strong> <span style="text-decoration:line-through;">${escapeHtml(formatLongDate(prev.date || booking.date, lang))}${prev.arrival_time ? ' · ' + escapeHtml(prev.arrival_time) : ''}</span> ${escapeHtml(t.wasSuffix)}</p>`
     : '';
   const arrivalHero = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.blush};border:1px solid ${C.line};border-radius:16px;margin:0 0 22px;">
     <tr><td style="padding:22px 24px;text-align:center;">
-      <div style="font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:${C.brown};">New arrival time</div>
+      <div style="font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:${C.brown};">${escapeHtml(t.arrivalLabel)}</div>
       <div style="margin-top:6px;font-size:46px;line-height:1;font-weight:800;color:${C.salmonDeep};font-variant-numeric:tabular-nums;">${escapeHtml(bar.arrival_time)}</div>
-      <div style="margin-top:10px;font-size:14px;font-weight:700;color:${C.ink};">Table for ${escapeHtml(String(booking.party))} · ${escapeHtml(formatLongDate(booking.date, 'en'))}</div>
+      <div style="margin-top:10px;font-size:14px;font-weight:700;color:${C.ink};">${escapeHtml(t.tableCaption(String(booking.party), formatLongDate(booking.date, lang)))}</div>
     </td></tr>
   </table>`;
   const rows = [
-    ['Party', `${escapeHtml(String(booking.party))} ${booking.party === 1 ? 'guest' : 'guests'}`],
-    ['Route', escapeHtml(route.name)],
-    ['Guest name', escapeHtml(booking.name)],
-    ['Guest contact', guestContact],
+    [t.labels.party, `${escapeHtml(String(booking.party))} ${t.guestWord(booking.party)}`],
+    [t.labels.route, escapeHtml(route.name)],
+    [t.labels.guestName, escapeHtml(booking.name)],
+    [t.labels.guestContact, guestContact],
   ];
   const content = `
-    ${allergiesNotesBlock(booking.notes)}${wasLine}${arrivalHero}
+    ${allergiesNotesBlock(booking.notes, lang)}${wasLine}${arrivalHero}
     ${detailPanel(rows, C.salmonDeep)}
     <p style="margin:0;font-size:13.5px;line-height:1.55;color:${C.brown};">
-      This WOGO reservation has <strong>moved</strong>. Please release the earlier table and
-      hold the new one shown above. Need to reach the guests? Use the contact details above.
+      ${t.closing}
     </p>`;
   return {
-    subject: `WOGO reservation MOVED · now ${bar.arrival_time} · ${booking.date} · ${booking.party} guests`,
+    // EN subject keeps the raw ISO booking.date + guest count, unchanged
+    // since before 0022. NL uses the owner's exact spec: no guest count, a
+    // short human date (migrations/0022).
+    subject: lang === 'nl'
+      ? t.subject(bar.arrival_time, formatShortDate(booking.date, 'nl'))
+      : t.subject(bar.arrival_time, booking.date, booking.party),
     html: layout({
-      preheader: `Moved: now hold a table for ${booking.party} at ${bar.arrival_time}.`,
+      preheader: t.preheader(booking.party, bar.arrival_time),
       // hero.chip is escaped once by heroBand() — see the doc comment above
-      // the identical pattern in the bar-arrival email, ~line 559.
-      hero: { badge: 'Reservation moved', title: `New time ${bar.arrival_time}`, chip: `${bar.bar_name} · ${route.city}` },
+      // the identical pattern in the bar-arrival email.
+      hero: { badge: t.badge, title: t.heroTitle(bar.arrival_time), chip: `${bar.bar_name} · ${route.city}` },
       posterRoute: route,
-      heading: `Hi ${bar.bar_name},`,
-      intro: 'A WOGO reservation has been rescheduled. Here is the new arrival time.',
+      heading: t.heading(bar.bar_name),
+      intro: t.intro,
       contentHtml: content,
     }),
   };
@@ -808,30 +909,62 @@ export function renderGuestCancellation(booking, route, opts = {}) {
   };
 }
 
-// --- 6b. BAR cancellation (EN) ---------------------------------------------
+// --- 6b. BAR cancellation (EN/NL — migrations/0022: bar.locale) ------------
 // bar.arrival_time = the arrival time of the reservation being released.
+
+const BAR_CANCEL_STRINGS = {
+  en: {
+    badge: 'Reservation cancelled',
+    heroTitle: 'Table released',
+    heading: (barName) => `Hi ${barName},`,
+    intro: 'A WOGO reservation has been cancelled — here are the details so you can free the table.',
+    preheader: (party, time) => `Cancelled: you can release the ${time} table for ${party}.`,
+    subject: (date, time, party) => `WOGO reservation CANCELLED · ${date} ${time} · ${party} guests`,
+    labels: { date: 'Date', time: 'Time', party: 'Party', guestName: 'Guest name' },
+    guestWord: (p) => (p === 1 ? 'guest' : 'guests'),
+    closing: 'This WOGO reservation has been <strong>cancelled</strong> — you can release the table above. Nothing else is needed on your side.',
+  },
+  nl: {
+    badge: 'Reservering geannuleerd',
+    heroTitle: 'Tafel vrijgegeven',
+    heading: (barName) => `Hoi ${barName},`,
+    intro: 'Een WOGO-reservering is geannuleerd. Hier zijn de gegevens zodat je de tafel kunt vrijgeven.',
+    preheader: (party, time) => `Geannuleerd: je mag de tafel van ${time} voor ${party} vrijgeven.`,
+    subject: (dateShortNl, time, party) => `WOGO reservering GEANNULEERD · ${dateShortNl} ${time} · ${party} gasten`,
+    labels: { date: 'Datum', time: 'Tijd', party: 'Gezelschap', guestName: 'Naam gast' },
+    guestWord: (p) => (p === 1 ? 'gast' : 'gasten'),
+    closing: 'Deze WOGO-reservering is <strong>geannuleerd</strong>. Je mag de tafel hierboven vrijgeven. Verder hoef je niets te doen.',
+  },
+};
+
 export function renderBarCancellation(bar, booking, route) {
+  const lang = bar.locale === 'en' ? 'en' : 'nl';
+  const t = BAR_CANCEL_STRINGS[lang];
+
   const rows = [
-    ['Date', escapeHtml(formatLongDate(booking.date, 'en'))],
-    ['Time', `<span style="font-variant-numeric:tabular-nums;">${escapeHtml(bar.arrival_time)}</span>`],
-    ['Party', `${escapeHtml(String(booking.party))} ${booking.party === 1 ? 'guest' : 'guests'}`],
-    ['Guest name', escapeHtml(booking.name)],
+    [t.labels.date, escapeHtml(formatLongDate(booking.date, lang))],
+    [t.labels.time, `<span style="font-variant-numeric:tabular-nums;">${escapeHtml(bar.arrival_time)}</span>`],
+    [t.labels.party, `${escapeHtml(String(booking.party))} ${t.guestWord(booking.party)}`],
+    [t.labels.guestName, escapeHtml(booking.name)],
   ];
   const content = `
     ${detailPanel(rows, '#8a3f6b')}
     <p style="margin:0;font-size:13.5px;line-height:1.55;color:${C.brown};">
-      This WOGO reservation has been <strong>cancelled</strong> — you can release the table
-      above. Nothing else is needed on your side.
+      ${t.closing}
     </p>`;
   return {
-    subject: `WOGO reservation CANCELLED · ${booking.date} ${bar.arrival_time} · ${booking.party} guests`,
+    // EN subject keeps the raw ISO booking.date, unchanged since before 0022.
+    // NL uses a short human date (migrations/0022).
+    subject: lang === 'nl'
+      ? t.subject(formatShortDate(booking.date, 'nl'), bar.arrival_time, booking.party)
+      : t.subject(booking.date, bar.arrival_time, booking.party),
     html: layout({
-      preheader: `Cancelled: you can release the ${bar.arrival_time} table for ${booking.party}.`,
+      preheader: t.preheader(booking.party, bar.arrival_time),
       // hero.chip is escaped once by heroBand() — see the doc comment above
-      // the identical pattern in the bar-arrival email, ~line 559.
-      hero: { badge: 'Reservation cancelled', title: 'Table released', chip: `${bar.bar_name} · ${route.city}` },
-      heading: `Hi ${bar.bar_name},`,
-      intro: 'A WOGO reservation has been cancelled — here are the details so you can free the table.',
+      // the identical pattern in the bar-arrival email.
+      hero: { badge: t.badge, title: t.heroTitle, chip: `${bar.bar_name} · ${route.city}` },
+      heading: t.heading(bar.bar_name),
+      intro: t.intro,
       contentHtml: content,
     }),
   };
