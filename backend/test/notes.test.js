@@ -36,6 +36,7 @@ const schemaSql = [
   '0008_failed_email.sql', '0009_webhook_processing_status.sql', '0010_booking_notes.sql',
   '0011_currency_timezone.sql', '0012_map_url_nl.sql',
   '0014_weekday_capacity.sql', '0015_weekday_bars.sql',
+  '0022_bar_locale.sql',
 ].map((n) => readFileSync(path.join(__dirname, `../migrations/${n}`), 'utf8')).join('\n');
 
 function exec(db, sql, params = {}) {
@@ -263,7 +264,10 @@ function fixtureBooking(overrides = {}) {
   };
 }
 const fixtureRoute = { id: 'testroute', name: 'Test Route', city: 'Testville', price_cents: 2995, map_url: 'https://maps.example.com/x' };
-const fixtureBar = { ord: 1, bar_name: 'Bar A', bar_email: 'bara@example.com', arrival_time: '18:00' };
+// locale: 'en' pins this fixture English — these tests assert literal EN
+// copy ("Allergies / notes:", "Arrival time"). NL rendering of the same
+// block is covered by test/bar_locale.test.js.
+const fixtureBar = { ord: 1, bar_name: 'Bar A', bar_email: 'bara@example.com', arrival_time: '18:00', locale: 'en' };
 
 describe('emails — allergies/notes rendering', () => {
   test('BAR email prominently shows the "⚠️ Allergies / notes:" block, HTML-escaped', () => {

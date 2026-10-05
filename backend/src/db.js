@@ -763,28 +763,38 @@ export async function listBarsForDate(db, routeId, date) {
   );
 }
 
+/** migrations/0022: the only two meaningful values are 'nl'/'en' — anything
+ * else (missing, typo, future language not yet built) normalizes to 'nl',
+ * same normalize-at-the-write-edge pattern used everywhere else a locale is
+ * stored (vs. trusting an arbitrary string into a column every bar-email
+ * renderer branches on). */
+function normalizeBarLocale(value) {
+  return value === 'en' ? 'en' : 'nl';
+}
+
 export async function addBar(db, routeId, bar) {
   const result = await run(
     db,
-    `INSERT INTO routes_bars (route_id, ord, bar_name, bar_email, minutes_offset)
-     VALUES (:route_id, :ord, :bar_name, :bar_email, :minutes_offset)`,
+    `INSERT INTO routes_bars (route_id, ord, bar_name, bar_email, minutes_offset, locale)
+     VALUES (:route_id, :ord, :bar_name, :bar_email, :minutes_offset, :locale)`,
     {
       route_id: routeId,
       ord: bar.ord,
       bar_name: bar.bar_name,
       bar_email: bar.bar_email,
       minutes_offset: bar.minutes_offset ?? 0,
+      locale: normalizeBarLocale(bar.locale),
     }
   );
   return first(db, `SELECT * FROM routes_bars WHERE id = :id`, { id: result.meta.last_row_id });
 }
 
 export async function updateBar(db, barId, patch) {
-  const cols = ['ord', 'bar_name', 'bar_email', 'minutes_offset'].filter((k) => k in patch);
+  const cols = ['ord', 'bar_name', 'bar_email', 'minutes_offset', 'locale'].filter((k) => k in patch);
   if (cols.length === 0) return first(db, `SELECT * FROM routes_bars WHERE id = :id`, { id: barId });
   const setClause = cols.map((c) => `${c} = :${c}`).join(', ');
   const bound = { id: barId };
-  for (const c of cols) bound[c] = patch[c];
+  for (const c of cols) bound[c] = c === 'locale' ? normalizeBarLocale(patch[c]) : patch[c];
   await run(db, `UPDATE routes_bars SET ${setClause} WHERE id = :id`, bound);
   return first(db, `SELECT * FROM routes_bars WHERE id = :id`, { id: barId });
 }
@@ -821,8 +831,8 @@ export async function replaceBars(db, routeId, bars, weekday = null) {
   let ord = 1;
   for (const bar of bars) {
     statements.push({
-      sql: `INSERT INTO routes_bars (route_id, ord, bar_name, bar_email, minutes_offset, weekday)
-            VALUES (:route_id, :ord, :bar_name, :bar_email, :minutes_offset, :weekday)`,
+      sql: `INSERT INTO routes_bars (route_id, ord, bar_name, bar_email, minutes_offset, weekday, locale)
+            VALUES (:route_id, :ord, :bar_name, :bar_email, :minutes_offset, :weekday, :locale)`,
       params: {
         route_id: routeId,
         ord: Number.isInteger(bar.ord) ? bar.ord : ord,
@@ -830,6 +840,7 @@ export async function replaceBars(db, routeId, bars, weekday = null) {
         bar_email: bar.bar_email,
         minutes_offset: bar.minutes_offset ?? 0,
         weekday,
+        locale: normalizeBarLocale(bar.locale),
       },
     });
     ord++;

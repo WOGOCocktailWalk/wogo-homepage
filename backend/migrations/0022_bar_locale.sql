@@ -1,0 +1,24 @@
+-- migrations/0022_bar_locale.sql
+-- Per-bar email language (owner requirement, 2026-10). Every bar-facing
+-- renderer (renderBarNotification / renderBarReschedule / renderBarCancellation,
+-- src/emails.js) was English-only — fine while every bar was a Dutch venue,
+-- wrong now that WOGO is expanding to London. A bar's staff should get their
+-- reservation mail in their own language, not WOGO's internal admin language.
+--
+-- ALTER TABLE ADD COLUMN ... NOT NULL DEFAULT 'nl' backfills every existing
+-- row to 'nl' in the same statement (SQLite's documented behaviour for a
+-- non-NULL constant default on ADD COLUMN) — correct because every bar on
+-- routes_bars today (Amsterdam/Rotterdam/Utrecht/Groningen/Delft) is a Dutch
+-- venue. Only values 'nl'/'en' are meaningful — src/emails.js treats
+-- anything other than the literal 'en' as 'nl' (same normalize-at-the-edge
+-- pattern booking.locale already uses), so this column never needs a CHECK
+-- constraint to stay safe.
+--
+-- London bars (added via a future seed/admin-entry once the London route
+-- goes live) get locale='en' at insert time — db.js:addBar/replaceBars both
+-- accept an explicit `locale` and default to 'nl' only when it's omitted.
+--
+-- NOT applied to remote D1 by tooling — the operator applies this by hand
+-- (wrangler d1 migrations apply wogo-bookings --remote) and redeploys.
+
+ALTER TABLE routes_bars ADD COLUMN locale TEXT NOT NULL DEFAULT 'nl';
