@@ -969,6 +969,76 @@ The three Rotterdam routes' `routes.name` dropped their sub-neighbourhood/market
 
 ---
 
+## 17. Subscribers (newsletter) (`migrations/0024_subscribers.sql`, 2026-10)
+
+The newsletter plumbing: a GDPR double opt-in signup flow for the site footer, a direct-to-confirmed path for a booking's own opt-in checkbox and for a historical Wix CSV import, a programmatically-created Brevo contact model (nothing clicked together by hand in the Brevo UI), and a Stripe welcome-code bootstrap. Two new tables: `subscribers` (one row per email WOGO has ever tried to add, any source) and `brevo_sync_queue` (the Brevo-is-down retry queue, §17.7).
+
+### 17.1 Brevo contact model — `POST /admin/api/brevo/setup`
+
+Admin-only, CSRF-guarded like every other admin mutation. Idempotently ensures, via `src/brevo.js`'s `ensureContactFolder`/`ensureContactList`/`ensureContactAttribute` (each: list-then-create-only-if-missing):
+- folder `"WOGO"` (`BREVO_FOLDER_NAME`), list `"WOGO subscribers"` (`BREVO_LIST_NAME`) under it — the resulting list id is stored in `settings` under key `brevo_list_id` (`db.js:getSetting`/`setSetting`, the same generic table the owner-alert throttles already use);
+- nine custom contact attributes (`BREVO_CONTACT_ATTRIBUTES`, `src/config.js`): `LANGUAGE`/`CITY_INTEREST`/`SOURCE`/`FIRST_NAME`/`CONSENT_SOURCE` (text), `LAST_BOOKING_DATE`/`CONSENT_AT` (date), `LAST_ROUTE` (text), `BOOKINGS_COUNT` (float — Brevo has no plain integer attribute type).
+
+Response: `{ folder: {id, created}, list: {id, created}, attributes: [{name, type, created}, ...] }` — `created:false` on every field when re-run against an already-set-up account. Safe to run as many times as needed; it's how Maroussia's own session (or a future one) bootstraps Brevo instead of clicking through its UI.
+
+### 17.2 `POST /api/subscribe` — the site-footer double opt-in signup
+
+Public, CORS like every other guest endpoint, own rate-limit bucket (`kind='subscribe'`), honeypot field `website` (identical silent-absorb pattern to `/api/contact`). Body: `{email, first_name?, locale, city?, source}` — `source` must be one of `SUBSCRIBE_SOURCES` (`site_footer`/`booking_opt_in`/`wix_import`/`gift_card`/`contact_form`).
+
+The state machine (`src/guest_api.js:handleSubscribe`, storage half in `db.js`):
+- **no existing row** → `subscribers.createSubscriber`: a `'pending'` row, a confirmation email (`emails.js:renderSubscribeConfirm`, EN/NL, logo + "Confirm your subscription"/"Bevestig je inschrijving" + one button → `GET /api/subscribe/confirm?token=…`).
+- **existing `'pending'` row** → `db.js:reissueSubscriberToken`: a fresh `confirm_token`, `created_at` reset (restarts the `CONFIRM_TOKEN_EXPIRY_HOURS` clock), resend.
+- **existing `'unsubscribed'` row** → re-armed to `'pending'` exactly like a brand-new signup (a deliberate fresh opt-in round), resend.
+- **existing `'confirmed'` row** → `200 {ok:true, already:true}`, **no email** — re-submitting the form for an already-confirmed address must not re-trigger the welcome code or spam them.
+
+### 17.3 `GET /api/subscribe/confirm?token=…` — the click
+
+Always a `302` redirect (a link clicked out of an email, never a `fetch()` call):
+- missing/unknown token, or a token belonging to an `'unsubscribed'` row → `${SITE_URL}/subscribed/?state=invalid`
+- an expired `'pending'` token (`logic.js:isConfirmTokenExpired`, judged against `created_at` vs. `CONFIRM_TOKEN_EXPIRY_HOURS` = 48h) → same `?state=invalid`
+- already `'confirmed'` (a double-click, or an email client pre-fetching the link) → `${SITE_URL}/subscribed/?lang=en|nl`, **idempotent — no second welcome email**
+- a genuine first confirm → `db.js:confirmSubscriberByToken` flips the row, `src/subscribers.js:syncConfirmedSubscriber` upserts the contact into Brevo (full attribute set, added to the list, `CONSENT_SOURCE='double_opt_in'`), the **WELCOME email** sends (`emails.js:renderSubscribeWelcome` — the `WELCOME_CODE` constant (`'WELCOME10'`), a footer unsubscribe link built from this request's own origin + the row's never-rotated `unsubscribe_token`), then the same success redirect.
+
+The welcome code is never present in the confirmation email or the redirect URL itself — it only ever reaches the subscriber once consent is actually confirmed, so a stray/forwarded confirmation link can't leak a discount to someone who never opted in.
+
+### 17.4 `GET /api/unsubscribe?token=…`
+
+Always a `302` redirect, idempotent (`db.js:unsubscribeByToken` — a second click on an already-unsubscribed token is a no-op, not an error): `${SITE_URL}/subscribed/?state=unsubscribed` on success or an already-unsubscribed token; `?state=invalid` for an unknown one. Mirrors to Brevo via `src/brevo.js:unsubscribeContact` (blacklists the contact + removes it from the list) through the same retry-queue wrapper as every other Brevo write here. The unsubscribe link is only ever in the WELCOME email's footer — transactional booking confirmation/reschedule/cancellation mails never carry one (they're not marketing mail).
+
+### 17.5 Booking opt-in — the consent act that skips the email round-trip
+
+`src/subscribers.js:handleConfirmedBookingOptIn(env, booking, route, {baseUrl})`, called from **both** `src/webhook.js` (a Stripe-confirmed booking, `status==='confirmed'` or `'confirmed_conflict'`) **and** `src/admin_api.js:handleCreateManualBooking` (the owner's phone-booking form) — one implementation, two call sites, so a manual booking's opt-in checkbox behaves identically to a web one. `baseUrl` is the Worker's **own** origin (`new URL(request.url).origin` at each call site) — never `SITE_URL`, which is the static site's domain.
+
+- **`booking.marketing_opt_in` truthy** — the booking itself IS the consent act. `db.js:upsertConfirmedSubscriber` writes/updates a `'confirmed'` local row (`source='booking_opt_in'`), Brevo gets the full attribute set **plus** `CONSENT_SOURCE='booking'`/`LAST_BOOKING_DATE`/`LAST_ROUTE`/`BOOKINGS_COUNT` and is added to the list. The WELCOME email sends only the **first** time this email becomes a confirmed subscriber (tracked via a pre-write read of the existing local row) — a second, third, Nth opted-in booking from an already-subscribed guest updates their Brevo attributes but does **not** re-send the welcome code.
+- **not opted in** — `src/subscribers.js`'s `doSyncBookingAttributesIfExists`: looks the email up in Brevo (`getContact`) and, **only if it already exists there**, patches `LAST_BOOKING_DATE`/`LAST_ROUTE`/`BOOKINGS_COUNT` (read-then-increment — Brevo's contacts API has no atomic increment verb). **Never creates a Brevo contact or a local `subscribers` row from this path** — that would be subscribing someone without consent. A non-subscriber booking a cocktail walk leaves zero trace in either table.
+- **Gift-card buyers are never subscribed.** A gift-card *purchase* (`session.metadata.type==='giftcard'`) is handled entirely in `webhook.js:handleGiftCardPurchaseCompleted`, a completely separate branch that never creates a `bookings` row and never calls `handleConfirmedBookingOptIn` — there is no code path to "fix" here; a buyer who also books a walk themselves (gift-card *redemption* as payment) is subscribed or not exactly like any other booking, independent of how it was paid.
+
+### 17.6 `POST /admin/api/subscribers/import` — the Wix CSV import
+
+Admin-only, CSRF-guarded, body: a JSON array (max 2000 rows per call) of `{email, first_name?, locale?, city?, consented_at?}`. Every row lands as `'confirmed'`, `source='wix_import'`, `CONSENT_SOURCE='wix_import'` — no confirmation email, this is pre-consented history. `consented_at` is accepted but not persisted on a separate column today (the row's own `created_at`/`confirmed_at` already record "when WOGO's system first knew" — a dedicated original-consent-date column is a natural follow-up, flagged rather than silently dropped). `src/subscribers.js:importSubscribers` writes every row to D1 first, THEN syncs to Brevo in chunks of 100 with a 1-second pause between chunks (`IMPORT_CHUNK_SIZE`/`IMPORT_CHUNK_DELAY_MS`) to respect Brevo's rate limits; a per-row Brevo failure queues that one row to `brevo_sync_queue` instead of failing the whole batch. Response: `{imported, updated, queued_for_retry, errors: [...]}`.
+
+**Owner step, not built here** (a local one-time script, not an endpoint): converting the Wix contacts export (CSV) into the JSON array this endpoint expects. See `SETUP.md` §18 for the exact shape to produce.
+
+### 17.7 Brevo failure handling — `brevo_sync_queue`
+
+The simpler of the two options considered (see BUILD item #7): rather than re-deriving "what Brevo state should this subscriber be in" from scratch on every cron tick, every Brevo CONTACTS-API write in `src/subscribers.js` that throws is queued verbatim (`kind` + a small JSON `payload`) to `brevo_sync_queue`, mirroring `migrations/0008`'s `failed_email` queue shape exactly. `src/brevo_sync.js:retryBrevoSyncQueue` (consolidated into the existing 5-minute cron, `src/index.js`) drains due rows with the same attempts/backoff/give-up-and-alert contract as `src/email_retry.js`: `BREVO_SYNC_MAX_ATTEMPTS=5`, backoff `[5,15,60,240,720]` minutes, one throttled owner alert (not one per row) after a row gives up. The local D1 write (the subscriber row, the confirmed booking) has already committed by the time any Brevo call runs — a Brevo outage never turns a successful guest/owner action into a failed one. `GET /admin/api/subscribers/sync-queue` surfaces the queue for the dashboard, mirroring `GET /admin/api/failed-emails`.
+
+### 17.8 `POST /admin/api/stripe/ensure-welcome-code` — WELCOME10
+
+Admin-only, CSRF-guarded. Idempotently creates a Stripe Coupon (`percent_off=10`, `duration='once'`) + a Promotion Code with the literal code `WELCOME10` (`WELCOME_CODE`, `src/config.js`) — `allow_promotion_codes:true` is already set on every booking Checkout Session (`src/stripe.js:createCheckoutSession`), so the code works at checkout with zero further wiring the moment it exists. Re-running the endpoint finds the existing code (`GET /v1/promotion_codes?code=WELCOME10`) and returns `created:false`. Stripe's own error body is returned as-is on failure (`502 {error:'stripe_error', message:'<Stripe's text>'}`) rather than a generic message.
+
+**Honest limitation, flagged rather than hidden**: the task asked for a code usable "once per customer." Stripe's Promotion Code API has no literal "once per redeeming customer, including repeat customers" restriction — the closest available is `restrictions[first_time_transaction]=true`, applied here, which limits the code to a Customer's FIRST successful payment ever, not "once each, even on a later purchase" for someone who has paid before. That's a narrower guarantee than the literal ask. If Maroussia wants a stricter cap later, Stripe's dashboard shows redemption history and `max_redemptions` (global, not per-customer) can be lowered by hand.
+
+### 17.9 Admin dashboard — Subscribers tab
+
+`GET /admin/api/subscribers?status=&source=&locale=&q=&page=` (counts by status/source/locale alongside the filtered list) and `GET /admin/api/subscribers.csv` back a new **Subscribers** tab (`src/admin/admin.html`/`admin.js`/`mock.js`) — stat tiles (total/confirmed/pending/unsubscribed), a filterable table, a CSV download button (same pattern as the existing Export tab), and a **"Sync Brevo setup"** button that calls §17.1's endpoint. Rebuilt via `node src/admin/build.mjs` into `src/admin/assets.js` (auto-generated, imported by `index.js`) — required after any hand-edit to the `src/admin/*` source files.
+
+### 17.10 Tests
+
+`test/subscribers.test.js` (41 tests) covers: `/api/subscribe` validation/honeypot/own-rate-limit-bucket/the full double-opt-in state machine (pending re-issue, confirmed no-op, unsubscribed re-arm); `/api/subscribe/confirm` (success EN+NL with the real welcome code + unsubscribe link, invalid token, expired token via a direct `created_at` rewind, idempotent double-click, a token for an unsubscribed row); `/api/unsubscribe` (success + Brevo blacklist, invalid token, idempotent double-unsubscribe); `POST /admin/api/brevo/setup` (creates everything on first run, nothing twice on a second run, CSRF-gated); `POST /admin/api/stripe/ensure-welcome-code` (creates, then finds existing); `GET /admin/api/subscribers`(+`.csv`) filters/counts; `POST /admin/api/subscribers/import` (creates, updates on re-import, a per-row Brevo failure queues instead of failing the batch, oversized/invalid rejected); the full booking-opt-in decision tree via a **real** signed Stripe webhook request against a real SQLite-backed D1 adapter (opted-in confirms + lists + welcomes once, a second opted-in booking doesn't re-welcome, non-opted-in-and-not-a-contact creates nothing, non-opted-in-and-already-a-contact updates attributes without listing); the same opt-in path via `handleCreateManualBooking`; and `retryBrevoSyncQueue` (succeeds on retry, gives up + alerts after `BREVO_SYNC_MAX_ATTEMPTS`). Both Brevo and Stripe are faked via one small stateful `global.fetch` router per test file (folders/lists/attributes/contacts with real merge-not-replace semantics, promotion codes) — exercising the actual idempotent find-or-create logic in `brevo.js`/`stripe.js`, not just asserting a call was made. Full suite: **548 passing, 0 failing** (up from 507).
+
+---
+
 ## PORTABILITY.md (to be created verbatim as its own file)
 
 ```markdown

@@ -151,6 +151,86 @@ export async function createGiftCardCheckoutSession(env, gift) {
   return res.json();
 }
 
+// ---------------------------------------------------------------------------
+// Welcome code (WELCOME_CODE, src/config.js) — POST /admin/api/stripe/ensure-
+// welcome-code (src/admin_api.js). Idempotently creates a 10%-off Stripe
+// Promotion Code the subscriber-welcome email can tell guests to enter at
+// checkout (`allow_promotion_codes: true` is already set on every booking
+// Checkout Session — see createCheckoutSession above — so this code works
+// there with zero further wiring).
+//
+// HONEST LIMITATION, flagged rather than hidden: the task asked for a code
+// that is usable "once per customer". Stripe's Promotion Code API has no
+// literal "once per redeeming customer, including repeat customers" guard —
+// the closest built-in restriction is `restrictions[first_time_transaction]`,
+// which limits the code to a Customer's FIRST successful payment, not "once
+// each, ever, even on a later purchase" for a customer who has paid before.
+// That's a different (narrower) guarantee than "once per customer" literally
+// means, so it's applied here as the best available approximation and called
+// out explicitly in SETUP.md — if Maroussia wants a stricter per-customer cap
+// later, Stripe's own dashboard shows redemption history and the code's
+// `max_redemptions` (global, not per-customer) can be lowered by hand.
+// ---------------------------------------------------------------------------
+
+/**
+ * Looks up an existing Promotion Code by its exact `code` string. Returns the
+ * promotion code object, or null if none exists yet.
+ */
+async function findPromotionCodeByCode(env, code) {
+  const res = await fetch(`https://api.stripe.com/v1/promotion_codes?code=${encodeURIComponent(code)}&limit=1`, {
+    headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` },
+  });
+  if (!res.ok) throw new Error(`stripe_promotion_code_lookup_failed: ${res.status} ${await res.text()}`);
+  const json = await res.json();
+  return (json.data && json.data[0]) || null;
+}
+
+/**
+ * Idempotently ensures a `percentOff`% Promotion Code with the literal string
+ * `code` exists, creating the backing Coupon + the Promotion Code if missing.
+ * Returns { code, id, created, coupon_id } — `created: false` when it already
+ * existed (re-running this endpoint is always safe, same "ensure" contract as
+ * src/brevo.js's ensureContactFolder/ensureContactList/ensureContactAttribute).
+ * Throws Stripe's own error body on an unexpected API failure (admin_api.js
+ * surfaces it as-is rather than masking it behind a generic 502 — the owner
+ * needs to see WHY Stripe rejected the create, not just that it failed).
+ */
+export async function ensureWelcomePromotionCode(env, code, percentOff) {
+  const existing = await findPromotionCodeByCode(env, code);
+  if (existing) return { code: existing.code, id: existing.id, created: false, coupon_id: existing.coupon };
+
+  const couponBody = new URLSearchParams();
+  couponBody.set('percent_off', String(percentOff));
+  couponBody.set('duration', 'once');
+  couponBody.set('name', `WOGO Welcome ${percentOff}%`);
+  const couponRes = await fetch('https://api.stripe.com/v1/coupons', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: couponBody,
+  });
+  if (!couponRes.ok) throw new Error(`stripe_coupon_failed: ${couponRes.status} ${await couponRes.text()}`);
+  const coupon = await couponRes.json();
+
+  const promoBody = new URLSearchParams();
+  // Stripe API versions from 2025 onward nest the coupon under `promotion`
+  // (the flat `coupon` param returns "parameter_unknown" on this account).
+  promoBody.set('promotion[type]', 'coupon');
+  promoBody.set('promotion[coupon]', coupon.id);
+  promoBody.set('code', code);
+  // See the doc comment above — this is an APPROXIMATION of "once per
+  // customer" (Stripe has no exact equivalent via this API).
+  promoBody.set('restrictions[first_time_transaction]', 'true');
+  const promoRes = await fetch('https://api.stripe.com/v1/promotion_codes', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: promoBody,
+  });
+  if (!promoRes.ok) throw new Error(`stripe_promotion_code_failed: ${promoRes.status} ${await promoRes.text()}`);
+  const promo = await promoRes.json();
+
+  return { code: promo.code, id: promo.id, created: true, coupon_id: coupon.id };
+}
+
 /**
  * Verifies a Stripe webhook's Stripe-Signature header using the async Web
  * Crypto pattern (Workers cannot use Node's `crypto` module / stripe-node).

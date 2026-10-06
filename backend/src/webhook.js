@@ -20,6 +20,7 @@ import {
 import * as db from './db.js';
 import { OWNER_NOTIFY_EMAIL, OWNER_ALERT_EMAIL, WEBHOOK_TOLERANCE_SECONDS } from './config.js';
 import { sendWithRetry } from './email_retry.js';
+import { handleConfirmedBookingOptIn } from './subscribers.js';
 
 function json(data, status) {
   return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -144,6 +145,17 @@ export async function handleWebhook(request, env, deps = {}) {
           if (booking.gift_code) {
             await applyGiftCardRedemption(env, booking, { database, sendTransactional: brevoSend });
           }
+
+          // Newsletter subscriber plumbing (BUILD item #3) — a confirmed
+          // booking is a real consent act (opt-in checkbox) or, if not opted
+          // in, a chance to keep an ALREADY-subscribed guest's booking
+          // history current in Brevo. handleConfirmedBookingOptIn never
+          // throws on its own, but it's wrapped in safe() here anyway
+          // (belt-and-suspenders) — a Brevo hiccup must never turn a paid,
+          // confirmed booking into a failed webhook / Stripe retry storm.
+          await safe(() =>
+            handleConfirmedBookingOptIn(env, booking, route, { baseUrl: new URL(request.url).origin }, { database, sendTransactional: brevoSend })
+          );
 
           await safe(() => metaSend(env, booking, route));
         }

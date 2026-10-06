@@ -52,7 +52,8 @@
     customers: { list: [], q: "", codes: {}, codesLoaded: false, loaded: false, formOpen: false },
     hours: { date: todayStr(), route: "", _data: null, editSlot: null },
     routesUI: { openId: null, tab: "details", bars: {}, overrides: {} },
-    giftCards: { list: [], loaded: false }
+    giftCards: { list: [], loaded: false },
+    subscribers: { list: [], total: 0, counts: null, loaded: false, filters: { status: "", source: "", q: "" } }
   };
 
   /* ---------- date utils (timezone-safe, local) ------------------------- */
@@ -155,6 +156,7 @@
       hours: ["Participants per hour", "Who is arriving, and when — pick a date"],
       routes: ["Route manager", "Days, times, seats, bars and one-off date changes"],
       giftcards: ["Gift cards", "Every card sold, its balance, and who it's for"],
+      subscribers: ["Subscribers", "The newsletter list — signups, booking opt-ins, and imports"],
       export: ["Export", "Download bookings as a spreadsheet (CSV)"]
     };
     $("#page-title").textContent = titles[view][0];
@@ -166,6 +168,7 @@
     else if (view === "hours") renderHours(target);
     else if (view === "routes") renderRoutes(target);
     else if (view === "giftcards") renderGiftCards(target);
+    else if (view === "subscribers") renderSubscribers(target);
     else if (view === "export") renderExport(target);
   }
 
@@ -1955,6 +1958,173 @@
         el("td", {}, [el("div", { class: "td-name", text: c.buyer_name || "—" }), el("div", { class: "td-sub", text: c.buyer_email || "" })]),
         el("td", { class: "td-sub num", text: c.created_at ? prettyDate(String(c.created_at).slice(0, 10)) : "—" }),
         el("td", {}, voidBtn)
+      ]));
+    });
+    t.appendChild(tb);
+    scroll.appendChild(t);
+    card.appendChild(scroll);
+    holder.appendChild(card);
+  }
+
+  /* ======================================================================
+     VIEW 4.5 — SUBSCRIBERS (migrations/0024, BUILD §17)
+     The newsletter list: site-footer signups, booking opt-ins, and Wix
+     imports — all double-opt-in-confirmed except where the opt-in act
+     itself (a booking checkbox, or the import) already WAS the consent.
+     A "Sync Brevo setup" button runs the idempotent folder/list/attribute
+     bootstrap (POST /admin/api/brevo/setup) so nothing has to be clicked
+     together by hand in the Brevo dashboard.
+     ====================================================================== */
+  function subscriberStatusTag(status) {
+    const cls = status === "confirmed" ? "confirmed" : status === "unsubscribed" ? "cancelled" : "hold";
+    const label = { confirmed: "Confirmed", pending: "Pending", unsubscribed: "Unsubscribed" }[status] || status;
+    return el("span", { class: "badge " + cls, text: label });
+  }
+  const SUBSCRIBE_SOURCE_LABELS = {
+    site_footer: "Site footer", booking_opt_in: "Booking opt-in", wix_import: "Wix import",
+    gift_card: "Gift card", contact_form: "Contact form"
+  };
+
+  function renderSubscribers(root) {
+    $("#topbar-actions").innerHTML = "";
+    $("#topbar-actions").appendChild(el("button", {
+      class: "btn btn-quiet", text: "Sync Brevo setup",
+      onclick: async (ev) => {
+        const btn = ev.currentTarget; btn.disabled = true; btn.textContent = "Syncing…";
+        try {
+          const res = await api("/admin/api/brevo/setup", { method: "POST" });
+          const createdAttrs = (res.attributes || []).filter((a) => a.created).length;
+          toast("Brevo is set up — list “" + res.list.name + "” ready" + (createdAttrs ? ", " + createdAttrs + " new attribute(s) created" : ""), "ok");
+        } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+        btn.disabled = false; btn.textContent = "Sync Brevo setup";
+      }
+    }));
+    $("#topbar-actions").appendChild(el("button", {
+      class: "btn btn-primary", text: "⬇  Download CSV",
+      onclick: async (ev) => {
+        const btn = ev.currentTarget; btn.disabled = true;
+        const qs = new URLSearchParams();
+        const f = S.subscribers.filters;
+        if (f.status) qs.set("status", f.status);
+        if (f.source) qs.set("source", f.source);
+        if (f.q) qs.set("q", f.q);
+        try {
+          const res = await fetch(API + "/admin/api/subscribers.csv?" + qs.toString(), { credentials: "same-origin" });
+          if (res.status === 401) { showLogin(); return; }
+          if (!res.ok) throw new Error("Export failed (" + res.status + ")");
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = el("a", { href: url, download: "wogo-subscribers-" + todayStr() + ".csv" });
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 4000);
+          toast("Downloaded CSV", "ok");
+        } catch (e) { toast(e.message, "err"); }
+        btn.disabled = false;
+      }
+    }));
+
+    clear(root);
+    const f = S.subscribers.filters;
+    const statusOptions = ["All statuses", "Pending", "Confirmed", "Unsubscribed"];
+    const statusSel = selectField("Status", "", statusOptions, (v) => {
+      f.status = v === "All statuses" ? "" : v.toLowerCase();
+      loadSubscribers();
+    }, f.status ? f.status[0].toUpperCase() + f.status.slice(1) : "All statuses");
+    const sourceLabels = ["All sources"].concat(Object.keys(SUBSCRIBE_SOURCE_LABELS).map((k) => SUBSCRIBE_SOURCE_LABELS[k]));
+    const sourceKeys = [""].concat(Object.keys(SUBSCRIBE_SOURCE_LABELS));
+    const sourceSel = selectField("Source", "", sourceLabels, (v) => {
+      const idx = sourceLabels.indexOf(v);
+      f.source = sourceKeys[idx] || "";
+      loadSubscribers();
+    }, f.source ? SUBSCRIBE_SOURCE_LABELS[f.source] : "All sources");
+    const searchInput = el("input", { type: "text", placeholder: "Email or name…", value: f.q });
+    let sT;
+    searchInput.addEventListener("input", () => {
+      clearTimeout(sT);
+      sT = setTimeout(() => { f.q = searchInput.value.trim(); loadSubscribers(); }, 320);
+    });
+
+    root.appendChild(el("div", { class: "filters" }, [
+      el("div", { class: "filters-row" }, [
+        statusSel, sourceSel,
+        el("div", { class: "filter-group search", style: "flex:1;max-width:280px" }, [el("label", { text: "Search" }), searchInput])
+      ])
+    ]));
+    root.appendChild(el("div", { class: "stat-row", id: "sub-stats" }));
+    root.appendChild(el("div", { id: "sub-holder" }));
+
+    if (S.subscribers.loaded) paintSubscribers();
+    else loadSubscribers();
+  }
+
+  async function loadSubscribers() {
+    const holder = $("#sub-holder");
+    if (!holder) return;
+    clear(holder);
+    holder.appendChild(skeletonCard());
+    try {
+      const f = S.subscribers.filters;
+      const qs = new URLSearchParams();
+      if (f.status) qs.set("status", f.status);
+      if (f.source) qs.set("source", f.source);
+      if (f.q) qs.set("q", f.q);
+      const data = await api("/admin/api/subscribers?" + qs.toString());
+      S.subscribers.list = data.subscribers || [];
+      S.subscribers.total = data.total || 0;
+      S.subscribers.counts = data.counts || null;
+      S.subscribers.loaded = true;
+      paintSubscribers();
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(holder); holder.appendChild(errorCard(e.message, loadSubscribers)); }
+    }
+  }
+
+  function paintSubscribers() {
+    const stats = $("#sub-stats"), holder = $("#sub-holder");
+    if (!holder) return;
+    const list = S.subscribers.list;
+    const counts = S.subscribers.counts;
+
+    if (stats) {
+      clear(stats);
+      const byStatus = {};
+      (counts && counts.by_status || []).forEach((r) => { byStatus[r.status] = r.n; });
+      const total = Object.keys(byStatus).reduce((a, k) => a + byStatus[k], 0);
+      stats.appendChild(stat("Total subscribers", total, "every status, all time"));
+      stats.appendChild(stat("Confirmed", byStatus.confirmed || 0, "on the Brevo list"));
+      stats.appendChild(stat("Pending", byStatus.pending || 0, "awaiting double opt-in"));
+      stats.appendChild(stat("Unsubscribed", byStatus.unsubscribed || 0, "opted back out"));
+    }
+
+    clear(holder);
+    const card = el("div", { class: "card" });
+    card.appendChild(el("div", { class: "card-head" }, [
+      el("h2", { text: "Subscribers" }),
+      el("span", { class: "count-badge", text: list.length + (list.length === 1 ? " shown" : " shown") + " · " + S.subscribers.total + " total" })
+    ]));
+    if (list.length === 0) {
+      card.appendChild(el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "✉️" }),
+        el("div", { text: "No subscribers match these filters yet." })
+      ]));
+      holder.appendChild(card);
+      return;
+    }
+    const scroll = el("div", { class: "table-scroll" });
+    const t = el("table", { class: "data" });
+    t.appendChild(el("thead", {}, el("tr", {}, [
+      th("Email"), th("Name"), th("Locale"), th("City"), th("Source"), th("Status"), th("Signed up")
+    ])));
+    const tb = el("tbody");
+    list.forEach((s) => {
+      tb.appendChild(el("tr", {}, [
+        el("td", { class: "td-name", text: s.email }),
+        el("td", { class: "td-sub", text: s.first_name || "—" }),
+        el("td", { class: "td-sub", text: (s.locale || "en").toUpperCase() }),
+        el("td", { class: "td-sub", text: s.city || "—" }),
+        el("td", { class: "td-sub", text: SUBSCRIBE_SOURCE_LABELS[s.source] || s.source }),
+        el("td", {}, subscriberStatusTag(s.status)),
+        el("td", { class: "td-sub num", text: s.created_at ? prettyDate(String(s.created_at).slice(0, 10)) : "—" })
       ]));
     });
     t.appendChild(tb);

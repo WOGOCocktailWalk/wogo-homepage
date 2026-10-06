@@ -45,7 +45,10 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       notes: "Allergies or notes (optional)",
       notes_ph: "Nut allergy, wheelchair access, celebrating a birthday…",
       gift: "Gift card code (optional)", gift_ph: "WOGO-XXXX-XXXX",
-      optin: "Send me the occasional WOGO tip — no spam, unsubscribe anytime.",
+      /* Marketing opt-in. Unticked by default (GDPR: consent must be a positive
+         act) — the checkbox is created unchecked and only ever restored from the
+         guest's own in-session snapshot. */
+      optin: "Keep me posted on new routes and offers (10% off your next walk)",
       total: "Total", book: "Continue to secure payment",
       redirecting: "Taking you to secure checkout…",
       fine: "You'll pay securely via Stripe — iDEAL, card, Apple Pay or Klarna. Your table is only reserved once payment completes.",
@@ -91,7 +94,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       notes: "Allergieën of opmerkingen (optioneel)",
       notes_ph: "Notenallergie, rolstoeltoegang, een verjaardag vieren…",
       gift: "Cadeaubon-code (optioneel)", gift_ph: "WOGO-XXXX-XXXX",
-      optin: "Stuur me af en toe een WOGO-tip — geen spam, altijd uitschrijfbaar.",
+      optin: "Houd me op de hoogte van nieuwe routes en acties (10% korting op je volgende walk)",
       total: "Totaal", book: "Naar veilig betalen",
       redirecting: "Je gaat naar de beveiligde betaalpagina…",
       fine: "Je betaalt veilig via Stripe — iDEAL, kaart, Apple Pay of Klarna. Je tafel is pas gereserveerd zodra de betaling rond is.",
@@ -763,6 +766,33 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       setErr(this.nameInput, name ? "" : t.err_name);
       setErr(this.emailInput, EMAIL_RE.test(email) ? "" : t.err_email);
       if (!ok) return;
+
+      /* Analytics: "continue to payment" IS the GA4 begin_checkout step (and
+         Meta's InitiateCheckout). window.wogoTrack is the site's shared helper
+         (see ANALYTICS.md); it buffers and sends nothing until the visitor has
+         consented, so this is safe to call unconditionally. */
+      try {
+        const price = ((this.route && this.route.price_cents) || 0) / 100;
+        const currency = (this.route && this.route.currency) || "EUR";
+        const item = {
+          item_id: this.routeId,
+          item_name: (this.route && this.route.name) || this.routeId,
+          price, quantity: this.party,
+        };
+        if (this.route && this.route.city) item.item_category = this.route.city;
+        if (window.wogoTrack) {
+          window.wogoTrack("begin_checkout", {
+            currency, value: Math.round(price * this.party * 100) / 100, items: [item],
+          });
+        }
+        /* Stash the route so the confirmation page — reached after a same-tab
+           round trip through Stripe — can send `purchase` with an item_id that
+           MATCHES this begin_checkout. GET /api/booking returns route_name but
+           not route_id, so without this the funnel items wouldn't line up. */
+        sessionStorage.setItem("wogo_last_route", JSON.stringify({
+          id: this.routeId, name: item.item_name, city: (this.route && this.route.city) || "",
+        }));
+      } catch (e) { /* analytics must never block a booking */ }
 
       book.disabled = true;
       const original = book.textContent;

@@ -34,7 +34,7 @@
 // per-language map, the allergies block ordering, and the currency-aware money.
 
 import { isoWeekday, formatMoney } from './logic.js';
-import { EMAIL_LOGO_URL, posterUrlFor, SITE_URL } from './config.js';
+import { EMAIL_LOGO_URL, posterUrlFor, SITE_URL, WELCOME_CODE } from './config.js';
 
 // ---------------------------------------------------------------------------
 // Brand tokens (verbatim from the site palette — see src/admin/admin.css)
@@ -1243,6 +1243,138 @@ export function renderInquiryAutoAck(inquiry) {
       intro: t.intro,
       contentHtml: content,
       footerHtml: `<p style="margin:0;font-size:13px;line-height:1.5;color:${C.brown};">${escapeHtml(t.footer)}</p>`,
+    }),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 12 & 13. Newsletter subscribers (migrations/0024, BUILD §17)
+//   12. Double opt-in CONFIRMATION — one button, the ONLY job of this email.
+//       Deliberately carries NO welcome code — the code only ever arrives
+//       once consent is actually confirmed (the WELCOME email below), so a
+//       stray/forwarded confirmation link can't leak a discount to someone
+//       who never opted in themselves.
+//   13. WELCOME — sent once a subscription is CONFIRMED (double opt-in click,
+//       OR a booking's own opt-in checkbox, which IS the consent act —
+//       src/subscribers.js). Carries WELCOME_CODE and an unsubscribe link in
+//       the footer (transactional booking mails never carry one — only this
+//       marketing-adjacent mail does, BUILD item #4).
+// ---------------------------------------------------------------------------
+
+const SUBSCRIBE_CONFIRM_STRINGS = {
+  en: {
+    subject: 'Confirm your subscription — WOGO Cocktail Walk',
+    preheader: 'One click and you’re on the list.',
+    chip: 'Almost there',
+    heading: (name) => `Confirm your subscription${name ? ', ' + name : ''}`,
+    intro: 'Click below to confirm you’d like to hear from WOGO — new cities, offers, and the occasional good excuse for cocktails.',
+    button: 'Confirm your subscription',
+    ignore: "Didn't sign up for this? Just ignore this email — nothing happens unless you click the button above.",
+  },
+  nl: {
+    subject: 'Bevestig je inschrijving — WOGO Cocktail Walk',
+    preheader: 'Eén klik en je staat op de lijst.',
+    chip: 'Bijna klaar',
+    heading: (name) => `Bevestig je inschrijving${name ? ', ' + name : ''}`,
+    intro: 'Klik hieronder om te bevestigen dat je updates van WOGO wilt ontvangen — nieuwe steden, acties, en af en toe een goed excuus voor cocktails.',
+    button: 'Bevestig je inschrijving',
+    ignore: 'Heb je je niet aangemeld? Negeer deze e-mail gerust — er gebeurt niets tenzij je op de knop hierboven klikt.',
+  },
+};
+
+/** 12. Double opt-in confirmation email. `confirmUrl` is the full
+ * GET /api/subscribe/confirm?token=... link (built by the caller,
+ * src/guest_api.js, not this pure renderer). */
+export function renderSubscribeConfirm(subscriber, confirmUrl) {
+  const lang = loc(subscriber.locale);
+  const t = SUBSCRIBE_CONFIRM_STRINGS[lang];
+  const firstName = subscriber.first_name ? String(subscriber.first_name).trim().split(/\s+/)[0] : '';
+
+  const content = `
+    ${primaryButton(confirmUrl, t.button)}
+    <p style="margin:18px 0 0;font-size:13px;line-height:1.55;color:${C.muted};">${escapeHtml(t.ignore)}</p>`;
+
+  return {
+    subject: t.subject,
+    html: layout({
+      preheader: t.preheader,
+      hero: { chip: t.chip },
+      heading: t.heading(firstName),
+      intro: t.intro,
+      contentHtml: content,
+    }),
+  };
+}
+
+const SUBSCRIBE_WELCOME_STRINGS = {
+  en: {
+    subject: `Welcome to WOGO — here's 10% off`,
+    preheader: (code) => `Your code: ${code} — 10% off your next cocktail walk.`,
+    chip: `You're on the list`,
+    heading: (name) => `Welcome${name ? ', ' + name : ''}!`,
+    intro: `You're officially on the list. As a thank you, here's 10% off your next WOGO Cocktail Walk.`,
+    codeLabel: 'Your code',
+    codeNote: 'Enter it at checkout on any WOGO route.',
+    button: 'Book your walk',
+    signoff: 'See you out there — the WOGO team',
+    footer: `You're receiving this because you subscribed to WOGO Cocktail Walk updates.`,
+    unsubscribe: 'Unsubscribe',
+  },
+  nl: {
+    subject: 'Welkom bij WOGO — hier is 10% korting',
+    preheader: (code) => `Je code: ${code} — 10% korting op je volgende cocktail walk.`,
+    chip: 'Je staat op de lijst',
+    heading: (name) => `Welkom${name ? ', ' + name : ''}!`,
+    intro: 'Je staat officieel op de lijst. Als bedankje krijg je 10% korting op je volgende WOGO Cocktail Walk.',
+    codeLabel: 'Jouw code',
+    codeNote: 'Vul deze in bij het afrekenen op elke WOGO-route.',
+    button: 'Boek je walk',
+    signoff: 'Tot snel — het WOGO-team',
+    footer: 'Je ontvangt dit omdat je je hebt ingeschreven voor WOGO Cocktail Walk-updates.',
+    unsubscribe: 'Uitschrijven',
+  },
+};
+
+/** 13. Welcome email + WELCOME10 code. `opts.bookUrl` defaults to the site
+ * homepage (there is no single cross-city booking page); `opts.unsubscribeUrl`
+ * is the full GET /api/unsubscribe?token=... link — omit only in tests that
+ * don't care about the footer link, every real send always has one (every
+ * confirmed subscriber row carries an unsubscribe_token). */
+export function renderSubscribeWelcome(subscriber, opts = {}) {
+  const lang = loc(subscriber.locale);
+  const t = SUBSCRIBE_WELCOME_STRINGS[lang];
+  const firstName = subscriber.first_name ? String(subscriber.first_name).trim().split(/\s+/)[0] : '';
+  const bookUrl = opts.bookUrl || SITE_URL;
+
+  const codeBlock = `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.blush};border:1px dashed ${C.salmonDeep};border-radius:12px;margin:0 0 22px;">
+      <tr><td style="padding:16px;text-align:center;">
+        <div style="font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${C.brown};">${escapeHtml(t.codeLabel)}</div>
+        <div style="margin-top:6px;font:800 24px/1.2 ui-monospace,Menlo,monospace;color:${C.ink};letter-spacing:.06em;">${escapeHtml(WELCOME_CODE)}</div>
+        <div style="margin-top:6px;font-size:13px;color:${C.brown};">${escapeHtml(t.codeNote)}</div>
+      </td></tr>
+    </table>`;
+  const content = `
+    ${codeBlock}
+    ${primaryButton(bookUrl, t.button)}
+    <p style="margin:22px 0 0;font-size:16px;line-height:1.5;font-weight:800;color:${C.ink};">${escapeHtml(t.signoff)}</p>`;
+
+  const unsubscribeUrl = opts.unsubscribeUrl;
+  const footerHtml = `<p style="margin:0;font-size:12px;line-height:1.5;color:${C.muted};">${escapeHtml(t.footer)}${
+    unsubscribeUrl
+      ? ` &middot; <a href="${escapeHtml(unsubscribeUrl)}" style="color:${C.muted};text-decoration:underline;">${escapeHtml(t.unsubscribe)}</a>`
+      : ''
+  }</p>`;
+
+  return {
+    subject: t.subject,
+    html: layout({
+      preheader: t.preheader(WELCOME_CODE),
+      hero: { chip: t.chip },
+      heading: t.heading(firstName),
+      intro: t.intro,
+      contentHtml: content,
+      footerHtml,
     }),
   };
 }

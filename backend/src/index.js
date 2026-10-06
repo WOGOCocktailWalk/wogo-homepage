@@ -10,12 +10,13 @@ import { requireSession } from './auth.js';
 import {
   expireHolds, pruneRateEvents, pruneAuthEvents,
   pruneErrorLog, pruneAdminAudit, pruneResolvedFailedEmails,
+  pruneResolvedBrevoSyncItems,
 } from './db.js';
 import { constantTimeEqual, sqliteMinutesAgo } from './logic.js';
 import {
   RATE_EVENTS_RETENTION_MINUTES, AUTH_EVENTS_RETENTION_MINUTES,
   ERROR_LOG_RETENTION_MINUTES, ADMIN_AUDIT_RETENTION_MINUTES,
-  FAILED_EMAIL_RESOLVED_RETENTION_MINUTES,
+  FAILED_EMAIL_RESOLVED_RETENTION_MINUTES, BREVO_SYNC_RESOLVED_RETENTION_MINUTES,
 } from './config.js';
 import { adminResponse } from './admin/assets.js';
 import { withSecurityHeaders } from './security_headers.js';
@@ -24,6 +25,7 @@ import { runHealthCheck } from './healthcheck.js';
 import { retryFailedEmails } from './email_retry.js';
 import { runGdprRetention } from './retention.js';
 import { exportBackupToR2 } from './backup.js';
+import { retryBrevoSyncQueue } from './brevo_sync.js';
 
 // Second, less-frequent cron for daily housekeeping (GDPR retention, R2
 // backup export, pruning the long-retention audit/error/email-log tables) —
@@ -43,6 +45,9 @@ router.get('/api/booking', guestApi.handleBookingLookup);
 router.post('/api/book', guestApi.handleBook);
 router.post('/api/giftcard/checkout', guestApi.handleGiftCardCheckout);
 router.post('/api/contact', guestApi.handleContact);
+router.post('/api/subscribe', guestApi.handleSubscribe);
+router.get('/api/subscribe/confirm', guestApi.handleSubscribeConfirm);
+router.get('/api/unsubscribe', guestApi.handleUnsubscribe);
 
 // -- Webhook ------------------------------------------------------------------
 router.post('/webhooks/stripe', (request, env) => handleWebhook(request, env));
@@ -108,6 +113,14 @@ router.post('/admin/api/gift-cards/:code/void', adminApi.handleVoidGiftCard);
 
 // -- Contact + group-booking inquiries (migrations/0021) ---------------------
 router.get('/admin/api/inquiries', adminApi.handleListInquiries);
+
+// -- Newsletter subscribers (migrations/0024, BUILD §17) ---------------------
+router.post('/admin/api/brevo/setup', adminApi.handleBrevoSetup);
+router.post('/admin/api/stripe/ensure-welcome-code', adminApi.handleEnsureWelcomeCode);
+router.get('/admin/api/subscribers', adminApi.handleListSubscribers);
+router.get('/admin/api/subscribers.csv', adminApi.handleSubscribersCsv);
+router.post('/admin/api/subscribers/import', adminApi.handleImportSubscribers);
+router.get('/admin/api/subscribers/sync-queue', adminApi.handleBrevoSyncQueue);
 
 const ADMIN_API_PREFIX = '/admin/api/';
 const PUBLIC_ADMIN_PATHS = new Set(['/admin/login', '/admin/logout', '/admin/public-config']);
@@ -212,6 +225,7 @@ async function runScheduled(event, env) {
     await pruneRateEvents(env.DB, sqliteMinutesAgo(RATE_EVENTS_RETENTION_MINUTES));
     await pruneAuthEvents(env.DB, sqliteMinutesAgo(AUTH_EVENTS_RETENTION_MINUTES));
     await retryFailedEmails(env);
+    await retryBrevoSyncQueue(env);
     await runHealthCheck(env);
 
     if (event.cron === DAILY_CRON) {
@@ -225,6 +239,7 @@ async function runScheduled(event, env) {
       await pruneErrorLog(env.DB, sqliteMinutesAgo(ERROR_LOG_RETENTION_MINUTES));
       await pruneAdminAudit(env.DB, sqliteMinutesAgo(ADMIN_AUDIT_RETENTION_MINUTES));
       await pruneResolvedFailedEmails(env.DB, sqliteMinutesAgo(FAILED_EMAIL_RESOLVED_RETENTION_MINUTES));
+      await pruneResolvedBrevoSyncItems(env.DB, sqliteMinutesAgo(BREVO_SYNC_RESOLVED_RETENTION_MINUTES));
     }
   } catch (err) {
     console.error('scheduled_error', err);
