@@ -706,6 +706,29 @@ table.data tbody tr:last-child td { border-bottom: none; }
 }
 .hour-count small { display: block; font-weight: 600; font-size: 11px; color: var(--muted); }
 
+/* Analytics period chart (BUILD §19) — same bar mechanics as .hour-row, just
+   a wider first column for a period label ("2026-10" / "6 Oct") instead of
+   an "HH:MM" slot time. */
+.period-row {
+  display: grid;
+  grid-template-columns: 92px 1fr 90px;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 0;
+}
+.period-row + .period-row { border-top: 1px solid var(--line); }
+.period-time {
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Analytics sub-nav deltas vs. the KPI tab bar — a plain horizontal scroller
+   on narrow screens rather than wrapping (seven labels is a lot). */
+.analytics-subnav { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.analytics-subnav .rc-tabs { flex-wrap: nowrap; }
+
 .legend {
   display: flex;
   flex-wrap: wrap;

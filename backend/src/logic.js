@@ -807,6 +807,152 @@ export function aggregateCustomers(rows, q) {
 }
 
 // ---------------------------------------------------------------------------
+// Analytics (migrations/0025's idx_bookings_created, BUILD §19). Pure
+// aggregation over rows ALREADY filtered to confirmed bookings by the caller
+// (db.js:listBookingsForAnalyticsByWalkDate/BySaleDate — status IN
+// ('confirmed','confirmed_conflict')); this function does not re-check
+// status at all, so a test feeding it a cancelled/hold row would wrongly
+// count it — that filtering is SQL's job, by design (db.js fetches, this
+// folds — same split as aggregateCustomers above).
+//
+// Row shape expected: { id, route_id, route_name, city, date, slot, party,
+// created_at, source, locale, payment_status, discount_code, discount_cents,
+// gift_applied_cents, price_cents }.
+// ---------------------------------------------------------------------------
+
+/**
+ * Money actually RECOGNIZED as revenue for this booking.
+ *   - 'manual' bookings marked payment_status 'free'/'comp' → 0 (an owner
+ *     comp, not a sale).
+ *   - otherwise: price_cents × party, net of the promo discount AND any
+ *     gift-card amount applied (`gift_applied_cents`, migrations/0019).
+ * The gift-card deduction is a DELIBERATE divergence from
+ * logic.js's own customer-CRM `bookingSpendCents` (which does NOT subtract
+ * it — there, "spend" means the full value of what the guest walked away
+ * with). Here it matters: gift-card money was already recognized as revenue
+ * at the CARD's purchase date (see `giftCardSalesSummary` in db.js) — counting
+ * it again when the card is later redeemed against a booking would double
+ * -count it in any period straddling both events. Floored at 0 so a
+ * data-entry quirk (a discount bigger than the price) can't produce negative
+ * revenue.
+ */
+export function analyticsRevenueCents(row) {
+  if (row.source === 'manual' && (row.payment_status === 'free' || row.payment_status === 'comp')) return 0;
+  const gross = (Number(row.price_cents) || 0) * (Number(row.party) || 0)
+    - (Number(row.discount_cents) || 0)
+    - (Number(row.gift_applied_cents) || 0);
+  return gross > 0 ? gross : 0;
+}
+
+const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+/** 'YYYY-MM-DD' -> the bucket key for `group`: 'day' (unchanged), 'week'
+ * (that ISO week's Monday), or 'month' ('YYYY-MM'). */
+function analyticsBucketKey(dateStr, group) {
+  if (group === 'month') return dateStr.slice(0, 7);
+  if (group === 'week') return addDaysToDateStr(dateStr, -(isoWeekday(dateStr) - 1));
+  return dateStr;
+}
+
+function emptyBreakdownAccumulator() {
+  return { bookings: 0, guests: 0, revenue_cents: 0 };
+}
+
+function addRowToAccumulator(acc, row, revenue) {
+  acc.bookings += 1;
+  acc.guests += Number(row.party) || 0;
+  acc.revenue_cents += revenue;
+}
+
+/**
+ * @param rows   confirmed booking rows (see shape above), any order.
+ * @param opts.group      'day' | 'week' | 'month' — the time-series bucket.
+ * @param opts.dateField  which row field is the date to bucket/break down
+ *                        by weekday — `'date'` (walk date, the default) or
+ *                        `'created_at'` (sale date; only its first 10 chars
+ *                        are read, so a full datetime works unmodified).
+ * @returns {
+ *   series: [{period, bookings, guests, revenue_cents, avg_party}], period-ascending
+ *   by_route, by_city, by_slot, by_source, by_locale: [{key fields..., bookings, guests, revenue_cents}]
+ *   by_weekday: 7 rows, Monday..Sunday, always present even at 0
+ *   discount_usage: [{code, uses, total_discount_cents}]
+ *   totals: {bookings, guests, revenue_cents, avg_party}
+ * }
+ */
+export function buildBookingAnalytics(rows, opts = {}) {
+  const group = opts.group === 'week' || opts.group === 'month' ? opts.group : 'day';
+  const dateField = opts.dateField === 'created_at' ? 'created_at' : 'date';
+
+  const seriesMap = new Map();
+  const byRoute = new Map();
+  const byCity = new Map();
+  const bySlot = new Map();
+  const bySource = new Map();
+  const byLocale = new Map();
+  const byWeekday = WEEKDAY_LABELS.map((label, i) => ({ weekday: i + 1, label, ...emptyBreakdownAccumulator() }));
+  const discountUsage = new Map();
+  const totals = emptyBreakdownAccumulator();
+
+  for (const row of rows || []) {
+    const day = String(row[dateField] || '').slice(0, 10);
+    const revenue = analyticsRevenueCents(row);
+
+    const period = analyticsBucketKey(day, group);
+    if (!seriesMap.has(period)) seriesMap.set(period, emptyBreakdownAccumulator());
+    addRowToAccumulator(seriesMap.get(period), row, revenue);
+
+    if (row.route_id) {
+      if (!byRoute.has(row.route_id)) byRoute.set(row.route_id, { route_id: row.route_id, route_name: row.route_name, city: row.city, ...emptyBreakdownAccumulator() });
+      addRowToAccumulator(byRoute.get(row.route_id), row, revenue);
+    }
+    if (row.city) {
+      if (!byCity.has(row.city)) byCity.set(row.city, { city: row.city, ...emptyBreakdownAccumulator() });
+      addRowToAccumulator(byCity.get(row.city), row, revenue);
+    }
+    if (row.slot) {
+      if (!bySlot.has(row.slot)) bySlot.set(row.slot, { slot: row.slot, ...emptyBreakdownAccumulator() });
+      addRowToAccumulator(bySlot.get(row.slot), row, revenue);
+    }
+    const source = row.source || 'web';
+    if (!bySource.has(source)) bySource.set(source, { source, ...emptyBreakdownAccumulator() });
+    addRowToAccumulator(bySource.get(source), row, revenue);
+
+    const locale = row.locale || 'en';
+    if (!byLocale.has(locale)) byLocale.set(locale, { locale, ...emptyBreakdownAccumulator() });
+    addRowToAccumulator(byLocale.get(locale), row, revenue);
+
+    if (day) addRowToAccumulator(byWeekday[isoWeekday(day) - 1], row, revenue);
+
+    if (row.discount_code) {
+      if (!discountUsage.has(row.discount_code)) discountUsage.set(row.discount_code, { code: row.discount_code, uses: 0, total_discount_cents: 0 });
+      const d = discountUsage.get(row.discount_code);
+      d.uses += 1;
+      d.total_discount_cents += Number(row.discount_cents) || 0;
+    }
+
+    addRowToAccumulator(totals, row, revenue);
+  }
+
+  const withAvgParty = (acc) => ({ ...acc, avg_party: acc.bookings > 0 ? acc.guests / acc.bookings : 0 });
+
+  const series = [...seriesMap.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([period, acc]) => ({ period, ...withAvgParty(acc) }));
+
+  return {
+    series,
+    by_route: [...byRoute.values()].sort((a, b) => b.guests - a.guests),
+    by_city: [...byCity.values()].sort((a, b) => b.guests - a.guests),
+    by_slot: [...bySlot.values()].sort((a, b) => a.slot.localeCompare(b.slot)),
+    by_source: [...bySource.values()].sort((a, b) => b.guests - a.guests),
+    by_locale: [...byLocale.values()].sort((a, b) => b.guests - a.guests),
+    by_weekday: byWeekday,
+    discount_usage: [...discountUsage.values()].sort((a, b) => b.uses - a.uses),
+    totals: withAvgParty(totals),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Gift cards (migrations/0018) — code generation
 // ---------------------------------------------------------------------------
 

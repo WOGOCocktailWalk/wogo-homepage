@@ -30,6 +30,16 @@ you already use). If your `ADMIN_TOKEN` ever leaked, whoever has it still
 can't get past this second lock without also being logged into YOUR
 Google account. Free for up to 50 users (you need one).
 
+**Update (2026-10, personal team logins):** `/admin` now also supports
+per-person magic-link logins for teammates (Team tab, owner only — see
+`SETUP.md` §19), with roles (`owner`/`staff`/`viewer`) enforced by the
+Worker itself. That's a real improvement over everyone sharing one token,
+but it's still "whoever controls that person's email inbox can get in." If
+you ever do set up Cloudflare Access, it layers in front of EVERY login
+path here — the shared `ADMIN_TOKEN` AND every personal magic-link login
+alike — as one more gate before any of them are even checked. Still fully
+optional; not required for the team-logins feature to be safe to use as-is.
+
 **MFA note:** Access "sign in with Google" inherits whatever protection
 your Google account already has. If your Google account doesn't have
 2-Step Verification turned on yet, turn that on first

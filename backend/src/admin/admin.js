@@ -53,7 +53,10 @@
     hours: { date: todayStr(), route: "", _data: null, editSlot: null },
     routesUI: { openId: null, tab: "details", bars: {}, overrides: {} },
     giftCards: { list: [], loaded: false },
-    subscribers: { list: [], total: 0, counts: null, loaded: false, filters: { status: "", source: "", q: "" } }
+    subscribers: { list: [], total: 0, counts: null, loaded: false, filters: { status: "", source: "", q: "" } },
+    me: null, // {uid, email, name, role} — set by boot(), drives client-side UI hiding (server ROUTE_ROLES is the real control)
+    users: { list: [], loaded: false },
+    analytics: { sub: "sales", range: null, group: "day", data: null, kpi: null, loading: false, traffic: null }
   };
 
   /* ---------- date utils (timezone-safe, local) ------------------------- */
@@ -157,7 +160,9 @@
       routes: ["Route manager", "Days, times, seats, bars and one-off date changes"],
       giftcards: ["Gift cards", "Every card sold, its balance, and who it's for"],
       subscribers: ["Subscribers", "The newsletter list — signups, booking opt-ins, and imports"],
-      export: ["Export", "Download bookings as a spreadsheet (CSV)"]
+      export: ["Export", "Download bookings as a spreadsheet (CSV)"],
+      analytics: ["Analytics", "Business numbers — sales, and (once connected) site traffic"],
+      team: ["Team", "Who can sign in, and what they can do"]
     };
     $("#page-title").textContent = titles[view][0];
     $("#page-sub").textContent = titles[view][1];
@@ -170,6 +175,8 @@
     else if (view === "giftcards") renderGiftCards(target);
     else if (view === "subscribers") renderSubscribers(target);
     else if (view === "export") renderExport(target);
+    else if (view === "analytics") renderAnalytics(target);
+    else if (view === "team") renderTeam(target);
   }
 
   /* ---------- shared: route color + dot ---------------------------------- */
@@ -541,6 +548,25 @@
         catch (e) { toast(e.message, "err"); }
       }
     }));
+    // "How was your walk?" (migrations/0026, BUILD §20) — normally sent
+    // automatically the day after the walk; this is the manual/testing
+    // trigger. Only meaningful for a confirmed booking that hasn't had one
+    // yet (the server enforces this too — a 409 here just means it already went out).
+    if (movable && !b.review_sent_at) {
+      foot.appendChild(el("button", {
+        class: "btn btn-quiet", text: "Send review request",
+        onclick: async (ev) => {
+          const btn = ev.currentTarget;
+          btn.disabled = true;
+          try {
+            await api("/admin/api/bookings/" + b.id + "/send-review", { method: "POST" });
+            toast("Review request sent to " + b.email, "ok");
+            b.review_sent_at = new Date().toISOString();
+            btn.remove();
+          } catch (e) { toast(e.message, "err"); btn.disabled = false; }
+        }
+      }));
+    }
     if (movable) {
       foot.appendChild(el("button", {
         class: "btn btn-quiet", text: "Move booking",
@@ -2134,6 +2160,382 @@
   }
 
   /* ======================================================================
+     VIEW 4.6 — ANALYTICS (migrations/0025's idx_bookings_created, BUILD §19)
+     A Wix-style section: a sub-nav of report pages sharing one date-range
+     picker. "Sales" is fully wired to GET /admin/api/analytics +
+     /admin/api/analytics/kpi (pure D1 numbers). "Traffic" calls
+     GET /admin/api/analytics/traffic (GA4) and shows a friendly "connect
+     Google Analytics" card when that's not configured. Highlights/
+     Real-time/Behavior/Marketing are placeholders for now — each says so
+     plainly rather than rendering an empty or half-wired widget.
+     ====================================================================== */
+  const ANALYTICS_SUBPAGES = [
+    ["highlights", "Highlights"], ["realtime", "Real-time"], ["traffic", "Traffic"],
+    ["behavior", "Behavior"], ["marketing", "Marketing"], ["sales", "Sales"], ["all", "All reports"]
+  ];
+  const RANGE_PRESETS = ["Last 7 days", "Last 30 days", "Last 90 days", "This month", "Last month", "This year", "Custom"];
+
+  function rangeForPreset(preset) {
+    const t = todayStr();
+    if (preset === "Last 7 days") return { from: addDays(t, -6), to: t };
+    if (preset === "Last 90 days") return { from: addDays(t, -89), to: t };
+    if (preset === "This month") return { from: t.slice(0, 8) + "01", to: t };
+    if (preset === "Last month") {
+      const firstThis = t.slice(0, 8) + "01";
+      const lastPrevMonth = addDays(firstThis, -1);
+      return { from: lastPrevMonth.slice(0, 8) + "01", to: lastPrevMonth };
+    }
+    if (preset === "This year") return { from: t.slice(0, 4) + "-01-01", to: t };
+    return { from: addDays(t, -29), to: t }; // "Last 30 days" default
+  }
+
+  function renderAnalytics(root) {
+    $("#topbar-actions").innerHTML = "";
+    clear(root);
+    if (!S.analytics.range) S.analytics.range = rangeForPreset("Last 30 days");
+
+    const nav = el("div", { class: "analytics-subnav" }, el("div", { class: "rc-tabs" }, ANALYTICS_SUBPAGES.map(([key, label]) =>
+      el("button", { class: "rc-tab" + (S.analytics.sub === key ? " active" : ""), text: label, onclick: () => { S.analytics.sub = key; renderAnalytics(root); } })
+    )));
+    root.appendChild(nav);
+
+    const needsRange = ["sales", "traffic", "behavior", "marketing"].indexOf(S.analytics.sub) >= 0;
+    if (needsRange) root.appendChild(analyticsRangeBar(root));
+
+    const body = el("div", { id: "an-body" });
+    root.appendChild(body);
+
+    if (S.analytics.sub === "sales") renderAnalyticsSales(body);
+    else if (S.analytics.sub === "traffic") renderAnalyticsTraffic(body);
+    else if (S.analytics.sub === "all") renderAnalyticsIndex(body);
+    else renderAnalyticsPlaceholder(body, ANALYTICS_SUBPAGES.find((s) => s[0] === S.analytics.sub)[1]);
+  }
+
+  function analyticsRangeBar(root) {
+    const r = S.analytics.range;
+    const fromF = dateField("From", r.from, (v) => { if (v) { r.from = v; renderAnalytics(root); } });
+    const toF = dateField("To", r.to, (v) => { if (v) { r.to = v; renderAnalytics(root); } });
+    const presetSel = selectField("Range", "", RANGE_PRESETS, (v) => {
+      if (v === "Custom") return;
+      S.analytics.range = rangeForPreset(v);
+      renderAnalytics(root);
+    }, "Custom");
+    const groupSel = selectField("Group by", "", ["day", "week", "month"], (v) => { S.analytics.group = v; renderAnalytics(root); }, S.analytics.group);
+    return el("div", { class: "filters" }, el("div", { class: "filters-row" }, [presetSel, fromF, toF, groupSel]));
+  }
+
+  function renderAnalyticsPlaceholder(body, label) {
+    clear(body);
+    body.appendChild(el("div", { class: "card" }, el("div", { class: "empty" }, [
+      el("div", { class: "big", text: "🚧" }),
+      el("div", { text: label + " isn't built yet." }),
+      el("div", { class: "capacity-hint", style: "padding:6px 0 0", text: "Sales and Traffic are live today — this page is a reserved spot for a future pass." })
+    ])));
+  }
+
+  function renderAnalyticsIndex(body) {
+    clear(body);
+    const card = el("div", { class: "card" });
+    card.appendChild(el("div", { class: "card-head" }, el("h2", { text: "All reports" })));
+    const list = el("div", { style: "padding:6px 18px 18px" });
+    ANALYTICS_SUBPAGES.filter((s) => s[0] !== "all").forEach(([key, label]) => {
+      list.appendChild(el("div", { style: "padding:10px 0;border-top:1px solid var(--line)" }, [
+        el("button", { class: "btn btn-quiet btn-sm", text: label, onclick: () => { S.analytics.sub = key; renderAnalytics($("#view")); } })
+      ]));
+    });
+    card.appendChild(list);
+    body.appendChild(card);
+  }
+
+  // ---- Sales (fully wired to D1) -----------------------------------------
+  function renderAnalyticsSales(body) {
+    clear(body);
+    body.appendChild(skeletonCard());
+    loadAnalyticsSales(body);
+  }
+
+  async function loadAnalyticsSales(body) {
+    try {
+      const r = S.analytics.range;
+      const qs = "from=" + r.from + "&to=" + r.to + "&group=" + S.analytics.group;
+      const [data, kpi] = await Promise.all([
+        api("/admin/api/analytics?" + qs),
+        api("/admin/api/analytics/kpi")
+      ]);
+      S.analytics.data = data;
+      S.analytics.kpi = kpi;
+      paintAnalyticsSales(body);
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(body); body.appendChild(errorCard(e.message, () => loadAnalyticsSales(body))); }
+    }
+  }
+
+  function paintAnalyticsSales(body) {
+    clear(body);
+    const d = S.analytics.data, kpi = S.analytics.kpi;
+    if (!d) return;
+
+    // KPI row (last 7 vs previous 7 days, sale date)
+    const stats = el("div", { class: "stat-row" });
+    stats.appendChild(stat("Bookings (7d)", kpi.last_7_days.bookings, kpi.previous_7_days.bookings + " previous 7d"));
+    stats.appendChild(stat("Guests (7d)", kpi.last_7_days.guests, kpi.previous_7_days.guests + " previous 7d"));
+    stats.appendChild(stat("Revenue (7d)", euros(kpi.last_7_days.revenue_cents), euros(kpi.previous_7_days.revenue_cents) + " previous 7d"));
+    stats.appendChild(stat("Avg order (7d)", euros(kpi.last_7_days.avg_order_value_cents), "per booking"));
+    stats.appendChild(stat("New subscribers (7d)", kpi.last_7_days.new_subscribers, kpi.previous_7_days.new_subscribers + " previous 7d"));
+    stats.appendChild(stat("Gift cards sold (7d)", kpi.last_7_days.gift_cards_sold, kpi.previous_7_days.gift_cards_sold + " previous 7d"));
+    body.appendChild(stats);
+
+    // Totals for the selected range
+    const rangeStats = el("div", { class: "stat-row" });
+    rangeStats.appendChild(stat("Bookings", d.totals.bookings, d.from + " → " + d.to));
+    rangeStats.appendChild(stat("Guests", d.totals.guests, "avg party " + d.totals.avg_party.toFixed(1)));
+    rangeStats.appendChild(stat("Revenue", euros(d.totals.revenue_cents), "net of discounts + gift cards"));
+    rangeStats.appendChild(stat("Cancellations", d.cancellations.count, d.cancellations.guests + " guests"));
+    body.appendChild(rangeStats);
+
+    // Period chart (guests per bucket) + CSV export of the by-route table
+    const chartCard = el("div", { class: "card" });
+    chartCard.appendChild(el("div", { class: "card-head" }, [
+      el("h2", { text: "Guests per " + S.analytics.group }),
+      el("span", { class: "grow" }),
+      el("button", { class: "btn btn-quiet btn-sm", text: "⬇ CSV (by route)", onclick: () => downloadAnalyticsCsv(d) })
+    ]));
+    const chartBody = el("div", { style: "padding:6px 18px 16px" });
+    const maxGuests = Math.max(1, ...d.series_by_booking_date.map((s) => s.guests));
+    d.series_by_booking_date.forEach((s) => {
+      const w = (s.guests / maxGuests) * 100;
+      chartBody.appendChild(el("div", { class: "period-row" }, [
+        el("div", { class: "period-time", text: s.period }),
+        el("div", { class: "hour-bar-track" }, el("div", { class: "hour-seg", style: "width:" + w + "%;background:var(--salmon-deep)" }, w > 10 ? String(s.guests) : "")),
+        el("div", { class: "hour-count" }, [String(s.guests), el("small", { text: s.bookings + " bookings" })])
+      ]));
+    });
+    if (d.series_by_booking_date.length === 0) chartBody.appendChild(el("div", { class: "capacity-hint", text: "No confirmed bookings in this range." }));
+    chartCard.appendChild(chartBody);
+    body.appendChild(chartCard);
+
+    body.appendChild(breakdownTable("By route", ["Route", "City", "Bookings", "Guests", "Revenue"], d.by_route.map((r) => [shortRoute(r.route_name), r.city, r.bookings, r.guests, euros(r.revenue_cents)])));
+    body.appendChild(breakdownTable("By city", ["City", "Bookings", "Guests", "Revenue"], d.by_city.map((r) => [r.city, r.bookings, r.guests, euros(r.revenue_cents)])));
+    body.appendChild(breakdownTable("By weekday", ["Day", "Bookings", "Guests", "Revenue"], d.by_weekday.map((r) => [r.label, r.bookings, r.guests, euros(r.revenue_cents)])));
+    body.appendChild(breakdownTable("By slot", ["Slot", "Bookings", "Guests", "Revenue"], d.by_slot.map((r) => [r.slot, r.bookings, r.guests, euros(r.revenue_cents)])));
+    body.appendChild(breakdownTable("By source", ["Source", "Bookings", "Guests", "Revenue"], d.by_source.map((r) => [r.source, r.bookings, r.guests, euros(r.revenue_cents)])));
+    body.appendChild(breakdownTable("By language", ["Locale", "Bookings", "Guests", "Revenue"], d.by_locale.map((r) => [(r.locale || "en").toUpperCase(), r.bookings, r.guests, euros(r.revenue_cents)])));
+    if (d.discount_usage.length > 0) {
+      body.appendChild(breakdownTable("Discount codes used", ["Code", "Uses", "Total discount"], d.discount_usage.map((r) => [r.code, r.uses, euros(r.total_discount_cents)])));
+    }
+
+    const giftStats = el("div", { class: "stat-row" });
+    giftStats.appendChild(stat("Gift cards sold", d.gift_cards.sold_count, euros(d.gift_cards.sold_value_cents) + " value"));
+    giftStats.appendChild(stat("Gift cards redeemed", euros(d.gift_cards.redeemed_value_cents), "this period"));
+    giftStats.appendChild(stat("Outstanding balance", euros(d.gift_cards.outstanding_balance_cents), "across every active card"));
+    giftStats.appendChild(stat("New subscribers", d.subscribers.new_confirmed, d.subscribers.total_confirmed + " confirmed total"));
+    body.appendChild(giftStats);
+
+    if (d.top_upcoming_days.length > 0) {
+      body.appendChild(breakdownTable("Top upcoming days by guests", ["Date", "Guests", "Bookings"], d.top_upcoming_days.map((r) => [prettyDate(r.date), r.guests, r.bookings])));
+    }
+  }
+
+  function breakdownTable(title, headers, rows) {
+    const card = el("div", { class: "card" });
+    card.appendChild(el("div", { class: "card-head" }, el("h2", { text: title })));
+    if (rows.length === 0) {
+      card.appendChild(el("div", { class: "empty", style: "padding:18px" }, el("div", { text: "Nothing in this range." })));
+      return card;
+    }
+    const scroll = el("div", { class: "table-scroll" });
+    const t = el("table", { class: "data" });
+    t.appendChild(el("thead", {}, el("tr", {}, headers.map((h) => th(h)))));
+    const tb = el("tbody");
+    rows.forEach((row) => {
+      tb.appendChild(el("tr", {}, row.map((v, i) => el("td", { class: i === 0 ? "td-name" : "td-sub num", text: String(v) }))));
+    });
+    t.appendChild(tb);
+    scroll.appendChild(t);
+    card.appendChild(scroll);
+    return card;
+  }
+
+  function downloadAnalyticsCsv(d) {
+    const rows = [["route", "city", "bookings", "guests", "revenue_eur"]].concat(
+      d.by_route.map((r) => [r.route_name, r.city, r.bookings, r.guests, (r.revenue_cents / 100).toFixed(2)])
+    );
+    const csv = rows.map((r) => r.map((v) => '"' + String(v).replace(/"/g, '""') + '"').join(",")).join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = el("a", { href: url, download: "wogo-analytics-by-route-" + d.from + "-to-" + d.to + ".csv" });
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  // ---- Traffic (GA4, optional — degrades to a "connect" card) ------------
+  function renderAnalyticsTraffic(body) {
+    clear(body);
+    body.appendChild(skeletonCard());
+    loadAnalyticsTraffic(body);
+  }
+
+  async function loadAnalyticsTraffic(body) {
+    try {
+      const r = S.analytics.range;
+      const data = await api("/admin/api/analytics/traffic?from=" + r.from + "&to=" + r.to);
+      S.analytics.traffic = data;
+      paintAnalyticsTraffic(body);
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(body); body.appendChild(errorCard(e.message, () => loadAnalyticsTraffic(body))); }
+    }
+  }
+
+  function paintAnalyticsTraffic(body) {
+    clear(body);
+    const t = S.analytics.traffic;
+    if (!t || t.configured === false) {
+      body.appendChild(el("div", { class: "card" }, el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "📈" }),
+        el("div", { text: "Connect Google Analytics to see site traffic here." }),
+        el("div", { class: "capacity-hint", style: "padding:10px 0 0;max-width:460px;margin:0 auto" }, [
+          "Free, takes a few minutes: ",
+          el("br"), "1. Create a Google Cloud service account.",
+          el("br"), "2. Create a JSON key for it.",
+          el("br"), "3. In GA4 Admin → Property access management, add the service account's email as a Viewer.",
+          el("br"), "4. ", el("code", { text: "wrangler secret put GA4_SERVICE_ACCOUNT_JSON" }), " (paste the key file's contents) and set ", el("code", { text: "GA4_PROPERTY_ID" }), "."
+        ])
+      ])));
+      return;
+    }
+    const stats = el("div", { class: "stat-row" });
+    stats.appendChild(stat("Sessions", t.totals.sessions, t.from + " → " + t.to));
+    stats.appendChild(stat("Users", t.totals.total_users, t.totals.new_users + " new"));
+    stats.appendChild(stat("Engaged sessions", t.totals.engaged_sessions, ""));
+    stats.appendChild(stat("Avg. session", Math.round(t.totals.avg_session_duration) + "s", ""));
+    body.appendChild(stats);
+
+    body.appendChild(breakdownTable("Sessions by source / medium", ["Source", "Medium", "Sessions"], t.by_source.map((r) => [r.source, r.medium, r.sessions])));
+    body.appendChild(breakdownTable("Top pages", ["Page", "Views"], t.by_page.map((r) => [r.page, r.views])));
+    body.appendChild(breakdownTable("By device", ["Device", "Sessions"], t.by_device.map((r) => [r.device, r.sessions])));
+    body.appendChild(breakdownTable("By country", ["Country", "Sessions"], t.by_country.map((r) => [r.country, r.sessions])));
+
+    const funnelCard = el("div", { class: "card" });
+    funnelCard.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Funnel: view → checkout → purchase" })));
+    const fb = el("div", { style: "padding:6px 18px 16px" });
+    const steps = [["View item", t.funnel.view_item], ["Begin checkout", t.funnel.begin_checkout], ["Purchase", t.funnel.purchase]];
+    const maxStep = Math.max(1, steps[0][1]);
+    steps.forEach(([label, n]) => {
+      const w = (n / maxStep) * 100;
+      fb.appendChild(el("div", { class: "period-row" }, [
+        el("div", { class: "period-time", text: label }),
+        el("div", { class: "hour-bar-track" }, el("div", { class: "hour-seg", style: "width:" + w + "%;background:var(--salmon-deep)" }, w > 10 ? String(n) : "")),
+        el("div", { class: "hour-count", text: String(n) })
+      ]));
+    });
+    funnelCard.appendChild(fb);
+    body.appendChild(funnelCard);
+  }
+
+  /* ======================================================================
+     VIEW 4.7 — TEAM (migrations/0025_admin_users.sql, BUILD §18, owner only
+     — the server's ROUTE_ROLES is the real control; a staff/viewer user who
+     somehow lands here just gets a 403 from every call this view makes)
+     ====================================================================== */
+  function renderTeam(root) {
+    $("#topbar-actions").innerHTML = "";
+    $("#topbar-actions").appendChild(el("button", {
+      class: "btn btn-primary", text: "+ Invite teammate", onclick: () => openInviteForm(root)
+    }));
+    clear(root);
+    if (S.inviteFormOpen) root.appendChild(inviteFormCard(root));
+    root.appendChild(el("div", { id: "team-holder" }));
+    loadTeam(root);
+  }
+
+  function openInviteForm(root) {
+    S.inviteFormOpen = true;
+    renderTeam(root);
+  }
+
+  function inviteFormCard(root) {
+    const nameI = el("input", { type: "text", placeholder: "Full name" });
+    const emailI = el("input", { type: "email", placeholder: "email@example.com" });
+    const roleSel = el("select", {}, ["staff", "viewer", "owner"].map((r) => el("option", { value: r, text: r })));
+    const card = el("div", { class: "card", style: "margin-bottom:18px" });
+    card.appendChild(el("div", { class: "card-head" }, [el("h2", { text: "Invite a teammate" }), el("span", { class: "grow" }),
+      el("button", { class: "icon-btn", text: "✕", onclick: () => { S.inviteFormOpen = false; renderTeam(root); } })]));
+    card.appendChild(el("div", { style: "padding:14px 18px;display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end" }, [
+      field("Name", nameI), field("Email", emailI), field("Role", roleSel),
+      el("button", {
+        class: "btn btn-primary", text: "Send invite", onclick: async () => {
+          try {
+            await api("/admin/api/users", { method: "POST", body: { name: nameI.value.trim(), email: emailI.value.trim(), role: roleSel.value } });
+            toast("Invite sent — they'll get a login link by email", "ok");
+            S.inviteFormOpen = false;
+            S.users.loaded = false;
+            renderTeam(root);
+          } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+        }
+      })
+    ]));
+    return card;
+  }
+
+  async function loadTeam(root) {
+    const holder = $("#team-holder");
+    if (!holder) return;
+    clear(holder);
+    holder.appendChild(skeletonCard());
+    try {
+      const data = await api("/admin/api/users");
+      S.users.list = data.users || [];
+      S.users.loaded = true;
+      paintTeam(root);
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(holder); holder.appendChild(errorCard(e.message, () => loadTeam(root))); }
+    }
+  }
+
+  function paintTeam(root) {
+    const holder = $("#team-holder");
+    if (!holder) return;
+    clear(holder);
+    const card = el("div", { class: "card" });
+    card.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Who can sign in" })));
+    const scroll = el("div", { class: "table-scroll" });
+    const t = el("table", { class: "data" });
+    t.appendChild(el("thead", {}, el("tr", {}, [th("Name"), th("Email"), th("Role"), th("Status"), th("Last login"), th("")])));
+    const tb = el("tbody");
+    S.users.list.forEach((u) => {
+      const roleSel = el("select", {}, ["owner", "staff", "viewer"].map((r) => { const o = el("option", { value: r, text: r }); if (r === u.role) o.selected = true; return o; }));
+      roleSel.addEventListener("change", async () => {
+        try {
+          await api("/admin/api/users/" + u.id, { method: "PUT", body: { role: roleSel.value } });
+          toast("Role updated", "ok");
+        } catch (e) { toast(e.message, "err"); roleSel.value = u.role; }
+      });
+      const toggleBtn = el("button", {
+        class: "btn btn-quiet btn-sm", text: u.status === "active" ? "Disable" : "Enable",
+        onclick: async () => {
+          try {
+            await api("/admin/api/users/" + u.id, { method: "PUT", body: { status: u.status === "active" ? "disabled" : "active" } });
+            S.users.loaded = false;
+            loadTeam(root);
+          } catch (e) { toast(e.message, "err"); }
+        }
+      });
+      tb.appendChild(el("tr", {}, [
+        el("td", { class: "td-name", text: u.name }),
+        el("td", { class: "td-sub", text: u.email }),
+        el("td", {}, roleSel),
+        el("td", {}, el("span", { class: "badge " + (u.status === "active" ? "confirmed" : "cancelled"), text: u.status === "active" ? "Active" : "Disabled" })),
+        el("td", { class: "td-sub num", text: u.last_login_at ? prettyDate(String(u.last_login_at).slice(0, 10)) : "Never" }),
+        el("td", {}, toggleBtn)
+      ]));
+    });
+    t.appendChild(tb);
+    scroll.appendChild(t);
+    card.appendChild(scroll);
+    holder.appendChild(card);
+  }
+
+  /* ======================================================================
      VIEW 5 — CUSTOMERS (CRM)
      Derived from bookings by the Worker (no separate customers table).
      Search, spend, discounts; click-through detail with edit-propagation;
@@ -2535,9 +2937,18 @@
      ====================================================================== */
   async function boot() {
     try {
-      const data = await api("/admin/api/routes");
-      S.routes = data.routes || [];
+      const [routesData, me] = await Promise.all([api("/admin/api/routes"), api("/admin/api/me")]);
+      S.routes = routesData.routes || [];
+      S.me = me;
       assignColors();
+      const who = $("#who");
+      if (who) who.textContent = me.name ? (me.name + " · " + me.role) : ("Signed in · " + me.role);
+      // Hide owner-only UI affordances client-side (the REAL control is the
+      // server's ROUTE_ROLES table — a staff/viewer user hitting the Team
+      // nav button directly would still just get a 403 from every request
+      // it makes, this just keeps the dangling button from showing at all).
+      const teamNav = $("#nav-team");
+      if (teamNav) teamNav.style.display = me.role === "owner" ? "" : "none";
       showApp();
       go("bookings");
     } catch (e) {

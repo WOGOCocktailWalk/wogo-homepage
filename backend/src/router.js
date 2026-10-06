@@ -9,7 +9,7 @@ export function createRouter() {
 
   function add(method, pattern, handler) {
     const segs = pattern.split('/').filter(Boolean);
-    routes.push({ method, segs, handler });
+    routes.push({ method, pattern, segs, handler });
   }
 
   function match(method, pathname) {
@@ -29,7 +29,11 @@ export function createRouter() {
           break;
         }
       }
-      if (ok) return { handler: route.handler, params };
+      // `pattern`/`method` round-trip the ORIGINAL registration string (e.g.
+      // '/admin/api/bookings/:id') — used by src/admin_api.js's ROUTE_ROLES
+      // table to look up the minimum role for the route that actually
+      // matched, keyed exactly as `${method} ${pattern}`.
+      if (ok) return { handler: route.handler, params, pattern: route.pattern, method: route.method };
     }
     return null;
   }
@@ -40,5 +44,9 @@ export function createRouter() {
     put: (p, h) => add('PUT', p, h),
     delete: (p, h) => add('DELETE', p, h),
     match,
+    // Test-only introspection (test/admin_users.test.js asserts every
+    // registered /admin/api/* route has a ROUTE_ROLES entry) — not used by
+    // any production code path.
+    routes: () => routes.map((r) => ({ method: r.method, pattern: r.pattern })),
   };
 }

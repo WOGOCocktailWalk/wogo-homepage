@@ -63,7 +63,9 @@ const schemaSql =
   '\n' +
   readFileSync(path.join(__dirname, '../migrations/0015_weekday_bars.sql'), 'utf8') +
   '\n' +
-  readFileSync(path.join(__dirname, '../migrations/0022_bar_locale.sql'), 'utf8');
+  readFileSync(path.join(__dirname, '../migrations/0022_bar_locale.sql'), 'utf8') +
+  '\n' +
+  readFileSync(path.join(__dirname, '../migrations/0025_admin_users.sql'), 'utf8');
 
 function seedRoute(db, overrides = {}) {
   const route = {

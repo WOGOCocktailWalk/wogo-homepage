@@ -1468,17 +1468,22 @@ export async function pruneErrorLog(db, beforeStr) {
 // mutating call. Read back via GET /admin/api/audit-log.
 // ---------------------------------------------------------------------------
 
-export async function insertAdminAudit(db, { ip, action, entity_type, entity_id, detail }) {
+/** `actor` (migrations/0025) — the admin_users email behind this mutation, or
+ * 'token' for the emergency ADMIN_TOKEN login path / any caller that didn't
+ * have a resolved session (see src/admin_api.js's `audit()` helper). `null`
+ * only for historical rows written before this column existed. */
+export async function insertAdminAudit(db, { ip, action, entity_type, entity_id, detail, actor }) {
   await run(
     db,
-    `INSERT INTO admin_audit (ip, action, entity_type, entity_id, detail)
-     VALUES (:ip, :action, :entity_type, :entity_id, :detail)`,
+    `INSERT INTO admin_audit (ip, action, entity_type, entity_id, detail, actor)
+     VALUES (:ip, :action, :entity_type, :entity_id, :detail, :actor)`,
     {
       ip: ip ?? null,
       action,
       entity_type: entity_type ?? null,
       entity_id: entity_id == null ? null : String(entity_id),
       detail: detail ?? null,
+      actor: actor ?? null,
     }
   );
 }
@@ -1902,6 +1907,280 @@ export async function listAllDateOverridesForBackup(db) {
 
 export async function listAllBookingsForBackup(db) {
   return all(db, `SELECT * FROM bookings ORDER BY created_at`, {});
+}
+
+// ---------------------------------------------------------------------------
+// admin_users / admin_login_links (migrations/0025) — personal team logins,
+// roles, per-user audit (BUILD §18).
+// ---------------------------------------------------------------------------
+
+export async function getAdminUserByEmail(db, email) {
+  return first(db, `SELECT * FROM admin_users WHERE email = LOWER(:email)`, { email });
+}
+
+export async function getAdminUserById(db, id) {
+  return first(db, `SELECT * FROM admin_users WHERE id = :id`, { id });
+}
+
+export async function listAdminUsers(db) {
+  return all(db, `SELECT * FROM admin_users ORDER BY created_at`, {});
+}
+
+export async function createAdminUser(db, { id, email, name, role, status, locale, invited_by }) {
+  await run(
+    db,
+    `INSERT INTO admin_users (id, email, name, role, status, locale, invited_by)
+     VALUES (:id, LOWER(:email), :name, :role, :status, :locale, :invited_by)`,
+    { id, email, name, role, status: status || 'active', locale: locale ?? null, invited_by: invited_by ?? null }
+  );
+  return getAdminUserById(db, id);
+}
+
+/** Partial update — `patch` may include any of `role`/`status`/`name`/`locale`.
+ * Callers (src/admin_api.js) decide WHAT may change and enforce the
+ * last-owner guard BEFORE calling this; this function applies whatever it's
+ * given unconditionally. */
+export async function updateAdminUser(db, id, patch) {
+  const sets = [];
+  const bound = { id };
+  for (const key of ['role', 'status', 'name', 'locale']) {
+    if (patch[key] === undefined) continue;
+    sets.push(`${key} = :${key}`);
+    bound[key] = patch[key];
+  }
+  if (sets.length > 0) {
+    await run(db, `UPDATE admin_users SET ${sets.join(', ')} WHERE id = :id`, bound);
+  }
+  return getAdminUserById(db, id);
+}
+
+export async function touchAdminUserLogin(db, id) {
+  await run(db, `UPDATE admin_users SET last_login_at = datetime('now') WHERE id = :id`, { id });
+}
+
+/** How many ACTIVE owners exist right now — the last-owner guard
+ * (src/admin_api.js:handleUpdateUser) reads this before demoting/disabling
+ * an owner, so the dashboard can never lock every owner out of itself. */
+export async function countActiveOwners(db) {
+  const row = await first(
+    db, `SELECT COUNT(*) AS n FROM admin_users WHERE role = 'owner' AND status = 'active'`, {}
+  );
+  return row ? row.n : 0;
+}
+
+export async function createLoginLink(db, { token_hash, user_id, expires_at, ip_hash }) {
+  await run(
+    db,
+    `INSERT INTO admin_login_links (token_hash, user_id, expires_at, ip_hash)
+     VALUES (:token_hash, :user_id, :expires_at, :ip_hash)`,
+    { token_hash, user_id, expires_at, ip_hash: ip_hash ?? null }
+  );
+}
+
+/**
+ * Atomically redeems a login-link token: single guarded UPDATE carries all
+ * three invariants (unused, not expired, token exists) at once — same
+ * "atomic guarded SQL" idiom as redeemGiftCard, so a mail client that
+ * prefetches the link (or a guest double-clicking it) can't use it twice,
+ * and a race between two near-simultaneous clicks can't both succeed.
+ * Returns `{ user_id }` on success, `null` on any failure (expired, already
+ * used, or no such token) — the caller doesn't need to know which.
+ */
+export async function consumeLoginLink(db, token_hash) {
+  const result = await run(
+    db,
+    `UPDATE admin_login_links SET used_at = datetime('now')
+      WHERE token_hash = :token_hash AND used_at IS NULL AND expires_at > datetime('now')`,
+    { token_hash }
+  );
+  if (result.meta.changes !== 1) return null;
+  const row = await first(db, `SELECT user_id FROM admin_login_links WHERE token_hash = :token_hash`, { token_hash });
+  return row ? { user_id: row.user_id } : null;
+}
+
+// ---------------------------------------------------------------------------
+// Analytics (migrations/0025's idx_bookings_created, BUILD §19). Raw/joined
+// rows only — the revenue formula, period bucketing, and every "by X"
+// breakdown is pure JS in logic.js:buildBookingAnalytics (same split as
+// aggregateCustomers above: SQL filters/joins, logic.js folds).
+//
+// "CONFIRMED" here means status IN ('confirmed','confirmed_conflict') — a
+// confirmed_conflict booking is still a real, paid guest (the rare §6.4
+// overbooking edge case), so it counts toward revenue/guests. This
+// deliberately diverges from participantsPerHour (confirmed-only), which is
+// about today's literal seat count, not historical business totals.
+// ---------------------------------------------------------------------------
+
+const ANALYTICS_BOOKING_COLUMNS = `
+  b.id, b.route_id, r.name AS route_name, r.city, b.date, b.slot, b.party,
+  b.created_at, b.source, b.locale, b.payment_status, b.discount_code,
+  b.discount_cents, b.gift_applied_cents, r.price_cents`;
+
+/** Confirmed bookings whose WALK date (`bookings.date`) falls in [from, to]
+ * (both 'YYYY-MM-DD') — the "business happened in this period" lens: every
+ * by-route/by-city/by-weekday/by-slot/by-source/by-locale/discount breakdown
+ * is built from this set. */
+export async function listBookingsForAnalyticsByWalkDate(db, from, to) {
+  return all(
+    db,
+    `SELECT ${ANALYTICS_BOOKING_COLUMNS}
+       FROM bookings b JOIN routes r ON r.id = b.route_id
+      WHERE b.status IN ('confirmed', 'confirmed_conflict') AND b.date BETWEEN :from AND :to`,
+    { from, to }
+  );
+}
+
+/** Confirmed bookings whose SALE date (`bookings.created_at`) falls in
+ * [fromDatetime, toDatetime] (full 'YYYY-MM-DD HH:MM:SS' bounds, built by the
+ * caller) — the "sold in this period" lens, used only for the separate
+ * sale-date time series (owner requirement: "by booking DATE ... and also by
+ * created_at"). */
+export async function listBookingsForAnalyticsBySaleDate(db, fromDatetime, toDatetime) {
+  return all(
+    db,
+    `SELECT ${ANALYTICS_BOOKING_COLUMNS}
+       FROM bookings b JOIN routes r ON r.id = b.route_id
+      WHERE b.status IN ('confirmed', 'confirmed_conflict') AND b.created_at BETWEEN :from AND :to`,
+    { from: fromDatetime, to: toDatetime }
+  );
+}
+
+/** Cancelled bookings whose walk date falls in [from, to] — there is no
+ * `cancelled_at` column (cancelBooking just flips status), so "cancellations
+ * in this period" is necessarily "walks in this period that ended up
+ * cancelled", not "cancelled during this period". Documented in SPEC.md §19. */
+export async function countCancelledBookingsByWalkDate(db, from, to) {
+  const row = await first(
+    db,
+    `SELECT COUNT(*) AS n, COALESCE(SUM(party), 0) AS guests
+       FROM bookings WHERE status = 'cancelled' AND date BETWEEN :from AND :to`,
+    { from, to }
+  );
+  return row || { n: 0, guests: 0 };
+}
+
+/** Top `limit` upcoming (date >= fromDate) days by guest count — the
+ * forward-looking operational lens, independent of the analytics from/to
+ * range (BOOKING_HORIZON_DAYS already bounds how far out a web booking can
+ * exist; a manual booking could in principle be further out, which is
+ * correctly still useful information). */
+export async function listUpcomingGuestsByDate(db, fromDate, limit = 10) {
+  return all(
+    db,
+    `SELECT date, COALESCE(SUM(party), 0) AS guests, COUNT(*) AS bookings
+       FROM bookings
+      WHERE status IN ('confirmed', 'confirmed_conflict') AND date >= :from
+      GROUP BY date
+      ORDER BY guests DESC, date ASC
+      LIMIT :limit`,
+    { from: fromDate, limit }
+  );
+}
+
+/** Guests booked per city across [from, to] by walk date — backs the KPI
+ * endpoint's "next-14-days booked guests per city". */
+export async function listUpcomingGuestsByCity(db, from, to) {
+  return all(
+    db,
+    `SELECT r.city, COALESCE(SUM(b.party), 0) AS guests
+       FROM bookings b JOIN routes r ON r.id = b.route_id
+      WHERE b.status IN ('confirmed', 'confirmed_conflict') AND b.date BETWEEN :from AND :to
+      GROUP BY r.city
+      ORDER BY guests DESC`,
+    { from, to }
+  );
+}
+
+/** Gift cards SOLD (created) in [fromDatetime, toDatetime] — count + the
+ * total initial value, regardless of what's happened to the balance since
+ * (a later void doesn't retroactively un-sell it). */
+export async function giftCardSalesSummary(db, fromDatetime, toDatetime) {
+  const row = await first(
+    db,
+    `SELECT COUNT(*) AS sold_count, COALESCE(SUM(initial_cents), 0) AS sold_value_cents
+       FROM gift_cards WHERE created_at BETWEEN :from AND :to`,
+    { from: fromDatetime, to: toDatetime }
+  );
+  return row || { sold_count: 0, sold_value_cents: 0 };
+}
+
+/** Gift-card value REDEEMED (spent against a booking) in [fromDatetime, toDatetime]. */
+export async function giftCardRedemptionsSummary(db, fromDatetime, toDatetime) {
+  const row = await first(
+    db,
+    `SELECT COALESCE(SUM(amount_cents), 0) AS redeemed_value_cents
+       FROM gift_card_redemptions WHERE created_at BETWEEN :from AND :to`,
+    { from: fromDatetime, to: toDatetime }
+  );
+  return row ? row.redeemed_value_cents : 0;
+}
+
+/** Current outstanding balance across every ACTIVE gift card — a snapshot
+ * as of now, deliberately not period-bound (it's "what's still owed", not
+ * "what happened in this period"). */
+export async function giftCardOutstandingBalance(db) {
+  const row = await first(db, `SELECT COALESCE(SUM(balance_cents), 0) AS outstanding_cents FROM gift_cards WHERE status = 'active'`, {});
+  return row ? row.outstanding_cents : 0;
+}
+
+/** Inquiries (migrations/0021) SUBMITTED in [fromDatetime, toDatetime], by kind. */
+export async function countInquiriesByKind(db, fromDatetime, toDatetime) {
+  return all(
+    db,
+    `SELECT kind, COUNT(*) AS n FROM inquiries WHERE created_at BETWEEN :from AND :to GROUP BY kind`,
+    { from: fromDatetime, to: toDatetime }
+  );
+}
+
+/** New CONFIRMED subscribers (the double-opt-in click, a booking opt-in, or
+ * an import landing as already-confirmed) in [fromDatetime, toDatetime]. */
+export async function countNewConfirmedSubscribers(db, fromDatetime, toDatetime) {
+  const row = await first(
+    db,
+    `SELECT COUNT(*) AS n FROM subscribers WHERE status = 'confirmed' AND confirmed_at BETWEEN :from AND :to`,
+    { from: fromDatetime, to: toDatetime }
+  );
+  return row ? row.n : 0;
+}
+
+// ---------------------------------------------------------------------------
+// Review requests (migrations/0026_review_requests.sql, BUILD §20).
+// ---------------------------------------------------------------------------
+
+/** Confirmed web/manual bookings for `dateStr` ('YYYY-MM-DD', the walk date)
+ * that haven't had a review request sent yet — the daily cron's candidate
+ * set (src/reviews.js). Joined with routes for the email's route name/city/
+ * poster. `confirmed_conflict` is deliberately excluded (unlike the
+ * analytics "confirmed" set) — a review ask doesn't belong on the rare
+ * overbooking edge case the same way revenue reporting does. */
+export async function listBookingsNeedingReviewRequest(db, dateStr) {
+  return all(
+    db,
+    `SELECT b.*, r.name AS route_name, r.city, r.id AS route_id
+       FROM bookings b JOIN routes r ON r.id = b.route_id
+      WHERE b.status = 'confirmed' AND b.date = :date AND b.review_sent_at IS NULL
+        AND b.source IN ('web', 'manual')`,
+    { date: dateStr }
+  );
+}
+
+/**
+ * Atomically claims ONE booking's review-request slot — marks
+ * review_sent_at BEFORE the email is actually sent, same "mark atomically
+ * first" idiom as redeemGiftCard/consumeLoginLink, so a cron overlap or the
+ * manual POST .../send-review trigger racing the cron can never double-send.
+ * Returns true if THIS call won the claim (still 'confirmed', not yet
+ * sent); false if another caller already claimed it, or the booking isn't
+ * in a sendable state anymore (cancelled/rescheduled away/etc.).
+ */
+export async function markReviewRequestSent(db, id) {
+  const result = await run(
+    db,
+    `UPDATE bookings SET review_sent_at = datetime('now')
+      WHERE id = :id AND status = 'confirmed' AND review_sent_at IS NULL`,
+    { id }
+  );
+  return result.meta.changes === 1;
 }
 
 export { nowSqlite };
