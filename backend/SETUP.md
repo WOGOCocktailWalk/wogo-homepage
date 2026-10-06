@@ -700,6 +700,153 @@ the slot's clock time to "now" client-side) — not required, just noted.
 
 ---
 
+## 18. Newsletter subscribers — the site form's contract (2026-10)
+
+New backend for the site's **newsletter signup** (site footer) and the
+thank-you/confirmation page it needs. This is the frontend agent's (or your
+own) contract for wiring up the `<form>` and the `/subscribed/` page.
+
+### 18.1 One-time setup, before the form goes live
+
+0. **Load migration 0024** (if you haven't already loaded every migration up
+   through 0023 — see step 3 above — load those first, in order, then this
+   one):
+   ```bash
+   npx wrangler d1 execute wogo-bookings --remote --file=./migrations/0024_subscribers.sql
+   ```
+1. **Set `BREVO_API_KEY`** — already covered in step 4 above; nothing new here.
+2. **Run the Brevo setup once** (creates the folder/list/attributes in Brevo —
+   nothing to click together in Brevo's own dashboard):
+   ```bash
+   curl -X POST https://<your-worker>.workers.dev/admin/api/brevo/setup \
+     -H "Cookie: <your admin session cookie — log into /admin in a browser and copy it>" \
+     -H "X-Requested-With: wogo-admin"
+   ```
+   Safe to re-run any time — it finds what already exists and only creates
+   what's missing. Easiest in practice: once the dashboard's **Subscribers**
+   tab is live, just click its **"Sync Brevo setup"** button instead of
+   using curl.
+3. **Create the WELCOME10 code in Stripe**:
+   ```bash
+   curl -X POST https://<your-worker>.workers.dev/admin/api/stripe/ensure-welcome-code \
+     -H "Cookie: <your admin session cookie>" \
+     -H "X-Requested-With: wogo-admin"
+   ```
+   This makes `WELCOME10` a real, usable Stripe promotion code (10% off,
+   approximately "once per customer" — see the honest caveat in `SPEC.md`
+   §17.8: Stripe's closest restriction is "first payment ever on this
+   Stripe Customer," not "once per customer even on a later purchase"). The
+   booking checkout already has `allow_promotion_codes: true` turned on, so
+   the moment this code exists, guests can type it in at checkout — no
+   further wiring needed on the booking side.
+4. **Build the `/subscribed/` thank-you page** (site repo, not this backend)
+   — see §18.4 below for exactly which states it needs to handle.
+
+### 18.2 `POST /api/subscribe` — the signup form itself
+
+**Endpoint:** `POST https://<your-worker>.workers.dev/api/subscribe` (same
+base URL as every other guest endpoint — `WOGO_API` in
+`widget/wogo-calendar.js`). CORS is the same allowlist as the booking widget.
+
+**Request body** (JSON):
+```json
+{
+  "email": "anna@example.com",   // REQUIRED, valid email
+  "first_name": "Anna",          // optional
+  "locale": "en",                // "en" or "nl" — which language the
+                                  // confirmation + welcome emails render in
+  "city": "Amsterdam",           // optional — which city's updates they care about
+  "source": "site_footer",       // REQUIRED, exactly this string for the footer form
+  "website": ""                  // HONEYPOT — same rule as the contact form:
+                                  // hide with CSS (not type="hidden"), real
+                                  // visitors always submit it empty
+}
+```
+
+**Success response** — always `200 {"ok": true}`, or `200 {"ok": true,
+"already": true}` if this email was already a confirmed subscriber (no
+email is sent in that case — don't treat `already:true` as an error, it's a
+normal outcome). The guest then gets a confirmation email ("Confirm your
+subscription" / "Bevestig je inschrijving") with one button — nothing is
+added to the mailing list, and no welcome code is sent, until they click it.
+
+**Error responses** — same shape as every other guest endpoint
+(`{"error": "<code>", "message": "<human text>"}`):
+- `400 bad_request` — a required field is missing/invalid.
+- `403 forbidden` — Origin not on the allowlist.
+- `429 rate_limited` — too many signups from this IP in a 10-minute window;
+  body includes `retry_after_seconds`, response carries `Retry-After`.
+
+A filled honeypot still gets `200 {"ok": true}` but nothing is stored or
+emailed — same "don't give the bot a signal" reasoning as the contact form.
+
+### 18.3 The confirmation link and unsubscribe link
+
+Both are plain `GET` links the guest clicks straight out of an email — the
+frontend never calls these as `fetch()`, and never needs to build the URLs
+itself (they're embedded ready-made in the emails):
+
+- `GET /api/subscribe/confirm?token=…` — always redirects (`302`) to
+  `https://www.wogococktailwalk.com/subscribed/?lang=en` (or `nl`) on
+  success, or `…/subscribed/?state=invalid` for an unknown, already-used-by-
+  someone-else, expired (48 hours), or previously-unsubscribed token.
+- `GET /api/unsubscribe?token=…` — only ever appears in the footer of the
+  WELCOME email (never in a transactional booking email) — redirects to
+  `…/subscribed/?state=unsubscribed` on success (or an already-unsubscribed
+  click — that's still a normal, not-an-error outcome) or `?state=invalid`
+  for an unknown token.
+
+### 18.4 The `/subscribed/` page — states it must handle
+
+One static page, driven entirely by its own URL's query string (no API call
+needed from the page itself):
+
+| URL | Meaning | What to show |
+|---|---|---|
+| `/subscribed/?lang=en` or `?lang=nl` | Just confirmed (first time) | The "you're in!" state. **This is the ONLY place the 10% welcome code is shown on the site** — but the code is also emailed (see below), so the page doesn't strictly have to display it if that's simpler; showing it is a nice-to-have, not a requirement, since the WELCOME email always carries `WELCOME10` regardless. |
+| `/subscribed/?state=invalid` | Bad/expired/already-unsubscribed link | A gentle "this link didn't work — try subscribing again" message + the signup form (or a link back to it). |
+| `/subscribed/?state=unsubscribed` | Successfully unsubscribed | A simple "you're unsubscribed, sorry to see you go" confirmation. |
+
+**Do not send the welcome code to anyone who lands on this page without a
+valid `lang=` param** — the code is only ever genuinely earned via a real
+confirm click or a booking's own opt-in checkbox, both of which land here
+with the right state.
+
+### 18.5 Booking widget — no change needed
+
+The booking widget already sends `marketing_opt_in` on every `POST
+/api/book` call (its existing checkbox) — this now ALSO subscribes the
+guest directly (no confirmation email needed; the booking itself is the
+consent) and sends them the exact same welcome code, first time only. No
+widget change required for this to work.
+
+### 18.6 Importing the old Wix newsletter list (one-time)
+
+1. **Export from Wix**: Wix's Contacts app → Export → CSV (do this *before*
+   cancelling Wix — see the urgent note in `BACKEND-PLAN.md`).
+2. **Convert to the JSON shape this endpoint wants** — a local script (ask
+   your main Claude session to write a quick one-off converter) turning
+   Wix's CSV columns into:
+   ```json
+   [
+     {"email": "anna@example.com", "first_name": "Anna", "locale": "nl", "city": "Amsterdam"},
+     {"email": "bram@example.com"}
+   ]
+   ```
+3. **Import** (max 2000 rows per call — split a bigger export into chunks):
+   ```bash
+   curl -X POST https://<your-worker>.workers.dev/admin/api/subscribers/import \
+     -H "Content-Type: application/json" \
+     -H "Cookie: <your admin session cookie>" \
+     -H "X-Requested-With: wogo-admin" \
+     -d @converted-subscribers.json
+   ```
+   Every imported row lands straight as **confirmed** (it's historical,
+   already-consented data — no confirmation email is sent) and is synced
+   into Brevo's list automatically.
+
+---
+
 ## Moving to another host later
 
 Nothing here locks you into Cloudflare forever — see

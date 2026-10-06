@@ -178,6 +178,16 @@
     { id: "gc_4", code: "WOGO-8YV3-HK6C", initial_cents: 3000, balance_cents: 3000, currency: "EUR", status: "void", buyer_name: "Bram de Groot", buyer_email: "bram@example.com", recipient_name: "Els Peeters", recipient_email: "els@example.com", message: "", stripe_session: "cs_mock_gift_4", locale: "en", created_at: day(-40) }
   ];
 
+  /* ---- subscribers (migrations/0024, BUILD §17) — a handful across every
+     status/source, so the admin preview shows the full picture. ---- */
+  const subscribers = [
+    { id: "sub_1", email: "anna@example.com", first_name: "Anna", locale: "en", city: "Amsterdam", source: "site_footer", status: "confirmed", created_at: day(-12), confirmed_at: day(-12) },
+    { id: "sub_2", email: "bram@example.com", first_name: "Bram", locale: "nl", city: "Utrecht", source: "booking_opt_in", status: "confirmed", created_at: day(-8), confirmed_at: day(-8) },
+    { id: "sub_3", email: "sophie.bakker@example.com", first_name: "Sophie", locale: "nl", city: null, source: "wix_import", status: "confirmed", created_at: day(-40), confirmed_at: day(-40) },
+    { id: "sub_4", email: "pending@example.com", first_name: "", locale: "en", city: "Rotterdam", source: "site_footer", status: "pending", created_at: day(-1), confirmed_at: null },
+    { id: "sub_5", email: "gone@example.com", first_name: "Lotte", locale: "nl", city: null, source: "site_footer", status: "unsubscribed", created_at: day(-60), confirmed_at: day(-59), unsubscribed_at: day(-5) }
+  ];
+
   /* ---- customers: derived from bookings (mirrors logic.js:aggregateCustomers) ---- */
   function bookingSpendCents(b) {
     if (!(b.status === "confirmed" || b.status === "confirmed_conflict")) return 0;
@@ -441,6 +451,41 @@
       if (!card || card.status !== "active") return json({ error: "not_found" }, 404);
       card.status = "void";
       return json({ ok: true });
+    }
+
+    // subscribers (migrations/0024, BUILD §17)
+    if (path === "/admin/api/subscribers" && method === "GET") {
+      let list = subscribers.slice();
+      if (q.get("status")) list = list.filter((s) => s.status === q.get("status"));
+      if (q.get("source")) list = list.filter((s) => s.source === q.get("source"));
+      if (q.get("q")) {
+        const needle = q.get("q").toLowerCase();
+        list = list.filter((s) => s.email.indexOf(needle) >= 0 || (s.first_name || "").toLowerCase().indexOf(needle) >= 0);
+      }
+      list.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+      const countBy = (key) => {
+        const out = {};
+        subscribers.forEach((s) => { out[s[key]] = (out[s[key]] || 0) + 1; });
+        return Object.keys(out).map((k) => ({ [key]: k, n: out[k] }));
+      };
+      return json({
+        subscribers: list, total: list.length, page: 1, limit: 200,
+        counts: { by_status: countBy("status"), by_source: countBy("source"), by_locale: countBy("locale") }
+      });
+    }
+    if (path === "/admin/api/subscribers.csv" && method === "GET") {
+      const cols = ["id", "email", "first_name", "locale", "city", "source", "status", "created_at", "confirmed_at", "unsubscribed_at"];
+      const esc = (v) => { v = v == null ? "" : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+      const csv = [cols.join(",")].concat(subscribers.map((s) => cols.map((c) => esc(s[c])).join(","))).join("\n");
+      return Promise.resolve(new Response(csv, { status: 200, headers: { "Content-Type": "text/csv; charset=utf-8" } }));
+    }
+    if (path === "/admin/api/brevo/setup" && method === "POST") {
+      return json({
+        folder: { id: 1, created: false },
+        list: { id: 10, created: false },
+        attributes: ["LANGUAGE", "CITY_INTEREST", "SOURCE", "FIRST_NAME", "LAST_BOOKING_DATE", "LAST_ROUTE", "BOOKINGS_COUNT", "CONSENT_AT", "CONSENT_SOURCE"]
+          .map((name) => ({ name, type: "text", created: false }))
+      });
     }
 
     return json({ error: "not_found", message: "mock: no handler for " + method + " " + path }, 404);

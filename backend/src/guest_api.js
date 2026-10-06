@@ -19,6 +19,11 @@ import {
   CONTACT_CITY_MAX_LENGTH,
   CONTACT_DATE_MAX_LENGTH,
   CONTACT_PARTY_SIZE_MAX,
+  SUBSCRIBE_SOURCES,
+  SUBSCRIBE_NAME_MAX_LENGTH,
+  SUBSCRIBE_CITY_MAX_LENGTH,
+  CONFIRM_TOKEN_EXPIRY_HOURS,
+  SITE_URL,
 } from './config.js';
 import {
   computeHoldExpiry,
@@ -34,11 +39,14 @@ import {
   nowSqlite,
   todayInTimezone,
   computeRateLimitRetryAfterSeconds,
+  isConfirmTokenExpired,
 } from './logic.js';
 import * as db from './db.js';
 import { createCheckoutSession, createGiftCardCheckoutSession } from './stripe.js';
 import { sendTransactional } from './brevo.js';
-import { renderInquiryOwnerNotification, renderInquiryAutoAck } from './emails.js';
+import { sendWithRetry } from './email_retry.js';
+import { renderInquiryOwnerNotification, renderInquiryAutoAck, renderSubscribeConfirm, renderSubscribeWelcome } from './emails.js';
+import { generateToken, syncConfirmedSubscriber, syncUnsubscribe } from './subscribers.js';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH_RE = /^\d{4}-\d{2}$/;
@@ -705,4 +713,208 @@ export async function handleContact(request, env) {
   }
 
   return json({ ok: true, id: inquiry.id }, 200, request);
+}
+
+// ---------------------------------------------------------------------------
+// Newsletter subscribers (migrations/0024, BUILD §17) — the site-footer
+// signup form's backend. GDPR DOUBLE OPT-IN: POST /api/subscribe only ever
+// stores a 'pending' row and sends a confirmation link; a subscriber is never
+// added to Brevo (and never emailed the WELCOME10 code) until they click it
+// (GET /api/subscribe/confirm). Own rate-limit bucket ('subscribe'), same
+// honeypot pattern as /api/contact. See SETUP.md for the full site-form
+// contract (request/response/error codes, the /subscribed/ page's states).
+// ---------------------------------------------------------------------------
+
+const SUBSCRIBE_SOURCE_SET = new Set(SUBSCRIBE_SOURCES);
+
+/**
+ * POST /api/subscribe — body { email, first_name?, locale, city?, source,
+ * website }. The double-opt-in state machine (src/db.js has the storage half
+ * of each branch):
+ *   * no existing row            -> create 'pending' + send confirm email
+ *   * existing row, 'pending'    -> re-issue a fresh token (resets the
+ *                                    CONFIRM_TOKEN_EXPIRY_HOURS clock) + resend
+ *   * existing row, 'unsubscribed' -> re-arm as 'pending' (a fresh opt-in
+ *                                    round, same as a brand-new signup) + resend
+ *   * existing row, 'confirmed'  -> 200 {ok:true, already:true}, NO email —
+ *                                    re-submitting the form for an already-
+ *                                    confirmed address must not be a way to
+ *                                    re-trigger the welcome code or spam them.
+ */
+export async function handleSubscribe(request, env) {
+  const origin = request.headers.get('Origin');
+  if (origin && !isAllowedOrigin(origin)) {
+    return errorJson('forbidden', null, 403, request);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return errorJson('bad_request', 'invalid JSON body', 400, request);
+  }
+
+  const { email, first_name, locale, city, source, website } = body || {};
+
+  // Honeypot — identical silent-absorb pattern to /api/contact: a real
+  // visitor never sees/fills this field, so a filled one is a bot. Absorbed
+  // with a normal-looking 200 so the bot has no signal to react to, but
+  // nothing is stored and no rate-limit event is spent.
+  if (website !== undefined && website !== null && String(website).trim() !== '') {
+    return json({ ok: true }, 200, request);
+  }
+
+  if (!email || typeof email !== 'string' || email.length > 254 || !EMAIL_RE.test(email)) {
+    return errorJson('bad_request', 'a valid email is required', 400, request);
+  }
+  if (first_name !== undefined && first_name !== null && first_name !== '' && (typeof first_name !== 'string' || first_name.length > SUBSCRIBE_NAME_MAX_LENGTH)) {
+    return errorJson('bad_request', 'invalid first_name', 400, request);
+  }
+  if (city !== undefined && city !== null && city !== '' && (typeof city !== 'string' || city.length > SUBSCRIBE_CITY_MAX_LENGTH)) {
+    return errorJson('bad_request', 'invalid city', 400, request);
+  }
+  if (!source || !SUBSCRIBE_SOURCE_SET.has(source)) {
+    return errorJson('bad_request', `source must be one of ${[...SUBSCRIBE_SOURCE_SET].join(', ')}`, 400, request);
+  }
+
+  // Rate limit AFTER validation (same reasoning as /api/book and /api/contact
+  // — a malformed request never burns a genuine guest's attempt budget). Own
+  // bucket ('subscribe') so a burst of newsletter signups can't be starved
+  // by, or starve, booking/gift-card/contact traffic.
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  await db.recordRateEvent(env.DB, 'subscribe', ip);
+  const since = sqliteMinutesAgo(HOLD_ATTEMPT_WINDOW_MINUTES);
+  const attempts = await db.countRateEventsSince(env.DB, 'subscribe', ip, since);
+  if (attempts > HOLD_ATTEMPTS_PER_WINDOW) {
+    const oldest = await db.oldestRateEventSince(env.DB, 'subscribe', ip, since);
+    const retryAfterSeconds = computeRateLimitRetryAfterSeconds(oldest, HOLD_ATTEMPT_WINDOW_MINUTES, nowSqlite());
+    return rateLimitedJson(retryAfterSeconds, 'too many attempts — please try again in a few minutes', request);
+  }
+
+  const normalizedLocale = locale === 'nl' ? 'nl' : 'en';
+  const existing = await db.getSubscriberByEmail(env.DB, email);
+
+  if (existing && existing.status === 'confirmed') {
+    return json({ ok: true, already: true }, 200, request);
+  }
+
+  let subscriber;
+  if (existing) {
+    subscriber = await db.reissueSubscriberToken(env.DB, existing.id, {
+      confirm_token: generateToken(),
+      locale: normalizedLocale,
+      city: city || null,
+      source,
+      first_name: first_name || null,
+    });
+  } else {
+    subscriber = await db.createSubscriber(env.DB, {
+      id: `sub_${crypto.randomUUID()}`,
+      email,
+      first_name: first_name || null,
+      locale: normalizedLocale,
+      city: city || null,
+      source,
+      confirm_token: generateToken(),
+      unsubscribe_token: generateToken(),
+      ip_hash: ip === 'unknown' ? null : await sha256Hex(ip),
+    });
+  }
+
+  const baseUrl = new URL(request.url).origin;
+  const confirmUrl = `${baseUrl}/api/subscribe/confirm?token=${subscriber.confirm_token}`;
+  const mail = renderSubscribeConfirm(subscriber, confirmUrl);
+  await sendWithRetry(
+    env,
+    { to: subscriber.email, subject: mail.subject, htmlContent: mail.html },
+    { database: db, sendTransactional, kind: 'subscribe_confirm' }
+  );
+
+  return json({ ok: true }, 200, request);
+}
+
+/**
+ * GET /api/subscribe/confirm?token=... — the double opt-in click. Always a
+ * 302 redirect to the site's /subscribed/ page (this is a link clicked
+ * straight out of an email, never a fetch() call — no JSON response, no CORS
+ * concern). Invalid/expired/unsubscribed token -> ?state=invalid; success ->
+ * ?lang=en|nl so the thank-you page can show the welcome code in the right
+ * language (the code itself is sent in the WELCOME email, never embedded in
+ * this redirect URL). An already-'confirmed' token (a double-click, or an
+ * email client that pre-fetches links) redirects to the SAME success page
+ * without re-sending the welcome email — this handler is idempotent.
+ */
+export async function handleSubscribeConfirm(request, env) {
+  const url = new URL(request.url);
+  const token = url.searchParams.get('token');
+
+  if (!token || typeof token !== 'string') {
+    return Response.redirect(`${SITE_URL}/subscribed/?state=invalid`, 302);
+  }
+
+  const subscriber = await db.getSubscriberByConfirmToken(env.DB, token);
+  if (!subscriber || subscriber.status === 'unsubscribed') {
+    return Response.redirect(`${SITE_URL}/subscribed/?state=invalid`, 302);
+  }
+
+  if (subscriber.status === 'confirmed') {
+    return Response.redirect(`${SITE_URL}/subscribed/?state=confirmed&lang=${subscriber.locale}`, 302);
+  }
+
+  // status === 'pending' from here.
+  if (isConfirmTokenExpired(subscriber.created_at, CONFIRM_TOKEN_EXPIRY_HOURS)) {
+    return Response.redirect(`${SITE_URL}/subscribed/?state=invalid`, 302);
+  }
+
+  let confirmed = await db.confirmSubscriberByToken(env.DB, token);
+  if (!confirmed) {
+    // Lost a race to a near-simultaneous confirm of the same token (e.g. an
+    // email client that opens the link twice) — re-read; it's confirmed
+    // either way, so this is still a success, just without re-sending mail.
+    const recheck = await db.getSubscriberByConfirmToken(env.DB, token);
+    if (!recheck || recheck.status !== 'confirmed') {
+      return Response.redirect(`${SITE_URL}/subscribed/?state=invalid`, 302);
+    }
+    return Response.redirect(`${SITE_URL}/subscribed/?state=confirmed&lang=${recheck.locale}`, 302);
+  }
+
+  await syncConfirmedSubscriber(env, confirmed);
+
+  const unsubscribeUrl = `${url.origin}/api/unsubscribe?token=${confirmed.unsubscribe_token}`;
+  const mail = renderSubscribeWelcome(confirmed, { unsubscribeUrl });
+  await sendWithRetry(
+    env,
+    { to: confirmed.email, subject: mail.subject, htmlContent: mail.html },
+    { database: db, sendTransactional, kind: 'subscribe_welcome' }
+  );
+
+  return Response.redirect(`${SITE_URL}/subscribed/?state=confirmed&lang=${confirmed.locale}`, 302);
+}
+
+/**
+ * GET /api/unsubscribe?token=... — the welcome email's footer link (and any
+ * future marketing send). Always a 302 redirect, same reasoning as the
+ * confirm handler above. An invalid token, or a token for a row already
+ * unsubscribed, both redirect to the SAME success state — unsubscribing is
+ * idempotent from the guest's point of view, and a stale/already-used link
+ * must never look like an error.
+ */
+export async function handleUnsubscribe(request, env) {
+  const url = new URL(request.url);
+  const token = url.searchParams.get('token');
+
+  if (!token || typeof token !== 'string') {
+    return Response.redirect(`${SITE_URL}/subscribed/?state=invalid`, 302);
+  }
+
+  const result = await db.unsubscribeByToken(env.DB, token);
+  if (!result) {
+    return Response.redirect(`${SITE_URL}/subscribed/?state=invalid`, 302);
+  }
+
+  if (!result.already_unsubscribed) {
+    await syncUnsubscribe(env, result.email);
+  }
+
+  return Response.redirect(`${SITE_URL}/subscribed/?state=unsubscribed`, 302);
 }

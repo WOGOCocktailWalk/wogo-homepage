@@ -13,6 +13,14 @@ import {
   LOGIN_LOCK_MAX_MINUTES,
   LOGIN_FAIL_WINDOW_MINUTES,
   MAX_TOKEN_LENGTH,
+  BREVO_FOLDER_NAME,
+  BREVO_LIST_NAME,
+  BREVO_CONTACT_ATTRIBUTES,
+  BREVO_LIST_ID_SETTING_KEY,
+  WELCOME_CODE,
+  WELCOME_DISCOUNT_PERCENT,
+  SUBSCRIBE_NAME_MAX_LENGTH,
+  SUBSCRIBE_CITY_MAX_LENGTH,
 } from './config.js';
 import { checkAdminToken, createSessionCookieValue, sessionSetCookieHeader, sessionClearCookieHeader, hasCsrfHeader } from './auth.js';
 import {
@@ -22,6 +30,9 @@ import {
 } from './webhook.js';
 import { verifyTurnstile } from './turnstile.js';
 import { runHealthCheck } from './healthcheck.js';
+import { ensureContactFolder, ensureContactList, ensureContactAttribute } from './brevo.js';
+import { ensureWelcomePromotionCode } from './stripe.js';
+import { importSubscribers, handleConfirmedBookingOptIn } from './subscribers.js';
 
 // ---------------------------------------------------------------------------
 // Admin mutation audit trail (owner audit item #8, migrations/0007). Called
@@ -810,6 +821,11 @@ export async function handleCreateManualBooking(request, env) {
   // notification: she's the one who just typed this in.
   await sendGuestConfirmationEmails(env, result.booking, route);
   await notifyBars(env, result.booking, route);
+  // Newsletter subscriber plumbing (BUILD item #3) — a manual (phone) booking
+  // is just as real a consent act as a web one; never throws, see
+  // src/subscribers.js's own try/catch contract.
+  const baseUrl = new URL(request.url).origin;
+  await handleConfirmedBookingOptIn(env, result.booking, route, { baseUrl });
   await audit(env, request, 'booking.create_manual', 'booking', bookingId, { route_id, date, slot, party, email });
 
   return json({ booking: result.booking }, 201);
@@ -971,4 +987,173 @@ export async function handleVoidGiftCard(request, env, params) {
   if (!ok) return errorJson('not_found', 'no active gift card with that code', 404);
   await audit(env, request, 'gift_card.void', 'gift_card', params.code, null);
   return json({ ok: true });
+}
+
+// ---------------------------------------------------------------------------
+// Newsletter subscribers (migrations/0024, BUILD §17) — Brevo contact model
+// setup, the Stripe welcome-code bootstrap, admin list/CSV, and the Wix
+// import. Session-guarded like every other /admin/api/* route.
+// ---------------------------------------------------------------------------
+
+/**
+ * POST /admin/api/brevo/setup — idempotently ensures the folder, list, and
+ * every custom contact attribute the subscriber plumbing needs exist in
+ * Brevo (BUILD item #1). Safe to call repeatedly: each ensure* helper
+ * (src/brevo.js) checks for an existing match by name before creating
+ * anything. The resulting list id is stored in `settings` (BREVO_LIST_ID_SETTING_KEY)
+ * so every later contact upsert/unsubscribe (src/subscribers.js) knows which
+ * list to add to/remove from without re-querying Brevo each time.
+ */
+export async function handleBrevoSetup(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  if (!env.BREVO_API_KEY) return errorJson('bad_request', 'BREVO_API_KEY is not configured', 400);
+
+  let folder, list;
+  try {
+    folder = await ensureContactFolder(env, BREVO_FOLDER_NAME);
+    list = await ensureContactList(env, BREVO_LIST_NAME, folder.id);
+    await db.setSetting(env.DB, BREVO_LIST_ID_SETTING_KEY, String(list.id));
+  } catch (err) {
+    return errorJson('brevo_error', String(err && err.message ? err.message : err), 502);
+  }
+
+  const attributes = [];
+  for (const attr of BREVO_CONTACT_ATTRIBUTES) {
+    try {
+      attributes.push(await ensureContactAttribute(env, attr.name, attr.type));
+    } catch (err) {
+      attributes.push({ name: attr.name, type: attr.type, created: false, error: String(err && err.message ? err.message : err) });
+    }
+  }
+
+  await audit(env, request, 'brevo.setup', null, null, {
+    folder, list, attributes_created: attributes.filter((a) => a.created).length,
+  });
+  return json({ folder, list, attributes });
+}
+
+/**
+ * POST /admin/api/stripe/ensure-welcome-code — idempotently creates the
+ * WELCOME10 Stripe Promotion Code (10% off, see src/stripe.js's doc comment
+ * on the "once per customer" approximation it actually applies). Stripe's own
+ * error body is surfaced on failure rather than a generic message, so the
+ * owner can see exactly why Stripe rejected the create.
+ */
+export async function handleEnsureWelcomeCode(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  if (!env.STRIPE_SECRET_KEY) return errorJson('bad_request', 'STRIPE_SECRET_KEY is not configured', 400);
+  try {
+    const result = await ensureWelcomePromotionCode(env, WELCOME_CODE, WELCOME_DISCOUNT_PERCENT);
+    await audit(env, request, 'stripe.ensure_welcome_code', null, null, { created: result.created, code: result.code });
+    return json(result);
+  } catch (err) {
+    return errorJson('stripe_error', String(err && err.message ? err.message : err), 502);
+  }
+}
+
+function parseSubscriberFilters(url) {
+  const p = url.searchParams;
+  return {
+    status: p.get('status') || undefined,
+    source: p.get('source') || undefined,
+    locale: p.get('locale') || undefined,
+    q: p.get('q') || undefined,
+    limit: p.get('limit') ? Number(p.get('limit')) : undefined,
+    offset: p.get('offset') ? Number(p.get('offset')) : undefined,
+  };
+}
+
+/** GET /admin/api/subscribers?status=&source=&locale=&q=&page= — list +
+ * counts by status/source/locale for the dashboard's Subscribers tab. `page`
+ * (1-based, optional) is a convenience over raw limit/offset: page N with the
+ * request's own `limit` (default 200) maps to offset = (N-1)*limit. */
+export async function handleListSubscribers(request, env) {
+  const url = new URL(request.url);
+  const filters = parseSubscriberFilters(url);
+  const page = url.searchParams.get('page') ? Math.max(1, Number(url.searchParams.get('page'))) : 1;
+  const limit = filters.limit || 200;
+  filters.limit = limit;
+  filters.offset = (page - 1) * limit;
+
+  const subscribers = await db.listSubscribers(env.DB, filters);
+  const total = await db.countSubscribersFiltered(env.DB, filters);
+  const by_status = await db.countSubscribersByStatus(env.DB);
+  const by_source = await db.countSubscribersBySource(env.DB);
+  const by_locale = await db.countSubscribersByLocale(env.DB);
+  return json({ subscribers, total, page, limit, counts: { by_status, by_source, by_locale } });
+}
+
+const SUBSCRIBER_CSV_COLUMNS = ['id', 'email', 'first_name', 'locale', 'city', 'source', 'status', 'created_at', 'confirmed_at', 'unsubscribed_at'];
+
+export async function handleSubscribersCsv(request, env) {
+  const url = new URL(request.url);
+  const filters = parseSubscriberFilters(url);
+  filters.limit = 10000;
+  filters.offset = 0;
+  const subscribers = await db.listSubscribers(env.DB, filters);
+  const csv = toCsv(subscribers, SUBSCRIBER_CSV_COLUMNS);
+  const today = new Date().toISOString().slice(0, 10);
+  await audit(env, request, 'subscribers.export_csv', null, null, { rows: subscribers.length, filters });
+  return new Response(csv, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="wogo-subscribers-${today}.csv"`,
+    },
+  });
+}
+
+const MAX_IMPORT_ROWS = 2000;
+
+/**
+ * POST /admin/api/subscribers/import — body: a JSON array (max 2000) of
+ * { email, first_name?, locale?, city?, consented_at? } (BUILD item #5).
+ * `consented_at` is accepted for the owner's own record-keeping but not
+ * persisted on the subscriber row today (the row's own created_at/confirmed_at
+ * already mark "when WOGO's system first knew about this consent" — adding a
+ * separate historical-consent-date column is a natural follow-up if Maroussia
+ * wants the ORIGINAL Wix consent date preserved distinctly; flagged in
+ * SETUP.md rather than silently dropped). Every row lands as a CONFIRMED,
+ * source='wix_import' subscriber — see src/subscribers.js:importSubscribers
+ * for the chunked Brevo upsert + per-row retry-on-failure behaviour.
+ */
+export async function handleImportSubscribers(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return errorJson('bad_request', 'invalid JSON', 400);
+  }
+  if (!Array.isArray(body) || body.length === 0) {
+    return errorJson('bad_request', 'body must be a non-empty JSON array of {email, first_name?, locale?, city?}', 400);
+  }
+  if (body.length > MAX_IMPORT_ROWS) {
+    return errorJson('bad_request', `max ${MAX_IMPORT_ROWS} rows per call`, 400);
+  }
+  for (const row of body) {
+    if (!row || typeof row.email !== 'string' || !EMAIL_RE.test(row.email)) {
+      return errorJson('bad_request', `invalid or missing email in one row: ${row && row.email}`, 400);
+    }
+    if (row.first_name !== undefined && row.first_name !== null && (typeof row.first_name !== 'string' || row.first_name.length > SUBSCRIBE_NAME_MAX_LENGTH)) {
+      return errorJson('bad_request', `invalid first_name for ${row.email}`, 400);
+    }
+    if (row.city !== undefined && row.city !== null && (typeof row.city !== 'string' || row.city.length > SUBSCRIBE_CITY_MAX_LENGTH)) {
+      return errorJson('bad_request', `invalid city for ${row.email}`, 400);
+    }
+  }
+
+  const result = await importSubscribers(env, body);
+  await audit(env, request, 'subscribers.import', null, null, {
+    rows: body.length, imported: result.imported, updated: result.updated,
+    queued_for_retry: result.queued_for_retry, errors: result.errors.length,
+  });
+  return json(result, 201);
+}
+
+/** GET /admin/api/subscribers/sync-queue — dashboard visibility into the
+ * Brevo retry queue (BUILD item #7), same shape as GET /admin/api/failed-emails. */
+export async function handleBrevoSyncQueue(request, env) {
+  const items = await db.listRecentBrevoSyncItems(env.DB, 100);
+  return json({ items });
 }

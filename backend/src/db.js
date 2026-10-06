@@ -1609,6 +1609,280 @@ export async function anonymizeOldBookings(db, beforeStr) {
 }
 
 // ---------------------------------------------------------------------------
+// Newsletter subscribers (migrations/0024, BUILD §17). Orchestration (Brevo
+// calls, token generation, the double-opt-in state machine) lives in
+// src/subscribers.js; this file is pure storage, same split as everywhere
+// else in this codebase.
+// ---------------------------------------------------------------------------
+
+export async function getSubscriberByEmail(db, email) {
+  return first(db, `SELECT * FROM subscribers WHERE LOWER(email) = LOWER(:email)`, { email });
+}
+
+export async function getSubscriberById(db, id) {
+  return first(db, `SELECT * FROM subscribers WHERE id = :id`, { id });
+}
+
+export async function getSubscriberByConfirmToken(db, token) {
+  return first(db, `SELECT * FROM subscribers WHERE confirm_token = :token`, { token });
+}
+
+export async function getSubscriberByUnsubscribeToken(db, token) {
+  return first(db, `SELECT * FROM subscribers WHERE unsubscribe_token = :token`, { token });
+}
+
+/** Brand-new signup row — always starts 'pending' (double opt-in). Every
+ * field + both tokens are supplied by the caller (src/subscribers.js) so this
+ * function stays pure storage with no token-generation logic of its own. */
+export async function createSubscriber(db, params) {
+  await run(
+    db,
+    `INSERT INTO subscribers
+       (id, email, first_name, locale, city, source, status, confirm_token, unsubscribe_token, created_at, ip_hash)
+     VALUES
+       (:id, :email, :first_name, :locale, :city, :source, 'pending', :confirm_token, :unsubscribe_token, datetime('now'), :ip_hash)`,
+    {
+      id: params.id,
+      email: String(params.email).trim().toLowerCase(),
+      first_name: params.first_name ?? null,
+      locale: params.locale === 'nl' ? 'nl' : 'en',
+      city: params.city ?? null,
+      source: params.source,
+      confirm_token: params.confirm_token,
+      unsubscribe_token: params.unsubscribe_token,
+      ip_hash: params.ip_hash ?? null,
+    }
+  );
+  return getSubscriberById(db, params.id);
+}
+
+/**
+ * Re-arms a NOT-yet-confirmed (or previously unsubscribed) row for a fresh
+ * double-opt-in round: a brand new confirm_token, `created_at` reset (so
+ * logic.js:isConfirmTokenExpired's clock restarts), status forced back to
+ * 'pending', and the freshest locale/city/source the guest just submitted.
+ * Used when POST /api/subscribe sees an existing row that is NOT already
+ * 'confirmed' (src/guest_api.js's double-opt-in state machine).
+ */
+export async function reissueSubscriberToken(db, id, { confirm_token, locale, city, source, first_name }) {
+  await run(
+    db,
+    `UPDATE subscribers
+        SET status = 'pending', confirm_token = :confirm_token, created_at = datetime('now'),
+            confirmed_at = NULL, unsubscribed_at = NULL,
+            locale = :locale, city = :city, source = :source,
+            first_name = COALESCE(:first_name, first_name)
+      WHERE id = :id`,
+    {
+      id,
+      confirm_token,
+      locale: locale === 'nl' ? 'nl' : 'en',
+      city: city ?? null,
+      source,
+      first_name: first_name ?? null,
+    }
+  );
+  return getSubscriberById(db, id);
+}
+
+/** Flips a 'pending' row to 'confirmed' via its confirm_token (the double
+ * opt-in click). Returns the updated row, or null if the token didn't match a
+ * still-pending row (already confirmed, unsubscribed, or token never existed
+ * — the caller, src/guest_api.js, tells those apart by re-reading the row). */
+export async function confirmSubscriberByToken(db, token) {
+  const result = await run(
+    db,
+    `UPDATE subscribers SET status = 'confirmed', confirmed_at = datetime('now')
+      WHERE confirm_token = :token AND status = 'pending'`,
+    { token }
+  );
+  if (result.meta.changes !== 1) return null;
+  return getSubscriberByConfirmToken(db, token);
+}
+
+/**
+ * Upserts a subscriber straight to 'confirmed' — the consent act was a
+ * booking's own opt-in checkbox or a pre-consented Wix import, so there is no
+ * token/email round-trip (BUILD items #3/#5). If a row for this email already
+ * exists (any prior status), it's reaffirmed to 'confirmed' and its
+ * source/locale/city updated to the latest consent; a brand-new row still
+ * gets a real unsubscribe_token (every confirmed subscriber must be able to
+ * unsubscribe) but no confirm_token (nothing left to confirm).
+ */
+export async function upsertConfirmedSubscriber(db, params) {
+  const existing = await getSubscriberByEmail(db, params.email);
+  if (existing) {
+    await run(
+      db,
+      `UPDATE subscribers
+          SET status = 'confirmed', confirmed_at = datetime('now'),
+              locale = :locale, city = COALESCE(:city, city), source = :source,
+              first_name = COALESCE(:first_name, first_name)
+        WHERE id = :id`,
+      {
+        id: existing.id,
+        locale: params.locale === 'nl' ? 'nl' : 'en',
+        city: params.city ?? null,
+        source: params.source,
+        first_name: params.first_name ?? null,
+      }
+    );
+    return getSubscriberById(db, existing.id);
+  }
+  await run(
+    db,
+    `INSERT INTO subscribers
+       (id, email, first_name, locale, city, source, status, confirm_token, unsubscribe_token, created_at, confirmed_at, ip_hash)
+     VALUES
+       (:id, :email, :first_name, :locale, :city, :source, 'confirmed', NULL, :unsubscribe_token, datetime('now'), datetime('now'), :ip_hash)`,
+    {
+      id: params.id,
+      email: String(params.email).trim().toLowerCase(),
+      first_name: params.first_name ?? null,
+      locale: params.locale === 'nl' ? 'nl' : 'en',
+      city: params.city ?? null,
+      source: params.source,
+      unsubscribe_token: params.unsubscribe_token,
+      ip_hash: params.ip_hash ?? null,
+    }
+  );
+  return getSubscriberById(db, params.id);
+}
+
+/** Marks a row unsubscribed via its (never-rotated) unsubscribe_token.
+ * Returns the row (so the caller can remove it from Brevo by email) or null
+ * if the token matched nothing, or matched a row already unsubscribed — an
+ * already-unsubscribed click is treated as a harmless no-op by the caller,
+ * not an error, which is why this returns the row either way when found;
+ * callers distinguish via `already_unsubscribed` on the returned shape. */
+export async function unsubscribeByToken(db, token) {
+  const existing = await getSubscriberByUnsubscribeToken(db, token);
+  if (!existing) return null;
+  if (existing.status === 'unsubscribed') return { ...existing, already_unsubscribed: true };
+  await run(
+    db,
+    `UPDATE subscribers SET status = 'unsubscribed', unsubscribed_at = datetime('now') WHERE id = :id`,
+    { id: existing.id }
+  );
+  return getSubscriberById(db, existing.id);
+}
+
+export async function listSubscribers(db, filters = {}) {
+  const clauses = ['1=1'];
+  const bound = {};
+  if (filters.status) { clauses.push('status = :status'); bound.status = filters.status; }
+  if (filters.source) { clauses.push('source = :source'); bound.source = filters.source; }
+  if (filters.locale) { clauses.push('locale = :locale'); bound.locale = filters.locale; }
+  if (filters.q) {
+    clauses.push(`(email LIKE '%'||:q||'%' OR first_name LIKE '%'||:q||'%')`);
+    bound.q = filters.q;
+  }
+  bound.limit = filters.limit ?? 200;
+  bound.offset = filters.offset ?? 0;
+  return all(
+    db,
+    `SELECT * FROM subscribers WHERE ${clauses.join(' AND ')} ORDER BY created_at DESC LIMIT :limit OFFSET :offset`,
+    bound
+  );
+}
+
+/** Total rows matching the same filters as listSubscribers (minus pagination)
+ * — for the admin dashboard's "N of M" pager. */
+export async function countSubscribersFiltered(db, filters = {}) {
+  const clauses = ['1=1'];
+  const bound = {};
+  if (filters.status) { clauses.push('status = :status'); bound.status = filters.status; }
+  if (filters.source) { clauses.push('source = :source'); bound.source = filters.source; }
+  if (filters.locale) { clauses.push('locale = :locale'); bound.locale = filters.locale; }
+  if (filters.q) {
+    clauses.push(`(email LIKE '%'||:q||'%' OR first_name LIKE '%'||:q||'%')`);
+    bound.q = filters.q;
+  }
+  const row = await first(db, `SELECT COUNT(*) AS n FROM subscribers WHERE ${clauses.join(' AND ')}`, bound);
+  return row ? row.n : 0;
+}
+
+/** Counts grouped by status / source / locale — the admin dashboard's summary
+ * tiles. Three small GROUP BY queries (volume here is at most a few thousand
+ * rows — not worth a single clever combined query). */
+export async function countSubscribersByStatus(db) {
+  return all(db, `SELECT status, COUNT(*) AS n FROM subscribers GROUP BY status`, {});
+}
+export async function countSubscribersBySource(db) {
+  return all(db, `SELECT source, COUNT(*) AS n FROM subscribers GROUP BY source`, {});
+}
+export async function countSubscribersByLocale(db) {
+  return all(db, `SELECT locale, COUNT(*) AS n FROM subscribers GROUP BY locale`, {});
+}
+
+// ---------------------------------------------------------------------------
+// brevo_sync_queue (migrations/0024, BUILD item #7) — outbound Brevo CONTACT
+// API retry queue. Mirrors failed_email's shape exactly (see src/email_retry.js
+// for the transactional-email twin of this); drained by src/brevo_sync.js.
+// ---------------------------------------------------------------------------
+
+export async function queueBrevoSync(db, { kind, payload, last_error, next_attempt_at }) {
+  await run(
+    db,
+    `INSERT INTO brevo_sync_queue (kind, payload, attempts, status, last_error, next_attempt_at)
+     VALUES (:kind, :payload, 1, 'pending', :last_error, :next_attempt_at)`,
+    { kind, payload: JSON.stringify(payload || {}), last_error: last_error ?? null, next_attempt_at }
+  );
+}
+
+export async function listDueBrevoSyncItems(db, nowStr, limit = 50) {
+  return all(
+    db,
+    `SELECT * FROM brevo_sync_queue WHERE status = 'pending' AND next_attempt_at <= :now ORDER BY id LIMIT :limit`,
+    { now: nowStr, limit }
+  );
+}
+
+export async function markBrevoSyncDone(db, id) {
+  await run(db, `UPDATE brevo_sync_queue SET status = 'done', updated_at = datetime('now') WHERE id = :id`, { id });
+}
+
+export async function markBrevoSyncRetry(db, id, attempts, nextAttemptAt, lastError) {
+  await run(
+    db,
+    `UPDATE brevo_sync_queue
+        SET attempts = :attempts, next_attempt_at = :next_attempt_at, last_error = :last_error, updated_at = datetime('now')
+      WHERE id = :id`,
+    { id, attempts, next_attempt_at: nextAttemptAt, last_error: lastError ?? null }
+  );
+}
+
+export async function markBrevoSyncPermanent(db, id, lastError) {
+  await run(
+    db,
+    `UPDATE brevo_sync_queue SET status = 'failed_permanent', last_error = :last_error, updated_at = datetime('now') WHERE id = :id`,
+    { id, last_error: lastError ?? null }
+  );
+}
+
+/** Metadata-only listing — the dashboard-readable endpoint, same shape as
+ * listRecentFailedEmails above. */
+export async function listRecentBrevoSyncItems(db, limit = 100) {
+  return all(
+    db,
+    `SELECT id, created_at, updated_at, kind, attempts, status, last_error, next_attempt_at
+       FROM brevo_sync_queue ORDER BY id DESC LIMIT :limit`,
+    { limit }
+  );
+}
+
+/** Housekeeping — called from the cron sweep. Only resolved rows are pruned;
+ * still-pending rows are untouched no matter how old. Returns rows deleted. */
+export async function pruneResolvedBrevoSyncItems(db, beforeStr) {
+  const result = await run(
+    db,
+    `DELETE FROM brevo_sync_queue WHERE status IN ('done', 'failed_permanent') AND updated_at < :before`,
+    { before: beforeStr }
+  );
+  return result.meta.changes;
+}
+
+// ---------------------------------------------------------------------------
 // Full-table dumps for the daily R2 export (src/backup.js). Deliberately
 // separate from every other read function in this file (which all filter/
 // paginate) — a backup needs EVERY row, every column, unfiltered.

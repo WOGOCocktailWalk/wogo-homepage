@@ -177,6 +177,55 @@ export const CONTACT_CITY_MAX_LENGTH = 100;
 export const CONTACT_DATE_MAX_LENGTH = 100; // free text ("mid November"), not a strict YYYY-MM-DD
 export const CONTACT_PARTY_SIZE_MAX = 500;
 
+// --- Newsletter subscribers (migrations/0024, BUILD §17) --------------------
+
+export const SUBSCRIBE_SOURCES = ['site_footer', 'booking_opt_in', 'wix_import', 'gift_card', 'contact_form'];
+export const SUBSCRIBE_NAME_MAX_LENGTH = 200;
+export const SUBSCRIBE_CITY_MAX_LENGTH = 100;
+
+// How long a 'pending' confirm_token stays valid, judged against the row's
+// created_at (reset every time a new token is issued — see db.js:
+// reissueSubscriberToken). Re-submitting POST /api/subscribe for a still-
+// pending email always issues a fresh token + resets this clock, so a guest
+// is never permanently locked out by an expired first attempt.
+export const CONFIRM_TOKEN_EXPIRY_HOURS = 48;
+
+// Welcome code sent once a subscriber confirms (double opt-in) or opts in at
+// booking time. A plain constant so the email copy, the Stripe promotion-code
+// creation endpoint (POST /admin/api/stripe/ensure-welcome-code), and any
+// future reference to it can never drift onto different strings.
+export const WELCOME_CODE = 'WELCOME10';
+export const WELCOME_DISCOUNT_PERCENT = 10;
+
+// Brevo contact model (POST /admin/api/brevo/setup) — the folder/list names
+// and the full custom-attribute set this codebase creates programmatically so
+// nothing has to be clicked together by hand in the Brevo UI.
+export const BREVO_FOLDER_NAME = 'WOGO';
+export const BREVO_LIST_NAME = 'WOGO subscribers';
+export const BREVO_CONTACT_ATTRIBUTES = [
+  { name: 'LANGUAGE', type: 'text' },
+  { name: 'CITY_INTEREST', type: 'text' },
+  { name: 'SOURCE', type: 'text' },
+  { name: 'FIRST_NAME', type: 'text' },
+  { name: 'LAST_BOOKING_DATE', type: 'date' },
+  { name: 'LAST_ROUTE', type: 'text' },
+  { name: 'BOOKINGS_COUNT', type: 'float' },
+  { name: 'CONSENT_AT', type: 'date' },
+  { name: 'CONSENT_SOURCE', type: 'text' },
+];
+// settings (k/v) table key where the created-or-found Brevo list id is stored
+// (db.js:getSetting/setSetting — the same generic settings table the owner
+// alert throttles already reuse).
+export const BREVO_LIST_ID_SETTING_KEY = 'brevo_list_id';
+
+// brevo_sync_queue retry (BUILD item #7) — same shape as the failed_email
+// retry constants above, separate numbers so the two queues can never
+// accidentally share a clock.
+export const BREVO_SYNC_MAX_ATTEMPTS = 5;
+export const BREVO_SYNC_RETRY_BACKOFF_MINUTES = [5, 15, 60, 240, 720]; // 5m,15m,1h,4h,12h
+export const BREVO_SYNC_RESOLVED_RETENTION_MINUTES = 30 * 24 * 60; // 30 days
+export const BREVO_SYNC_ALERT_THROTTLE_MINUTES = 60;
+
 // route slug -> public route page path, used for Stripe cancel_url / Meta event_source_url
 export const ROUTE_PATHS = {
   amsterdam: '/amsterdam/',

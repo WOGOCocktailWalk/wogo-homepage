@@ -1342,6 +1342,10 @@ table.data tbody tr:last-child td { border-bottom: none; }
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18M7.5 8a2.5 2.5 0 010-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 010 5"/></svg>
           Gift cards
         </button>
+        <button class="nav-item" data-view="subscribers">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+          Subscribers
+        </button>
         <button class="nav-item" data-view="export">
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
           Export
@@ -1568,6 +1572,16 @@ table.data tbody tr:last-child td { border-bottom: none; }
     { id: "gc_2", code: "WOGO-4M2X-P8WD", initial_cents: 10000, balance_cents: 4010, currency: "EUR", status: "active", buyer_name: "Tom Jansen", buyer_email: "tom.jansen@example.com", recipient_name: "Hugo Verbeek", recipient_email: "hugo.verbeek@example.com", message: "", stripe_session: "cs_mock_gift_2", locale: "nl", created_at: day(-19) },
     { id: "gc_3", code: "WOGO-QW5T-2NBH", initial_cents: 3000, balance_cents: 0, currency: "EUR", status: "depleted", buyer_name: "Lotte Smit", buyer_email: "lotte.smit@example.com", recipient_name: "Maartje Willems", recipient_email: "maartje@example.com", message: "Cheers to us!", stripe_session: "cs_mock_gift_3", locale: "nl", created_at: day(-33) },
     { id: "gc_4", code: "WOGO-8YV3-HK6C", initial_cents: 3000, balance_cents: 3000, currency: "EUR", status: "void", buyer_name: "Bram de Groot", buyer_email: "bram@example.com", recipient_name: "Els Peeters", recipient_email: "els@example.com", message: "", stripe_session: "cs_mock_gift_4", locale: "en", created_at: day(-40) }
+  ];
+
+  /* ---- subscribers (migrations/0024, BUILD §17) — a handful across every
+     status/source, so the admin preview shows the full picture. ---- */
+  const subscribers = [
+    { id: "sub_1", email: "anna@example.com", first_name: "Anna", locale: "en", city: "Amsterdam", source: "site_footer", status: "confirmed", created_at: day(-12), confirmed_at: day(-12) },
+    { id: "sub_2", email: "bram@example.com", first_name: "Bram", locale: "nl", city: "Utrecht", source: "booking_opt_in", status: "confirmed", created_at: day(-8), confirmed_at: day(-8) },
+    { id: "sub_3", email: "sophie.bakker@example.com", first_name: "Sophie", locale: "nl", city: null, source: "wix_import", status: "confirmed", created_at: day(-40), confirmed_at: day(-40) },
+    { id: "sub_4", email: "pending@example.com", first_name: "", locale: "en", city: "Rotterdam", source: "site_footer", status: "pending", created_at: day(-1), confirmed_at: null },
+    { id: "sub_5", email: "gone@example.com", first_name: "Lotte", locale: "nl", city: null, source: "site_footer", status: "unsubscribed", created_at: day(-60), confirmed_at: day(-59), unsubscribed_at: day(-5) }
   ];
 
   /* ---- customers: derived from bookings (mirrors logic.js:aggregateCustomers) ---- */
@@ -1835,6 +1849,41 @@ table.data tbody tr:last-child td { border-bottom: none; }
       return json({ ok: true });
     }
 
+    // subscribers (migrations/0024, BUILD §17)
+    if (path === "/admin/api/subscribers" && method === "GET") {
+      let list = subscribers.slice();
+      if (q.get("status")) list = list.filter((s) => s.status === q.get("status"));
+      if (q.get("source")) list = list.filter((s) => s.source === q.get("source"));
+      if (q.get("q")) {
+        const needle = q.get("q").toLowerCase();
+        list = list.filter((s) => s.email.indexOf(needle) >= 0 || (s.first_name || "").toLowerCase().indexOf(needle) >= 0);
+      }
+      list.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+      const countBy = (key) => {
+        const out = {};
+        subscribers.forEach((s) => { out[s[key]] = (out[s[key]] || 0) + 1; });
+        return Object.keys(out).map((k) => ({ [key]: k, n: out[k] }));
+      };
+      return json({
+        subscribers: list, total: list.length, page: 1, limit: 200,
+        counts: { by_status: countBy("status"), by_source: countBy("source"), by_locale: countBy("locale") }
+      });
+    }
+    if (path === "/admin/api/subscribers.csv" && method === "GET") {
+      const cols = ["id", "email", "first_name", "locale", "city", "source", "status", "created_at", "confirmed_at", "unsubscribed_at"];
+      const esc = (v) => { v = v == null ? "" : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+      const csv = [cols.join(",")].concat(subscribers.map((s) => cols.map((c) => esc(s[c])).join(","))).join("\n");
+      return Promise.resolve(new Response(csv, { status: 200, headers: { "Content-Type": "text/csv; charset=utf-8" } }));
+    }
+    if (path === "/admin/api/brevo/setup" && method === "POST") {
+      return json({
+        folder: { id: 1, created: false },
+        list: { id: 10, created: false },
+        attributes: ["LANGUAGE", "CITY_INTEREST", "SOURCE", "FIRST_NAME", "LAST_BOOKING_DATE", "LAST_ROUTE", "BOOKINGS_COUNT", "CONSENT_AT", "CONSENT_SOURCE"]
+          .map((name) => ({ name, type: "text", created: false }))
+      });
+    }
+
     return json({ error: "not_found", message: "mock: no handler for " + method + " " + path }, 404);
   };
 
@@ -1901,7 +1950,8 @@ table.data tbody tr:last-child td { border-bottom: none; }
     customers: { list: [], q: "", codes: {}, codesLoaded: false, loaded: false, formOpen: false },
     hours: { date: todayStr(), route: "", _data: null, editSlot: null },
     routesUI: { openId: null, tab: "details", bars: {}, overrides: {} },
-    giftCards: { list: [], loaded: false }
+    giftCards: { list: [], loaded: false },
+    subscribers: { list: [], total: 0, counts: null, loaded: false, filters: { status: "", source: "", q: "" } }
   };
 
   /* ---------- date utils (timezone-safe, local) ------------------------- */
@@ -2004,6 +2054,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
       hours: ["Participants per hour", "Who is arriving, and when — pick a date"],
       routes: ["Route manager", "Days, times, seats, bars and one-off date changes"],
       giftcards: ["Gift cards", "Every card sold, its balance, and who it's for"],
+      subscribers: ["Subscribers", "The newsletter list — signups, booking opt-ins, and imports"],
       export: ["Export", "Download bookings as a spreadsheet (CSV)"]
     };
     $("#page-title").textContent = titles[view][0];
@@ -2015,6 +2066,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
     else if (view === "hours") renderHours(target);
     else if (view === "routes") renderRoutes(target);
     else if (view === "giftcards") renderGiftCards(target);
+    else if (view === "subscribers") renderSubscribers(target);
     else if (view === "export") renderExport(target);
   }
 
@@ -3804,6 +3856,173 @@ table.data tbody tr:last-child td { border-bottom: none; }
         el("td", {}, [el("div", { class: "td-name", text: c.buyer_name || "—" }), el("div", { class: "td-sub", text: c.buyer_email || "" })]),
         el("td", { class: "td-sub num", text: c.created_at ? prettyDate(String(c.created_at).slice(0, 10)) : "—" }),
         el("td", {}, voidBtn)
+      ]));
+    });
+    t.appendChild(tb);
+    scroll.appendChild(t);
+    card.appendChild(scroll);
+    holder.appendChild(card);
+  }
+
+  /* ======================================================================
+     VIEW 4.5 — SUBSCRIBERS (migrations/0024, BUILD §17)
+     The newsletter list: site-footer signups, booking opt-ins, and Wix
+     imports — all double-opt-in-confirmed except where the opt-in act
+     itself (a booking checkbox, or the import) already WAS the consent.
+     A "Sync Brevo setup" button runs the idempotent folder/list/attribute
+     bootstrap (POST /admin/api/brevo/setup) so nothing has to be clicked
+     together by hand in the Brevo dashboard.
+     ====================================================================== */
+  function subscriberStatusTag(status) {
+    const cls = status === "confirmed" ? "confirmed" : status === "unsubscribed" ? "cancelled" : "hold";
+    const label = { confirmed: "Confirmed", pending: "Pending", unsubscribed: "Unsubscribed" }[status] || status;
+    return el("span", { class: "badge " + cls, text: label });
+  }
+  const SUBSCRIBE_SOURCE_LABELS = {
+    site_footer: "Site footer", booking_opt_in: "Booking opt-in", wix_import: "Wix import",
+    gift_card: "Gift card", contact_form: "Contact form"
+  };
+
+  function renderSubscribers(root) {
+    $("#topbar-actions").innerHTML = "";
+    $("#topbar-actions").appendChild(el("button", {
+      class: "btn btn-quiet", text: "Sync Brevo setup",
+      onclick: async (ev) => {
+        const btn = ev.currentTarget; btn.disabled = true; btn.textContent = "Syncing…";
+        try {
+          const res = await api("/admin/api/brevo/setup", { method: "POST" });
+          const createdAttrs = (res.attributes || []).filter((a) => a.created).length;
+          toast("Brevo is set up — list “" + res.list.name + "” ready" + (createdAttrs ? ", " + createdAttrs + " new attribute(s) created" : ""), "ok");
+        } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+        btn.disabled = false; btn.textContent = "Sync Brevo setup";
+      }
+    }));
+    $("#topbar-actions").appendChild(el("button", {
+      class: "btn btn-primary", text: "⬇  Download CSV",
+      onclick: async (ev) => {
+        const btn = ev.currentTarget; btn.disabled = true;
+        const qs = new URLSearchParams();
+        const f = S.subscribers.filters;
+        if (f.status) qs.set("status", f.status);
+        if (f.source) qs.set("source", f.source);
+        if (f.q) qs.set("q", f.q);
+        try {
+          const res = await fetch(API + "/admin/api/subscribers.csv?" + qs.toString(), { credentials: "same-origin" });
+          if (res.status === 401) { showLogin(); return; }
+          if (!res.ok) throw new Error("Export failed (" + res.status + ")");
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = el("a", { href: url, download: "wogo-subscribers-" + todayStr() + ".csv" });
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 4000);
+          toast("Downloaded CSV", "ok");
+        } catch (e) { toast(e.message, "err"); }
+        btn.disabled = false;
+      }
+    }));
+
+    clear(root);
+    const f = S.subscribers.filters;
+    const statusOptions = ["All statuses", "Pending", "Confirmed", "Unsubscribed"];
+    const statusSel = selectField("Status", "", statusOptions, (v) => {
+      f.status = v === "All statuses" ? "" : v.toLowerCase();
+      loadSubscribers();
+    }, f.status ? f.status[0].toUpperCase() + f.status.slice(1) : "All statuses");
+    const sourceLabels = ["All sources"].concat(Object.keys(SUBSCRIBE_SOURCE_LABELS).map((k) => SUBSCRIBE_SOURCE_LABELS[k]));
+    const sourceKeys = [""].concat(Object.keys(SUBSCRIBE_SOURCE_LABELS));
+    const sourceSel = selectField("Source", "", sourceLabels, (v) => {
+      const idx = sourceLabels.indexOf(v);
+      f.source = sourceKeys[idx] || "";
+      loadSubscribers();
+    }, f.source ? SUBSCRIBE_SOURCE_LABELS[f.source] : "All sources");
+    const searchInput = el("input", { type: "text", placeholder: "Email or name…", value: f.q });
+    let sT;
+    searchInput.addEventListener("input", () => {
+      clearTimeout(sT);
+      sT = setTimeout(() => { f.q = searchInput.value.trim(); loadSubscribers(); }, 320);
+    });
+
+    root.appendChild(el("div", { class: "filters" }, [
+      el("div", { class: "filters-row" }, [
+        statusSel, sourceSel,
+        el("div", { class: "filter-group search", style: "flex:1;max-width:280px" }, [el("label", { text: "Search" }), searchInput])
+      ])
+    ]));
+    root.appendChild(el("div", { class: "stat-row", id: "sub-stats" }));
+    root.appendChild(el("div", { id: "sub-holder" }));
+
+    if (S.subscribers.loaded) paintSubscribers();
+    else loadSubscribers();
+  }
+
+  async function loadSubscribers() {
+    const holder = $("#sub-holder");
+    if (!holder) return;
+    clear(holder);
+    holder.appendChild(skeletonCard());
+    try {
+      const f = S.subscribers.filters;
+      const qs = new URLSearchParams();
+      if (f.status) qs.set("status", f.status);
+      if (f.source) qs.set("source", f.source);
+      if (f.q) qs.set("q", f.q);
+      const data = await api("/admin/api/subscribers?" + qs.toString());
+      S.subscribers.list = data.subscribers || [];
+      S.subscribers.total = data.total || 0;
+      S.subscribers.counts = data.counts || null;
+      S.subscribers.loaded = true;
+      paintSubscribers();
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(holder); holder.appendChild(errorCard(e.message, loadSubscribers)); }
+    }
+  }
+
+  function paintSubscribers() {
+    const stats = $("#sub-stats"), holder = $("#sub-holder");
+    if (!holder) return;
+    const list = S.subscribers.list;
+    const counts = S.subscribers.counts;
+
+    if (stats) {
+      clear(stats);
+      const byStatus = {};
+      (counts && counts.by_status || []).forEach((r) => { byStatus[r.status] = r.n; });
+      const total = Object.keys(byStatus).reduce((a, k) => a + byStatus[k], 0);
+      stats.appendChild(stat("Total subscribers", total, "every status, all time"));
+      stats.appendChild(stat("Confirmed", byStatus.confirmed || 0, "on the Brevo list"));
+      stats.appendChild(stat("Pending", byStatus.pending || 0, "awaiting double opt-in"));
+      stats.appendChild(stat("Unsubscribed", byStatus.unsubscribed || 0, "opted back out"));
+    }
+
+    clear(holder);
+    const card = el("div", { class: "card" });
+    card.appendChild(el("div", { class: "card-head" }, [
+      el("h2", { text: "Subscribers" }),
+      el("span", { class: "count-badge", text: list.length + (list.length === 1 ? " shown" : " shown") + " · " + S.subscribers.total + " total" })
+    ]));
+    if (list.length === 0) {
+      card.appendChild(el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "✉️" }),
+        el("div", { text: "No subscribers match these filters yet." })
+      ]));
+      holder.appendChild(card);
+      return;
+    }
+    const scroll = el("div", { class: "table-scroll" });
+    const t = el("table", { class: "data" });
+    t.appendChild(el("thead", {}, el("tr", {}, [
+      th("Email"), th("Name"), th("Locale"), th("City"), th("Source"), th("Status"), th("Signed up")
+    ])));
+    const tb = el("tbody");
+    list.forEach((s) => {
+      tb.appendChild(el("tr", {}, [
+        el("td", { class: "td-name", text: s.email }),
+        el("td", { class: "td-sub", text: s.first_name || "—" }),
+        el("td", { class: "td-sub", text: (s.locale || "en").toUpperCase() }),
+        el("td", { class: "td-sub", text: s.city || "—" }),
+        el("td", { class: "td-sub", text: SUBSCRIBE_SOURCE_LABELS[s.source] || s.source }),
+        el("td", {}, subscriberStatusTag(s.status)),
+        el("td", { class: "td-sub num", text: s.created_at ? prettyDate(String(s.created_at).slice(0, 10)) : "—" })
       ]));
     });
     t.appendChild(tb);

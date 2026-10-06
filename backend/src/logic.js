@@ -74,6 +74,18 @@ export function sqliteMinutesBetween(fromStr, toStr) {
   return (parseSqliteDatetime(toStr) - parseSqliteDatetime(fromStr)) / MS_PER_MINUTE;
 }
 
+/**
+ * Has a 'pending' subscriber row's confirm_token aged past its validity
+ * window? Judged against the row's own `created_at` (reset every time a
+ * fresh token is issued — db.js:reissueSubscriberToken), not when the token
+ * was first ever generated, so a guest who re-submits the signup form always
+ * gets a fresh CONFIRM_TOKEN_EXPIRY_HOURS window (src/config.js). Used by
+ * GET /api/subscribe/confirm (src/guest_api.js).
+ */
+export function isConfirmTokenExpired(createdAtStr, expiryHours, nowStr = nowSqlite()) {
+  return sqliteMinutesBetween(createdAtStr, nowStr) > expiryHours * 60;
+}
+
 // ---------------------------------------------------------------------------
 // 15.x Security primitives (SPEC.md §15) — pure, Node-testable
 // ---------------------------------------------------------------------------
