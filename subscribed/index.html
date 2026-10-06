@@ -3,31 +3,18 @@
 <head>
 <meta charset="utf-8">
 <!-- ============================================================================
-     ★ WOGO CITY BOOKING PAGE — DELFT ★ (hub + single route MERGED here,
-     2026-07 structural pass: /utrecht/ deleted, see REDIRECT-MAP.md;
-     canonical /utrecht/, breadcrumbs Home › Utrecht, H1 = the city walk name,
-     ticket card + sticky CTA go STRAIGHT to the Wix booking calendar.)
-     Official name: "Utrecht City Centre" (homepage card c1, "Utrecht — City
-     Centre") · Theme: Hidden gems. Built from the master lean route template
-     at rotterdam/route-2/ — only the spots marked "ROUTE-EDIT" differ
-     (head title/metas/JSON-LD, hero eyebrow+H1+descriptor+flag, quick facts,
-     the three stops, #book heading, the next-city cards). The page is
-     5 sections only — no reviews, no groups/gift/final strips (those live in
-     the shared footer).
-     House rules baked in:
-       • H1 = the city walk name; the OFFICIAL route-card name stays in the
-         eyebrow, the #book heading and the JSON-LD. No dashes in headlines.
-       • hero_flag (best-seller / New) stays ONLY when genuine — no fake scarcity.
-         This route is genuinely NEW (homepage flag_new) and runs every night.
-       • Route pages carry NO review section and NO review node in the JSON-LD.
-       • "Partner of Gemeente Rotterdam" (t_partner) is ROTTERDAM-ONLY → removed.
-       • Booking URL = the EXISTING Wix calendar; never invent booking URLs.
-       • Cancellation ceiling: "get in touch — we'll see what's possible".
-     Utrecht has ONE route today, so the "More routes" strip cross-sells
-     Rotterdam instead of siblings (Utrecht ↔ Rotterdam per SITE-PLAN).
-     The SHARED NAV / SHARED FOOTER blocks and the foot script stay IDENTICAL
-     across all pages — only relative prefixes / the BASE line change (../
-     from one folder deep).
+     WOGO NEWSLETTER LANDING PAGE — the one page the newsletter emails link to.
+     Three states, chosen by the query string (the Worker redirects here):
+       ?state=confirmed    (also the default)  double opt-in confirmed
+       ?state=invalid                          confirm link expired or unknown
+       ?state=unsubscribed                     one-click unsubscribe done
+     ?lang=nl|en pre-seeds the saved language before the page paints, so the
+     visitor lands in the language their email was written in.
+     noindex + no JSON-LD on purpose: a private landing page has nothing to
+     offer a search engine.
+     Built from /booking-confirmed/ (same folder depth, same confirmation-page
+     chrome). The SHARED NAV / SHARED FOOTER / COOKIE CONSENT / ANALYTICS
+     blocks stay IDENTICAL across all pages — only relative prefixes change.
      ========================================================================= -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -36,27 +23,31 @@
 <link rel="apple-touch-icon" href="../apple-touch-icon.png" sizes="180x180">
 <link rel="manifest" href="../site.webmanifest">
 <meta name="theme-color" content="#ffaa81">
-<!-- This is the post-payment confirmation page. It is route-agnostic: the booking
-     details are fetched client-side from /api/booking?session_id=…, so nothing
-     here may name a single city. (It was originally copied from the Delft route
-     page — those leftovers were removed 2026-09.) noindex + no JSON-LD on
-     purpose: a private receipt has nothing to offer a search engine. -->
-<title>You're booked | WOGO Cocktail Walk</title>
+<title>You're subscribed | WOGO Cocktail Walk</title>
 <meta name="robots" content="noindex">
-<link rel="canonical" href="https://www.wogococktailwalk.com/booking-confirmed/">
-<meta name="description" content="Your WOGO Cocktail Walk is confirmed. Your booking details and route map are on their way to your inbox.">
+<link rel="canonical" href="https://www.wogococktailwalk.com/subscribed/">
+<meta name="description" content="You're on the WOGO list. Use code WELCOME10 for 10% off your first self-guided cocktail walk.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="WOGO Cocktail Walk">
-<meta property="og:title" content="You're booked | WOGO Cocktail Walk">
-<meta property="og:description" content="Your WOGO Cocktail Walk is confirmed. Your booking details and route map are on their way to your inbox.">
-<meta property="og:url" content="https://www.wogococktailwalk.com/booking-confirmed/">
+<meta property="og:title" content="You're subscribed | WOGO Cocktail Walk">
+<meta property="og:description" content="You're on the WOGO list. Use code WELCOME10 for 10% off your first self-guided cocktail walk.">
+<meta property="og:url" content="https://www.wogococktailwalk.com/subscribed/">
 <meta property="og:image" content="https://www.wogococktailwalk.com/og/wogo-default.jpg">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="You're booked | WOGO Cocktail Walk">
-<meta name="twitter:description" content="Your WOGO Cocktail Walk is confirmed. Your booking details and route map are on their way to your inbox.">
+<meta name="twitter:title" content="You're subscribed | WOGO Cocktail Walk">
+<meta name="twitter:description" content="You're on the WOGO list. Use code WELCOME10 for 10% off your first self-guided cocktail walk.">
 <meta name="twitter:image" content="https://www.wogococktailwalk.com/og/wogo-default.jpg">
+<!-- The newsletter emails link here with ?lang=nl|en. Store it as the site's
+     saved language BEFORE anything paints, so the anti-flicker script below and
+     the foot script's setLang() both pick it up with no extra wiring. -->
+<script>
+(function(){try{
+  var q=new URLSearchParams(location.search).get('lang');
+  if(q==='nl'||q==='en') localStorage.setItem('wogoLang',q);
+}catch(e){}})();
+</script>
 <!-- Anti-flicker for Dutch visitors: the page is authored in English and translated by
      the script at the foot of the body, so briefly hide the body ONLY when Dutch is about
      to be shown (setLang reveals it; a 2.5s timeout is the safety net). -->
@@ -622,59 +613,63 @@
 <!-- ===== /WOGO SHARED NAV v4 ===== -->
 <main id="wMain" tabindex="-1">
 <style>
-  .conf-sec{background:var(--wogo-cream,#fffaf6);min-height:78vh;display:flex;align-items:center;padding:140px 20px 80px;}
-  .conf-wrap{max-width:780px;margin:0 auto;width:100%;text-align:center;}
-  .conf-emoji{font-size:56px;line-height:1;margin:0 0 14px;}
-  /* h1 and h2 render identically: only ONE state is visible at a time, and only
-     the resolved booking view (#conf-ok) owns the page's single <h1>. The
-     transient loading + fallback states use <h2> so three <h1>s never coexist. */
-  .conf-sec h1, .conf-sec h2{font-size:clamp(26px,5vw,38px);font-weight:900;color:var(--wogo-ink,#201611);margin:0 0 10px;line-height:1.15;}
-  .conf-sec p{font-size:16px;line-height:1.6;color:var(--wogo-espresso,#3f2b21);margin:0 auto 18px;max-width:520px;}
-  .conf-card{background:#fff;border:1px solid rgba(63,43,33,0.12);border-radius:16px;box-shadow:0 8px 26px rgba(26,20,16,0.08);padding:6px 22px;margin:22px auto 22px;max-width:440px;text-align:left;}
-  .conf-row{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid rgba(63,43,33,0.08);font-size:14.5px;}
-  .conf-row:last-child{border-bottom:none;}
-  .conf-row .k{color:#8a7066;font-weight:600;}
-  .conf-row .v{color:var(--wogo-ink,#201611);font-weight:800;text-align:right;}
-  .conf-email{background:var(--wogo-blush,#ffe5d9);border-radius:14px;padding:16px 18px;font-size:14px;line-height:1.55;color:var(--wogo-espresso,#3f2b21);max-width:520px;margin:0 auto 26px;text-align:left;}
-  .conf-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
-  .conf-cta a{text-decoration:none;}
-  .conf-ghost{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:11px 22px;border-radius:999px;font-weight:800;font-size:13px;border:2px solid var(--wogo-espresso,#3f2b21);color:var(--wogo-espresso,#3f2b21);}
-  .conf-spin{width:38px;height:38px;border:3px solid rgba(63,43,33,0.15);border-top-color:var(--wogo-salmon,#ffaa81);border-radius:50%;margin:0 auto 16px;animation:confspin 0.8s linear infinite;}
-  @keyframes confspin{to{transform:rotate(360deg);}}
-  /* Booked panel: details on the left, the route poster on the right, in one rounded card. */
-  .conf-panel{display:flex;gap:24px;align-items:center;max-width:720px;margin:22px auto;border:2px solid rgba(63,43,33,0.16);border-radius:22px;background:#fff;box-shadow:0 14px 38px rgba(26,20,16,0.10);padding:22px;text-align:left;}
-  .conf-panel .conf-card{flex:1 1 auto;margin:0;border:none;box-shadow:none;border-radius:0;padding:2px 4px;max-width:none;background:none;}
-  .conf-poster{flex:0 0 230px;border-radius:14px;overflow:hidden;background:#faf6f2;}
-  .conf-poster img{width:100%;height:auto;display:block;border-radius:14px;}
-  @media(max-width:640px){.conf-panel{flex-direction:column;gap:18px;padding:16px;align-items:stretch;}.conf-poster{flex-basis:auto;max-width:300px;margin:0 auto;}}
+  .sub-sec { background: var(--wogo-cream,#fffaf6); min-height: 72vh; display: flex; align-items: center; padding: 140px 20px 80px; }
+  .sub-wrap { max-width: 720px; margin: 0 auto; width: 100%; text-align: center; }
+  .sub-emoji { font-size: 56px; line-height: 1; margin: 0 0 14px; }
+  /* Only ONE state is ever visible, and only the confirmed state owns the page's
+     single <h1>; the other two use <h2> so three <h1>s never coexist. */
+  .sub-sec h1, .sub-sec h2 { font-size: clamp(26px,5vw,38px); font-weight: 900; color: var(--wogo-ink,#201611); margin: 0 0 10px; line-height: 1.15; }
+  .sub-sec p { font-size: 16px; line-height: 1.6; color: var(--wogo-espresso,#3f2b21); margin: 0 auto 18px; max-width: 520px; }
+  /* The welcome code is the reward for confirming, so it gets the biggest type
+     on the page after the headline. Dashed border reads as "coupon" without
+     any clip-art. */
+  .sub-code { background: #fff; border: 2px dashed rgba(63,43,33,0.22); border-radius: 18px; box-shadow: 0 10px 30px rgba(26,20,16,0.08); padding: 20px 24px; max-width: 440px; margin: 24px auto 16px; }
+  .sub-code-lab { font-size: 10.5px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #8a7066; margin-bottom: 10px; }
+  .sub-code-row { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+  .sub-code-val { font-size: clamp(26px,6vw,36px); font-weight: 900; letter-spacing: 0.14em; color: var(--wogo-ink,#201611); line-height: 1; }
+  .sub-copy { min-height: 40px; padding: 10px 18px; border: 2px solid var(--wogo-espresso,#3f2b21); background: transparent; border-radius: 999px; font: inherit; font-size: 12.5px; font-weight: 800; letter-spacing: 0.03em; color: var(--wogo-espresso,#3f2b21); cursor: pointer; transition: background 0.2s, color 0.2s; }
+  .sub-copy:hover { background: var(--wogo-espresso,#3f2b21); color: var(--wogo-cream,#fffaf6); }
+  .sub-copy[data-done="1"] { background: var(--wogo-espresso,#3f2b21); color: var(--wogo-cream,#fffaf6); }
+  .sub-hint { font-size: 13.5px; line-height: 1.55; color: #8a7066; margin: 0 auto 26px; max-width: 460px; }
+  .sub-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .sub-cta a, .sub-cta button { text-decoration: none; }
+  .sub-ghost { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 11px 22px; border-radius: 999px; font-weight: 800; font-size: 13px; border: 2px solid var(--wogo-espresso,#3f2b21); color: var(--wogo-espresso,#3f2b21); background: transparent; font-family: inherit; cursor: pointer; }
+  @media (prefers-reduced-motion: reduce) { .sub-copy { transition: none; } }
 </style>
-<section class="conf-sec"><div class="conf-wrap">
-  <div id="conf-loading">
-    <div class="conf-emoji">🍸</div>
-    <h2 data-i18n="conf_loading_h">You're booked — thank you!</h2>
-    <p data-i18n="conf_loading_p">One moment while we pull up your booking details…</p>
-    <div class="conf-spin" aria-hidden="true"></div>
-  </div>
-  <div id="conf-ok" hidden>
-    <div class="conf-emoji">🍸</div>
-    <h1 id="conf-title">You're booked!</h1>
-    <p data-i18n="conf_ok_p">Your table is reserved. Here are your details:</p>
-    <div class="conf-panel">
-      <div class="conf-poster"><img id="conf-poster-img" src="" alt="" loading="lazy"></div>
-      <div class="conf-card" id="conf-card"></div>
+<section class="sub-sec"><div class="sub-wrap">
+
+  <!-- STATE: confirmed (the default) -->
+  <div id="sub-confirmed">
+    <div class="sub-emoji" aria-hidden="true">🎉</div>
+    <h1 data-i18n="sub_c_h">You're subscribed</h1>
+    <p data-i18n="sub_c_p">You'll be first to know when a new route or city opens. Here's your welcome code.</p>
+    <div class="sub-code">
+      <div class="sub-code-lab" data-i18n="sub_code_lab">10% off your first walk</div>
+      <div class="sub-code-row">
+        <span class="sub-code-val" id="subCode">WELCOME10</span>
+        <button type="button" class="sub-copy" id="subCopy" data-i18n="sub_copy">Copy code</button>
+      </div>
     </div>
-    <div class="conf-email" data-i18n="conf_ok_email">📬 Your confirmation email — with your route map — is on its way. Don't see it within a few minutes? Check your spam or promotions folder.</div>
-    <div class="conf-cta">
-      <a href="../" class="w-nav-cta" data-i18n="conf_cta_home">Back to home</a>
-      <a href="../#cities" class="conf-ghost" data-i18n="conf_cta_more">Explore more cities</a>
-    </div>
+    <p class="sub-hint" data-i18n="sub_code_hint">Enter it at checkout when you book. Valid on every route, in every city.</p>
+    <div class="sub-cta"><a href="../#cities" class="w-nav-cta" data-i18n="sub_c_cta">Book your walk</a></div>
   </div>
-  <div id="conf-fallback" hidden>
-    <div class="conf-emoji">✅</div>
-    <h2 data-i18n="conf_fb_h">Thank you — your payment went through</h2>
-    <p data-i18n="conf_fb_p">Your confirmation email with your route map is on its way. Any questions? Email us at <a class="w-mail" href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a>.</p>
-    <div class="conf-cta"><a href="../" class="w-nav-cta" data-i18n="conf_cta_home">Back to home</a></div>
+
+  <!-- STATE: invalid / expired confirm link -->
+  <div id="sub-invalid" hidden>
+    <div class="sub-emoji" aria-hidden="true">⏳</div>
+    <h2 data-i18n="sub_i_h">That link has expired</h2>
+    <p data-i18n="sub_i_p">Confirmation links are valid for 48 hours. Drop your email in the sign-up box at the bottom of this page and we'll send a fresh one straight away.</p>
+    <div class="sub-cta"><button type="button" class="w-nav-cta" id="subToForm" data-i18n="sub_i_cta">Sign me up again</button></div>
   </div>
+
+  <!-- STATE: unsubscribed -->
+  <div id="sub-unsubscribed" hidden>
+    <div class="sub-emoji" aria-hidden="true">👋</div>
+    <h2 data-i18n="sub_u_h">You're unsubscribed</h2>
+    <p data-i18n="sub_u_p">You won't receive WOGO emails any more. Your bookings and confirmations are unaffected.</p>
+    <div class="sub-cta"><a href="../#cities" class="sub-ghost" data-i18n="sub_u_cta">Browse the routes</a></div>
+  </div>
+
 </div></section>
 </main>
 <!-- ===== WOGO SHARED FOOTER v4 (copied verbatim onto every page — keep IDENTICAL.
@@ -944,7 +939,7 @@
      #book block, which holds the one real Book button for this route. -->
 <!-- The guest has already paid, so the sticky bar cross-sells the other cities
      instead of a booking calendar (the old href="book/" 404d from this folder). -->
-<div class="w-sticky-cta" id="wStickyCta"><a href="../#cities" class="w-sticky-cta-btn" data-i18n="sticky_cta">Explore more cities</a></div>
+<div class="w-sticky-cta" id="wStickyCta"><a href="../#cities" class="w-sticky-cta-btn" data-i18n="sticky_cta">Browse the routes</a></div>
 
 <script>
 (function () {
@@ -963,65 +958,28 @@
   })();
 
   /* ===== COMPLETE NL DICTIONARY — every data-i18n key on this page.
-     ROUTE-EDIT when copying: retranslate the route-specific entries and
-     ⚠️ delete t_partner (Rotterdam-only — done on this Utrecht page). Keys
-     shared with the homepage and hubs (nav_*, foot_*, rc1_* and rc2_*
-     cards) keep their exact NL text so the same words appear everywhere. ===== */
+     The nav_* / foot_* entries keep the exact wording used on every other
+     page, so the same words appear everywhere. ===== */
   var NL = {
-    conf_loading_h: "Je boeking is bevestigd — bedankt!",
-    conf_loading_p: "Een moment, we halen je gegevens op…",
-    conf_ok_p: "Je tafel is gereserveerd. Hier zijn je gegevens:",
-    conf_ok_email: "📬 Je bevestigingsmail — met je routekaart — is onderweg. Zie je hem niet binnen een paar minuten? Check je spam- of reclamemap.",
-    conf_cta_home: "Terug naar home",
-    conf_cta_more: "Ontdek meer steden",
-    conf_fb_h: "Bedankt — je betaling is gelukt",
-    conf_fb_p: "Je bevestigingsmail met je routekaart is onderweg. Vragen? Mail ons op <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">info@wogoamsterdam.com</a>.",
+    /* --- state: confirmed --- */
+    sub_c_h: "Je bent ingeschreven",
+    sub_c_p: "Je hoort het als eerste zodra er een nieuwe route of stad opengaat. Hier is je welkomstcode.",
+    sub_code_lab: "10% korting op je eerste walk",
+    sub_copy: "Code kopi\u00EBren",
+    sub_copied: "Gekopieerd \u2713",
+    sub_code_hint: "Vul hem in bij het afrekenen. Geldig op elke route, in elke stad.",
+    sub_c_cta: "Boek je walk",
+    /* --- state: invalid / expired --- */
+    sub_i_h: "Deze link is verlopen",
+    sub_i_p: "Bevestigingslinks zijn 48 uur geldig. Vul je e-mailadres onderaan deze pagina in en we sturen direct een nieuwe.",
+    sub_i_cta: "Schrijf me opnieuw in",
+    /* --- state: unsubscribed --- */
+    sub_u_h: "Je bent uitgeschreven",
+    sub_u_p: "Je ontvangt geen WOGO-mails meer. Je boekingen en bevestigingen blijven gewoon doorkomen.",
+    sub_u_cta: "Bekijk de routes",
+    sticky_cta: "Bekijk de routes",
     /* --- nav --- */
-    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_about: "Over WOGO", nav_cta: "Boek je walk", gallery_h2: "Een voorproefje van de avond",
-    /* --- hero + breadcrumbs --- */
-    crumb_home: "Home",
-    hero_flag: "Nieuw · 7 dagen per week",
-    hero_kicker: "Delft · Verborgen parels",
-    hero_h1: "Delft Cocktail Walk",
-    hero_p: "Drie bars. Eén avond.",
-    hero_cta: "Boek je walk →",
-    /* --- tickets-include card (mirrors the live route ticket graphic) --- */
-    ticket_head: "Je ticket bevat",
-    ticket_r1: "3 cocktails",
-    ticket_r2: "3 bars",
-    ticket_r3: "Digitale kaart",
-    ticket_r4: "Dagelijks",
-    /* --- quick facts (complement the ticket card, never repeat it) --- */
-    fact_1: "📍 Centrum van Delft",
-    fact_2: "🕐 3 bars · ±1 uur ertussen",
-    fact_3: "🚶 Zelfgeleide wandeling",
-    fact_4: "🍸 Mocktails bij elke bar",
-    /* --- the experience (original live-site description + how-it-works lines) --- */
-    story_eyebrow: "De ervaring",
-    story_h2: "Ontdek Delft op een heel nieuwe manier",
-    story_p: "Een zelfgeleide cocktailwandeling langs drie zorgvuldig geselecteerde bars. Van creatieve cocktailcultuur tot bruisende hotspots en avontuurlijke proeverijen: elke stop heeft zijn eigen sfeer en unieke cocktails.",
-    story_p2: "Ontdek verborgen cocktailplekken, bijzondere interieurs en de historische sfeer aan de Delftse grachten, met onderweg handgemaakte cocktails. Alles ligt op korte loopafstand — en de bars blijven een verrassing tot je boekt.",
-    inc_1: "Boek je ticket en ontvang een digitale kaart met de vaste route.",
-    inc_2: "Loop de route in volgorde (bar 1 → bar 2 → bar 3) — je tafels zijn al gereserveerd.",
-    inc_3: "Kies bij elke stop één signature cocktail van het exclusieve WOGO-menu — inbegrepen in je ticket. Mocktails beschikbaar.",
-    /* --- book block --- */
-    book_eyebrow: "Boek je walk",
-    book_h2: "Delft Centrum",
-    per_person: "per persoon",
-    book_deal: "7 dagen per week · 3 cocktails · 3 tafels gereserveerd · jij hoeft alleen op te dagen",
-    book_btn: "Boek je walk → €29,95",
-    book_fine: "Je kiest je datum en starttijd in de boekingskalender. Plannen gewijzigd? Neem contact op via <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">info@wogoamsterdam.com</a> — dan kijken we wat mogelijk is.",
-    /* --- next-city routes (homepage card names, verbatim) --- */
-    sib_h2: "Volgende stad: Rotterdam",
-    sib_p: "Delft al gelopen? In Rotterdam lopen drie routes. Andere bars, dezelfde formule.",
-    time34: "🕐 3–4 uur",
-    flag_best: "Bestseller",
-    book: "Boek nu", info: "Bekijk route",
-    rc1_route: "Rotterdam Route 1", rc1_theme: "★ Thema: Lokale favorieten", rc1_day: "📅 do–za · start 17.00",
-    rc2_route: "Rotterdam Route 2", rc2_theme: "★ Thema: Verborgen parels", rc2_day: "📅 do–za · start 18.00–20.30", rc2_urgency: "🔥 Onze meest geboekte route",
-    sib_all: "Bekijk alle Rotterdam-routes →",
-    /* --- sticky mobile CTA --- */
-    sticky_cta: "Ontdek meer steden",
+    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_about: "Over WOGO", nav_cta: "Bekijk data",
     /* --- footer --- */
     foot_tag: "Drie bars die je nooit zelf had gevonden. Eén avond die je altijd bijblijft.",
     foot_c1_h: "Routes", foot_c2_h: "Ontdek",
@@ -2048,83 +2006,61 @@
 </style>
 <!-- ===== /WOGO WHATSAPP FLOAT ===== -->
 
-<!-- Post-payment confirmation + consent-gated Meta Pixel Purchase -->
+<!-- Newsletter landing page behaviour: pick the state, copy the welcome code. -->
 <script>
-(function(){
-  var API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
-  var PIXEL_ID = "652971109400692";
-  function $(id){ return document.getElementById(id); }
-  function show(which){ ['conf-loading','conf-ok','conf-fallback'].forEach(function(id){ var el=$(id); if(el) el.hidden=(id!==which); }); }
-  function lang(){ return document.documentElement.lang === 'nl' ? 'nl' : 'en'; }
-  var LABELS = { en:{exp:'Experience',date:'Date',time:'Start time',guests:'Guests',gift:'Gift card',total:'Total paid',g1:'guest',gN:'guests'},
-                 nl:{exp:'Ervaring',date:'Datum',time:'Starttijd',guests:'Gasten',gift:'Cadeaubon',total:'Totaal betaald',g1:'gast',gN:'gasten'} };
-  function money(c,cur){ try{ return new Intl.NumberFormat(lang()==='nl'?'nl-NL':'en-GB',{style:'currency',currency:cur||'EUR'}).format((c||0)/100); }catch(e){ return ((c||0)/100).toFixed(2)+' '+(cur||'EUR'); } }
-  function niceDate(d){ try{ return new Intl.DateTimeFormat(lang()==='nl'?'nl-NL':'en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date(d+'T12:00:00')); }catch(e){ return d; } }
-  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
-  function rowH(k,v){ return '<div class="conf-row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>'; }
-  function firePixel(b){
-    var key='wogo_purch_'+b.id;
-    try{ if(sessionStorage.getItem(key)) return; sessionStorage.setItem(key,'1'); }catch(e){}
-    if(!window.fbq){
-      !function(f,b2,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b2.createElement(e);t.async=!0;t.src=v;s=b2.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-      window.fbq('init', PIXEL_ID); window.fbq('track','PageView');
-    }
-    window.fbq('track','Purchase', { value:(b.amount_cents||0)/100, currency:b.currency||'EUR' }, { eventID:b.id });
+(function () {
+  "use strict";
+  var STATES = { confirmed: "sub-confirmed", invalid: "sub-invalid", unsubscribed: "sub-unsubscribed" };
+  var want = "confirmed";
+  try {
+    var q = String(new URLSearchParams(location.search).get("state") || "").toLowerCase();
+    if (STATES[q]) want = q;
+  } catch (e) {}
+  Object.keys(STATES).forEach(function (k) {
+    var el = document.getElementById(STATES[k]);
+    if (el) el.hidden = (k !== want);
+  });
+
+  /* "Sign me up again" scrolls to the footer form and focuses the email field —
+     the form is already on the page, so there is nowhere else to send anyone. */
+  var jump = document.getElementById("subToForm");
+  if (jump) {
+    jump.addEventListener("click", function () {
+      var nl = document.getElementById("wNl");
+      var email = document.getElementById("wNlEmail");
+      if (nl && nl.scrollIntoView) nl.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (email) setTimeout(function () { try { email.focus(); } catch (e) {} }, 350);
+    });
   }
-  /* GA4 `purchase`. Deliberately separate from firePixel: the Meta Purchase needs
-     MARKETING consent, while GA4 only needs ANALYTICS — window.wogoTrack (the
-     shared analytics block) applies the right gate for each and maps `purchase`
-     to NO Meta event, so the Pixel is never double-fired. */
-  function fireGa4Purchase(b){
-    if(!window.wogoTrack) return;
-    var key='wogo_ga4_purch_'+b.id;
-    try{ if(sessionStorage.getItem(key)) return; sessionStorage.setItem(key,'1'); }catch(e){}
-    // The booking API returns route_name but not route_id, so prefer the id the
-    // booking widget stashed at begin_checkout (same tab) and fall back to a slug
-    // of the name — that keeps GA4's funnel items matched end to end.
-    var stash=null; try{ stash=JSON.parse(sessionStorage.getItem('wogo_last_route')||'null'); }catch(e){}
-    var slug=String(b.route_name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-    var total=(b.amount_cents||0)/100, party=b.party||1;
-    var item={ item_id:(stash&&stash.id)||slug||'unknown-route', item_name:b.route_name||'',
-               price:Math.round((total/party)*100)/100, quantity:party };
-    if(b.city) item.item_category=b.city;
-    window.wogoTrack('purchase',{ transaction_id:b.id, value:total, currency:b.currency||'EUR', items:[item] });
-  }
-  function trackPurchase(b){ var run=function(c){ if(c&&c.marketing) firePixel(b); };
-    if(window.wogoOnConsent) window.wogoOnConsent(run); else run(window.wogoConsent||{});
-    try{ fireGa4Purchase(b); }catch(e){} }
-  function render(b){
-    show('conf-ok');  // reveal the booked view FIRST — details always appear, never stuck loading
-    // Show the page in the CUSTOMER's booked language (nl/en), overriding the browser default.
-    try{ if(b.locale && window.__wogoSetLang) window.__wogoSetLang(b.locale==='nl'?'nl':'en'); }catch(e){}
-    try{
-      var L=LABELS[lang()]||LABELS.en;
-      var nm=b.first_name?(', '+b.first_name):'';
-      var t=$('conf-title'); if(t){ t.textContent=(lang()==='nl'?'Je boeking is bevestigd':"You're booked")+nm+'! 🍸'; }
-      var pw=b.party===1?L.g1:L.gN, card=$('conf-card');
-      // Gift card, when one was redeemed: shown as its own line ABOVE "Total paid"
-      // so the guest can see why the total is lower than the ticket price.
-      // (amount_cents from the API is already net of the gift card.)
-      var giftRow='';
-      if(b.gift_applied_cents>0){
-        giftRow=rowH(esc(L.gift), esc(b.gift_code||'')+' · −'+esc(money(b.gift_applied_cents,b.currency)));
+
+  /* Copy-to-clipboard with a graceful fallback for browsers without the async
+     Clipboard API (and for insecure origins, where it silently rejects). */
+  var btn = document.getElementById("subCopy");
+  var code = document.getElementById("subCode");
+  if (btn && code) {
+    btn.addEventListener("click", function () {
+      var text = (code.textContent || "").trim();
+      var done = function () {
+        var nl = document.documentElement.lang === "nl";
+        btn.textContent = nl ? "Gekopieerd \u2713" : "Copied \u2713";
+        btn.setAttribute("data-done", "1");
+        setTimeout(function () {
+          btn.removeAttribute("data-done");
+          btn.textContent = nl ? "Code kopi\u00EBren" : "Copy code";
+        }, 2200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () { select(); });
+      } else { select(); }
+      function select() {
+        try {
+          var r = document.createRange(); r.selectNodeContents(code);
+          var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+          if (document.execCommand("copy")) done();
+        } catch (e) {}
       }
-      if(card) card.innerHTML = rowH(esc(L.exp),esc(b.route_name))+rowH(esc(L.date),esc(niceDate(b.date)))+rowH(esc(L.time),esc(b.slot))+rowH(esc(L.guests),esc(b.party+' '+pw))+giftRow+rowH(esc(L.total),esc(money(b.amount_cents,b.currency)));
-      var pi=$('conf-poster-img'); if(pi){ if(b.poster_url){ pi.src=b.poster_url; pi.alt=b.route_name||'WOGO Cocktail Walk'; } else if(pi.parentNode){ pi.parentNode.style.display='none'; } }
-    }catch(e){}
-    try{ trackPurchase(b); }catch(e){}
+    });
   }
-  var sid=new URLSearchParams(location.search).get('session_id');
-  if(!sid){ show('conf-fallback'); return; }
-  var tries=0;
-  function poll(){ fetch(API+'/api/booking?session_id='+encodeURIComponent(sid))
-    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
-    .then(function(b){ if(b.status==='pending'&&tries<5){ tries++; setTimeout(poll,2000); return; } render(b); })
-    .catch(function(){ show('conf-fallback'); }); }
-  poll();
-  // Safety net: never leave the guest on the loading state — after 7s of no
-  // resolved booking, fall back to the confident "thank you, payment went through".
-  setTimeout(function(){ var l=$('conf-loading'); if(l && !l.hidden) show('conf-fallback'); }, 7000);
 })();
 </script>
 

@@ -1,0 +1,163 @@
+<!-- ============================================================================
+     ▼▼▼  WOGO ANALYTICS v1  —  BEGIN  (copy from here)  ▼▼▼
+     Consent-gated GA4 (Google Consent Mode v2) + Meta Pixel. Self-contained:
+     no library, no build step. Paste IDENTICALLY on every page, ALWAYS AFTER the
+     WOGO COOKIE CONSENT block — it needs window.wogoOnConsent, which that block
+     defines. Nothing here loads or sends anything until the visitor consents.
+
+     Pages talk to it through ONE function:  window.wogoTrack(name, params)
+     It buffers (never sends) until consent, then flushes. See ANALYTICS.md.
+
+     NOTE on the name: each page's own foot script declares a LOCAL
+     function wogoTrack(action, label) (the old postMessage → Wix host tracker).
+     Inside those scripts the local one wins, so always call this one as
+     window.wogoTrack(...) — never bare wogoTrack(...).
+     ============================================================================ -->
+<script>
+(function () {
+  "use strict";
+
+  /* ── THE ONE LINE TO CHANGE ───────────────────────────────────────────────
+     Two GA4 properties came over from the Wix era. Events are sent to BOTH
+     until the owner picks one; then delete the other ID from this array.
+     Nothing else in the codebase needs editing. */
+  var GA_IDS = ["G-QLXFFEK69D", "G-45QEXJY544"];
+  var META_PIXEL_ID = "652971109400692";
+
+  var gaLoaded = false, metaLoaded = false, buffer = [], MAX_BUFFER = 20;
+
+  /* GA4 event -> Meta standard event.
+     `purchase` is deliberately ABSENT: the booking-confirmation page fires Meta's
+     own Purchase with eventID = booking id, so the server-side CAPI copy can
+     dedupe it. Firing a second one here would double-count every booking. */
+  var META = {
+    view_item: "ViewContent",
+    begin_checkout: "InitiateCheckout",
+    sign_up: "CompleteRegistration",
+    generate_lead: "Lead"
+  };
+
+  function gtag() { window.dataLayer.push(arguments); }
+
+  function consentFlags(c) {
+    c = c || {};
+    return {
+      analytics_storage: c.analytics ? "granted" : "denied",
+      ad_storage: c.marketing ? "granted" : "denied",
+      ad_user_data: c.marketing ? "granted" : "denied",
+      ad_personalization: c.marketing ? "granted" : "denied",
+      functionality_storage: c.functional ? "granted" : "denied",
+      personalization_storage: c.functional ? "granted" : "denied"
+    };
+  }
+
+  function loadGA(c) {
+    if (gaLoaded) return;                  /* guard: wogoOnConsent fires on every change */
+    gaLoaded = true;
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = gtag;
+    /* Consent Mode v2: everything denied first, then granted per the visitor's choice. */
+    gtag("consent", "default", {
+      ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied",
+      analytics_storage: "denied", functionality_storage: "denied",
+      personalization_storage: "denied", security_storage: "granted"
+    });
+    gtag("consent", "update", consentFlags(c));
+    gtag("js", new Date());
+    /* One config per property. gtag('event', …) then fans out to all of them
+       automatically — events are NEVER sent twice by hand. */
+    for (var i = 0; i < GA_IDS.length; i++) {
+      gtag("config", GA_IDS[i], { send_page_view: true });
+    }
+    var s = document.createElement("script");
+    s.async = true;
+    s.src = "https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(GA_IDS[0]);
+    document.head.appendChild(s);
+  }
+
+  function loadMeta() {
+    if (metaLoaded) return;
+    metaLoaded = true;
+    if (!window.fbq) {
+      !function (f, b, e, v, n, t, s) {
+        if (f.fbq) return; n = f.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments) };
+        if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = "2.0"; n.queue = [];
+        t = b.createElement(e); t.async = !0; t.src = v;
+        s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t, s);
+      }(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
+      window.fbq("init", META_PIXEL_ID);
+    }
+    window.fbq("track", "PageView");
+  }
+
+  /* GA4 ecommerce params -> the shape Meta expects. */
+  function metaParams(p) {
+    var out = {}, ids = [], n = 0, i;
+    if (p.items && p.items.length) {
+      for (i = 0; i < p.items.length; i++) {
+        if (p.items[i].item_id) ids.push(p.items[i].item_id);
+        n += Number(p.items[i].quantity || 1);
+      }
+    }
+    if (ids.length) { out.content_ids = ids; out.content_type = "product"; }
+    if (n) out.num_items = n;
+    if (p.value != null) out.value = p.value;
+    if (p.currency) out.currency = p.currency;
+    return out;
+  }
+
+  function send(name, p) {
+    if (gaLoaded && window.gtag) { try { gtag("event", name, p); } catch (e) {} }
+    if (metaLoaded && window.fbq && META[name]) {
+      try { window.fbq("track", META[name], metaParams(p)); } catch (e) {}
+    }
+  }
+
+  /* The ONLY entry point pages use. No-ops (buffers) until there is consent, so
+     a page can call it freely without knowing anything about consent state. */
+  window.wogoTrack = function (name, params) {
+    if (!name) return;
+    var p = params || {};
+    if (!gaLoaded && !metaLoaded) {
+      if (buffer.length < MAX_BUFFER) buffer.push([name, p]);
+      return;
+    }
+    send(name, p);
+  };
+
+  function flush() {
+    var b = buffer; buffer = [];
+    for (var i = 0; i < b.length; i++) send(b[i][0], b[i][1]);
+  }
+
+  function onConsent(c) {
+    c = c || {};
+    /* GA4 loads once analytics OR marketing is granted; the Consent Mode flags
+       above decide what it is then allowed to store. */
+    if (c.analytics || c.marketing) {
+      if (!gaLoaded) loadGA(c);
+      else if (window.gtag) gtag("consent", "update", consentFlags(c));
+    }
+    if (c.marketing) loadMeta();
+    if ((gaLoaded || metaLoaded) && buffer.length) flush();
+  }
+  if (window.wogoOnConsent) window.wogoOnConsent(onConsent);
+  else onConsent(window.wogoConsent);
+
+  /* ---- Automatic product events -------------------------------------------
+     Driven by the one-line window.WOGO_PAGE just above this block (PAGE-EDIT).
+     Route + booking pages send view_item; multi-route hubs send view_item_list. */
+  var P = window.WOGO_PAGE;
+  if (P && P.route_id) {
+    var price = (P.price_cents || 0) / 100;
+    var item = { item_id: P.route_id, item_name: P.route_name || P.route_id, price: price, quantity: 1 };
+    if (P.city) item.item_category = P.city;
+    window.wogoTrack("view_item", { currency: P.currency || "EUR", value: price, items: [item] });
+  } else if (P && P.list_id) {
+    window.wogoTrack("view_item_list", { item_list_id: P.list_id, item_list_name: P.list_name || P.list_id });
+  }
+})();
+</script>
+<!-- ============================================================================
+     ▲▲▲  WOGO ANALYTICS v1  —  END  (copy to here)  ▲▲▲
+     ============================================================================ -->
