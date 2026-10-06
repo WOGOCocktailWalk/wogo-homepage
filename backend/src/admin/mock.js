@@ -256,7 +256,56 @@
       return json({ error: "invalid_token" }, 401);
     }
     if (path === "/admin/logout") { loggedIn = false; return json({ ok: true }); }
+    // Personal team logins (migrations/0025) — the preview always "logs in"
+    // as a single mock owner; there's no real session/role distinction here.
+    if (path === "/admin/login/request" && method === "POST") return json({ ok: true });
     if (!loggedIn) return json({ error: "unauthenticated" }, 401);
+
+    if (path === "/admin/api/me" && method === "GET") {
+      return json({ uid: "admuser_preview", email: "preview@wogoamsterdam.com", name: "Preview Owner", role: "owner" });
+    }
+    if (path === "/admin/api/users" && method === "GET") {
+      return json({ users: [
+        { id: "admuser_owner_info", email: "info@wogoamsterdam.com", name: "Maroussia", role: "owner", status: "active", last_login_at: dstr(TODAY) },
+        { id: "admuser_preview_staff", email: "selin@example.com", name: "Selin", role: "staff", status: "active", last_login_at: null }
+      ] });
+    }
+    if (path === "/admin/api/users" && method === "POST") return json({ user: Object.assign({ id: "admuser_new", status: "active" }, bodyObj) }, 201);
+    if (match(path, /^\/admin\/api\/users\/[^\/]+$/) && method === "PUT") return json({ user: Object.assign({ id: "admuser_new" }, bodyObj) });
+
+    // Analytics (BUILD §19) — a small but internally-consistent fixture so
+    // every chart/table in the preview has something real to show.
+    if (path === "/admin/api/analytics" && method === "GET") {
+      const from = q.get("from") || day(-29), to = q.get("to") || day(0);
+      return json({
+        from, to, group: q.get("group") || "day",
+        series_by_booking_date: [0, 1, 2].map((i) => ({ period: day(-2 + i), bookings: 3 + i, guests: (3 + i) * 3, revenue_cents: (3 + i) * 3 * 2995, avg_party: 3 })),
+        series_by_sale_date: [0, 1, 2].map((i) => ({ period: day(-2 + i), bookings: 2 + i, guests: (2 + i) * 3, revenue_cents: (2 + i) * 3 * 2995, avg_party: 3 })),
+        by_route: routes.slice(0, 3).map((r, i) => ({ route_id: r.id, route_name: r.name, city: r.city, bookings: 10 - i, guests: (10 - i) * 3, revenue_cents: (10 - i) * 3 * 2995 })),
+        by_city: ["Amsterdam", "Rotterdam", "Utrecht"].map((c, i) => ({ city: c, bookings: 8 - i, guests: (8 - i) * 3, revenue_cents: (8 - i) * 3 * 2995 })),
+        by_weekday: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((label, i) => ({ weekday: i + 1, label, bookings: i, guests: i * 3, revenue_cents: i * 3 * 2995 })),
+        by_slot: ["18:00", "19:00", "20:00"].map((slot, i) => ({ slot, bookings: 5 - i, guests: (5 - i) * 3, revenue_cents: (5 - i) * 3 * 2995 })),
+        by_source: [{ source: "web", bookings: 18, guests: 54, revenue_cents: 18 * 2995 }, { source: "manual", bookings: 2, guests: 6, revenue_cents: 2 * 2995 }],
+        by_locale: [{ locale: "en", bookings: 14, guests: 42, revenue_cents: 14 * 2995 }, { locale: "nl", bookings: 6, guests: 18, revenue_cents: 6 * 2995 }],
+        discount_usage: [{ code: "WELCOME10", uses: 4, total_discount_cents: 4 * 300 }],
+        totals: { bookings: 20, guests: 60, revenue_cents: 20 * 2995, avg_party: 3 },
+        cancellations: { count: 1, guests: 2 },
+        gift_cards: { sold_count: 3, sold_value_cents: 3 * 6000, redeemed_value_cents: 4500, outstanding_balance_cents: 13500 },
+        inquiries_by_kind: [{ kind: "contact", n: 5 }, { kind: "group", n: 2 }],
+        subscribers: { new_confirmed: 7, total_confirmed: 120 },
+        top_upcoming_days: [0, 1, 2].map((i) => ({ date: day(3 + i), guests: 12 - i * 2, bookings: 4 - i }))
+      });
+    }
+    if (path === "/admin/api/analytics/kpi" && method === "GET") {
+      return json({
+        last_7_days: { bookings: 14, guests: 42, revenue_cents: 14 * 2995, avg_order_value_cents: 2995, new_subscribers: 5, gift_cards_sold: 2 },
+        previous_7_days: { bookings: 11, guests: 33, revenue_cents: 11 * 2995, avg_order_value_cents: 2995, new_subscribers: 3, gift_cards_sold: 1 },
+        next_14_days_by_city: ["Amsterdam", "Rotterdam", "Utrecht"].map((city, i) => ({ city, guests: 30 - i * 5 }))
+      });
+    }
+    // Traffic (GA4) — the preview always shows the "not connected" card, since
+    // there's no real Google Analytics property behind a file:// preview.
+    if (path === "/admin/api/analytics/traffic" && method === "GET") return json({ configured: false });
 
     // routes
     if (path === "/admin/api/routes" && method === "GET") return json({ routes: routes.slice() });
@@ -281,6 +330,11 @@
       const r = routes.find((x) => x.id === m[1]); if (r) Object.assign(r, bodyObj); return json({ ok: true });
     }
     if ((m = match(path, /^\/admin\/api\/bookings\/([^\/]+)\/resend$/))) return json({ ok: true });
+    if ((m = match(path, /^\/admin\/api\/bookings\/([^\/]+)\/send-review$/)) && method === "POST") {
+      const b = bookings.find((x) => x.id === m[1]);
+      if (b) b.review_sent_at = new Date().toISOString();
+      return json({ ok: true });
+    }
 
     // Move (reschedule) a booking — mirrors the Worker: only confirmed bookings
     // move, and the in-memory row is updated so the calendar repaints correctly.

@@ -107,6 +107,16 @@ export const LOGIN_LOCK_MAX_MINUTES = 240;  // escalation cap (4h)
 export const LOGIN_FAIL_WINDOW_MINUTES = 24 * 60; // how far back fails are counted
 export const MAX_TOKEN_LENGTH = 256;        // sanity cap on submitted login tokens
 
+// Personal team logins (migrations/0025_admin_users.sql) — magic-link email
+// auth, replacing "everyone shares ADMIN_TOKEN". The token itself is a
+// 32-byte random secret (unguessable), so these are about containing blast
+// radius (a leaked/forwarded email, a mail-scanner prefetch) rather than
+// brute-force resistance like §LOGIN_FAIL_THRESHOLD above.
+export const LOGIN_LINK_TOKEN_EXPIRY_MINUTES = 15;    // single-use link lifetime
+export const LOGIN_LINK_ATTEMPTS_PER_WINDOW = 5;      // POST /admin/login/request attempts...
+export const LOGIN_LINK_ATTEMPT_WINDOW_MINUTES = 15;  // ...per sliding window, own buckets per-IP AND per-email
+export const ADMIN_EMAIL_MAX_LENGTH = 200;            // sanity cap on a submitted admin email
+
 // Retention for the two security tables — pruned by the 5-minute cron sweep.
 export const RATE_EVENTS_RETENTION_MINUTES = 24 * 60;      // 24h
 export const AUTH_EVENTS_RETENTION_MINUTES = 30 * 24 * 60; // 30 days (audit log)
@@ -240,3 +250,18 @@ export const ROUTE_PATHS = {
 export function routePathFor(route) {
   return ROUTE_PATHS[route.id] || '/';
 }
+
+// --- Review requests (migrations/0026_review_requests.sql, BUILD §20) ------
+// "Review op Google" is reserved but INERT until the owner supplies her real
+// g.page/Google review link — an empty string means src/emails.js simply
+// omits that second button rather than linking somewhere wrong.
+export const REVIEW_TRUSTPILOT_URL_EN = 'https://www.trustpilot.com/evaluate/wogoamsterdam.com';
+export const REVIEW_TRUSTPILOT_URL_NL = 'https://nl.trustpilot.com/evaluate/wogoamsterdam.com';
+export const REVIEW_GOOGLE_URL = '';
+
+// --- Analytics (BUILD §19, GET /admin/api/analytics) ------------------------
+// A wide-open date range would scan an unbounded number of booking rows (and
+// an unbounded JS array in logic.js:buildBookingAnalytics) — cap it. 400 days
+// covers "this year" + slack with room to spare; a real owner-facing report
+// never needs more in one call.
+export const ANALYTICS_MAX_RANGE_DAYS = 400;

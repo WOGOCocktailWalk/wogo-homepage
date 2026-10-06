@@ -34,7 +34,10 @@
 // per-language map, the allergies block ordering, and the currency-aware money.
 
 import { isoWeekday, formatMoney } from './logic.js';
-import { EMAIL_LOGO_URL, posterUrlFor, SITE_URL, WELCOME_CODE } from './config.js';
+import {
+  EMAIL_LOGO_URL, posterUrlFor, SITE_URL, WELCOME_CODE,
+  REVIEW_TRUSTPILOT_URL_EN, REVIEW_TRUSTPILOT_URL_NL, REVIEW_GOOGLE_URL,
+} from './config.js';
 
 // ---------------------------------------------------------------------------
 // Brand tokens (verbatim from the site palette — see src/admin/admin.css)
@@ -260,6 +263,17 @@ function primaryButton(href, label) {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px;">
     <tr><td align="center" style="border-radius:14px;background:linear-gradient(135deg,${C.salmon} 0%,${C.salmonDeep} 100%);">
       <a href="${escapeHtml(href)}" style="display:block;padding:18px 26px;font-size:17px;font-weight:800;color:${C.espresso};text-decoration:none;text-align:center;letter-spacing:.01em;">${escapeHtml(label)} &rarr;</a>
+    </td></tr>
+  </table>`;
+}
+
+/** A quieter second action, stacked under primaryButton — outlined instead
+ * of filled, so two buttons never fight for the reader's eye (used by the
+ * review-request mail's "Review on Trustpilot" + "Review on Google" pair). */
+function secondaryButton(href, label) {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px;">
+    <tr><td align="center" style="border-radius:14px;border:2px solid ${C.salmonDeep};">
+      <a href="${escapeHtml(href)}" style="display:block;padding:16px 26px;font-size:16px;font-weight:800;color:${C.salmonDeep};text-decoration:none;text-align:center;letter-spacing:.01em;">${escapeHtml(label)} &rarr;</a>
     </td></tr>
   </table>`;
 }
@@ -1375,6 +1389,127 @@ export function renderSubscribeWelcome(subscriber, opts = {}) {
       intro: t.intro,
       contentHtml: content,
       footerHtml,
+    }),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 14. Admin team login link (migrations/0025_admin_users.sql, BUILD §18).
+// ONE template serves both POST /admin/login/request (an existing teammate
+// requesting a fresh link) and the owner inviting a brand-new teammate —
+// `opts.invite` just swaps the subject/heading/intro to "you've been added"
+// phrasing. Locale is the admin_users row's OWN `locale` ('en'/'nl'), falling
+// back to 'nl' (every admin today is Dutch-first) — NOT the visitor's
+// browser locale, since there's no browser involved yet when this is sent.
+// ---------------------------------------------------------------------------
+
+const ADMIN_LOGIN_LINK_STRINGS = {
+  en: {
+    subject: 'Your WOGO dashboard login link',
+    inviteSubject: "You've been added to the WOGO dashboard",
+    preheader: 'This link signs you in — valid for 15 minutes, one click only.',
+    chip: 'WOGO dashboard',
+    heading: (name) => `Hi${name ? ' ' + name : ''} — here's your login link`,
+    inviteHeading: (name) => `Welcome to the WOGO dashboard${name ? ', ' + name : ''}`,
+    intro: 'Click below to sign in. No password to remember.',
+    inviteIntro: "You've been invited to the WOGO Cocktail Walk dashboard. Click below to sign in for the first time.",
+    button: 'Log in',
+    note: 'This link is valid for 15 minutes and works once. Didn’t request this? Just ignore this email — nothing happens unless you click.',
+  },
+  nl: {
+    subject: 'Je inloglink voor het WOGO dashboard',
+    inviteSubject: 'Je bent toegevoegd aan het WOGO dashboard',
+    preheader: 'Deze link logt je in — 15 minuten geldig, één keer te gebruiken.',
+    chip: 'WOGO dashboard',
+    heading: (name) => `Hoi${name ? ' ' + name : ''} — hier is je inloglink`,
+    inviteHeading: (name) => `Welkom bij het WOGO dashboard${name ? ', ' + name : ''}`,
+    intro: 'Klik hieronder om in te loggen. Geen wachtwoord nodig.',
+    inviteIntro: 'Je bent uitgenodigd voor het WOGO Cocktail Walk dashboard. Klik hieronder om voor het eerst in te loggen.',
+    button: 'Inloggen',
+    note: 'Deze link is 15 minuten geldig en werkt één keer. Heb je dit niet aangevraagd? Negeer deze e-mail gerust — er gebeurt niets tenzij je klikt.',
+  },
+};
+
+/** `user` is an admin_users row ({email, name, locale}); `magicUrl` is the
+ * full GET /admin/login/magic?token=... link (built by the caller,
+ * src/admin_api.js, not this pure renderer). `opts.invite` = true for the
+ * owner's "invite a teammate" flow. */
+export function renderAdminLoginLink(user, magicUrl, opts = {}) {
+  const lang = loc(user.locale);
+  const t = ADMIN_LOGIN_LINK_STRINGS[lang];
+  const firstName = user.name ? String(user.name).trim().split(/\s+/)[0] : '';
+
+  const content = `
+    ${primaryButton(magicUrl, t.button)}
+    <p style="margin:18px 0 0;font-size:13px;line-height:1.55;color:${C.muted};">${escapeHtml(t.note)}</p>`;
+
+  return {
+    subject: opts.invite ? t.inviteSubject : t.subject,
+    html: layout({
+      preheader: t.preheader,
+      hero: { chip: t.chip },
+      heading: opts.invite ? t.inviteHeading(firstName) : t.heading(firstName),
+      intro: opts.invite ? t.inviteIntro : t.intro,
+      contentHtml: content,
+    }),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 15. Review request (migrations/0026_review_requests.sql, BUILD §20) — sent
+// once per booking, the day after the walk (src/reviews.js). Transactional,
+// one-off: NO unsubscribe link (this isn't a marketing send the subscribers
+// plumbing governs — see emails.js's own file-level note on owner mails vs.
+// guest mails). "Review op Google" only appears when REVIEW_GOOGLE_URL
+// (src/config.js) is non-empty — it starts empty until the owner supplies
+// her real g.page link, and an empty/wrong link is worse than one button.
+// ---------------------------------------------------------------------------
+
+const REVIEW_REQUEST_STRINGS = {
+  en: {
+    subject: 'How was your WOGO Cocktail Walk? 🍸',
+    preheader: 'Two minutes of your time means a lot to a small team.',
+    chip: 'Thank you',
+    heading: (name) => `Thanks for walking with us${name ? ', ' + name : ''}!`,
+    intro: (routeName) => `We hope ${routeName} was a great night out. If you have a moment, a quick review helps other people discover WOGO — it really does mean a lot to us.`,
+    trustpilotButton: 'Review on Trustpilot',
+    googleButton: 'Review on Google',
+    somethingWrong: "Something wasn't quite right? Just reply to this email — we read everything.",
+  },
+  nl: {
+    subject: 'Hoe was je WOGO Cocktail Walk? 🍸',
+    preheader: 'Twee minuten van je tijd betekent veel voor een klein team.',
+    chip: 'Dankjewel',
+    heading: (name) => `Bedankt dat je met ons mee liep${name ? ', ' + name : ''}!`,
+    intro: (routeName) => `We hopen dat ${routeName} een top avond was. Heb je een momentje, dan helpt een review ons enorm — andere mensen vinden WOGO erdoor, en het betekent echt veel voor ons.`,
+    trustpilotButton: 'Review op Trustpilot',
+    googleButton: 'Review op Google',
+    somethingWrong: 'Was er iets niet helemaal goed? Antwoord gewoon op deze mail — we lezen alles.',
+  },
+};
+
+/** `booking.locale` picks EN/NL; `route.name` is used in the intro line as-is
+ * (already the clean display name per migrations/0023). */
+export function renderReviewRequest(booking, route) {
+  const lang = loc(booking.locale);
+  const t = REVIEW_REQUEST_STRINGS[lang];
+  const firstName = booking.name ? String(booking.name).trim().split(/\s+/)[0] : '';
+  const trustpilotUrl = lang === 'nl' ? REVIEW_TRUSTPILOT_URL_NL : REVIEW_TRUSTPILOT_URL_EN;
+
+  const content = `
+    ${primaryButton(trustpilotUrl, t.trustpilotButton)}
+    ${REVIEW_GOOGLE_URL ? secondaryButton(REVIEW_GOOGLE_URL, t.googleButton) : ''}
+    <p style="margin:18px 0 0;font-size:13px;line-height:1.55;color:${C.muted};">${escapeHtml(t.somethingWrong)}</p>`;
+
+  return {
+    subject: t.subject,
+    html: layout({
+      preheader: t.preheader,
+      hero: { chip: t.chip },
+      posterRoute: route,
+      heading: t.heading(firstName),
+      intro: t.intro(route.name),
+      contentHtml: content,
     }),
   };
 }

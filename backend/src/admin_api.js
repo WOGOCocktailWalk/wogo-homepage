@@ -4,8 +4,8 @@
 
 import * as db from './db.js';
 import {
-  toCsv, aggregateCustomers, computeLoginLockout, nowSqlite, sqliteMinutesAgo, validateNotes,
-  isValidCurrencyCode, isValidIanaTimeZone,
+  toCsv, aggregateCustomers, computeLoginLockout, nowSqlite, sqliteMinutesAgo, sqliteMinutesFromNow,
+  validateNotes, isValidCurrencyCode, isValidIanaTimeZone, buildBookingAnalytics, addDaysToDateStr,
 } from './logic.js';
 import {
   LOGIN_FAIL_THRESHOLD,
@@ -21,8 +21,16 @@ import {
   WELCOME_DISCOUNT_PERCENT,
   SUBSCRIBE_NAME_MAX_LENGTH,
   SUBSCRIBE_CITY_MAX_LENGTH,
+  LOGIN_LINK_TOKEN_EXPIRY_MINUTES,
+  LOGIN_LINK_ATTEMPTS_PER_WINDOW,
+  LOGIN_LINK_ATTEMPT_WINDOW_MINUTES,
+  ADMIN_EMAIL_MAX_LENGTH,
+  ANALYTICS_MAX_RANGE_DAYS,
 } from './config.js';
-import { checkAdminToken, createSessionCookieValue, sessionSetCookieHeader, sessionClearCookieHeader, hasCsrfHeader } from './auth.js';
+import {
+  checkAdminToken, createSessionCookieValue, sessionSetCookieHeader, sessionClearCookieHeader,
+  hasCsrfHeader, getSession, roleAtLeast, generateLoginLinkToken, sha256Hex,
+} from './auth.js';
 import {
   sendGuestConfirmationEmails, notifyBars,
   sendGuestRescheduleEmail, notifyBarsReschedule,
@@ -30,9 +38,13 @@ import {
 } from './webhook.js';
 import { verifyTurnstile } from './turnstile.js';
 import { runHealthCheck } from './healthcheck.js';
-import { ensureContactFolder, ensureContactList, ensureContactAttribute } from './brevo.js';
+import { ensureContactFolder, ensureContactList, ensureContactAttribute, sendTransactional } from './brevo.js';
 import { ensureWelcomePromotionCode } from './stripe.js';
 import { importSubscribers, handleConfirmedBookingOptIn } from './subscribers.js';
+import { sendWithRetry } from './email_retry.js';
+import { renderAdminLoginLink } from './emails.js';
+import { getTrafficSummary, isGa4Configured, CACHE_TTL_SECONDS as GA4_CACHE_TTL_SECONDS } from './ga4.js';
+import { sendReviewRequestForBooking } from './reviews.js';
 
 // ---------------------------------------------------------------------------
 // Admin mutation audit trail (owner audit item #8, migrations/0007). Called
@@ -42,13 +54,28 @@ import { importSubscribers, handleConfirmedBookingOptIn } from './subscribers.js
 // owner. `detail` is a small plain object, JSON-stringified for storage.
 // ---------------------------------------------------------------------------
 
+// `actor` (migrations/0025) is read off `request.adminSession` — set by
+// src/index.js right after it resolves the request's session, BEFORE the
+// matched handler ever runs (see resolveSession below). Reading it back off
+// the Request object rather than threading a `session` parameter through
+// every one of this file's ~20 handler signatures keeps every existing
+// handler's signature untouched; a handler that genuinely NEEDS the session
+// object (not just the audit actor string) reads the same property — see
+// handleMe/handleInviteUser/handleUpdateUser. A request that never went
+// through index.js's gate (every existing unit test that calls a handler
+// directly) simply has no `adminSession` — `actor` falls back to 'token',
+// matching this table's pre-0025 meaning (one shared ADMIN_TOKEN, no
+// per-user identity).
 async function audit(env, request, action, entity_type, entity_id, detail) {
   try {
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const session = request.adminSession;
+    const actor = session && session.email ? session.email : 'token';
     await db.insertAdminAudit(env.DB, {
       ip, action, entity_type,
       entity_id: entity_id == null ? null : String(entity_id),
       detail: detail ? JSON.stringify(detail) : null,
+      actor,
     });
   } catch (err) {
     console.error('admin_audit_write_failed', action, err);
@@ -122,7 +149,10 @@ export async function handleLogin(request, env) {
     return errorJson('invalid_token', null, 401);
   }
   await db.recordAuthEvent(env.DB, ip, 1); // audit trail + resets this IP's fail count
-  const cookieValue = await createSessionCookieValue(env.ADMIN_SESSION_SECRET);
+  // Emergency owner login (migrations/0025): no admin_users row behind this
+  // path by design — `uid`/`email` stay null, role is fixed 'owner'. See
+  // auth.js:createSessionCookieValue's doc comment for the payload shape.
+  const cookieValue = await createSessionCookieValue(env.ADMIN_SESSION_SECRET, { uid: null, role: 'owner', email: null });
   const secure = env.ENVIRONMENT !== 'development';
   return json({ ok: true }, 200, { 'Set-Cookie': sessionSetCookieHeader(cookieValue, secure) });
 }
@@ -153,6 +183,331 @@ export async function handleLoginAttempts(request, env) {
 export async function handleLogout(request, env) {
   const secure = env.ENVIRONMENT !== 'development';
   return json({ ok: true }, 200, { 'Set-Cookie': sessionClearCookieHeader(secure) });
+}
+
+// ---------------------------------------------------------------------------
+// Personal team logins (migrations/0025_admin_users.sql, BUILD §18).
+// ---------------------------------------------------------------------------
+
+const ROLES = new Set(['owner', 'staff', 'viewer']);
+
+/**
+ * The authoritative minimum-role-per-route table (owner audit item: "table
+ * in SPEC" — mirrored verbatim in SPEC.md §18). Keyed exactly as
+ * `${method} ${pattern}`, `pattern` being the route's ORIGINAL registration
+ * string from src/index.js (e.g. '/admin/api/bookings/:id'), which
+ * src/router.js's `match()` now round-trips. Enforced CENTRALLY in
+ * src/index.js, right after the router matches a request and before the
+ * handler ever runs — a table beats a guard copy-pasted into every handler
+ * because a newly-added route that's missing from this table fails CLOSED
+ * (default-deny 'owner', see index.js), and test/admin_users.test.js asserts
+ * every registered /admin/api/* route has an explicit entry here, so a
+ * missing row is a test failure, not a silent security gap.
+ *
+ * 'viewer' = read-only: bookings list/detail, analytics, routes (needed just
+ * to boot the dashboard shell and label things — see admin.js:boot()).
+ * 'staff' = day-to-day booking ops: manual booking, reschedule/cancel/resend,
+ * date overrides, gift card view/void, read-only routes/bars/subscribers/
+ * inquiries/customers (incl. editing a customer's own contact details — a
+ * routine CS task, not a settings change).
+ * 'owner' = everything else: user management, route/bar STRUCTURE changes
+ * (the "settings" the owner role covers), Brevo/Stripe setup, CSV exports,
+ * subscriber import, and every internal-observability endpoint (audit log,
+ * error log, failed emails, health, login-attempt security audit) — none of
+ * that was asked for by name for staff/viewer, so it defaults to the most
+ * restrictive role rather than guessing wider.
+ */
+export const ROUTE_ROLES = {
+  'GET /admin/api/me': 'viewer',
+  'GET /admin/api/routes': 'viewer',
+  'GET /admin/api/bookings': 'viewer',
+  'GET /admin/api/bookings/:id': 'viewer',
+  'GET /admin/api/analytics': 'viewer',
+  'GET /admin/api/analytics/kpi': 'viewer',
+  'GET /admin/api/analytics/traffic': 'viewer',
+
+  'GET /admin/api/participants-per-hour': 'staff',
+  'GET /admin/api/routes/:id/bars': 'staff',
+  'POST /admin/api/bookings/:id/resend': 'staff',
+  'POST /admin/api/bookings/:id/reschedule': 'staff',
+  'POST /admin/api/bookings/:id/cancel': 'staff',
+  'POST /admin/api/bookings/:id/send-review': 'staff',
+  'POST /admin/api/bookings/manual': 'staff',
+  'GET /admin/api/date-overrides': 'staff',
+  'POST /admin/api/date-overrides': 'staff',
+  'DELETE /admin/api/date-overrides/:id': 'staff',
+  'GET /admin/api/customers': 'staff',
+  'GET /admin/api/customers/:email': 'staff',
+  'PUT /admin/api/customers/:email': 'staff',
+  'GET /admin/api/gift-cards': 'staff',
+  'POST /admin/api/gift-cards/:code/void': 'staff',
+  'GET /admin/api/inquiries': 'staff',
+  'GET /admin/api/subscribers': 'staff',
+
+  'POST /admin/api/routes': 'owner',
+  'PUT /admin/api/routes/:id': 'owner',
+  'POST /admin/api/routes/:id/bars': 'owner',
+  'PUT /admin/api/routes/:id/bars': 'owner',
+  'PUT /admin/api/routes/:id/bars/:barId': 'owner',
+  'DELETE /admin/api/routes/:id/bars/:barId': 'owner',
+  'GET /admin/api/bookings.csv': 'owner',
+  'GET /admin/api/security/login-attempts': 'owner',
+  'GET /admin/api/audit-log': 'owner',
+  'GET /admin/api/error-log': 'owner',
+  'GET /admin/api/failed-emails': 'owner',
+  'GET /admin/api/health': 'owner',
+  'POST /admin/api/brevo/setup': 'owner',
+  'POST /admin/api/stripe/ensure-welcome-code': 'owner',
+  'GET /admin/api/subscribers.csv': 'owner',
+  'POST /admin/api/subscribers/import': 'owner',
+  'GET /admin/api/subscribers/sync-queue': 'owner',
+  'GET /admin/api/users': 'owner',
+  'POST /admin/api/users': 'owner',
+  'PUT /admin/api/users/:id': 'owner',
+};
+
+/**
+ * Resolves the LIVE identity behind an admin request — wraps
+ * auth.js:getSession (pure cookie decode) with a fresh DB read for any
+ * personal (uid-bearing) session, so a role change or a disable takes effect
+ * on this user's VERY NEXT request rather than waiting up to 12h for their
+ * cookie to expire. The emergency ADMIN_TOKEN session (uid === null) skips
+ * the DB read entirely — there's no admin_users row behind it to re-check.
+ * Returns `null` if there's no session, it's expired/invalid, or (for a
+ * personal session) the user row is gone or `status !== 'active'`.
+ */
+export async function resolveSession(request, env) {
+  const session = await getSession(request, env);
+  if (!session) return null;
+  if (session.uid == null) return session; // token login — role fixed 'owner', nothing to re-check
+  const user = await db.getAdminUserById(env.DB, session.uid);
+  if (!user || user.status !== 'active') return null;
+  return { exp: session.exp, uid: user.id, role: user.role, email: user.email, name: user.name };
+}
+
+/** GET /admin/api/me (viewer+) — what the dashboard shell needs to know
+ * about who's signed in: fills the sidebar's "Signed in" line and lets
+ * admin.js hide owner/staff-only UI affordances client-side (the server-side
+ * ROUTE_ROLES table above is the REAL control; this is just so the UI
+ * doesn't dangle buttons a 403 will reject). */
+export async function handleMe(request, env) {
+  const session = request.adminSession;
+  if (!session) return errorJson('unauthenticated', null, 401); // defensive only — index.js already gates this
+  return json({
+    uid: session.uid,
+    email: session.email,
+    name: session.name || null,
+    role: session.role,
+  });
+}
+
+/** POST /admin/login/request {email} — self-serve magic-link request
+ * (BUILD §18). ALWAYS responds 200 {ok:true}, whether or not the email
+ * belongs to an active admin_users row — this is the enumeration-safety
+ * requirement: an attacker probing emails can't distinguish "exists" from
+ * "doesn't" by status code, timing-sensitive branch, or response shape.
+ * Rate-limited in TWO own buckets (per-IP and per-email, src/config.js) —
+ * reuses the generic `rate_events` sliding-window mechanism §15.1 already
+ * built (kind='login_link_ip'/'login_link_email'); hitting either bucket
+ * also returns a plain 200 (never 429) so a rate-limited probe looks
+ * identical to a successful one from the outside. */
+export async function handleLoginLinkRequest(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return errorJson('bad_request', 'invalid JSON', 400);
+  }
+  const emailRaw = body && body.email;
+  if (typeof emailRaw !== 'string' || emailRaw.length > ADMIN_EMAIL_MAX_LENGTH || !EMAIL_RE.test(emailRaw)) {
+    return errorJson('bad_request', 'valid email required', 400);
+  }
+  const email = emailRaw.trim().toLowerCase();
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+
+  await db.recordRateEvent(env.DB, 'login_link_ip', ip);
+  await db.recordRateEvent(env.DB, 'login_link_email', email);
+  const since = sqliteMinutesAgo(LOGIN_LINK_ATTEMPT_WINDOW_MINUTES);
+  const [ipCount, emailCount] = await Promise.all([
+    db.countRateEventsSince(env.DB, 'login_link_ip', ip, since),
+    db.countRateEventsSince(env.DB, 'login_link_email', email, since),
+  ]);
+  if (ipCount > LOGIN_LINK_ATTEMPTS_PER_WINDOW || emailCount > LOGIN_LINK_ATTEMPTS_PER_WINDOW) {
+    return json({ ok: true }, 200); // silently dropped — see doc comment above
+  }
+
+  const user = await db.getAdminUserByEmail(env.DB, email);
+  if (user && user.status === 'active') {
+    await sendLoginLinkEmail(request, env, user, { invite: false });
+  }
+  return json({ ok: true }, 200);
+}
+
+/** Shared by the self-serve request above and handleInviteUser below — mints
+ * one single-use token, stores only its hash, and sends the branded mail.
+ * Never throws (sendWithRetry already queues a failed send for retry; a
+ * DB-write failure here is logged, same posture as the `audit()` helper —
+ * an owner inviting a teammate must still get their 201, the mail is a
+ * best-effort side effect). */
+async function sendLoginLinkEmail(request, env, user, opts) {
+  try {
+    const rawToken = generateLoginLinkToken();
+    const tokenHash = await sha256Hex(rawToken);
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    await db.createLoginLink(env.DB, {
+      token_hash: tokenHash,
+      user_id: user.id,
+      expires_at: sqliteMinutesFromNow(LOGIN_LINK_TOKEN_EXPIRY_MINUTES),
+      ip_hash: ip === 'unknown' ? null : await sha256Hex(ip),
+    });
+    const baseUrl = new URL(request.url).origin;
+    const magicUrl = `${baseUrl}/admin/login/magic?token=${rawToken}`;
+    const mail = renderAdminLoginLink(user, magicUrl, opts);
+    // NOTE: sendWithRetry's first backoff step is 5 minutes (src/config.js's
+    // FAILED_EMAIL_RETRY_BACKOFF_MINUTES) while this link expires in
+    // LOGIN_LINK_TOKEN_EXPIRY_MINUTES (15) — a retried send could in
+    // principle deliver a link that's already dead. Acceptable: the common
+    // case is an immediate successful send, and the person can just click
+    // "log in" again for a fresh one if a retry ever does land late.
+    await sendWithRetry(
+      env,
+      { to: user.email, subject: mail.subject, htmlContent: mail.html },
+      { database: db, sendTransactional, kind: opts.invite ? 'admin_invite' : 'admin_login_link' }
+    );
+  } catch (err) {
+    console.error('admin_login_link_send_failed', user.email, err);
+  }
+}
+
+/**
+ * GET /admin/login/magic?token=... (public — the link clicked out of an
+ * email, never a fetch() call, so this always responds with a 302 redirect,
+ * never JSON). Single-use: db.consumeLoginLink is ONE atomic guarded UPDATE
+ * (unused + not expired), so a mail client prefetching the link, or the
+ * person clicking it twice, can't double-spend it. Sets the SAME session
+ * cookie mechanism as the ADMIN_TOKEN login, carrying this user's real
+ * id/role/email.
+ */
+export async function handleLoginLinkMagic(request, env) {
+  const url = new URL(request.url);
+  const token = url.searchParams.get('token');
+  const invalidRedirect = () => new Response(null, { status: 302, headers: { Location: `${url.origin}/admin/login?state=invalid` } });
+  if (!token || typeof token !== 'string') return invalidRedirect();
+
+  const tokenHash = await sha256Hex(token);
+  const consumed = await db.consumeLoginLink(env.DB, tokenHash);
+  if (!consumed) return invalidRedirect();
+
+  const user = await db.getAdminUserById(env.DB, consumed.user_id);
+  if (!user || user.status !== 'active') return invalidRedirect(); // disabled since the link was sent
+
+  await db.touchAdminUserLogin(env.DB, user.id);
+  const cookieValue = await createSessionCookieValue(env.ADMIN_SESSION_SECRET, { uid: user.id, role: user.role, email: user.email });
+  const secure = env.ENVIRONMENT !== 'development';
+  // Built as a plain Response, NOT Response.redirect(url, 302) — a redirect
+  // Response's headers cannot reliably have Set-Cookie appended afterward,
+  // so the cookie has to be set at construction time, in the same object
+  // that carries the Location header.
+  return new Response(null, {
+    status: 302,
+    headers: { Location: `${url.origin}/admin`, 'Set-Cookie': sessionSetCookieHeader(cookieValue, secure) },
+  });
+}
+
+/** GET /admin/api/users (owner only) — the Team tab's list. */
+export async function handleListUsers(request, env) {
+  const users = await db.listAdminUsers(env.DB);
+  return json({ users });
+}
+
+/**
+ * POST /admin/api/users (owner only) — invite a NEW teammate: creates the
+ * admin_users row and sends the magic link as the invite mail (same
+ * mechanism as a self-serve login request, just with invite-flavored copy).
+ * 409s if the email already has a row (active OR disabled) — re-activating
+ * a disabled user or resending an active one's link is PUT's/the self-serve
+ * request endpoint's job respectively, kept separate so "invite" always
+ * unambiguously means "brand new person".
+ */
+export async function handleInviteUser(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return errorJson('bad_request', 'invalid JSON', 400);
+  }
+  const emailRaw = body && body.email;
+  const name = body && typeof body.name === 'string' ? body.name.trim().slice(0, 200) : '';
+  const role = body && typeof body.role === 'string' ? body.role : '';
+  if (typeof emailRaw !== 'string' || emailRaw.length > ADMIN_EMAIL_MAX_LENGTH || !EMAIL_RE.test(emailRaw)) {
+    return errorJson('bad_request', 'valid email required', 400);
+  }
+  if (!name) return errorJson('bad_request', 'name is required', 400);
+  if (!ROLES.has(role)) return errorJson('bad_request', 'role must be owner, staff or viewer', 400);
+
+  const email = emailRaw.trim().toLowerCase();
+  const existing = await db.getAdminUserByEmail(env.DB, email);
+  if (existing) return errorJson('user_exists', 'a user with this email already exists', 409);
+
+  const session = request.adminSession;
+  const user = await db.createAdminUser(env.DB, {
+    id: `admuser_${crypto.randomUUID()}`,
+    email, name, role, status: 'active', locale: null,
+    invited_by: session && session.email ? session.email : null,
+  });
+  await audit(env, request, 'admin_user.invite', 'admin_user', user.id, { email, role });
+  await sendLoginLinkEmail(request, env, user, { invite: true });
+  return json({ user }, 201);
+}
+
+/**
+ * PUT /admin/api/users/:id (owner only) — change role/status/name of an
+ * EXISTING teammate. Last-owner guard: if `user` is currently an ACTIVE
+ * owner and this patch would either demote them away from 'owner' or
+ * disable them, and they're the ONLY active owner right now, reject —
+ * otherwise the dashboard could lock every owner out of itself with one
+ * click. (A soft check, not a transactional guarantee — two concurrent PUTs
+ * targeting two different owners could both pass; acceptable for a
+ * small-team admin tool that isn't defending against itself.)
+ */
+export async function handleUpdateUser(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const user = await db.getAdminUserById(env.DB, params.id);
+  if (!user) return errorJson('not_found', null, 404);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return errorJson('bad_request', 'invalid JSON', 400);
+  }
+  const patch = {};
+  if (body && body.role !== undefined) {
+    if (!ROLES.has(body.role)) return errorJson('bad_request', 'invalid role', 400);
+    patch.role = body.role;
+  }
+  if (body && body.status !== undefined) {
+    if (body.status !== 'active' && body.status !== 'disabled') return errorJson('bad_request', 'invalid status', 400);
+    patch.status = body.status;
+  }
+  if (body && body.name !== undefined) {
+    const name = String(body.name).trim().slice(0, 200);
+    if (!name) return errorJson('bad_request', 'name cannot be empty', 400);
+    patch.name = name;
+  }
+  if (Object.keys(patch).length === 0) return errorJson('bad_request', 'nothing to update', 400);
+
+  const demotingOwner = user.role === 'owner' && patch.role && patch.role !== 'owner';
+  const disablingOwner = user.role === 'owner' && user.status === 'active' && patch.status === 'disabled';
+  if (demotingOwner || disablingOwner) {
+    const activeOwners = await db.countActiveOwners(env.DB);
+    if (activeOwners <= 1) return errorJson('last_owner', 'cannot remove the last owner', 400);
+  }
+
+  const updated = await db.updateAdminUser(env.DB, params.id, patch);
+  await audit(env, request, 'admin_user.update', 'admin_user', params.id, patch);
+  return json({ user: updated });
 }
 
 // ---------------------------------------------------------------------------
@@ -926,6 +1281,28 @@ export async function handleCancelBooking(request, env, params) {
   return json({ booking: result.booking });
 }
 
+/**
+ * POST /admin/api/bookings/:id/send-review (staff+, migrations/0026, BUILD
+ * §20) — manual trigger for the "how was your walk?" email, for testing a
+ * specific booking without waiting for the next day's cron. Uses the SAME
+ * atomic claim (src/reviews.js:sendReviewRequestForBooking) the cron uses,
+ * so this can't double-send a review request the cron already sent (or vice
+ * versa) — only a booking that's 'confirmed' and hasn't been sent one yet
+ * actually goes out.
+ */
+export async function handleSendReviewRequest(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const booking = await db.getBooking(env.DB, params.id);
+  if (!booking) return errorJson('not_found', null, 404);
+  const route = await db.getRoute(env.DB, booking.route_id);
+  if (!route) return errorJson('route_not_found', null, 404);
+
+  const result = await sendReviewRequestForBooking(env, { ...booking, route_name: route.name, city: route.city, route_id: route.id });
+  if (!result.sent) return errorJson(result.reason || 'not_sent', 'could not send a review request for this booking', 409);
+  await audit(env, request, 'booking.send_review', 'booking', params.id, { email: booking.email });
+  return json({ ok: true });
+}
+
 // ---------------------------------------------------------------------------
 // Production hardening (2026-07): dashboard-readable observability for the
 // error_log (item #5), admin_audit (item #8), and failed_email (item #12)
@@ -1156,4 +1533,204 @@ export async function handleImportSubscribers(request, env) {
 export async function handleBrevoSyncQueue(request, env) {
   const items = await db.listRecentBrevoSyncItems(env.DB, 100);
   return json({ items });
+}
+
+// ---------------------------------------------------------------------------
+// Analytics (migrations/0025's idx_bookings_created, BUILD §19, viewer+).
+// SPEC.md §19 documents the full response shape for a future reader (e.g. a
+// skill that pulls the weekly KPI set into Maroussia's Notion tracker).
+// ---------------------------------------------------------------------------
+
+/** `from`/`to` both 'YYYY-MM-DD', from <= to, range capped at
+ * ANALYTICS_MAX_RANGE_DAYS. Returns `null` on anything invalid. */
+function parseAnalyticsRange(url) {
+  const from = url.searchParams.get('from');
+  const to = url.searchParams.get('to');
+  if (!from || !to || !DATE_RE.test(from) || !DATE_RE.test(to) || from > to) return null;
+  const days = Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86400000) + 1;
+  if (!(days > 0) || days > ANALYTICS_MAX_RANGE_DAYS) return null;
+  return { from, to };
+}
+
+const ANALYTICS_GROUPS = new Set(['day', 'week', 'month']);
+
+/**
+ * GET /admin/api/analytics?from&to&group=day|week|month (viewer+). Two
+ * independent lenses on the SAME [from,to] window (owner requirement: "by
+ * booking DATE (walk date) and also by created_at (sale date)"):
+ *   - `series_by_booking_date` / every `by_*` breakdown / `totals` — built
+ *     from bookings whose WALK date falls in the range ("business that
+ *     happened in this period").
+ *   - `series_by_sale_date` — built from bookings whose CREATED_AT falls in
+ *     the range ("bookings sold in this period"); deliberately does NOT get
+ *     its own by-route/by-city/etc. breakdowns (see logic.js:buildBookingAnalytics's
+ *     doc comment — one well-tested function, called twice, the second
+ *     call's extra breakdowns are just unused rather than duplicated as a
+ *     second function).
+ * `cancellations`/`inquiries_by_kind`/`subscribers.new_confirmed`/gift-card
+ * sold+redeemed are period-bound the same [from,to] window (sale-side dates
+ * where no walk-date concept applies — see each db.js function's doc
+ * comment for exactly which date column). `gift_cards.outstanding_balance_cents`
+ * and `top_upcoming_days` are deliberately NOT period-bound — they're "right
+ * now" / "what's coming" snapshots, not "what happened in this window".
+ */
+export async function handleAnalytics(request, env) {
+  const url = new URL(request.url);
+  const range = parseAnalyticsRange(url);
+  if (!range) {
+    return errorJson('bad_request', `from and to (YYYY-MM-DD, from <= to, max ${ANALYTICS_MAX_RANGE_DAYS} days) are required`, 400);
+  }
+  const groupParam = url.searchParams.get('group');
+  const group = ANALYTICS_GROUPS.has(groupParam) ? groupParam : 'day';
+  const saleFrom = `${range.from} 00:00:00`;
+  const saleTo = `${range.to} 23:59:59`;
+
+  const [walkRows, saleRows, cancelled, upcoming, giftSales, giftRedeemedCents, giftOutstandingCents, inquiries, newSubs, subsByStatus] = await Promise.all([
+    db.listBookingsForAnalyticsByWalkDate(env.DB, range.from, range.to),
+    db.listBookingsForAnalyticsBySaleDate(env.DB, saleFrom, saleTo),
+    db.countCancelledBookingsByWalkDate(env.DB, range.from, range.to),
+    db.listUpcomingGuestsByDate(env.DB, nowSqlite().slice(0, 10), 10),
+    db.giftCardSalesSummary(env.DB, saleFrom, saleTo),
+    db.giftCardRedemptionsSummary(env.DB, saleFrom, saleTo),
+    db.giftCardOutstandingBalance(env.DB),
+    db.countInquiriesByKind(env.DB, saleFrom, saleTo),
+    db.countNewConfirmedSubscribers(env.DB, saleFrom, saleTo),
+    db.countSubscribersByStatus(env.DB),
+  ]);
+
+  const walkAnalytics = buildBookingAnalytics(walkRows, { group, dateField: 'date' });
+  const saleAnalytics = buildBookingAnalytics(saleRows, { group, dateField: 'created_at' });
+  const confirmedTotalRow = subsByStatus.find((r) => r.status === 'confirmed');
+
+  return json({
+    from: range.from,
+    to: range.to,
+    group,
+    series_by_booking_date: walkAnalytics.series,
+    series_by_sale_date: saleAnalytics.series,
+    by_route: walkAnalytics.by_route,
+    by_city: walkAnalytics.by_city,
+    by_weekday: walkAnalytics.by_weekday,
+    by_slot: walkAnalytics.by_slot,
+    by_source: walkAnalytics.by_source,
+    by_locale: walkAnalytics.by_locale,
+    discount_usage: walkAnalytics.discount_usage,
+    totals: walkAnalytics.totals,
+    cancellations: { count: cancelled.n, guests: cancelled.guests },
+    gift_cards: {
+      sold_count: giftSales.sold_count,
+      sold_value_cents: giftSales.sold_value_cents,
+      redeemed_value_cents: giftRedeemedCents,
+      outstanding_balance_cents: giftOutstandingCents,
+    },
+    inquiries_by_kind: inquiries,
+    subscribers: { new_confirmed: newSubs, total_confirmed: confirmedTotalRow ? confirmedTotalRow.n : 0 },
+    top_upcoming_days: upcoming,
+  });
+}
+
+/**
+ * GET /admin/api/analytics/kpi (viewer+) — the compact weekly set the
+ * owner's Monday Notion tracker needs (a future skill can read this
+ * verbatim). "Last 7 days vs previous 7" is judged by SALE date
+ * (created_at) — a rolling sales-velocity read ("how much did we sell this
+ * week"), matching new_subscribers/gift_cards_sold which are naturally dated
+ * by when they happened, not by some future walk date. `next_14_days_by_city`
+ * is the separate forward-looking WALK-date lens (guests already booked to
+ * walk in the next 14 days, per city) for "what's coming up operationally".
+ *
+ * Response shape:
+ * {
+ *   last_7_days:     { bookings, guests, revenue_cents, avg_order_value_cents, new_subscribers, gift_cards_sold },
+ *   previous_7_days: { same shape },
+ *   next_14_days_by_city: [{city, guests}]
+ * }
+ */
+export async function handleAnalyticsKpi(request, env) {
+  const today = nowSqlite().slice(0, 10);
+  const last7From = addDaysToDateStr(today, -6);
+  const prev7To = addDaysToDateStr(today, -7);
+  const prev7From = addDaysToDateStr(today, -13);
+  const next14To = addDaysToDateStr(today, 14);
+
+  async function windowKpi(fromDate, toDate) {
+    const fromDt = `${fromDate} 00:00:00`;
+    const toDt = `${toDate} 23:59:59`;
+    const [rows, newSubs, giftSales] = await Promise.all([
+      db.listBookingsForAnalyticsBySaleDate(env.DB, fromDt, toDt),
+      db.countNewConfirmedSubscribers(env.DB, fromDt, toDt),
+      db.giftCardSalesSummary(env.DB, fromDt, toDt),
+    ]);
+    const a = buildBookingAnalytics(rows, { group: 'day', dateField: 'created_at' });
+    const avgOrder = a.totals.bookings > 0 ? Math.round(a.totals.revenue_cents / a.totals.bookings) : 0;
+    return {
+      bookings: a.totals.bookings,
+      guests: a.totals.guests,
+      revenue_cents: a.totals.revenue_cents,
+      avg_order_value_cents: avgOrder,
+      new_subscribers: newSubs,
+      gift_cards_sold: giftSales.sold_count,
+    };
+  }
+
+  const [last7, previous7, byCity] = await Promise.all([
+    windowKpi(last7From, today),
+    windowKpi(prev7From, prev7To),
+    db.listUpcomingGuestsByCity(env.DB, today, next14To),
+  ]);
+
+  return json({
+    last_7_days: last7,
+    previous_7_days: previous7,
+    next_14_days_by_city: byCity,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// GA4 traffic (BUILD §19's "Traffic" sub-page, viewer+). Config-gated — see
+// src/ga4.js's doc comment: with GA4_SERVICE_ACCOUNT_JSON/GA4_PROPERTY_ID
+// unset, this always returns {configured:false} and the dashboard shows a
+// "connect Google Analytics" card instead of an error.
+//
+// Cached in `settings` (the same generic k/v table alerts.js already reuses
+// as a clock) for GA4_CACHE_TTL_SECONDS (1h) PER [from,to] pair — GA4's Data
+// API free tier has a real daily quota, and an owner tabbing between date
+// ranges a few times a session should never risk hitting it. `settings` has
+// no TTL of its own, so the cached value carries its own timestamp and this
+// function compares that itself.
+// ---------------------------------------------------------------------------
+
+function ga4CacheKey(from, to) {
+  return `ga4_traffic:${from}:${to}`;
+}
+
+export async function handleAnalyticsTraffic(request, env) {
+  const url = new URL(request.url);
+  const range = parseAnalyticsRange(url);
+  if (!range) {
+    return errorJson('bad_request', `from and to (YYYY-MM-DD, from <= to, max ${ANALYTICS_MAX_RANGE_DAYS} days) are required`, 400);
+  }
+  if (!isGa4Configured(env)) return json({ configured: false });
+
+  const cacheKey = ga4CacheKey(range.from, range.to);
+  try {
+    const cachedRaw = await db.getSetting(env.DB, cacheKey);
+    if (cachedRaw) {
+      const cached = JSON.parse(cachedRaw);
+      const ageSeconds = Math.floor(Date.now() / 1000) - cached.ts;
+      if (ageSeconds >= 0 && ageSeconds < GA4_CACHE_TTL_SECONDS) return json(cached.data);
+    }
+  } catch (err) {
+    console.error('ga4_cache_read_failed', err); // fall through to a fresh fetch
+  }
+
+  const data = await getTrafficSummary(env, range.from, range.to);
+  if (data.configured) {
+    try {
+      await db.setSetting(env.DB, cacheKey, JSON.stringify({ ts: Math.floor(Date.now() / 1000), data }));
+    } catch (err) {
+      console.error('ga4_cache_write_failed', err); // the response is still correct, just not cached
+    }
+  }
+  return json(data);
 }

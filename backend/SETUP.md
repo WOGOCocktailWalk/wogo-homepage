@@ -847,6 +847,111 @@ widget change required for this to work.
 
 ---
 
+## 19. Team logins — inviting Selin (or anyone else) (2026-10)
+
+You don't need to share your `ADMIN_TOKEN` with anyone anymore. Each
+teammate gets their OWN login, tied to their own email, with a role that
+controls what they can see and do.
+
+**You're already set up to log in** — the migration seeded both of your
+addresses (`info@wogoamsterdam.com` and `maroussiastyles@gmail.com`) as
+`owner`. On the login page, use "Log in met e-mail" instead of the token box:
+type your email, check your inbox for the link, click it, you're in. Your old
+token still works too (useful as a backup if email is ever down).
+
+**To invite Selin:**
+1. Log in, go to the **Team** tab (only owners see it).
+2. "+ Invite teammate" → her name, her email, and a role:
+   - `viewer` — can only look (bookings, analytics). Good for "just checking numbers."
+   - `staff` — day-to-day bookings work (manual bookings, reschedule/cancel,
+     date overrides, gift cards, resending confirmations) but can't touch
+     routes, Brevo/Stripe setup, or other people's logins.
+   - `owner` — everything, including inviting/removing other people. Use
+     sparingly.
+3. Send. She gets an email with a login link — she clicks it, she's in. No
+   password for her to remember or for you to hand over.
+
+**To remove someone or change their role**: Team tab → change their role in
+the dropdown, or hit "Disable." A disabled person is locked out on their
+VERY NEXT click, not just next time they'd otherwise log in.
+
+**One thing to double-check if invites don't seem to arrive**: if you ever
+set the `EMAIL_TEST_REDIRECT` secret (used during pre-launch testing to
+redirect every outgoing email to one test inbox), invites and login links go
+there too, not to the real person. Check with:
+```bash
+npx wrangler secret list
+```
+If `EMAIL_TEST_REDIRECT` is listed and you're live, remove it:
+```bash
+npx wrangler secret delete EMAIL_TEST_REDIRECT
+```
+
+## 20. Analytics — connecting Google Analytics for the Traffic tab (optional, free)
+
+The Analytics tab's **Sales** page works today with zero setup — it's your
+own booking numbers. The **Traffic** page (sessions, visitors, top pages,
+where people come from) needs a one-time connection to Google Analytics —
+free, takes about 10 minutes, and only has to be done once.
+
+1. **Create a Google Cloud project** (free) at console.cloud.google.com if
+   you don't have one already.
+2. **Create a service account**: APIs & Services → Credentials → Create
+   Credentials → Service account. Give it any name (e.g. "wogo-ga4-reader").
+3. **Create a JSON key** for it: on the service account's page → Keys → Add
+   Key → Create new key → JSON. This downloads a `.json` file — keep it
+   somewhere safe, you'll paste its CONTENTS in a moment.
+4. **In Google Analytics**: Admin (gear icon, bottom left) → under the
+   Property column → "Property access management" → the `+` button → add
+   the service account's email (it's the `client_email` field inside the
+   JSON file, looks like `wogo-ga4-reader@your-project.iam.gserviceaccount.com`)
+   as a **Viewer**.
+5. **Find your Property ID**: still in GA4 Admin → Property Settings → it's
+   the numeric ID at the top (NOT the "G-XXXXXXX" measurement ID — a plain
+   number like `123456789`).
+6. **Paste both into your Worker**:
+   ```bash
+   npx wrangler secret put GA4_SERVICE_ACCOUNT_JSON
+   ```
+   → paste the ENTIRE contents of the downloaded `.json` file (open it in a
+   text editor, select all, copy, paste here).
+   ```bash
+   npx wrangler secret put GA4_PROPERTY_ID
+   ```
+   → paste the numeric property ID from step 5.
+7. Redeploy (`npx wrangler deploy`) and refresh the dashboard's Analytics →
+   Traffic tab — it should now show real numbers instead of the "Connect
+   Google Analytics" card.
+
+Nothing breaks if you skip this — the Traffic tab just keeps showing the
+connect-it card, and every other tab works exactly the same either way.
+
+## 21. "How was your walk?" review emails (2026-10)
+
+The day after someone's walk, they automatically get a short, friendly email
+asking for a review (Trustpilot always; Google too, once you add your Google
+review link — see below). Nothing to set up — it just starts working once
+this is deployed.
+
+**To turn on the Google review button**: open `src/config.js`, find
+`REVIEW_GOOGLE_URL = ''`, and paste your Google review link between the
+quotes (find it via Google Business Profile → "Ask for reviews" → copy
+link). Redeploy. Until you do this, only the Trustpilot button shows — never
+a broken or wrong Google link.
+
+**To test it on one specific booking** (without waiting for tomorrow's
+batch): open that booking in the dashboard and use "Send review request" in
+its detail panel, or:
+```bash
+curl -X POST https://<your-worker>.workers.dev/admin/api/bookings/<booking-id>/send-review \
+  -H "Cookie: <your admin session cookie>" \
+  -H "X-Requested-With: wogo-admin"
+```
+It only works once per booking (sending it twice on purpose just tells you
+it's already been sent).
+
+---
+
 ## Moving to another host later
 
 Nothing here locks you into Cloudflare forever — see

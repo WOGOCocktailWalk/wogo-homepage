@@ -1039,6 +1039,113 @@ Admin-only, CSRF-guarded. Idempotently creates a Stripe Coupon (`percent_off=10`
 
 ---
 
+## 18. Team & roles (`migrations/0025_admin_users.sql`, 2026-10)
+
+Replaces "everyone who knows `ADMIN_TOKEN` is the owner" with personal, revocable logins — €0, works on `*.workers.dev` today. Cloudflare Access (free up to 50 users) remains available as an OPTIONAL second layer in front of all of `/admin/*`, documented in `OWNER-SECURITY-TODO.md` — not required, and not built here.
+
+### 18.1 Two login paths
+
+1. **Personal (magic link)** — `POST /admin/login/request {email}` (public). If the (lowercased) email matches an `active` row in `admin_users`, mints a single-use token (`auth.js:generateLoginLinkToken`, 32 random bytes), stores only its SHA-256 hash (`admin_login_links.token_hash`, 15-minute expiry — `LOGIN_LINK_TOKEN_EXPIRY_MINUTES`), and emails a branded link (`src/emails.js:renderAdminLoginLink`, locale = the user's own `locale` column, default `'nl'`). **Always responds `200 {ok:true}`**, whether or not the email exists or the request was rate-limited — no way to distinguish "sent" from "not sent" or "dropped" from the outside (enumeration-safe). Rate-limited in its own two `rate_events` buckets (`kind='login_link_ip'`/`'login_link_email'`, `LOGIN_LINK_ATTEMPTS_PER_WINDOW` per `LOGIN_LINK_ATTEMPT_WINDOW_MINUTES`) — hitting either bucket just means the (possible) email is silently never sent, the response is identical.
+   `GET /admin/login/magic?token=…` (public, the clicked link) — `db.js:consumeLoginLink` is ONE atomic guarded `UPDATE` (`token_hash` matches AND `used_at IS NULL` AND not expired) so the link is truly single-use even against a mail-scanner prefetch or a double-click. On success: sets the session cookie with this user's real `uid`/`role`/`email`, `302` to `/admin`. On any failure (missing/wrong/expired/already-used token, or the user got disabled since the link was sent): `302` to `/admin/login?state=invalid`, no cookie.
+2. **Emergency (ADMIN_TOKEN)** — unchanged behavior at `POST /admin/login {token}` (§12.1), now explicitly `role:'owner'`, `uid:null`, audited as actor `'token'`. Kept as the break-glass path if email delivery is ever down.
+
+### 18.2 Session payload + backward compatibility
+
+`auth.js:createSessionCookieValue(secret, {uid, role, email})` — payload is `{exp, uid, role, email}`. A cookie minted BEFORE this migration carries only `{exp}`; `auth.js:getSession` decodes a payload missing `role` as `{uid:null, role:'owner', email:null}` — i.e. exactly what the ADMIN_TOKEN path still produces — so an already-logged-in session stays logged in, as owner, until it naturally expires (12h) or logs out. HMAC/HttpOnly/Secure/SameSite=Strict/12h are all unchanged.
+
+**Live re-check, not just a signed claim**: `admin_api.js:resolveSession` wraps `getSession` — for a `uid`-bearing (personal) session, it re-reads the `admin_users` row on EVERY `/admin/*` request and uses THAT row's `status`/`role`, not whatever the cookie says. A disable or role change therefore takes effect on the user's very next request, not up to 12h later when the cookie would otherwise expire. (The `uid:null` ADMIN_TOKEN path skips this read — there's no row behind it.) `index.js` calls `resolveSession` once per request and attaches the result to `request.adminSession` for downstream handlers (the audit-trail actor, `GET /admin/api/me`, the Team-management handlers) — a plain Request property rather than a 5th argument threaded through ~20 existing handler signatures.
+
+### 18.3 Roles — enforced server-side, table-driven
+
+`'owner' > 'staff' > 'viewer'` (`auth.js:ROLE_RANK`/`roleAtLeast`). The authoritative minimum-role-per-route table is `admin_api.js:ROUTE_ROLES`, keyed `${method} ${pattern}` (`pattern` = the route's exact registration string in `index.js`, e.g. `/admin/api/bookings/:id` — `router.js`'s `match()` now round-trips it). Enforced CENTRALLY in `index.js`, right after the router matches and before the handler runs — chosen over a guard copy-pasted into every handler because (a) a route missing from the table fails CLOSED (default `'owner'`, the most restrictive, not the most permissive) and (b) `test/admin_users.test.js` asserts every registered `/admin/api/*` route has an explicit entry AND no stale ones, so the table can't silently drift from the router.
+
+| Role | Can do |
+|---|---|
+| **viewer** | `GET` bookings list/detail, `GET` routes (needed just to boot the dashboard shell), analytics (sales + traffic + kpi) |
+| **staff** | everything viewer can, plus: manual booking, reschedule/cancel/resend/send-review, date-override CRUD, gift card view/void, read-only routes-bars/customers (incl. editing a customer's own contact details)/subscribers/inquiries, participants-per-hour |
+| **owner** | everything, plus: user management, route/bar STRUCTURE changes ("settings"), Brevo/Stripe setup, CSV exports (bookings + subscribers), subscriber CSV import, every internal-observability endpoint (audit log, error log, failed emails, health, login-attempt security audit) |
+
+Client-side, `admin.js` hides the Team nav button for non-owners (`boot()` reads `GET /admin/api/me`) — purely cosmetic; the server table above is the real control, and every request a hidden button would have made still gets a `403` if somehow fired.
+
+### 18.4 User management (`GET`/`POST`/`PUT /admin/api/users`, owner only)
+
+`GET` lists every `admin_users` row. `POST {email, name, role}` invites a BRAND NEW person (409 if the email already has a row, active or disabled) — creates the row and sends the magic link as the invite mail (`opts.invite:true` swaps the email's copy to "you've been added"). `PUT /admin/api/users/:id {role?, status?, name?}` edits an existing person. **Last-owner guard**: if the target is currently an `active` `'owner'` and the patch would demote them away from `'owner'` OR disable them, and `db.js:countActiveOwners` is `≤1`, the request is rejected `400 {error:'last_owner'}` — the dashboard can never lock every owner out of itself. (A soft check — two concurrent `PUT`s targeting two DIFFERENT owners could theoretically both pass — acceptable for a small-team tool that isn't defending against itself.)
+
+### 18.5 Audit trail — `actor`
+
+`admin_audit` (migrations/0007) gains an `actor` column (migrations/0025). Every mutation's `audit()` helper (`admin_api.js`) reads `request.adminSession` and writes the signed-in user's email, or `'token'` for the ADMIN_TOKEN path — `NULL` only on rows written before this column existed. Shown in the dashboard's existing audit-log view.
+
+### 18.6 Tests (`test/admin_users.test.js`, 29 tests)
+
+ROUTE_ROLES completeness (every registered route has an entry, no stale ones) + `roleAtLeast`; session backward compatibility (pre-migration cookie → owner); the full role-guard matrix end-to-end through `worker.fetch` (viewer/staff/owner on representative routes, a disabled user rejected on their very next request, a role change taking effect immediately); the full magic-link lifecycle (request → email → click → session, single-use/reuse rejected, expiry, disabled user, enumeration-safe unknown-email response, both rate-limit buckets, actor correctness for both login paths); owner-only user management (invite, 409 on duplicate, last-owner protection on both demote and disable, allowed with a second owner present, `GET /admin/api/me`, 403 for non-owners).
+
+---
+
+## 19. Analytics (`migrations/0025`'s `idx_bookings_created`, 2026-10)
+
+### 19.1 `GET /admin/api/analytics?from&to&group=day|week|month` (viewer+)
+
+`from`/`to` are `'YYYY-MM-DD'`, `from ≤ to`, range capped at `ANALYTICS_MAX_RANGE_DAYS` (400). Two INDEPENDENT lenses on the same window (owner requirement: "by booking DATE (walk date) and also by `created_at` (sale date)"):
+
+- Every `by_*` breakdown, `discount_usage`, and `totals` are built from bookings whose WALK date (`bookings.date`) falls in range — "business that happened in this period." "CONFIRMED" here means `status IN ('confirmed','confirmed_conflict')` — a `confirmed_conflict` booking (the rare §6.4 overbooking edge case) is still a real paid guest, so it counts; this deliberately diverges from `participantsPerHour`, which is about today's literal seat count, not historical totals.
+- `series_by_sale_date` is built from bookings whose `created_at` falls in range — "sold in this period." It does NOT get its own breakdowns (one well-tested pure function, `logic.js:buildBookingAnalytics`, called twice; the second call's extra breakdowns are simply unused rather than duplicated into a second function).
+
+Response: `{from, to, group, series_by_booking_date, series_by_sale_date, by_route, by_city, by_weekday (always 7 rows, Mon..Sun, zeroed where absent), by_slot, by_source, by_locale, discount_usage, totals:{bookings,guests,revenue_cents,avg_party}, cancellations:{count,guests}, gift_cards:{sold_count,sold_value_cents,redeemed_value_cents,outstanding_balance_cents}, inquiries_by_kind, subscribers:{new_confirmed,total_confirmed}, top_upcoming_days}`.
+
+**Revenue formula** (`logic.js:analyticsRevenueCents`): a `'manual'` booking with `payment_status` `'free'`/`'comp'` → `0`. Otherwise `price_cents × party`, net of the promo `discount_cents` AND any `gift_applied_cents` (migrations/0019) — the gift-card deduction is deliberate: that money was already recognized as revenue at the CARD's purchase date (`gift_cards.sold_value_cents`), so counting it again at redemption would double-count it in any period straddling both events. This is a DELIBERATE DIVERGENCE from the existing customer-CRM `bookingSpendCents` (§12.5), which does NOT subtract gift-card amounts — there, "spend" means the full value of what the guest walked away with, a different question.
+
+**Other period-bound figures and their date column** (each is its own small `db.js` function, documented there): cancellations = cancelled bookings whose WALK date is in range (there's no `cancelled_at` column, so this is necessarily "walks in this period that got cancelled," not "cancelled during this period"); gift cards sold/inquiries/new-subscribers = their own `created_at`/`confirmed_at` in range. **Deliberately NOT period-bound** (snapshots, not "what happened in this window"): `gift_cards.outstanding_balance_cents` (every active card's balance right now) and `top_upcoming_days` (confirmed guests on/after TODAY, independent of `from`/`to`).
+
+### 19.2 `GET /admin/api/analytics/kpi` (viewer+)
+
+The compact weekly set the owner's Monday Notion tracker needs — `{last_7_days, previous_7_days: {bookings, guests, revenue_cents, avg_order_value_cents, new_subscribers, gift_cards_sold}, next_14_days_by_city: [{city, guests}]}`. "Last 7 vs previous 7" is judged by SALE date (`created_at`) — rolling sales velocity, matching `new_subscribers`/`gift_cards_sold` which are naturally dated by when they happened. `next_14_days_by_city` is the separate forward-looking WALK-date lens. A future skill reading this for the Notion tracker can rely on this exact shape.
+
+### 19.3 `GET /admin/api/analytics/traffic?from&to` (viewer+) — GA4, optional
+
+Site traffic via the Google Analytics Data API (`src/ga4.js`), config-gated like Turnstile/Brevo: unset `GA4_SERVICE_ACCOUNT_JSON`/`GA4_PROPERTY_ID` → `{configured:false}`, and the dashboard shows a "connect Google Analytics" card instead of an error — **never required for the rest of Analytics to work.**
+
+**Auth**: a Google service-account JWT-bearer flow, no stored refresh token. `ga4.js` signs an RS256 JWT (Web Crypto only — `crypto.subtle.importKey('pkcs8', …)` on the DER bytes stripped out of the key JSON's PEM `private_key`), trades it at `https://oauth2.googleapis.com/token` for a 1h access token, then calls `analyticsdata.googleapis.com/v1beta/properties/{id}:runReport` (six parallel reports: overview, source/medium, top pages, device, country, and an event-count report filtered to `view_item`/`begin_checkout`/`purchase`/`sign_up`/`generate_lead`). A single failing report degrades to empty/zeroed rather than failing the whole response (same "one bad side-effect doesn't fail the rest" posture as `webhook.js`).
+
+**Caching**: the combined response is cached in the generic `settings` k/v table, keyed `ga4_traffic:${from}:${to}`, for `CACHE_TTL_SECONDS` (1h) — `settings` has no TTL of its own, so the cached blob carries its own Unix-seconds timestamp and `handleAnalyticsTraffic` compares it itself. Keeps a session of date-range tabbing well under GA4's Data API daily quota.
+
+**Setup** (owner, one-time, documented in full in `SETUP.md`): create a Google Cloud service account → create a JSON key for it → in GA4 Admin → Property access management, add the service account's email as a **Viewer** → `wrangler secret put GA4_SERVICE_ACCOUNT_JSON` (paste the whole key file) → `wrangler secret put GA4_PROPERTY_ID` (the numeric property id, NOT the "G-XXXX" measurement id).
+
+**Tests** (`test/ga4.test.js`, 11 tests): the unconfigured path (missing secrets, malformed JSON) never calls `fetch` at all; report shaping via injected `deps` (no real crypto needed) including a failing individual report degrading gracefully and an auth failure; a genuinely-signed end-to-end JWT path against a mocked `fetch` (using a REAL RSA key generated fresh via Web Crypto at test-run time, not a hand-typed fake — the signing math is actually exercised); the endpoint's `{configured:false}` fallback and its 1h cache (a second call in-window never re-hits the mocked GA4 endpoints).
+
+### 19.4 Dashboard — the "Analytics" nav section (`src/admin/admin.js`)
+
+A Wix-Analytics-style sub-nav sharing one date-range picker (presets: Last 7/30/90 days, This month, Last month, This year, Custom; group by day/week/month): **Highlights**, **Real-time**, **Traffic**, **Behavior**, **Marketing**, **Sales**, **All reports**.
+
+**Built and fully wired in this pass**: **Sales** (§19.1/§19.2's full response — KPI cards, a guests-per-period bar chart in the existing styled-`<div>` house idiom (§12.2, no charting library, CSP stays locked down), by-route/city/weekday/slot/source/locale tables, discount usage, gift-card/subscriber boxes, top upcoming days, a client-side CSV export of the by-route table built from already-fetched JSON — no server CSV endpoint needed, which also sidesteps "CSV exports are owner-only but analytics is viewer+"); **Traffic** (§19.3, including the "connect Google Analytics" fallback card with inline setup steps); **All reports** (a plain index linking the other six).
+
+**Explicitly NOT built in this pass** — each renders a clear "isn't built yet" placeholder rather than a half-wired or empty widget: **Highlights** (per-KPI sparklines + %-vs-previous-period deltas + a top-selling-items module with route poster thumbnails + top-paying-customers), **Real-time** (GA4 `runRealtimeReport`, 60s auto-refresh), **Behavior** (top pages/engagement time/per-city page views beyond the funnel already in Traffic), **Marketing** (UTM-campaign-level sessions/purchases/revenue). **A GA4-to-D1 "sales by source" join was asked for and is NOT buildable as specified**: `bookings` has no UTM/source-tracking columns at all (checked migrations 0001/0004/0019) — there is no key to join a GA4 purchase event to a specific D1 booking row on. Building one would mean adding UTM columns to the booking flow first, which is new scope, not a reporting gap. Session recordings (e.g. Microsoft Clarity) were explicitly out of scope for this pass — free and consent-gateable, a candidate for a later pass if wanted.
+
+---
+
+## 20. Review requests (`migrations/0026_review_requests.sql`, 2026-10)
+
+### 20.1 What it does
+
+The day after a walk, every CONFIRMED `'web'`/`'manual'` booking that hasn't had one yet gets a short "how was your walk?" email (`src/emails.js:renderReviewRequest`, EN/NL by `booking.locale`) — a thank-you line naming the route, a dominant "Review on Trustpilot" button (the NL/EN Trustpilot evaluate-page URLs differ, `REVIEW_TRUSTPILOT_URL_NL`/`_EN`), a second "Review on Google" button ONLY when `REVIEW_GOOGLE_URL` (`src/config.js`) is non-empty (starts empty — an owner-supplied g.page link is needed before this button should exist at all), and a soft "something wasn't right? just reply" line. Transactional, one-off — deliberately NO unsubscribe link (this isn't a marketing send the subscribers plumbing (§17) governs).
+
+### 20.2 The atomic claim (`db.js:markReviewRequestSent`)
+
+`UPDATE bookings SET review_sent_at = datetime('now') WHERE id=:id AND status='confirmed' AND review_sent_at IS NULL` — ONE guarded statement, same "mark atomically before the side effect" idiom as `redeemGiftCard`/`consumeLoginLink` elsewhere in this schema. `src/reviews.js:sendReviewRequestForBooking` claims FIRST, then renders+sends — so a cron overlap, or the manual trigger (below) racing the cron, can never double-send. A booking that loses the race (already sent, or no longer `'confirmed'`) is reported, not retried.
+
+### 20.3 The daily cron
+
+A THIRD cron trigger, `0 9 * * *` (UTC — 10:00 Amsterdam in winter/CET, 11:00 in summer/CEST; see `wrangler.toml`'s `[triggers]`), deliberately separate from the existing `0 3 * * *` housekeeping cron so review emails land at a guest-friendly hour, not 3am. `src/reviews.js:sendDailyReviewRequests` computes "yesterday" DST-safely — `logic.js:todayInTimezone('Europe/Amsterdam')` reads the real local calendar date via `Intl.DateTimeFormat`, not a fixed UTC offset, then `addDaysToDateStr(…, -1)` — and fetches `db.js:listBookingsNeedingReviewRequest(yesterday)` (status `'confirmed'` only — `confirmed_conflict` is deliberately excluded, unlike Analytics' revenue set; a review ask doesn't belong on the rare overbooking edge case the same way revenue reporting does).
+
+### 20.4 Manual trigger
+
+`POST /admin/api/bookings/:id/send-review` (staff+, CSRF-guarded) — sends one booking's review request on demand (testing, or a guest who asks directly), through the SAME `sendReviewRequestForBooking` claim the cron uses. `409` if it's already been sent or the booking isn't `'confirmed'`. Audited as `booking.send_review`.
+
+### 20.5 Tests (`test/reviews.test.js`, 11 tests)
+
+EN/NL rendering (incl. the Google button's presence/absence and the never-an-unsubscribe-link check); the atomic claim (a second call for the same booking is rejected, a cancelled booking can't be claimed); the cron's candidate selection (picks exactly yesterday's confirmed web/manual bookings, skips cancelled/already-sent/hold/wrong-day, a second same-day run sends nothing further) and locale rendering; the manual-trigger endpoint (send + audit, 409 on a repeat, 404 on an unknown booking, CSRF-gated).
+
+---
+
 ## PORTABILITY.md (to be created verbatim as its own file)
 
 ```markdown

@@ -6,7 +6,7 @@ import { createRouter } from './router.js';
 import * as guestApi from './guest_api.js';
 import * as adminApi from './admin_api.js';
 import { handleWebhook } from './webhook.js';
-import { requireSession } from './auth.js';
+import { roleAtLeast } from './auth.js';
 import {
   expireHolds, pruneRateEvents, pruneAuthEvents,
   pruneErrorLog, pruneAdminAudit, pruneResolvedFailedEmails,
@@ -26,6 +26,7 @@ import { retryFailedEmails } from './email_retry.js';
 import { runGdprRetention } from './retention.js';
 import { exportBackupToR2 } from './backup.js';
 import { retryBrevoSyncQueue } from './brevo_sync.js';
+import { sendDailyReviewRequests } from './reviews.js';
 
 // Second, less-frequent cron for daily housekeeping (GDPR retention, R2
 // backup export, pruning the long-retention audit/error/email-log tables) —
@@ -34,7 +35,18 @@ import { retryBrevoSyncQueue } from './brevo_sync.js';
 // failed-email retry queue's first backoff step, the health check).
 const DAILY_CRON = '0 3 * * *';
 
+// Third daily cron, deliberately a SEPARATE time from DAILY_CRON — review
+// requests (BUILD §20) need to land in a guest's inbox at a sensible hour,
+// not 3am. 09:00 UTC = 10:00 Amsterdam in winter (CET) / 11:00 in summer
+// (CEST) — either is a reasonable late-morning send; see wrangler.toml's
+// `[triggers]` block.
+const REVIEW_CRON = '0 9 * * *';
+
 const router = createRouter();
+// Named export, test-only (test/admin_users.test.js walks router.routes() to
+// assert every /admin/api/* route has a ROUTE_ROLES entry) — production code
+// only ever uses the default export.
+export { router };
 
 // -- Guest API ---------------------------------------------------------------
 router.get('/api/geo', guestApi.handleGeo);
@@ -71,8 +83,21 @@ router.post('/admin/logout', adminApi.handleLogout);
 // reCAPTCHA site key — see src/turnstile.js). Excluded from the session
 // guard below like /admin/login and /admin/logout.
 router.get('/admin/public-config', adminApi.handlePublicConfig);
+// Personal team logins (migrations/0025_admin_users.sql, SPEC.md §18) — both
+// public/pre-session, like the two routes above: the login-link REQUEST is
+// the self-serve entry point (no session exists yet), and the magic-link
+// CLICK carries its own one-time proof (the token itself), not a cookie.
+router.post('/admin/login/request', adminApi.handleLoginLinkRequest);
+router.get('/admin/login/magic', adminApi.handleLoginLinkMagic);
 
-// -- Admin API (session-guarded) -------------------------------------------------
+// -- Admin API (session-guarded, role-guarded — see ROUTE_ROLES below) ----------
+router.get('/admin/api/me', adminApi.handleMe);
+router.get('/admin/api/users', adminApi.handleListUsers);
+router.post('/admin/api/users', adminApi.handleInviteUser);
+router.put('/admin/api/users/:id', adminApi.handleUpdateUser);
+router.get('/admin/api/analytics', adminApi.handleAnalytics);
+router.get('/admin/api/analytics/kpi', adminApi.handleAnalyticsKpi);
+router.get('/admin/api/analytics/traffic', adminApi.handleAnalyticsTraffic);
 router.get('/admin/api/bookings', adminApi.handleListBookings);
 router.get('/admin/api/bookings.csv', adminApi.handleExportCsv);
 router.get('/admin/api/bookings/:id', adminApi.handleGetBooking);
@@ -83,6 +108,7 @@ router.put('/admin/api/routes/:id', adminApi.handleUpdateRoute);
 router.post('/admin/api/bookings/:id/resend', adminApi.handleResendConfirmation);
 router.post('/admin/api/bookings/:id/reschedule', adminApi.handleRescheduleBooking);
 router.post('/admin/api/bookings/:id/cancel', adminApi.handleCancelBooking);
+router.post('/admin/api/bookings/:id/send-review', adminApi.handleSendReviewRequest);
 router.get('/admin/api/routes/:id/bars', adminApi.handleListBars);
 router.post('/admin/api/routes/:id/bars', adminApi.handleAddBar);
 router.put('/admin/api/routes/:id/bars', adminApi.handleReplaceBars);
@@ -123,7 +149,10 @@ router.post('/admin/api/subscribers/import', adminApi.handleImportSubscribers);
 router.get('/admin/api/subscribers/sync-queue', adminApi.handleBrevoSyncQueue);
 
 const ADMIN_API_PREFIX = '/admin/api/';
-const PUBLIC_ADMIN_PATHS = new Set(['/admin/login', '/admin/logout', '/admin/public-config']);
+const PUBLIC_ADMIN_PATHS = new Set([
+  '/admin/login', '/admin/logout', '/admin/public-config',
+  '/admin/login/request', '/admin/login/magic',
+]);
 
 export default {
   async fetch(request, env, ctx) {
@@ -147,15 +176,25 @@ export default {
       ) {
         response = adminResponse();
       } else {
-        // Session guard for /admin/api/* (the only part that's actually gated).
-        // /admin/login, /admin/logout and /admin/public-config are intentionally
-        // public (login IS the auth check; logout must work even with a stale/
-        // expired cookie; public-config is what the login FORM itself needs
-        // before there's a session — e.g. whether to render the Turnstile widget).
+        // Matched ONCE, up front — both the role check below and the final
+        // dispatch need the SAME match (its `pattern` is how ROUTE_ROLES is
+        // keyed; see src/router.js/src/admin_api.js:ROUTE_ROLES).
+        const match = request.method === 'OPTIONS' ? null : router.match(request.method, pathname);
+
+        // Session + role guard for /admin/api/* (the only part that's
+        // actually gated). /admin/login, /admin/logout, /admin/public-config,
+        // /admin/login/request and /admin/login/magic are intentionally
+        // public (login IS the auth check; logout must work even with a
+        // stale/expired cookie; public-config/login-request/login-magic are
+        // what the pre-session login page itself needs).
         if (pathname.startsWith('/admin') && !PUBLIC_ADMIN_PATHS.has(pathname)) {
           const isApi = pathname.startsWith(ADMIN_API_PREFIX);
-          const authed = await requireSession(request, env);
-          if (!authed) {
+          // resolveSession (src/admin_api.js) wraps auth.js's pure cookie
+          // decode with a live admin_users re-check for a personal login, so
+          // a disable/role-change takes effect on this very request, not up
+          // to 12h later when the cookie would otherwise expire.
+          const session = await adminApi.resolveSession(request, env);
+          if (!session) {
             if (isApi) {
               response = new Response(JSON.stringify({ error: 'unauthenticated' }), {
                 status: 401,
@@ -164,17 +203,39 @@ export default {
             } else {
               response = Response.redirect(`${url.origin}/admin/login`, 302);
             }
-          } else if (isApi && ['POST', 'PUT', 'DELETE'].includes(request.method) && request.headers.get('X-Requested-With') !== 'wogo-admin') {
-            // CSRF mitigation for state-changing admin API calls (§12.1).
-            response = new Response(JSON.stringify({ error: 'forbidden', message: 'missing CSRF header' }), {
-              status: 403,
-              headers: { 'Content-Type': 'application/json' },
-            });
+          } else {
+            // Attach for handlers that need the acting identity — the
+            // audit-trail `actor`, handleMe, and the Team-management
+            // handlers (invited_by, last-owner guard context). See
+            // admin_api.js's `audit()` doc comment for why this is a
+            // Request property rather than a 5th handler argument.
+            request.adminSession = session;
+
+            if (isApi && ['POST', 'PUT', 'DELETE'].includes(request.method) && request.headers.get('X-Requested-With') !== 'wogo-admin') {
+              // CSRF mitigation for state-changing admin API calls (§12.1).
+              response = new Response(JSON.stringify({ error: 'forbidden', message: 'missing CSRF header' }), {
+                status: 403,
+                headers: { 'Content-Type': 'application/json' },
+              });
+            } else if (isApi && match) {
+              // Default-deny: a route missing from ROUTE_ROLES requires
+              // 'owner' — the most restrictive role, not the most permissive
+              // — so a newly-added endpoint that forgets to register its
+              // role fails CLOSED. test/admin_users.test.js asserts every
+              // registered /admin/api/* route has an explicit entry, so this
+              // default should never actually fire in practice.
+              const minRole = adminApi.ROUTE_ROLES[`${match.method} ${match.pattern}`] || 'owner';
+              if (!roleAtLeast(session.role, minRole)) {
+                response = new Response(JSON.stringify({ error: 'forbidden', message: 'insufficient role' }), {
+                  status: 403,
+                  headers: { 'Content-Type': 'application/json' },
+                });
+              }
+            }
           }
         }
 
         if (!response) {
-          const match = router.match(request.method, pathname);
           if (match) {
             response = await match.handler(request, env, match.params, ctx);
           } else {
@@ -240,6 +301,12 @@ async function runScheduled(event, env) {
       await pruneAdminAudit(env.DB, sqliteMinutesAgo(ADMIN_AUDIT_RETENTION_MINUTES));
       await pruneResolvedFailedEmails(env.DB, sqliteMinutesAgo(FAILED_EMAIL_RESOLVED_RETENTION_MINUTES));
       await pruneResolvedBrevoSyncItems(env.DB, sqliteMinutesAgo(BREVO_SYNC_RESOLVED_RETENTION_MINUTES));
+    }
+
+    if (event.cron === REVIEW_CRON) {
+      // Once/day, at a guest-friendly hour (not 3am) — the "how was your
+      // walk?" review-request send (migrations/0026, BUILD §20).
+      await sendDailyReviewRequests(env);
     }
   } catch (err) {
     console.error('scheduled_error', err);

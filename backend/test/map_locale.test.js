@@ -26,7 +26,7 @@ const schemaSql = [
   '0008_failed_email.sql', '0009_webhook_processing_status.sql', '0010_booking_notes.sql',
   '0011_currency_timezone.sql', '0012_map_url_nl.sql',
   '0014_weekday_capacity.sql', '0015_weekday_bars.sql',
-  '0022_bar_locale.sql',
+  '0022_bar_locale.sql', '0025_admin_users.sql',
 ].map((n) => readFileSync(path.join(__dirname, `../migrations/${n}`), 'utf8')).join('\n');
 
 const EN_MAP = 'https://www.wogococktailwalk.com/maps/utrecht-en.pdf';
