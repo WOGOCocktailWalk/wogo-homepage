@@ -27,7 +27,7 @@ const schemaSql = [
   '0008_failed_email.sql', '0009_webhook_processing_status.sql', '0010_booking_notes.sql',
   '0011_currency_timezone.sql', '0012_map_url_nl.sql',
   '0014_weekday_capacity.sql', '0015_weekday_bars.sql',
-  '0022_bar_locale.sql', '0025_admin_users.sql',
+  '0022_bar_locale.sql', '0025_admin_users.sql', '0027_booking_utm.sql',
 ].map((n) => readFileSync(path.join(__dirname, `../migrations/${n}`), 'utf8')).join('\n');
 
 function exec(db, sql, params = {}) {
@@ -39,9 +39,34 @@ const TIMEZONE = 'Europe/Amsterdam';
 const TODAY = todayInTimezone(TIMEZONE);
 
 // Computed fresh from Date.now() every run — never a hardcoded clock time.
-const PASSED_SLOT = utcToZonedHHMM(new Date(Date.now() - 10 * 60 * 1000), TIMEZONE);           // 10 min ago
-const WITHIN_CUTOFF_SLOT = utcToZonedHHMM(new Date(Date.now() + 30 * 60 * 1000), TIMEZONE);    // 30 min from now (< 60min cutoff)
-const SAFE_SLOT = utcToZonedHHMM(new Date(Date.now() + 3 * 60 * 60 * 1000), TIMEZONE);         // 3h from now
+// BUT a plain fixed +3h/+30m/-10m offset can cross the Amsterdam midnight
+// boundary (e.g. running at 21:30 local: "now + 3h" is 00:30 TOMORROW, not
+// today) — every test below asserts against the literal date string TODAY,
+// so a wrapped slot silently becomes "already passed" and the suite fails
+// deterministically for ~3 hours out of every 24. Each offset is clamped to
+// never cross that boundary, so these stay correct (and still real-clock-
+// derived, not hardcoded) no matter what time of day the suite runs.
+function minutesUntilAmsterdamMidnight(now) {
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).formatToParts(now);
+  const get = (type) => Number(parts.find((p) => p.type === type).value);
+  return 24 * 60 - (get('hour') * 60 + get('minute') + get('second') / 60);
+}
+const NOW = new Date();
+const UNTIL_MIDNIGHT = minutesUntilAmsterdamMidnight(NOW);
+const SINCE_MIDNIGHT = 24 * 60 - UNTIL_MIDNIGHT;
+const PASSED_OFFSET_MIN = Math.min(10, Math.max(1, SINCE_MIDNIGHT - 1));           // stays today, still "already passed"
+const WITHIN_CUTOFF_OFFSET_MIN = Math.min(30, Math.max(1, UNTIL_MIDNIGHT - 1));    // stays today, still < the 60min cutoff
+// "Safe" must be BOTH same-day AND past the cutoff — genuinely impossible in
+// the last ~70 minutes before Amsterdam midnight (any time that far out
+// literally is tomorrow). SAFE_SLOT_IMPOSSIBLE flags that rare window so the
+// one assertion that needs it can skip itself rather than fail on a false
+// premise.
+const SAFE_SLOT_IMPOSSIBLE = UNTIL_MIDNIGHT - 2 <= SAME_DAY_CUTOFF_MINUTES + 10;
+const SAFE_OFFSET_MIN = SAFE_SLOT_IMPOSSIBLE ? 180 : Math.min(180, UNTIL_MIDNIGHT - 2);
+
+const PASSED_SLOT = utcToZonedHHMM(new Date(NOW.getTime() - PASSED_OFFSET_MIN * 60 * 1000), TIMEZONE);
+const WITHIN_CUTOFF_SLOT = utcToZonedHHMM(new Date(NOW.getTime() + WITHIN_CUTOFF_OFFSET_MIN * 60 * 1000), TIMEZONE);
+const SAFE_SLOT = utcToZonedHHMM(new Date(NOW.getTime() + SAFE_OFFSET_MIN * 60 * 1000), TIMEZONE);
 
 function seedRoute(db, overrides = {}) {
   const route = {
@@ -78,7 +103,7 @@ beforeEach(() => {
 after(() => { global.fetch = realFetch; });
 
 describe('GET /api/slots — same-day cutoff', () => {
-  test('a slot on TODAY within the cutoff (or already passed) is reported with seats_left 0', async () => {
+  test('a slot on TODAY within the cutoff (or already passed) is reported with seats_left 0', async (t) => {
     seedRoute(db);
     const env = { DB: db };
     const res = await handleSlots(new Request(`https://api.example.com/api/slots?route=testroute&date=${TODAY}`), env);
@@ -86,9 +111,10 @@ describe('GET /api/slots — same-day cutoff', () => {
     const body = await res.json();
     const passed = body.slots.find((s) => s.slot === PASSED_SLOT);
     const withinCutoff = body.slots.find((s) => s.slot === WITHIN_CUTOFF_SLOT);
-    const safe = body.slots.find((s) => s.slot === SAFE_SLOT);
     assert.equal(passed.seats_left, 0, 'an already-passed slot must show 0 seats left');
     assert.equal(withinCutoff.seats_left, 0, `a slot inside the ${SAME_DAY_CUTOFF_MINUTES}-minute cutoff must show 0 seats left`);
+    if (SAFE_SLOT_IMPOSSIBLE) { t.skip('within ~70 minutes of Amsterdam midnight — no same-day slot can be both "today" and past the cutoff'); return; }
+    const safe = body.slots.find((s) => s.slot === SAFE_SLOT);
     assert.ok(safe.seats_left > 0, 'a comfortably-future same-day slot is untouched');
   });
 
@@ -138,7 +164,8 @@ describe('POST /api/book — same-day cutoff', () => {
     assert.equal(body.error, 'slot_passed');
   });
 
-  test('booking a comfortably-future same-day slot still succeeds', async () => {
+  test('booking a comfortably-future same-day slot still succeeds', async (t) => {
+    if (SAFE_SLOT_IMPOSSIBLE) { t.skip('within ~70 minutes of Amsterdam midnight — no same-day slot can be both "today" and past the cutoff'); return; }
     seedRoute(db);
     const env = { DB: db };
     const res = await handleBook(bookRequest({ slot: SAFE_SLOT, email: 'safe@example.com' }), env);

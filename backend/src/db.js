@@ -212,10 +212,12 @@ const EFFECTIVE_CAPACITY_RECOVERY = effectiveCapacitySql(BOOKING_ROUTE_ID, BOOKI
 // finished booking.
 const CREATE_HOLD_SQL = `
 INSERT INTO bookings
-  (id, route_id, date, slot, party, name, email, phone, notes, locale, marketing_opt_in, status, created_at, hold_expires, ip)
+  (id, route_id, date, slot, party, name, email, phone, notes, locale, marketing_opt_in, status, created_at, hold_expires, ip,
+   utm_source, utm_medium, utm_campaign, utm_content, referrer, landing_path)
 SELECT
   :id, :route_id, :date, :slot, :party, :name, :email, :phone, :notes, :locale, :marketing_opt_in,
-  'hold', datetime('now'), :hold_expires, :ip
+  'hold', datetime('now'), :hold_expires, :ip,
+  :utm_source, :utm_medium, :utm_campaign, :utm_content, :referrer, :landing_path
 WHERE
   :party <= (SELECT max_party FROM routes WHERE id = :route_id AND active = 1)
 
@@ -340,6 +342,12 @@ export async function createHold(db, params) {
     marketing_opt_in: params.marketing_opt_in ? 1 : 0,
     hold_expires: params.hold_expires,
     ip: params.ip ?? null,
+    utm_source: params.utm_source ?? null,
+    utm_medium: params.utm_medium ?? null,
+    utm_campaign: params.utm_campaign ?? null,
+    utm_content: params.utm_content ?? null,
+    referrer: params.referrer ?? null,
+    landing_path: params.landing_path ?? null,
   };
   const result = await run(db, CREATE_HOLD_SQL, bound);
   if (result.meta.changes === 1) {
@@ -2014,7 +2022,8 @@ export async function consumeLoginLink(db, token_hash) {
 const ANALYTICS_BOOKING_COLUMNS = `
   b.id, b.route_id, r.name AS route_name, r.city, b.date, b.slot, b.party,
   b.created_at, b.source, b.locale, b.payment_status, b.discount_code,
-  b.discount_cents, b.gift_applied_cents, r.price_cents`;
+  b.discount_cents, b.gift_applied_cents, r.price_cents,
+  b.email, b.name, b.utm_source, b.utm_medium, b.utm_campaign, b.utm_content`;
 
 /** Confirmed bookings whose WALK date (`bookings.date`) falls in [from, to]
  * (both 'YYYY-MM-DD') — the "business happened in this period" lens: every
@@ -2141,6 +2150,23 @@ export async function countNewConfirmedSubscribers(db, fromDatetime, toDatetime)
     { from: fromDatetime, to: toDatetime }
   );
   return row ? row.n : 0;
+}
+
+/** Day-by-day new-CONFIRMED-subscriber counts in [fromDatetime, toDatetime]
+ * — the Marketing tab's "subscribers growth" chart (BUILD §19.4). Grouped by
+ * the first 10 characters of confirmed_at (the date part) — zero-filling any
+ * day with no confirmations is the CALLER's job (logic.js has no notion of
+ * "subscriber growth" today; admin_api.js zero-fills the same way
+ * buildHighlightsSales does for bookings). */
+export async function subscribersGrowthByDay(db, fromDatetime, toDatetime) {
+  return all(
+    db,
+    `SELECT substr(confirmed_at, 1, 10) AS date, COUNT(*) AS n
+       FROM subscribers
+      WHERE status = 'confirmed' AND confirmed_at BETWEEN :from AND :to
+      GROUP BY date`,
+    { from: fromDatetime, to: toDatetime }
+  );
 }
 
 // ---------------------------------------------------------------------------

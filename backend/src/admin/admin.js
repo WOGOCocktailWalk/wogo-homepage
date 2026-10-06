@@ -33,6 +33,16 @@
   const $ = (s, r) => (r || document).querySelector(s);
   const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); };
 
+  /* ---------- tiny SVG DOM helper (el() uses createElement, which yields a
+     dead unknown-element for "svg"/"polyline" etc — every inline chart in
+     Analytics (CSP forbids any charting library) goes through this instead) */
+  function svgEl(tag, attrs, children) {
+    const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    if (attrs) for (const k in attrs) { if (attrs[k] != null) n.setAttribute(k, attrs[k]); }
+    if (children != null) (Array.isArray(children) ? children : [children]).forEach((c) => { if (c) n.appendChild(c); });
+    return n;
+  }
+
   /* ---------- constants ------------------------------------------------- */
   const API = "";                       // same-origin; Worker serves both
   const CAT = ["--cat-1", "--cat-2", "--cat-3", "--cat-4", "--cat-5", "--cat-6"];
@@ -56,8 +66,9 @@
     subscribers: { list: [], total: 0, counts: null, loaded: false, filters: { status: "", source: "", q: "" } },
     me: null, // {uid, email, name, role} — set by boot(), drives client-side UI hiding (server ROUTE_ROLES is the real control)
     users: { list: [], loaded: false },
-    analytics: { sub: "sales", range: null, group: "day", data: null, kpi: null, loading: false, traffic: null }
+    analytics: { sub: "sales", range: null, group: "day", data: null, kpi: null, loading: false, traffic: null, highlights: null, realtime: null, behavior: null, marketing: null }
   };
+  let realtimeTimer = null; // auto-refresh interval while the Real-time page is mounted — cleared on every navigation
 
   /* ---------- date utils (timezone-safe, local) ------------------------- */
   function todayStr() { return dstr(new Date()); }
@@ -149,6 +160,7 @@
   $("#sidebar-scrim").addEventListener("click", () => $("#sidebar").classList.remove("open"));
 
   function go(view) {
+    if (realtimeTimer) { clearInterval(realtimeTimer); realtimeTimer = null; }
     S.view = view;
     NAV.forEach((b) => b.classList.toggle("active", b.dataset.view === view));
     $("#sidebar").classList.remove("open");
@@ -2011,6 +2023,36 @@
     gift_card: "Gift card", contact_form: "Contact form"
   };
 
+  /** "Push reference copies to Brevo" (owner only, BUILD §19) — renders
+     every transactional email WOGO can send with realistic sample data and
+     creates/updates an INACTIVE "[REFERENCE] ..." copy of each inside the
+     Brevo account's own Templates UI, so Maroussia (or anyone with Brevo
+     access) can browse the exact HTML without needing the dashboard open.
+     Explicitly explained in-card — this is easy to misread as "activates
+     these as the real sending templates," which it never does; every real
+     send still goes through this codebase's own owned-HTML path. */
+  function brevoReferenceTemplatesCard() {
+    const card = el("div", { class: "card", style: "margin-bottom:18px" });
+    card.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Brevo reference copies" })));
+    card.appendChild(el("div", { style: "padding:4px 18px 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap" }, [
+      el("p", { style: "margin:0;flex:1;min-width:220px;font-size:13.5px;line-height:1.55;color:var(--brown)", text:
+        "Creates a reviewable copy of every email WOGO can send — booking confirmations, bar notifications, gift cards, reschedules and more — inside your Brevo account's own Templates list, named \"[REFERENCE] …\". They're inactive and never used to actually send anything; editing one there changes nothing about real emails, which are always built and sent straight from this codebase." }),
+      el("button", {
+        class: "btn btn-primary", text: "Push reference copies to Brevo",
+        onclick: async (ev) => {
+          const btn = ev.currentTarget; btn.disabled = true; const original = btn.textContent; btn.textContent = "Pushing…";
+          try {
+            const res = await api("/admin/api/brevo/push-reference-templates", { method: "POST" });
+            toast("Pushed " + res.pushed + " reference templates to Brevo" + (res.failed ? " (" + res.failed + " failed — see console)" : ""), res.failed ? "err" : "ok");
+            if (res.failed) console.error("brevo_push_reference_templates", res.templates.filter((t) => t.error));
+          } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+          btn.disabled = false; btn.textContent = original;
+        }
+      })
+    ]));
+    return card;
+  }
+
   function renderSubscribers(root) {
     $("#topbar-actions").innerHTML = "";
     $("#topbar-actions").appendChild(el("button", {
@@ -2050,6 +2092,7 @@
     }));
 
     clear(root);
+    root.appendChild(brevoReferenceTemplatesCard());
     const f = S.subscribers.filters;
     const statusOptions = ["All statuses", "Pending", "Confirmed", "Unsubscribed"];
     const statusSel = selectField("Status", "", statusOptions, (v) => {
@@ -2170,8 +2213,13 @@
      plainly rather than rendering an empty or half-wired widget.
      ====================================================================== */
   const ANALYTICS_SUBPAGES = [
-    ["highlights", "Highlights"], ["realtime", "Real-time"], ["traffic", "Traffic"],
-    ["behavior", "Behavior"], ["marketing", "Marketing"], ["sales", "Sales"], ["all", "All reports"]
+    ["highlights", "Highlights", "Key stats at a glance — sessions, sales, orders and more, each with a trend and a vs-last-period comparison."],
+    ["realtime", "Real-time", "Who's on the site right now — live visitor count, top pages, countries and devices."],
+    ["traffic", "Traffic", "Where visitors come from over a date range — sessions, top pages, devices, countries, and the view→checkout→purchase funnel."],
+    ["behavior", "Behavior", "What visitors do on the site — top pages, time engaged, the booking funnel with drop-off, and page views per city."],
+    ["marketing", "Marketing", "Which campaigns and sources actually sell — sessions/purchases/revenue by source and campaign, plus subscriber growth and discount usage."],
+    ["sales", "Sales", "Your own booking numbers — guests, revenue, discounts, gift cards and subscribers, by route, city, weekday and more."],
+    ["all", "All reports", "An index of every report page above."]
   ];
   const RANGE_PRESETS = ["Last 7 days", "Last 30 days", "Last 90 days", "This month", "Last month", "This year", "Custom"];
 
@@ -2190,6 +2238,7 @@
   }
 
   function renderAnalytics(root) {
+    if (realtimeTimer) { clearInterval(realtimeTimer); realtimeTimer = null; } // leaving (or re-rendering) Real-time always stops the old tick first
     $("#topbar-actions").innerHTML = "";
     clear(root);
     if (!S.analytics.range) S.analytics.range = rangeForPreset("Last 30 days");
@@ -2199,14 +2248,18 @@
     )));
     root.appendChild(nav);
 
-    const needsRange = ["sales", "traffic", "behavior", "marketing"].indexOf(S.analytics.sub) >= 0;
+    const needsRange = ["highlights", "sales", "traffic", "behavior", "marketing"].indexOf(S.analytics.sub) >= 0;
     if (needsRange) root.appendChild(analyticsRangeBar(root));
 
     const body = el("div", { id: "an-body" });
     root.appendChild(body);
 
-    if (S.analytics.sub === "sales") renderAnalyticsSales(body);
+    if (S.analytics.sub === "highlights") renderAnalyticsHighlights(body);
+    else if (S.analytics.sub === "realtime") renderAnalyticsRealtime(body);
+    else if (S.analytics.sub === "sales") renderAnalyticsSales(body);
     else if (S.analytics.sub === "traffic") renderAnalyticsTraffic(body);
+    else if (S.analytics.sub === "behavior") renderAnalyticsBehavior(body);
+    else if (S.analytics.sub === "marketing") renderAnalyticsMarketing(body);
     else if (S.analytics.sub === "all") renderAnalyticsIndex(body);
     else renderAnalyticsPlaceholder(body, ANALYTICS_SUBPAGES.find((s) => s[0] === S.analytics.sub)[1]);
   }
@@ -2238,9 +2291,10 @@
     const card = el("div", { class: "card" });
     card.appendChild(el("div", { class: "card-head" }, el("h2", { text: "All reports" })));
     const list = el("div", { style: "padding:6px 18px 18px" });
-    ANALYTICS_SUBPAGES.filter((s) => s[0] !== "all").forEach(([key, label]) => {
+    ANALYTICS_SUBPAGES.filter((s) => s[0] !== "all").forEach(([key, label, desc]) => {
       list.appendChild(el("div", { style: "padding:10px 0;border-top:1px solid var(--line)" }, [
-        el("button", { class: "btn btn-quiet btn-sm", text: label, onclick: () => { S.analytics.sub = key; renderAnalytics($("#view")); } })
+        el("button", { class: "btn btn-quiet btn-sm", text: label, onclick: () => { S.analytics.sub = key; renderAnalytics($("#view")); } }),
+        el("div", { class: "capacity-hint", style: "padding:4px 0 0", text: desc })
       ]));
     });
     card.appendChild(list);
@@ -2430,6 +2484,406 @@
     });
     funnelCard.appendChild(fb);
     body.appendChild(funnelCard);
+  }
+
+  /* ======================================================================
+     Shared chart primitives for Highlights/Behavior/Marketing — inline SVG
+     only (CSP forbids any charting library): a tiny sparkline, a green/red
+     (on-brand: sage/terracotta, never true red) delta chip, and a
+     horizontal bar row reused by "Sales by source"/campaigns/by-device etc.
+     ====================================================================== */
+
+  /** `values`: plain numbers, oldest-first. Draws a single polyline in a
+     responsive viewBox (CSS sizes the box; the SVG itself scales inside
+     it) — a flat/empty/all-zero series still draws a flat midline rather
+     than collapsing to nothing. */
+  function sparklineSvg(values, opts) {
+    opts = opts || {};
+    const w = opts.width || 120, h = opts.height || 32;
+    const vals = (values || []).map((v) => Number(v) || 0);
+    if (vals.length === 0) vals.push(0, 0);
+    const max = Math.max(...vals), min = Math.min(...vals);
+    const range = max - min || 1;
+    const stepX = w / Math.max(1, vals.length - 1);
+    const points = vals.map((v, i) => {
+      const x = i * stepX;
+      const y = vals.length > 1 ? h - ((v - min) / range) * (h - 4) - 2 : h / 2;
+      return x.toFixed(1) + "," + y.toFixed(1);
+    }).join(" ");
+    return svgEl("svg", { viewBox: "0 0 " + w + " " + h, width: "100%", height: h, preserveAspectRatio: "none", class: "sparkline" }, [
+      svgEl("polyline", { points, fill: "none", stroke: opts.color || "var(--salmon-deep)", "stroke-width": "2", "stroke-linejoin": "round", "stroke-linecap": "round" })
+    ]);
+  }
+
+  /** `pct`: a plain percent number (12.5 means +12.5%), or `null` for "new
+     this period" (no previous-period data to compare against — see
+     logic.js:computePctDelta's server-side twin, which this mirrors). */
+  function deltaChip(pct) {
+    if (pct == null) return el("span", { class: "delta-chip flat", text: "New" });
+    const rounded = Math.round(pct * 10) / 10;
+    if (rounded === 0) return el("span", { class: "delta-chip flat", text: "0%" });
+    const up = rounded > 0;
+    return el("span", { class: "delta-chip " + (up ? "up" : "down"), text: (up ? "▲ " : "▼ ") + Math.abs(rounded) + "%" });
+  }
+
+  function pctDeltaClient(cur, prev) {
+    cur = Number(cur) || 0; prev = Number(prev) || 0;
+    if (prev === 0) return cur === 0 ? 0 : null;
+    return ((cur - prev) / prev) * 100;
+  }
+
+  /** One horizontal bar row — the house idiom (styled <div>s, §12.2) reused
+     for Sales-by-source, by-campaign, by-page, by-country, by-device. */
+  function barRow(label, value, maxValue, valueText, deltaPct) {
+    const w = maxValue > 0 ? Math.max(2, (value / maxValue) * 100) : 0;
+    return el("div", { class: "period-row" }, [
+      el("div", { class: "period-time", text: label }),
+      el("div", { class: "hour-bar-track" }, el("div", { class: "hour-seg", style: "width:" + w + "%;background:var(--salmon-deep)" })),
+      el("div", { class: "hour-count" }, [valueText, deltaPct !== undefined ? deltaChip(deltaPct) : null].filter(Boolean))
+    ]);
+  }
+
+  /** The Highlights "Key stats" grid card: title, big number, delta chip vs
+     previous period, a sparkline of the daily series, and "X today · Y
+     yesterday" (the LAST two points of the same series — see
+     renderAnalyticsHighlights' doc comment on what "today" means when the
+     picked range doesn't end on the real calendar today). `muted:true`
+     renders a disabled-looking tile with `mutedNote` instead of a number —
+     used for the three GA4-backed cards when Google Analytics isn't
+     connected (never a false "0").
+   */
+  function keyStatCard(opts) {
+    if (opts.muted) {
+      return el("div", { class: "stat kpi muted" }, [
+        el("div", { class: "k", text: opts.title }),
+        el("div", { class: "v muted-v", text: "—" }),
+        el("div", { class: "d", text: opts.mutedNote || "Connect Google Analytics" })
+      ]);
+    }
+    const daily = opts.daily || [];
+    const today = daily.length ? daily[daily.length - 1].value : 0;
+    const yesterday = daily.length > 1 ? daily[daily.length - 2].value : 0;
+    return el("div", { class: "stat kpi" }, [
+      el("div", { class: "kpi-head" }, [el("div", { class: "k", text: opts.title }), deltaChip(opts.deltaPct)]),
+      el("div", { class: "v", text: opts.valueText }),
+      sparklineSvg(daily.map((d) => d.value), { color: opts.sparkColor }),
+      el("div", { class: "d", text: opts.fmt(today) + " today · " + opts.fmt(yesterday) + " yesterday" })
+    ]);
+  }
+
+  /* ======================================================================
+     VIEW 4.3 — HIGHLIGHTS (BUILD §19.4) — the Wix-style "Key stats" grid +
+     "Track your sales" (top selling items, sales by source, top paying
+     customers). Sales-side numbers are D1 (always live); the three
+     traffic-side cards (sessions/page views/unique visitors) and
+     conversion rate need GA4 — each degrades to a muted "Connect Google
+     Analytics" tile rather than a false 0 when it isn't configured.
+     ====================================================================== */
+  function renderAnalyticsHighlights(body) {
+    clear(body);
+    body.appendChild(skeletonCard());
+    loadAnalyticsHighlights(body);
+  }
+
+  async function loadAnalyticsHighlights(body) {
+    try {
+      const r = S.analytics.range;
+      const data = await api("/admin/api/analytics/highlights?from=" + r.from + "&to=" + r.to);
+      S.analytics.highlights = data;
+      paintAnalyticsHighlights(body);
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(body); body.appendChild(errorCard(e.message, () => loadAnalyticsHighlights(body))); }
+    }
+  }
+
+  function paintAnalyticsHighlights(body) {
+    clear(body);
+    const d = S.analytics.highlights;
+    if (!d) return;
+    const t = d.traffic, ok = t && t.configured;
+
+    // "N live visitors" — a lightweight nod to the owner's Real-time
+    // reference card, without a second network call: Highlights' own GA4
+    // traffic daily series doesn't carry a live count, so this just links
+    // across; the REAL live number lives on the Real-time page itself.
+    const liveCard = el("div", { class: "card live-card" }, el("div", { class: "live-row" }, [
+      el("span", { class: "live-dot" }),
+      el("span", { text: "Want live visitors right now? " }),
+      el("button", { class: "btn btn-quiet btn-sm", text: "Open Real-time →", onclick: () => { S.analytics.sub = "realtime"; renderAnalytics($("#view")); } })
+    ]));
+    body.appendChild(liveCard);
+
+    const grid = el("div", { class: "kpi-grid" });
+    const series = (arr, key) => (arr || []).map((row) => ({ date: row.date, value: row[key] || 0 }));
+    const conversionSeries = d.sales.daily.map((row, i) => {
+      const sessions = ok ? (t.daily[i] ? t.daily[i].sessions : 0) : 0;
+      return { date: row.date, value: ok ? computeConversionRateClient(row.orders, sessions) : 0 };
+    });
+    const totalConversion = ok ? computeConversionRateClient(d.sales.totals.orders, t.totals.sessions) : 0;
+    const prevConversion = ok ? computeConversionRateClient(d.previous_sales.totals.orders, t.previous_totals.sessions) : 0;
+
+    const cards = [
+      ok
+        ? { title: "Site sessions", daily: series(t.daily, "sessions"), deltaPct: pctDeltaClient(t.totals.sessions, t.previous_totals.sessions), valueText: String(t.totals.sessions), fmt: (v) => String(v) }
+        : { title: "Site sessions", muted: true },
+      { title: "Total sales", daily: series(d.sales.daily, "revenue_cents"), deltaPct: pctDeltaClient(d.sales.totals.revenue_cents, d.previous_sales.totals.revenue_cents), valueText: euros(d.sales.totals.revenue_cents), fmt: (v) => euros(v) },
+      { title: "Total orders", daily: series(d.sales.daily, "orders"), deltaPct: pctDeltaClient(d.sales.totals.orders, d.previous_sales.totals.orders), valueText: String(d.sales.totals.orders), fmt: (v) => String(v) },
+      ok
+        ? { title: "Conversion rate", daily: conversionSeries, deltaPct: pctDeltaClient(totalConversion, prevConversion), valueText: (totalConversion * 100).toFixed(1) + "%", fmt: (v) => (v * 100).toFixed(1) + "%" }
+        : { title: "Conversion rate", muted: true, mutedNote: "Needs Google Analytics (orders ÷ sessions)" },
+      ok
+        ? { title: "Page views", daily: series(t.daily, "page_views"), deltaPct: pctDeltaClient(t.totals.page_views, t.previous_totals.page_views), valueText: String(t.totals.page_views), fmt: (v) => String(v) }
+        : { title: "Page views", muted: true },
+      ok
+        ? { title: "Unique visitors", daily: series(t.daily, "unique_visitors"), deltaPct: pctDeltaClient(t.totals.unique_visitors, t.previous_totals.unique_visitors), valueText: String(t.totals.unique_visitors), fmt: (v) => String(v) }
+        : { title: "Unique visitors", muted: true },
+      { title: "Items sold", daily: series(d.sales.daily, "guests"), deltaPct: pctDeltaClient(d.sales.totals.guests, d.previous_sales.totals.guests), valueText: String(d.sales.totals.guests), fmt: (v) => String(v) },
+      { title: "Customers", daily: series(d.sales.daily, "customers"), deltaPct: pctDeltaClient(d.sales.totals.customers, d.previous_sales.totals.customers), valueText: String(d.sales.totals.customers), fmt: (v) => String(v) },
+      { title: "Avg. order value", daily: series(d.sales.daily, "revenue_cents").map((p, i) => ({ date: p.date, value: d.sales.daily[i].orders > 0 ? Math.round(d.sales.daily[i].revenue_cents / d.sales.daily[i].orders) : 0 })), deltaPct: pctDeltaClient(d.sales.totals.avg_order_value_cents, d.previous_sales.totals.avg_order_value_cents), valueText: euros(d.sales.totals.avg_order_value_cents), fmt: (v) => euros(v) },
+    ];
+    cards.forEach((c) => grid.appendChild(keyStatCard(c)));
+    body.appendChild(grid);
+
+    // ---- Track your sales --------------------------------------------
+    const salesHead = el("h2", { class: "section-head", text: "Track your sales" });
+    body.appendChild(salesHead);
+
+    const itemsCard = el("div", { class: "card" });
+    itemsCard.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Top selling items" })));
+    const itemsBody = el("div", { class: "item-list" });
+    if (d.top_selling_items.length === 0) itemsBody.appendChild(el("div", { class: "empty", style: "padding:18px" }, el("div", { text: "No sales in this range yet." })));
+    d.top_selling_items.slice(0, 8).forEach((it) => {
+      itemsBody.appendChild(el("div", { class: "item-row" }, [
+        it.poster_url ? el("img", { class: "item-thumb", src: it.poster_url, alt: "" }) : el("div", { class: "item-thumb item-thumb-blank" }),
+        el("div", { class: "item-info" }, [
+          el("div", { class: "item-name", text: shortRoute(it.route_name) }),
+          el("div", { class: "item-sub", text: it.city })
+        ]),
+        el("div", { class: "item-stats" }, [
+          el("div", { class: "item-euros", text: euros(it.revenue_cents) }),
+          el("div", { class: "item-sold", text: it.guests + " items sold" })
+        ]),
+        deltaChip(it.pct_delta)
+      ]));
+    });
+    itemsCard.appendChild(itemsBody);
+    body.appendChild(itemsCard);
+
+    const sourceCard = el("div", { class: "card" });
+    sourceCard.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Sales by source" })));
+    const sourceBody = el("div", { style: "padding:6px 18px 16px" });
+    const maxSourceRevenue = Math.max(1, ...d.sales_by_source.map((s) => s.revenue_cents));
+    if (d.sales_by_source.length === 0) sourceBody.appendChild(el("div", { class: "capacity-hint", text: "No confirmed bookings in this range." }));
+    d.sales_by_source.forEach((s) => sourceBody.appendChild(barRow(s.source, s.revenue_cents, maxSourceRevenue, euros(s.revenue_cents), s.pct_delta)));
+    sourceCard.appendChild(sourceBody);
+    body.appendChild(sourceCard);
+
+    const custCard = el("div", { class: "card" });
+    custCard.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Top paying customers" })));
+    const custBody = el("div", { class: "cust-list" });
+    if (d.top_paying_customers.length === 0) custBody.appendChild(el("div", { class: "empty", style: "padding:18px" }, el("div", { text: "No customers in this range yet." })));
+    d.top_paying_customers.forEach((c) => {
+      custBody.appendChild(el("div", { class: "cust-row" }, [
+        el("div", { class: "avatar-initials", text: initialsOf(c.name || c.email) }),
+        el("div", { class: "item-info" }, [
+          el("div", { class: "item-name", text: c.name || c.email }),
+          el("div", { class: "item-sub", text: c.city || "—" })
+        ]),
+        el("div", { class: "item-stats" }, [
+          el("div", { class: "item-euros", text: euros(c.total_cents) }),
+          el("div", { class: "item-sold", text: c.orders + (c.orders === 1 ? " order" : " orders") })
+        ])
+      ]));
+    });
+    custCard.appendChild(custBody);
+    body.appendChild(custCard);
+  }
+
+  function computeConversionRateClient(orders, sessions) {
+    const s = Number(sessions);
+    if (!(s > 0)) return 0;
+    return (Number(orders) || 0) / s;
+  }
+
+  function initialsOf(name) {
+    const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "?";
+    return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
+  }
+
+  /* ======================================================================
+     VIEW 4.4 — REAL-TIME (BUILD §19.4) — GA4 runRealtimeReport, auto-
+     refreshed every 60s while this page is mounted (stopped the instant the
+     owner navigates elsewhere — see go()/renderAnalytics()'s realtimeTimer
+     clears). No date-range picker — "right now" has no range.
+     ====================================================================== */
+  function renderAnalyticsRealtime(body) {
+    clear(body);
+    body.appendChild(skeletonCard());
+    loadAnalyticsRealtime(body);
+    realtimeTimer = setInterval(() => loadAnalyticsRealtime(body), 60000);
+  }
+
+  async function loadAnalyticsRealtime(body) {
+    if (!document.body.contains(body)) { if (realtimeTimer) { clearInterval(realtimeTimer); realtimeTimer = null; } return; }
+    try {
+      const data = await api("/admin/api/analytics/realtime");
+      S.analytics.realtime = data;
+      paintAnalyticsRealtime(body);
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(body); body.appendChild(errorCard(e.message, () => loadAnalyticsRealtime(body))); }
+    }
+  }
+
+  function paintAnalyticsRealtime(body) {
+    clear(body);
+    const r = S.analytics.realtime;
+    if (!r || r.configured === false) {
+      body.appendChild(el("div", { class: "card" }, el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "📈" }),
+        el("div", { text: "Connect Google Analytics to see live visitors here." }),
+        el("div", { class: "capacity-hint", style: "padding:10px 0 0", text: "Same one-time setup as the Traffic page — see its \"connect\" card for the steps." })
+      ])));
+      return;
+    }
+    const hero = el("div", { class: "card live-hero" }, el("div", { class: "live-hero-row" }, [
+      el("span", { class: "live-dot big" }),
+      el("div", {}, [
+        el("div", { class: "live-hero-n", text: String(r.active_users) }),
+        el("div", { class: "live-hero-k", text: r.active_users === 1 ? "visitor on the site right now" : "visitors on the site right now" })
+      ]),
+      el("span", { class: "grow" }),
+      el("span", { class: "capacity-hint", text: "Refreshes every 60s" })
+    ]));
+    body.appendChild(hero);
+
+    body.appendChild(breakdownTable("By page", ["Page", "Active visitors"], r.by_page.map((p) => [p.page, p.active_users])));
+    body.appendChild(breakdownTable("By country", ["Country", "Active visitors"], r.by_country.map((p) => [p.country, p.active_users])));
+    body.appendChild(breakdownTable("By device", ["Device", "Active visitors"], r.by_device.map((p) => [p.device, p.active_users])));
+  }
+
+  /* ======================================================================
+     VIEW 4.5 — BEHAVIOR (BUILD §19.4) — top pages/engagement, the view→
+     checkout→purchase funnel with drop-off, sign_up/generate_lead event
+     counts, and page views per city.
+     ====================================================================== */
+  function renderAnalyticsBehavior(body) {
+    clear(body);
+    body.appendChild(skeletonCard());
+    loadAnalyticsBehavior(body);
+  }
+
+  async function loadAnalyticsBehavior(body) {
+    try {
+      const r = S.analytics.range;
+      const data = await api("/admin/api/analytics/behavior?from=" + r.from + "&to=" + r.to);
+      S.analytics.behavior = data;
+      paintAnalyticsBehavior(body);
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(body); body.appendChild(errorCard(e.message, () => loadAnalyticsBehavior(body))); }
+    }
+  }
+
+  function paintAnalyticsBehavior(body) {
+    clear(body);
+    const b = S.analytics.behavior;
+    if (!b || b.configured === false) {
+      body.appendChild(el("div", { class: "card" }, el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "📈" }),
+        el("div", { text: "Connect Google Analytics to see visitor behavior here." }),
+        el("div", { class: "capacity-hint", style: "padding:10px 0 0", text: "Same one-time setup as the Traffic page — see its \"connect\" card for the steps." })
+      ])));
+      return;
+    }
+
+    const stats = el("div", { class: "stat-row" });
+    stats.appendChild(stat("Avg. session", Math.round(b.engagement.avg_session_duration) + "s", b.engagement.engaged_sessions + " engaged sessions"));
+    stats.appendChild(stat("Sign-ups", b.events.sign_up, "this range"));
+    stats.appendChild(stat("Group leads", b.events.generate_lead, "this range"));
+    body.appendChild(stats);
+
+    const funnelCard = el("div", { class: "card" });
+    funnelCard.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Funnel: view item → begin checkout → purchase" })));
+    const fb = el("div", { style: "padding:6px 18px 16px" });
+    const steps = [
+      ["View item", b.funnel.view_item, null],
+      ["Begin checkout", b.funnel.begin_checkout, b.funnel.pct_checkout_of_view],
+      ["Purchase", b.funnel.purchase, b.funnel.pct_purchase_of_checkout],
+    ];
+    const maxStep = Math.max(1, b.funnel.view_item);
+    steps.forEach(([label, n, pct]) => {
+      const w = (n / maxStep) * 100;
+      fb.appendChild(el("div", { class: "period-row" }, [
+        el("div", { class: "period-time", text: label }),
+        el("div", { class: "hour-bar-track" }, el("div", { class: "hour-seg", style: "width:" + w + "%;background:var(--salmon-deep)" }, w > 10 ? String(n) : "")),
+        el("div", { class: "hour-count" }, [String(n), pct != null ? el("small", { text: pct.toFixed(1) + "% of previous step" }) : null].filter(Boolean))
+      ]));
+    });
+    fb.appendChild(el("div", { class: "capacity-hint", style: "padding-top:8px", text: "Drop-off: " + b.funnel.drop_off_view_to_checkout + " view→checkout · " + b.funnel.drop_off_checkout_to_purchase + " checkout→purchase" }));
+    funnelCard.appendChild(fb);
+    body.appendChild(funnelCard);
+
+    body.appendChild(breakdownTable("Top pages", ["Page", "Views"], b.top_pages.map((p) => [p.page, p.views])));
+    body.appendChild(breakdownTable("Page views by city", ["City", "Views"], (b.by_city || []).map((c) => [c.city[0].toUpperCase() + c.city.slice(1), c.views])));
+  }
+
+  /* ======================================================================
+     VIEW 4.6 — MARKETING (BUILD §19.4) — GA4 sessions/purchases/revenue by
+     source×medium and by campaign (top 15); D1 subscriber growth + totals
+     by source, discount-code usage, gift cards sold/redeemed.
+     ====================================================================== */
+  function renderAnalyticsMarketing(body) {
+    clear(body);
+    body.appendChild(skeletonCard());
+    loadAnalyticsMarketing(body);
+  }
+
+  async function loadAnalyticsMarketing(body) {
+    try {
+      const r = S.analytics.range;
+      const data = await api("/admin/api/analytics/marketing?from=" + r.from + "&to=" + r.to);
+      S.analytics.marketing = data;
+      paintAnalyticsMarketing(body);
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(body); body.appendChild(errorCard(e.message, () => loadAnalyticsMarketing(body))); }
+    }
+  }
+
+  function paintAnalyticsMarketing(body) {
+    clear(body);
+    const m = S.analytics.marketing;
+    if (!m) return;
+    const t = m.traffic, ok = t && t.configured;
+
+    if (ok) {
+      body.appendChild(breakdownTable("Sessions by source / medium", ["Source", "Medium", "Sessions", "Purchases", "Revenue"],
+        t.by_source_medium.map((r) => [r.source, r.medium, r.sessions, r.purchases, euros(Math.round(r.revenue * 100))])));
+      body.appendChild(breakdownTable("Top campaigns", ["Campaign", "Sessions", "Purchases", "Revenue"],
+        t.by_campaign.map((r) => [r.campaign, r.sessions, r.purchases, euros(Math.round(r.revenue * 100))])));
+    } else {
+      body.appendChild(el("div", { class: "card" }, el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "📈" }),
+        el("div", { text: "Connect Google Analytics to see campaign performance here." }),
+        el("div", { class: "capacity-hint", style: "padding:10px 0 0", text: "Same one-time setup as the Traffic page — see its \"connect\" card for the steps." })
+      ])));
+    }
+
+    const subCard = el("div", { class: "card" });
+    subCard.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Subscriber growth" })));
+    const subBody = el("div", { style: "padding:6px 18px 16px" });
+    const maxGrowth = Math.max(1, ...m.subscribers.growth.map((g) => g.new_subscribers));
+    m.subscribers.growth.forEach((g) => subBody.appendChild(barRow(g.date, g.new_subscribers, maxGrowth, String(g.new_subscribers))));
+    subCard.appendChild(subBody);
+    body.appendChild(subCard);
+
+    body.appendChild(breakdownTable("Subscribers by source (all time)", ["Source", "Count"], m.subscribers.by_source.map((s) => [SUBSCRIBE_SOURCE_LABELS[s.source] || s.source, s.n])));
+    if (m.discount_usage.length > 0) {
+      body.appendChild(breakdownTable("Discount codes used", ["Code", "Uses", "Total discount"], m.discount_usage.map((r) => [r.code, r.uses, euros(r.total_discount_cents)])));
+    }
+    const giftStats = el("div", { class: "stat-row" });
+    giftStats.appendChild(stat("Gift cards sold", m.gift_cards.sold_count, euros(m.gift_cards.sold_value_cents) + " value"));
+    giftStats.appendChild(stat("Gift cards redeemed", euros(m.gift_cards.redeemed_value_cents), "this period"));
+    body.appendChild(giftStats);
   }
 
   /* ======================================================================

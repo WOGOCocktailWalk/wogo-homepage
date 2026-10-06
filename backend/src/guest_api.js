@@ -33,6 +33,7 @@ import {
   isValidDateStr,
   isSlotPastCutoff,
   validateNotes,
+  validateUtmFields,
   isoWeekday,
   addDaysToDateStr,
   sqliteMinutesAgo,
@@ -327,6 +328,15 @@ export async function handleBook(request, env) {
 
   const { route_id, date, slot, party, name, email, phone, notes, locale, marketing_opt_in, gift_code } = body || {};
 
+  // UTM / source capture (migrations/0027, BUILD §19 Marketing pass) — every
+  // field optional, validated independently of the rest of the booking so a
+  // malformed tracking param never blocks a genuine guest; see
+  // logic.js:validateUtmFields for the exact shape/length rules.
+  const utmCheck = validateUtmFields(body);
+  if (!utmCheck.ok) {
+    return errorJson('bad_request', utmCheck.message, 400, request);
+  }
+
   if (!route_id || typeof route_id !== 'string' || route_id.length > 100) {
     return errorJson('bad_request', 'route_id is required', 400, request);
   }
@@ -459,6 +469,7 @@ export async function handleBook(request, env) {
     marketing_opt_in: !!marketing_opt_in,
     hold_expires: holdExpires,
     ip,
+    ...utmCheck.utm,
   });
 
   if (!holdResult.created) {

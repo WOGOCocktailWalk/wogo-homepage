@@ -1274,6 +1274,89 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .cust-bk-tags { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
 
 /* ==========================================================================
+   ANALYTICS — HIGHLIGHTS / REAL-TIME / BEHAVIOR / MARKETING (BUILD §19.4)
+   Inline SVG sparklines only (CSP forbids any charting library) + on-brand
+   delta chips (sage green / muted terracotta — never true red, per brand
+   rules) + a Wix-style "Key stats" grid and "Track your sales" modules.
+   ========================================================================== */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stat.kpi { padding: 16px 18px 14px; }
+.kpi-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.stat.kpi .v { margin: 6px 0 8px; }
+.stat.kpi .sparkline { display: block; margin: 2px 0 8px; }
+.stat.kpi.muted { opacity: 0.55; }
+.muted-v { color: var(--muted) !important; }
+
+.delta-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 11.5px; font-weight: 800; letter-spacing: 0.01em;
+  padding: 2px 8px; border-radius: var(--pill);
+  white-space: nowrap;
+}
+.delta-chip.up { color: var(--ok); background: var(--ok-bg); }
+.delta-chip.down { color: var(--cancel); background: var(--cancel-bg); }
+.delta-chip.flat { color: var(--muted); background: var(--panel-2); }
+
+.section-head {
+  font-size: 15px; font-weight: 800; color: var(--ink);
+  margin: 26px 0 12px;
+}
+
+/* "N live visitors" nudge card (Highlights) + the Real-time hero */
+.live-card { padding: 12px 18px; margin-bottom: 18px; }
+.live-row { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--brown); }
+.live-dot {
+  width: 9px; height: 9px; border-radius: 50%; background: var(--ok);
+  box-shadow: 0 0 0 0 rgba(63, 125, 90, 0.5);
+  animation: live-pulse 2s infinite;
+  flex: none;
+}
+.live-dot.big { width: 16px; height: 16px; margin-right: 6px; }
+@keyframes live-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(63, 125, 90, 0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(63, 125, 90, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(63, 125, 90, 0); }
+}
+.live-hero { padding: 20px 22px; margin-bottom: 18px; }
+.live-hero-row { display: flex; align-items: center; gap: 4px; }
+.live-hero-n { font-size: 34px; font-weight: 800; color: var(--ink); line-height: 1; font-variant-numeric: tabular-nums; }
+.live-hero-k { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+/* Top selling items (poster thumbnail) + Top paying customers (avatar) —
+   same row shape, different leading element. */
+.item-list, .cust-list { padding: 4px 0 10px; }
+.item-row, .cust-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 18px;
+  border-top: 1px solid var(--line);
+}
+.item-row:first-child, .cust-row:first-child { border-top: none; }
+.item-thumb {
+  width: 44px; height: 44px; border-radius: var(--r-sm);
+  object-fit: cover; flex: none; background: var(--panel-2);
+}
+.item-thumb-blank { display: flex; align-items: center; justify-content: center; }
+.item-info { flex: 1; min-width: 0; }
+.item-name { font-size: 13.5px; font-weight: 700; color: var(--ink); }
+.item-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.item-stats { text-align: right; flex: none; }
+.item-euros { font-size: 14px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.item-sold { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+
+.avatar-initials {
+  width: 38px; height: 38px; border-radius: 50%; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-tint); color: var(--salmon-deep);
+  font-size: 13px; font-weight: 800; letter-spacing: 0.02em;
+}
+
+/* ==========================================================================
    RESPONSIVE
    ========================================================================== */
 @media (max-width: 900px) {

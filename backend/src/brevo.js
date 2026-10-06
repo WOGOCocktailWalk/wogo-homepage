@@ -237,6 +237,72 @@ export async function unsubscribeContact(env, email, listId) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Brevo TRANSACTIONAL TEMPLATES API (v3/smtp/templates) — used ONLY by
+// POST /admin/api/brevo/push-reference-templates (BUILD §19's Brevo
+// reference-copy pass): every owned-HTML email this codebase can send
+// (src/emails.js) is rendered with realistic sample data and pushed into
+// the Brevo account as an INACTIVE "[REFERENCE] ..." template — copy-only,
+// never actually used to send (every real send still goes through
+// sendTransactional's htmlContent path above). This gives Maroussia a
+// reviewable copy of every email inside Brevo's own UI without her ever
+// touching Brevo's template editor by hand. Separate endpoint family from
+// both the transactional SEND above and the CONTACTS API further up this
+// file — same zero-dependency fetch + api-key header style.
+// ---------------------------------------------------------------------------
+
+/** Every template on the account, across however many pages of
+ * `limit` Brevo paginates in (the account is small — a handful of
+ * reference templates plus whatever real ones predate this feature — so a
+ * simple page-until-empty loop is plenty, no need for a smarter cursor). */
+export async function listContactTemplates(env, limit = 50) {
+  const templates = [];
+  let offset = 0;
+  for (;;) {
+    const { json } = await brevoRequest(env, 'GET', `/smtp/templates?templateStatus=false&limit=${limit}&offset=${offset}`);
+    const page = (json && json.templates) || [];
+    templates.push(...page);
+    if (page.length < limit) break;
+    offset += limit;
+  }
+  // templateStatus=false above only returns INACTIVE templates — every
+  // reference template this endpoint creates is isActive:false by design,
+  // but a real ACTIVE template could coincidentally share a name (unlikely,
+  // "[REFERENCE] ..." is a deliberately distinctive prefix) — a second pass
+  // over active templates keeps the name lookup correct regardless.
+  offset = 0;
+  for (;;) {
+    const { json } = await brevoRequest(env, 'GET', `/smtp/templates?templateStatus=true&limit=${limit}&offset=${offset}`);
+    const page = (json && json.templates) || [];
+    templates.push(...page);
+    if (page.length < limit) break;
+    offset += limit;
+  }
+  return templates;
+}
+
+/** Idempotent create-or-update by EXACT `templateName` match: PUTs an
+ * existing template's id if found, otherwise POSTs a new one. Returns
+ * `{ id, created }`. `fields`: `{ templateName, subject, sender:{name,email},
+ * htmlContent, isActive, replyTo? }`. */
+export async function upsertTransactionalTemplate(env, fields) {
+  const existing = (await listContactTemplates(env)).find((t) => t.name === fields.templateName);
+  const body = {
+    templateName: fields.templateName,
+    subject: fields.subject,
+    sender: fields.sender,
+    htmlContent: fields.htmlContent,
+    isActive: !!fields.isActive,
+  };
+  if (fields.replyTo) body.replyTo = fields.replyTo;
+  if (existing) {
+    await brevoRequest(env, 'PUT', `/smtp/templates/${existing.id}`, body);
+    return { id: existing.id, created: false };
+  }
+  const { json } = await brevoRequest(env, 'POST', '/smtp/templates', body);
+  return { id: json && json.id, created: true };
+}
+
 export async function sendTransactional(env, msg) {
   // TEST-SAFETY: if EMAIL_TEST_REDIRECT is set (a Worker secret used pre-go-live),
   // every recipient is rewritten to that address and the real recipient is shown

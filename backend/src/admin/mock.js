@@ -307,6 +307,92 @@
     // there's no real Google Analytics property behind a file:// preview.
     if (path === "/admin/api/analytics/traffic" && method === "GET") return json({ configured: false });
 
+    // Highlights (BUILD §19.4) — a believable 14-day fixture, GA4 "connected"
+    // here (unlike the plain Traffic tab above) so the preview actually shows
+    // every Key-stats card + sparkline + "Track your sales" module live.
+    if (path === "/admin/api/analytics/highlights" && method === "GET") {
+      const from = q.get("from") || day(-13), to = q.get("to") || day(0);
+      const mkDaily = (base, growth) => Array.from({ length: 14 }, (_, i) => {
+        const d = day(-13 + i);
+        const orders = Math.max(0, Math.round(base + Math.sin(i / 2) * 2 + i * growth));
+        return { date: d, orders, guests: orders * 3, revenue_cents: orders * 2995, customers: Math.max(0, orders - 1) };
+      });
+      const mkTraffic = (base) => Array.from({ length: 14 }, (_, i) => {
+        const d = day(-13 + i);
+        const sessions = Math.max(0, Math.round(base + Math.sin(i / 2) * 20 + i * 2));
+        return { date: d, sessions, page_views: sessions * 2, unique_visitors: Math.round(sessions * 0.8) };
+      });
+      const sum = (arr, k) => arr.reduce((a, r) => a + r[k], 0);
+      const sales = mkDaily(5, 0.3), prevSales = mkDaily(4, 0.1);
+      const traffic = mkTraffic(140), prevTraffic = mkTraffic(110);
+      return json({
+        from, to, previous_from: day(-27), previous_to: day(-14),
+        sales: { daily: sales, totals: { orders: sum(sales, "orders"), guests: sum(sales, "guests"), revenue_cents: sum(sales, "revenue_cents"), customers: Math.round(sum(sales, "customers") * 0.7), avg_order_value_cents: 2995 } },
+        previous_sales: { daily: prevSales, totals: { orders: sum(prevSales, "orders"), guests: sum(prevSales, "guests"), revenue_cents: sum(prevSales, "revenue_cents"), customers: Math.round(sum(prevSales, "customers") * 0.7), avg_order_value_cents: 2995 } },
+        traffic: {
+          configured: true, daily: traffic, previous_daily: prevTraffic,
+          totals: { sessions: sum(traffic, "sessions"), page_views: sum(traffic, "page_views"), unique_visitors: sum(traffic, "unique_visitors") },
+          previous_totals: { sessions: sum(prevTraffic, "sessions"), page_views: sum(prevTraffic, "page_views"), unique_visitors: sum(prevTraffic, "unique_visitors") },
+        },
+        top_selling_items: routes.slice(0, 4).map((r, i) => ({ route_id: r.id, route_name: r.name, city: r.city, poster_url: null, revenue_cents: (40 - i * 8) * 2995, guests: (40 - i * 8) * 3, orders: 40 - i * 8, pct_delta: [18, -4, 32, null][i] })),
+        sales_by_source: [
+          { source: "Direct / unknown", revenue_cents: 60 * 2995, orders: 60, pct_delta: 6 },
+          { source: "facebook", revenue_cents: 38 * 2995, orders: 38, pct_delta: 24 },
+          { source: "google", revenue_cents: 22 * 2995, orders: 22, pct_delta: -9 },
+          { source: "instagram", revenue_cents: 11 * 2995, orders: 11, pct_delta: null },
+        ],
+        top_paying_customers: [
+          { email: "sophie.devries@example.com", name: "Sophie de Vries", city: "Amsterdam", total_cents: 5 * 2995, orders: 5 },
+          { email: "mark.jansen@example.com", name: "Mark Jansen", city: "Rotterdam", total_cents: 4 * 2995, orders: 4 },
+          { email: "lotte.bakker@example.com", name: "Lotte Bakker", city: "Utrecht", total_cents: 3 * 2995, orders: 3 },
+        ],
+      });
+    }
+
+    // Real-time (BUILD §19.4) — a believable "right now" snapshot.
+    if (path === "/admin/api/analytics/realtime" && method === "GET") {
+      return json({
+        configured: true, active_users: 7,
+        by_page: [{ page: "/amsterdam/book/", active_users: 3 }, { page: "/", active_users: 2 }, { page: "/rotterdam/route-2/", active_users: 2 }],
+        by_country: [{ country: "Netherlands", active_users: 5 }, { country: "Germany", active_users: 2 }],
+        by_device: [{ device: "mobile", active_users: 5 }, { device: "desktop", active_users: 2 }],
+      });
+    }
+
+    // Behavior (BUILD §19.4)
+    if (path === "/admin/api/analytics/behavior" && method === "GET") {
+      return json({
+        configured: true,
+        top_pages: [{ page: "/amsterdam/", views: 820 }, { page: "/", views: 650 }, { page: "/rotterdam/", views: 410 }, { page: "/utrecht/", views: 290 }],
+        engagement: { avg_session_duration: 92.4, engaged_sessions: 540, sessions: 900 },
+        funnel: { view_item: 900, begin_checkout: 260, purchase: 110, pct_checkout_of_view: 28.9, pct_purchase_of_checkout: 42.3, drop_off_view_to_checkout: 640, drop_off_checkout_to_purchase: 150 },
+        events: { sign_up: 34, generate_lead: 9 },
+        by_city: [{ city: "amsterdam", views: 820 }, { city: "rotterdam", views: 410 }, { city: "utrecht", views: 290 }],
+      });
+    }
+
+    // Marketing (BUILD §19.4)
+    if (path === "/admin/api/analytics/marketing" && method === "GET") {
+      const from = q.get("from") || day(-29), to = q.get("to") || day(0);
+      return json({
+        from, to,
+        traffic: {
+          configured: true,
+          // NOTE: GA4's own purchaseRevenue metric is DECIMAL EUROS (not
+          // cents) — paintAnalyticsMarketing does euros(Math.round(revenue*100))
+          // to match, so this fixture must be decimal too (18 orders * €29.95).
+          by_source_medium: [{ source: "google", medium: "organic", sessions: 420, purchases: 18, revenue: 18 * 29.95 }, { source: "facebook", medium: "paid_social", sessions: 310, purchases: 22, revenue: 22 * 29.95 }, { source: "instagram", medium: "social", sessions: 150, purchases: 6, revenue: 6 * 29.95 }],
+          by_campaign: [{ campaign: "ams_launch", sessions: 180, purchases: 14, revenue: 14 * 29.95 }, { campaign: "rtm_autumn", sessions: 90, purchases: 5, revenue: 5 * 29.95 }],
+        },
+        subscribers: {
+          growth: Array.from({ length: 14 }, (_, i) => ({ date: day(-13 + i), new_subscribers: Math.max(0, Math.round(2 + Math.sin(i / 2) * 2)) })),
+          by_source: [{ source: "site_footer", n: 140 }, { source: "booking_opt_in", n: 95 }, { source: "wix_import", n: 60 }],
+        },
+        discount_usage: [{ code: "WELCOME10", uses: 24, total_discount_cents: 24 * 300 }],
+        gift_cards: { sold_count: 9, sold_value_cents: 9 * 6000, redeemed_value_cents: 21000 },
+      });
+    }
+
     // routes
     if (path === "/admin/api/routes" && method === "GET") return json({ routes: routes.slice() });
     if (path === "/admin/api/routes" && method === "POST") { routes.push(Object.assign({ created_at: dstr(TODAY) }, bodyObj)); return json({ ok: true, route: bodyObj }); }
