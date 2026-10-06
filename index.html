@@ -715,8 +715,58 @@
      Discover links point at the internal pages on every page (incl. the homepage);
      the Routes column renders all six route pages from WOGO_ROUTES, BASE-prefixed;
      legal links stay commented out until the privacy/cookie/terms pages ship) ===== -->
+<!-- Newsletter sign-up styles — part of the shared FOOTER v4 block, kept here so
+     the whole block stays self-contained and copy-pasteable. Scoped to .w-nl*. -->
+<style>
+  .w-nl { position: relative; border-bottom: 1px solid rgba(255,229,217,0.18); padding: 0 0 30px; margin-bottom: 30px; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.15fr); gap: 20px 44px; align-items: center; }
+  .w-nl-h { font-size: clamp(17px, 2.1vw, 21px); font-weight: 900; line-height: 1.25; letter-spacing: -0.005em; color: var(--wogo-cream, #fffaf6); margin: 0 0 7px; text-transform: none; }
+  .w-nl-sub { font-size: 13px; line-height: 1.55; color: rgba(255,229,217,0.78); margin: 0; }
+  .w-nl-sub a { color: var(--wogo-cream, #fffaf6); text-decoration: underline; text-underline-offset: 2px; }
+  .w-nl-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+  .w-nl-field { display: flex; flex-direction: column; gap: 5px; flex: 1 1 165px; min-width: 0; }
+  .w-nl-lab { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,229,217,0.72); }
+  .w-nl-in { width: 100%; min-height: 46px; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255,229,217,0.3); background: var(--wogo-cream, #fffaf6); color: var(--wogo-ink, #201611); font: inherit; font-size: 14px; }
+  .w-nl-in::placeholder { color: #8a7066; opacity: 1; }
+  .w-nl-in:focus-visible { outline: 3px solid var(--wogo-salmon, #ffaa81); outline-offset: 2px; }
+  .w-nl-btn { flex: 0 0 auto; min-height: 46px; padding: 13px 26px; border: none; border-radius: 999px; background: var(--wogo-cta-bg, linear-gradient(135deg,#ffaa81 0%,#f2905c 100%)); color: var(--wogo-cta-ink, #3f2b21); box-shadow: var(--wogo-cta-shadow, 0 8px 20px rgba(242,144,92,0.45)); font: inherit; font-size: 13px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; transition: transform 0.2s, background 0.2s; }
+  .w-nl-btn:hover:not([disabled]) { background: var(--wogo-cta-bg-hover, linear-gradient(135deg,#f2905c 0%,#f2905c 100%)); transform: translateY(-2px); }
+  .w-nl-btn:active:not([disabled]) { transform: scale(0.97); }
+  .w-nl-btn[disabled] { opacity: 0.62; cursor: default; transform: none; }
+  /* Status line. Success = cream pill with ink text (celebratory, AA on espresso);
+     error = dark pill with light text. Salmon is never used as readable text. */
+  .w-nl-msg { flex: 1 1 100%; margin: 2px 0 0; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 700; line-height: 1.5; }
+  .w-nl-msg.ok { background: var(--wogo-cream, #fffaf6); color: var(--wogo-ink, #201611); }
+  .w-nl-msg.err { background: rgba(0,0,0,0.3); color: #fff1ea; box-shadow: inset 0 0 0 1px rgba(255,229,217,0.38); }
+  /* Honeypot: off-screen for people, irresistible to bots. */
+  .w-nl-hp { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  @media (max-width: 780px) { .w-nl { grid-template-columns: 1fr; gap: 16px; } .w-nl-btn { flex: 1 1 100%; } }
+  @media (prefers-reduced-motion: reduce) { .w-nl-btn, .w-nl-btn:hover { transition: none; transform: none; } }
+</style>
 <footer class="w-footer">
   <div class="w-footer-inner w-pad">
+    <!-- Newsletter sign-up — consent-first (double opt-in; the Worker mails a
+         confirmation link). Carries its OWN EN/NL strings via data-nl so no page
+         dictionary has to know about it. Only the privacy href changes by depth. -->
+    <section class="w-nl" id="wNl" aria-labelledby="wNlH">
+      <div class="w-nl-copy">
+        <h2 class="w-nl-h" id="wNlH" data-nl="h">Be the first to hear about new routes &amp; cities</h2>
+        <p class="w-nl-sub"><span data-nl="sub">Get 10% off your first walk. Unsubscribe anytime.</span> <a href="privacy/" data-nl="priv">Privacy policy</a></p>
+      </div>
+      <form class="w-nl-form" id="wNlForm" novalidate>
+        <div class="w-nl-field">
+          <label class="w-nl-lab" for="wNlFirst" data-nl="first_lab">First name (optional)</label>
+          <input class="w-nl-in" id="wNlFirst" name="first_name" type="text" autocomplete="given-name" maxlength="80" data-nl-ph="first_ph" placeholder="Anna">
+        </div>
+        <div class="w-nl-field">
+          <label class="w-nl-lab" for="wNlEmail" data-nl="email_lab">Email</label>
+          <input class="w-nl-in" id="wNlEmail" name="email" type="email" inputmode="email" autocomplete="email" maxlength="200" required aria-describedby="wNlMsg" data-nl-ph="email_ph" placeholder="you@email.com">
+        </div>
+        <button class="w-nl-btn" type="submit" id="wNlBtn" data-nl="btn">Subscribe</button>
+        <label class="w-nl-hp" for="wNlWebsite" aria-hidden="true">Website</label>
+        <input class="w-nl-hp" id="wNlWebsite" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <p class="w-nl-msg" id="wNlMsg" role="status" aria-live="polite" hidden></p>
+      </form>
+    </section>
     <div class="w-footer-top">
       <div class="w-footer-brand">
         <div class="w-footer-word">WOGO</div>
@@ -781,6 +831,147 @@
     </div>
   </div>
 </footer>
+
+<script>
+/* ===== Newsletter sign-up behaviour — part of the shared FOOTER v4 block =====
+   POSTs to the Worker's POST /api/subscribe. Double opt-in: the Worker sends a
+   confirmation mail, so success here means "check your inbox", never "you're in".
+   Self-contained on purpose (own EN/NL strings, own language detection), so the
+   block can be pasted onto any page without editing that page's dictionary. */
+(function () {
+  "use strict";
+  var API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
+  /* Cities that may appear in a URL path; the first match becomes the `city`
+     field, so a sign-up from a route or booking page is attributed to its city. */
+  var CITIES = ["amsterdam", "rotterdam", "utrecht", "groningen", "delft", "london"];
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  var T = {
+    en: {
+      h: "Be the first to hear about new routes &amp; cities",
+      sub: "Get 10% off your first walk. Unsubscribe anytime.",
+      priv: "Privacy policy",
+      first_lab: "First name (optional)", first_ph: "Anna",
+      email_lab: "Email", email_ph: "you@email.com",
+      btn: "Subscribe", busy: "Sending…",
+      ok: "Check your inbox to confirm your subscription ✉️",
+      e400: "Please enter a valid email",
+      e429: "Too many attempts, please try again later",
+      enet: "Something went wrong. Please try again."
+    },
+    nl: {
+      h: "Nieuwe routes en steden als eerste weten?",
+      sub: "Je ontvangt 10% korting op je eerste walk. Uitschrijven kan altijd.",
+      priv: "Privacybeleid",
+      first_lab: "Voornaam (optioneel)", first_ph: "Anna",
+      email_lab: "E-mail", email_ph: "jij@email.com",
+      btn: "Inschrijven", busy: "Versturen…",
+      ok: "Check je inbox om je inschrijving te bevestigen ✉️",
+      e400: "Vul een geldig e-mailadres in",
+      e429: "Te veel pogingen, probeer het later opnieuw",
+      enet: "Er ging iets mis. Probeer het opnieuw."
+    }
+  };
+
+  var root = document.getElementById("wNl");
+  if (!root) return;
+  var form = document.getElementById("wNlForm");
+  var email = document.getElementById("wNlEmail");
+  var first = document.getElementById("wNlFirst");
+  var hp = document.getElementById("wNlWebsite");
+  var btn = document.getElementById("wNlBtn");
+  var msg = document.getElementById("wNlMsg");
+  if (!form || !email || !btn || !msg) return;
+
+  var sending = false;
+  var msgKey = "";   /* so the message re-translates when the visitor flips EN/NL */
+
+  /* Same language detection as the cookie-consent block: saved choice first,
+     then <html lang>, then the browser. */
+  function lang() {
+    try { var s = localStorage.getItem("wogoLang"); if (s === "nl" || s === "en") return s; } catch (e) {}
+    var h = (document.documentElement.lang || "").toLowerCase(); if (h.indexOf("nl") === 0) return "nl";
+    var n = (navigator.language || "").toLowerCase(); if (n.indexOf("nl") === 0) return "nl";
+    return "en";
+  }
+  function city() {
+    var segs = String(location.pathname || "").toLowerCase().split("/");
+    for (var i = 0; i < segs.length; i++) { if (CITIES.indexOf(segs[i]) !== -1) return segs[i]; }
+    return "";
+  }
+  function paint() {
+    var t = T[lang()] || T.en;
+    root.querySelectorAll("[data-nl]").forEach(function (el) {
+      var k = el.getAttribute("data-nl");
+      if (k === "btn" && sending) return;          /* don't clobber "Sending…" */
+      if (t[k] != null) el.innerHTML = t[k];
+    });
+    root.querySelectorAll("[data-nl-ph]").forEach(function (el) {
+      var k = el.getAttribute("data-nl-ph");
+      if (t[k] != null) el.setAttribute("placeholder", t[k]);
+    });
+    if (msgKey && t[msgKey] != null) msg.textContent = t[msgKey];
+  }
+  function say(kind, key) {
+    var t = T[lang()] || T.en;
+    msgKey = key;
+    msg.textContent = t[key] || "";
+    msg.className = "w-nl-msg " + kind;
+    msg.hidden = false;
+  }
+  function busy(on) {
+    var t = T[lang()] || T.en;
+    sending = on;
+    btn.disabled = on;
+    btn.textContent = on ? t.busy : t.btn;
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (sending) return;
+    var addr = email.value.trim();
+    if (!EMAIL_RE.test(addr)) {
+      email.setAttribute("aria-invalid", "true");
+      say("err", "e400");
+      try { email.focus(); } catch (err) {}
+      return;
+    }
+    email.setAttribute("aria-invalid", "false");
+    msg.hidden = true; msgKey = "";
+    busy(true);
+    /* locale = the language the page is being READ in right now. */
+    var locale = document.documentElement.lang === "nl" ? "nl" : "en";
+    fetch(API + "/api/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: addr,
+        first_name: first ? first.value.trim() : "",
+        locale: locale,
+        city: city(),
+        source: "site_footer",
+        website: hp ? hp.value : ""        /* honeypot — must be empty */
+      })
+    }).then(function (res) {
+      if (res.ok) {
+        form.reset();
+        say("ok", "ok");
+        if (window.wogoTrack) window.wogoTrack("sign_up", { method: "newsletter" });
+      } else if (res.status === 400) { say("err", "e400"); }
+      else if (res.status === 429) { say("err", "e429"); }
+      else { say("err", "enet"); }
+      busy(false);
+    }).catch(function () {
+      say("err", "enet");
+      busy(false);
+    });
+  });
+
+  paint();
+  /* Repaint when the site's language switcher fires, and when another tab switches. */
+  document.addEventListener("wogo:langchange", paint);
+  window.addEventListener("storage", function (e) { if (e.key === "wogoLang") paint(); });
+})();
+</script>
 <!-- ===== /WOGO SHARED FOOTER v4 ===== -->
 
 <!-- Sticky mobile bottom CTA — standalone mode only; the JS only ever shows it when
@@ -1580,8 +1771,7 @@ var WOGO_REVIEWS = [
 <!-- ============================================================================
      ▼▼▼  WOGO COOKIE CONSENT v1  —  BEGIN  (copy from here)  ▼▼▼
      Self-contained: CSS + HTML + JS, no library, no external requests, no images.
-     Paste IDENTICALLY on every page just before 
-</body>. Any edit here must be
+     Paste IDENTICALLY on every page just before </body>. Any edit here must be
      re-applied identically to every page.
      ============================================================================ -->
 <style>
@@ -2034,6 +2224,174 @@ var WOGO_REVIEWS = [
 </script>
 <!-- ============================================================================
      ▲▲▲  WOGO COOKIE CONSENT v1  —  END  (copy to here)  ▲▲▲
+     ============================================================================ -->
+
+<!-- WOGO_PAGE — this page lists several routes, so it reports a view_item_list (PAGE-EDIT).
+     Mirrors backend/migrations: route id, display name and price_cents. -->
+<script>window.WOGO_PAGE = {"list_id": "home_routes", "list_name": "Homepage route chooser"};</script>
+<!-- /WOGO_PAGE -->
+<!-- ============================================================================
+     ▼▼▼  WOGO ANALYTICS v1  —  BEGIN  (copy from here)  ▼▼▼
+     Consent-gated GA4 (Google Consent Mode v2) + Meta Pixel. Self-contained:
+     no library, no build step. Paste IDENTICALLY on every page, ALWAYS AFTER the
+     WOGO COOKIE CONSENT block — it needs window.wogoOnConsent, which that block
+     defines. Nothing here loads or sends anything until the visitor consents.
+
+     Pages talk to it through ONE function:  window.wogoTrack(name, params)
+     It buffers (never sends) until consent, then flushes. See ANALYTICS.md.
+
+     NOTE on the name: each page's own foot script declares a LOCAL
+     function wogoTrack(action, label) (the old postMessage → Wix host tracker).
+     Inside those scripts the local one wins, so always call this one as
+     window.wogoTrack(...) — never bare wogoTrack(...).
+     ============================================================================ -->
+<script>
+(function () {
+  "use strict";
+
+  /* ── THE ONE LINE TO CHANGE ───────────────────────────────────────────────
+     Two GA4 properties came over from the Wix era. Events are sent to BOTH
+     until the owner picks one; then delete the other ID from this array.
+     Nothing else in the codebase needs editing. */
+  var GA_IDS = ["G-QLXFFEK69D", "G-45QEXJY544"];
+  var META_PIXEL_ID = "652971109400692";
+
+  var gaLoaded = false, metaLoaded = false, buffer = [], MAX_BUFFER = 20;
+
+  /* GA4 event -> Meta standard event.
+     `purchase` is deliberately ABSENT: the booking-confirmation page fires Meta's
+     own Purchase with eventID = booking id, so the server-side CAPI copy can
+     dedupe it. Firing a second one here would double-count every booking. */
+  var META = {
+    view_item: "ViewContent",
+    begin_checkout: "InitiateCheckout",
+    sign_up: "CompleteRegistration",
+    generate_lead: "Lead"
+  };
+
+  function gtag() { window.dataLayer.push(arguments); }
+
+  function consentFlags(c) {
+    c = c || {};
+    return {
+      analytics_storage: c.analytics ? "granted" : "denied",
+      ad_storage: c.marketing ? "granted" : "denied",
+      ad_user_data: c.marketing ? "granted" : "denied",
+      ad_personalization: c.marketing ? "granted" : "denied",
+      functionality_storage: c.functional ? "granted" : "denied",
+      personalization_storage: c.functional ? "granted" : "denied"
+    };
+  }
+
+  function loadGA(c) {
+    if (gaLoaded) return;                  /* guard: wogoOnConsent fires on every change */
+    gaLoaded = true;
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = gtag;
+    /* Consent Mode v2: everything denied first, then granted per the visitor's choice. */
+    gtag("consent", "default", {
+      ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied",
+      analytics_storage: "denied", functionality_storage: "denied",
+      personalization_storage: "denied", security_storage: "granted"
+    });
+    gtag("consent", "update", consentFlags(c));
+    gtag("js", new Date());
+    /* One config per property. gtag('event', …) then fans out to all of them
+       automatically — events are NEVER sent twice by hand. */
+    for (var i = 0; i < GA_IDS.length; i++) {
+      gtag("config", GA_IDS[i], { send_page_view: true });
+    }
+    var s = document.createElement("script");
+    s.async = true;
+    s.src = "https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(GA_IDS[0]);
+    document.head.appendChild(s);
+  }
+
+  function loadMeta() {
+    if (metaLoaded) return;
+    metaLoaded = true;
+    if (!window.fbq) {
+      !function (f, b, e, v, n, t, s) {
+        if (f.fbq) return; n = f.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments) };
+        if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = "2.0"; n.queue = [];
+        t = b.createElement(e); t.async = !0; t.src = v;
+        s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t, s);
+      }(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
+      window.fbq("init", META_PIXEL_ID);
+    }
+    window.fbq("track", "PageView");
+  }
+
+  /* GA4 ecommerce params -> the shape Meta expects. */
+  function metaParams(p) {
+    var out = {}, ids = [], n = 0, i;
+    if (p.items && p.items.length) {
+      for (i = 0; i < p.items.length; i++) {
+        if (p.items[i].item_id) ids.push(p.items[i].item_id);
+        n += Number(p.items[i].quantity || 1);
+      }
+    }
+    if (ids.length) { out.content_ids = ids; out.content_type = "product"; }
+    if (n) out.num_items = n;
+    if (p.value != null) out.value = p.value;
+    if (p.currency) out.currency = p.currency;
+    return out;
+  }
+
+  function send(name, p) {
+    if (gaLoaded && window.gtag) { try { gtag("event", name, p); } catch (e) {} }
+    if (metaLoaded && window.fbq && META[name]) {
+      try { window.fbq("track", META[name], metaParams(p)); } catch (e) {}
+    }
+  }
+
+  /* The ONLY entry point pages use. No-ops (buffers) until there is consent, so
+     a page can call it freely without knowing anything about consent state. */
+  window.wogoTrack = function (name, params) {
+    if (!name) return;
+    var p = params || {};
+    if (!gaLoaded && !metaLoaded) {
+      if (buffer.length < MAX_BUFFER) buffer.push([name, p]);
+      return;
+    }
+    send(name, p);
+  };
+
+  function flush() {
+    var b = buffer; buffer = [];
+    for (var i = 0; i < b.length; i++) send(b[i][0], b[i][1]);
+  }
+
+  function onConsent(c) {
+    c = c || {};
+    /* GA4 loads once analytics OR marketing is granted; the Consent Mode flags
+       above decide what it is then allowed to store. */
+    if (c.analytics || c.marketing) {
+      if (!gaLoaded) loadGA(c);
+      else if (window.gtag) gtag("consent", "update", consentFlags(c));
+    }
+    if (c.marketing) loadMeta();
+    if ((gaLoaded || metaLoaded) && buffer.length) flush();
+  }
+  if (window.wogoOnConsent) window.wogoOnConsent(onConsent);
+  else onConsent(window.wogoConsent);
+
+  /* ---- Automatic product events -------------------------------------------
+     Driven by the one-line window.WOGO_PAGE just above this block (PAGE-EDIT).
+     Route + booking pages send view_item; multi-route hubs send view_item_list. */
+  var P = window.WOGO_PAGE;
+  if (P && P.route_id) {
+    var price = (P.price_cents || 0) / 100;
+    var item = { item_id: P.route_id, item_name: P.route_name || P.route_id, price: price, quantity: 1 };
+    if (P.city) item.item_category = P.city;
+    window.wogoTrack("view_item", { currency: P.currency || "EUR", value: price, items: [item] });
+  } else if (P && P.list_id) {
+    window.wogoTrack("view_item_list", { item_list_id: P.list_id, item_list_name: P.list_name || P.list_id });
+  }
+})();
+</script>
+<!-- ============================================================================
+     ▲▲▲  WOGO ANALYTICS v1  —  END  (copy to here)  ▲▲▲
      ============================================================================ -->
 
 
