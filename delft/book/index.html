@@ -862,12 +862,15 @@
     });
     if (msgKey && t[msgKey] != null) msg.textContent = t[msgKey];
   }
+  /* Reveal the live region BEFORE writing into it: a hidden element is outside
+     the accessibility tree, so text set while it is hidden is not announced. */
   function say(kind, key) {
     var t = T[lang()] || T.en;
     msgKey = key;
-    msg.textContent = t[key] || "";
     msg.className = "w-nl-msg " + kind;
     msg.hidden = false;
+    var paint1 = function () { msg.textContent = t[key] || ""; };
+    if (window.requestAnimationFrame) window.requestAnimationFrame(paint1); else paint1();
   }
   function busy(on) {
     var t = T[lang()] || T.en;
