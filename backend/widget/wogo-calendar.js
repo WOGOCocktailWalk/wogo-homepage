@@ -17,6 +17,45 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
 (function () {
   "use strict";
 
+  /* ---- UTM / source capture (BUILD §19 Marketing pass, migrations/0027) --
+     The site's shared footer snippet (every page, see amsterdam/index.html
+     and the /book pages themselves) reads utm_source/utm_medium/
+     utm_campaign/utm_content/fbclid/gclid/msclkid off THIS page's own URL
+     (falling back to document.referrer's query string) into a page-global
+     `window.__wogoCarry` object, then rewrites every outbound link
+     (including the one to a /book/ page) to carry those params forward —
+     it is NOT sessionStorage/localStorage, just a same-page-load global
+     re-derived on every page. By the time this widget mounts on a /book/
+     page, the SAME snippet has already run on THIS page too, so
+     `window.__wogoCarry` (when present) is this visit's own first-touch
+     params. Falls back to parsing this page's own location.search directly
+     — belt-and-suspenders for a book page reached without that shared
+     footer script (e.g. a future standalone embed). Capped to
+     UTM_FIELD_MAX_LENGTH (100, src/config.js) — anything longer is dropped
+     here rather than rejected server-side, so a malformed/huge tracking
+     param can never block a real booking. */
+  function captureUtm() {
+    const MAX = 100;
+    const clip = (v) => (v && String(v).length <= MAX ? String(v) : null);
+    const out = { utm_source: null, utm_medium: null, utm_campaign: null, utm_content: null };
+    try {
+      const carry = (typeof window !== "undefined" && window.__wogoCarry) || null;
+      const sp = new URLSearchParams((typeof window !== "undefined" && window.location.search) || "");
+      ["utm_source", "utm_medium", "utm_campaign", "utm_content"].forEach((k) => {
+        const v = (carry && carry[k]) || sp.get(k);
+        out[k] = clip(v);
+      });
+    } catch (e) { /* tracking must never block a booking */ }
+    try {
+      out.referrer = clip(typeof document !== "undefined" ? document.referrer : null);
+      out.landing_path = clip(typeof window !== "undefined" ? window.location.pathname : null);
+    } catch (e) {
+      out.referrer = null;
+      out.landing_path = null;
+    }
+    return out;
+  }
+
   /* ---- Localised strings (mirrors the site's data-i18n phrasing) ---------- */
   const STRINGS = {
     en: {
@@ -810,6 +849,10 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
         locale: currentLang(this.mount, this.lang), marketing_opt_in: !!this.optIn.checked,
       };
       if (giftCode) payload.gift_code = giftCode;
+      // UTM / source capture (BUILD §19 Marketing pass) — every field is
+      // optional server-side; a booking with none of them is simply
+      // "Direct / unknown" in the dashboard's Sales-by-source breakdown.
+      Object.assign(payload, captureUtm());
       try {
         const res = await this._fetch(`${this.api}/api/book`, {
           method: "POST",

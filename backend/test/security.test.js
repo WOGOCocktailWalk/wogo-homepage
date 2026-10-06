@@ -74,7 +74,9 @@ const schemaSql =
   '\n' +
   readFileSync(path.join(__dirname, '../migrations/0022_bar_locale.sql'), 'utf8') +
   '\n' +
-  readFileSync(path.join(__dirname, '../migrations/0025_admin_users.sql'), 'utf8');
+  readFileSync(path.join(__dirname, '../migrations/0025_admin_users.sql'), 'utf8') +
+  '\n' +
+  readFileSync(path.join(__dirname, '../migrations/0027_booking_utm.sql'), 'utf8');
 
 // A near-future date that's always inside the 90-day booking horizon no
 // matter when this suite runs (the seeded route is open every weekday) —

@@ -6,6 +6,7 @@ import * as db from './db.js';
 import {
   toCsv, aggregateCustomers, computeLoginLockout, nowSqlite, sqliteMinutesAgo, sqliteMinutesFromNow,
   validateNotes, isValidCurrencyCode, isValidIanaTimeZone, buildBookingAnalytics, addDaysToDateStr,
+  buildHighlightsSales, computePctDelta, pageViewsByCity,
 } from './logic.js';
 import {
   LOGIN_FAIL_THRESHOLD,
@@ -43,8 +44,15 @@ import { ensureWelcomePromotionCode } from './stripe.js';
 import { importSubscribers, handleConfirmedBookingOptIn } from './subscribers.js';
 import { sendWithRetry } from './email_retry.js';
 import { renderAdminLoginLink } from './emails.js';
-import { getTrafficSummary, isGa4Configured, CACHE_TTL_SECONDS as GA4_CACHE_TTL_SECONDS } from './ga4.js';
+import {
+  getTrafficSummary, isGa4Configured, CACHE_TTL_SECONDS as GA4_CACHE_TTL_SECONDS,
+  getRealtimeSummary, REALTIME_CACHE_TTL_SECONDS,
+  getHighlightsTraffic, getBehaviorSummary, getMarketingTraffic,
+} from './ga4.js';
 import { sendReviewRequestForBooking } from './reviews.js';
+import { posterUrlFor, EMAIL_SENDER } from './config.js';
+import { upsertTransactionalTemplate } from './brevo.js';
+import { buildReferenceTemplateSet } from './emails.js';
 
 // ---------------------------------------------------------------------------
 // Admin mutation audit trail (owner audit item #8, migrations/0007). Called
@@ -225,6 +233,10 @@ export const ROUTE_ROLES = {
   'GET /admin/api/analytics': 'viewer',
   'GET /admin/api/analytics/kpi': 'viewer',
   'GET /admin/api/analytics/traffic': 'viewer',
+  'GET /admin/api/analytics/highlights': 'viewer',
+  'GET /admin/api/analytics/realtime': 'viewer',
+  'GET /admin/api/analytics/behavior': 'viewer',
+  'GET /admin/api/analytics/marketing': 'viewer',
 
   'GET /admin/api/participants-per-hour': 'staff',
   'GET /admin/api/routes/:id/bars': 'staff',
@@ -257,6 +269,7 @@ export const ROUTE_ROLES = {
   'GET /admin/api/failed-emails': 'owner',
   'GET /admin/api/health': 'owner',
   'POST /admin/api/brevo/setup': 'owner',
+  'POST /admin/api/brevo/push-reference-templates': 'owner',
   'POST /admin/api/stripe/ensure-welcome-code': 'owner',
   'GET /admin/api/subscribers.csv': 'owner',
   'POST /admin/api/subscribers/import': 'owner',
@@ -1410,6 +1423,51 @@ export async function handleBrevoSetup(request, env) {
 }
 
 /**
+ * POST /admin/api/brevo/push-reference-templates (owner only, BUILD §19's
+ * Brevo reference-copy pass) — renders every transactional email this
+ * codebase can send (src/emails.js:buildReferenceTemplateSet, realistic
+ * sample data) and idempotently creates/updates one INACTIVE
+ * "[REFERENCE] ..." template per email in the Brevo account, via
+ * brevo.js:upsertTransactionalTemplate (lookup-by-name, PUT if it already
+ * exists, POST if not). Purely a reviewable COPY inside Brevo's own UI —
+ * editing a pushed template there changes nothing about what WOGO actually
+ * sends (every real send still goes through sendTransactional's owned-HTML
+ * path, never a Brevo template id). Safe to re-run any time; re-running
+ * after an emails.js copy change updates the existing reference templates
+ * in place rather than piling up duplicates.
+ *
+ * A per-template Brevo failure is collected and reported rather than
+ * aborting the whole run — one bad template (a transient Brevo error, a
+ * rate limit) shouldn't block the other 20 from being pushed.
+ */
+export async function handleBrevoPushReferenceTemplates(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  if (!env.BREVO_API_KEY) return errorJson('bad_request', 'BREVO_API_KEY is not configured', 400);
+
+  const templates = buildReferenceTemplateSet();
+  const results = [];
+  for (const tpl of templates) {
+    try {
+      const result = await upsertTransactionalTemplate(env, {
+        templateName: tpl.name,
+        subject: tpl.subject,
+        sender: EMAIL_SENDER,
+        htmlContent: tpl.html,
+        isActive: false,
+      });
+      results.push({ name: tpl.name, id: result.id, created: result.created });
+    } catch (err) {
+      results.push({ name: tpl.name, error: String(err && err.message ? err.message : err) });
+    }
+  }
+
+  const pushed = results.filter((r) => !r.error).length;
+  const failed = results.filter((r) => r.error).length;
+  await audit(env, request, 'brevo.push_reference_templates', null, null, { pushed, failed });
+  return json({ pushed, failed, templates: results });
+}
+
+/**
  * POST /admin/api/stripe/ensure-welcome-code — idempotently creates the
  * WELCOME10 Stripe Promotion Code (10% off, see src/stripe.js's doc comment
  * on the "once per customer" approximation it actually applies). Stripe's own
@@ -1733,4 +1791,241 @@ export async function handleAnalyticsTraffic(request, env) {
     }
   }
   return json(data);
+}
+
+/** Shared settings-table cache wrapper for every GA4-backed endpoint below —
+ * same read-then-maybe-fetch-then-maybe-write shape as handleAnalyticsTraffic
+ * above, factored out so Realtime/Highlights/Behavior/Marketing don't each
+ * hand-roll the same try/catch-and-fall-through. `fetcher()` is only called
+ * on a cache miss/expiry/read-failure; its result is cached only when
+ * `.configured` is true (an unconfigured response is cheap enough — and
+ * changes rarely enough on its own — that caching it would just risk
+ * serving a stale "not configured" after the owner DOES connect GA4).
+ */
+async function cachedGa4(env, cacheKey, ttlSeconds, fetcher) {
+  try {
+    const cachedRaw = await db.getSetting(env.DB, cacheKey);
+    if (cachedRaw) {
+      const cached = JSON.parse(cachedRaw);
+      const ageSeconds = Math.floor(Date.now() / 1000) - cached.ts;
+      if (ageSeconds >= 0 && ageSeconds < ttlSeconds) return cached.data;
+    }
+  } catch (err) {
+    console.error('ga4_cache_read_failed', err); // fall through to a fresh fetch
+  }
+  const data = await fetcher();
+  if (data.configured) {
+    try {
+      await db.setSetting(env.DB, cacheKey, JSON.stringify({ ts: Math.floor(Date.now() / 1000), data }));
+    } catch (err) {
+      console.error('ga4_cache_write_failed', err); // the response is still correct, just not cached
+    }
+  }
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Highlights (BUILD §19.4's "Highlights" page, viewer+): the Wix-style "Key
+// stats" grid (current + previous period in one call so the dashboard
+// computes deltas/sparklines client-side) and "Track your sales" (top
+// selling items, sales by source, top paying customers) — the three
+// explicitly-not-built-yet modules from the earlier Analytics pass.
+// ---------------------------------------------------------------------------
+
+/** Same length immediately preceding [from, to] — e.g. [2026-02-08,
+ * 2026-02-21] (14 days) -> previous = [2026-01-25, 2026-02-07]. Used for
+ * EVERY %-vs-previous-period comparison on this page (sales totals, traffic
+ * totals, top-selling-items/sales-by-source deltas) so "previous period"
+ * means the same thing everywhere on Highlights. */
+function previousPeriod(from, to) {
+  const days = Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86400000) + 1;
+  const previousTo = addDaysToDateStr(from, -1);
+  const previousFrom = addDaysToDateStr(previousTo, -(days - 1));
+  return { previousFrom, previousTo };
+}
+
+/** Zero-fills a GA4 daily-metrics array (GA4 simply omits a day with zero
+ * sessions) against the full [from, to] window, so it lines up index-for-
+ * index with logic.js:buildHighlightsSales' already-zero-filled D1 series
+ * for a sparkline. */
+function zeroFillTrafficDaily(rows, from, to) {
+  const byDate = new Map((rows || []).map((r) => [r.date, r]));
+  const out = [];
+  // `d <= to` is a defensive bound, not load-bearing today (every caller
+  // already validates from <= to via parseAnalyticsRange/previousPeriod) —
+  // without it, a future bad range would spin this loop until the Worker's
+  // CPU-time limit kills the request instead of just returning wrong data.
+  for (let d = from; d <= to; d = addDaysToDateStr(d, 1)) {
+    out.push(byDate.get(d) || { date: d, sessions: 0, page_views: 0, unique_visitors: 0 });
+    if (d === to) break;
+  }
+  return out;
+}
+
+export async function handleAnalyticsHighlights(request, env) {
+  const url = new URL(request.url);
+  const range = parseAnalyticsRange(url);
+  if (!range) {
+    return errorJson('bad_request', `from and to (YYYY-MM-DD, from <= to, max ${ANALYTICS_MAX_RANGE_DAYS} days) are required`, 400);
+  }
+  const { previousFrom, previousTo } = previousPeriod(range.from, range.to);
+
+  // Highlights is deliberately SALE-date throughout (logic.js:
+  // buildHighlightsSales' doc comment) — matching §19.2's KPI endpoint and
+  // the fact that utm_source/GA4 sessions are both naturally dated by when
+  // the visit/purchase happened, not by some future walk date.
+  const [currentRows, previousRows, trafficRaw] = await Promise.all([
+    db.listBookingsForAnalyticsBySaleDate(env.DB, `${range.from} 00:00:00`, `${range.to} 23:59:59`),
+    db.listBookingsForAnalyticsBySaleDate(env.DB, `${previousFrom} 00:00:00`, `${previousTo} 23:59:59`),
+    isGa4Configured(env)
+      ? cachedGa4(
+          env,
+          `ga4_highlights:${range.from}:${range.to}`,
+          GA4_CACHE_TTL_SECONDS,
+          () => getHighlightsTraffic(env, range.from, range.to, previousFrom, previousTo)
+        )
+      : Promise.resolve({ configured: false }),
+  ]);
+
+  const sales = buildHighlightsSales(currentRows, range.from, range.to, { dateField: 'created_at' });
+  const previousSales = buildHighlightsSales(previousRows, previousFrom, previousTo, { dateField: 'created_at' });
+
+  // Top selling items / sales by source: match current <-> previous rows by
+  // key and attach a %-delta — a route/source with no previous-period rows
+  // at all still appears (computePctDelta(cur, 0) -> null, "new").
+  const previousByRoute = new Map(previousSales.by_route.map((r) => [r.route_id, r]));
+  const topSellingItems = sales.by_route.map((r) => ({
+    route_id: r.route_id,
+    route_name: r.route_name,
+    city: r.city,
+    poster_url: posterUrlFor({ id: r.route_id }),
+    revenue_cents: r.revenue_cents,
+    guests: r.guests,
+    orders: r.orders,
+    pct_delta: computePctDelta(r.revenue_cents, previousByRoute.has(r.route_id) ? previousByRoute.get(r.route_id).revenue_cents : 0),
+  }));
+
+  const previousBySource = new Map(previousSales.by_source.map((r) => [r.source, r]));
+  const salesBySource = sales.by_source.map((r) => ({
+    source: r.source,
+    revenue_cents: r.revenue_cents,
+    orders: r.orders,
+    pct_delta: computePctDelta(r.revenue_cents, previousBySource.has(r.source) ? previousBySource.get(r.source).revenue_cents : 0),
+  }));
+
+  const traffic = trafficRaw.configured
+    ? {
+        configured: true,
+        daily: zeroFillTrafficDaily(trafficRaw.daily, range.from, range.to),
+        previous_daily: zeroFillTrafficDaily(trafficRaw.previous_daily, previousFrom, previousTo),
+        totals: trafficRaw.totals,
+        previous_totals: trafficRaw.previous_totals,
+      }
+    : { configured: false };
+
+  return json({
+    from: range.from,
+    to: range.to,
+    previous_from: previousFrom,
+    previous_to: previousTo,
+    sales: { daily: sales.daily, totals: sales.totals },
+    previous_sales: { daily: previousSales.daily, totals: previousSales.totals },
+    traffic,
+    top_selling_items: topSellingItems,
+    sales_by_source: salesBySource,
+    top_paying_customers: sales.top_customers,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Real-time (BUILD §19.4's "Real-time" page, viewer+) — GA4 only, config-
+// gated like Traffic. Cached 30s (REALTIME_CACHE_TTL_SECONDS) — the
+// dashboard itself auto-refreshes every 60s while the page is open, so this
+// floor just stops a burst of near-simultaneous tabs/reloads from each
+// re-hitting GA4.
+// ---------------------------------------------------------------------------
+
+export async function handleAnalyticsRealtime(request, env) {
+  if (!isGa4Configured(env)) return json({ configured: false });
+  const data = await cachedGa4(env, 'ga4_realtime', REALTIME_CACHE_TTL_SECONDS, () => getRealtimeSummary(env));
+  return json(data);
+}
+
+// ---------------------------------------------------------------------------
+// Behavior (BUILD §19.4's "Behavior" page, viewer+) — GA4 top pages/
+// engagement/funnel/events, plus page-views-per-city (logic.js:pageViewsByCity
+// over the same top-pages rows GA4 already returned — no extra report).
+// ---------------------------------------------------------------------------
+
+export async function handleAnalyticsBehavior(request, env) {
+  const url = new URL(request.url);
+  const range = parseAnalyticsRange(url);
+  if (!range) {
+    return errorJson('bad_request', `from and to (YYYY-MM-DD, from <= to, max ${ANALYTICS_MAX_RANGE_DAYS} days) are required`, 400);
+  }
+  if (!isGa4Configured(env)) return json({ configured: false });
+
+  const data = await cachedGa4(
+    env,
+    `ga4_behavior:${range.from}:${range.to}`,
+    GA4_CACHE_TTL_SECONDS,
+    () => getBehaviorSummary(env, range.from, range.to)
+  );
+  if (!data.configured) return json(data);
+  return json({ ...data, by_city: pageViewsByCity(data.by_page) });
+}
+
+// ---------------------------------------------------------------------------
+// Marketing (BUILD §19.4's "Marketing" page, viewer+) — GA4 sessions/
+// purchases/revenue by source×medium and by campaign (top 15), PLUS D1:
+// subscriber growth in-period + lifetime totals by source, discount-code
+// usage in-period, and gift cards sold/redeemed in-period.
+// ---------------------------------------------------------------------------
+
+/** Zero-fills db.js:subscribersGrowthByDay's sparse rows against [from,to] —
+ * same reasoning as zeroFillTrafficDaily above, just for the subscribers
+ * growth chart instead of GA4 traffic. */
+function zeroFillSubscriberGrowth(rows, from, to) {
+  const byDate = new Map((rows || []).map((r) => [r.date, r.n]));
+  const out = [];
+  for (let d = from; d <= to; d = addDaysToDateStr(d, 1)) {
+    out.push({ date: d, new_subscribers: byDate.get(d) || 0 });
+    if (d === to) break;
+  }
+  return out;
+}
+
+export async function handleAnalyticsMarketing(request, env) {
+  const url = new URL(request.url);
+  const range = parseAnalyticsRange(url);
+  if (!range) {
+    return errorJson('bad_request', `from and to (YYYY-MM-DD, from <= to, max ${ANALYTICS_MAX_RANGE_DAYS} days) are required`, 400);
+  }
+  const fromDt = `${range.from} 00:00:00`;
+  const toDt = `${range.to} 23:59:59`;
+
+  const [walkRows, subscriberGrowth, subscribersBySource, giftSales, giftRedeemedCents, traffic] = await Promise.all([
+    db.listBookingsForAnalyticsByWalkDate(env.DB, range.from, range.to),
+    db.subscribersGrowthByDay(env.DB, fromDt, toDt),
+    db.countSubscribersBySource(env.DB),
+    db.giftCardSalesSummary(env.DB, fromDt, toDt),
+    db.giftCardRedemptionsSummary(env.DB, fromDt, toDt),
+    isGa4Configured(env)
+      ? cachedGa4(env, `ga4_marketing:${range.from}:${range.to}`, GA4_CACHE_TTL_SECONDS, () => getMarketingTraffic(env, range.from, range.to))
+      : Promise.resolve({ configured: false }),
+  ]);
+
+  const walkAnalytics = buildBookingAnalytics(walkRows, { group: 'day', dateField: 'date' });
+
+  return json({
+    from: range.from,
+    to: range.to,
+    traffic,
+    subscribers: {
+      growth: zeroFillSubscriberGrowth(subscriberGrowth, range.from, range.to),
+      by_source: subscribersBySource,
+    },
+    discount_usage: walkAnalytics.discount_usage,
+    gift_cards: { sold_count: giftSales.sold_count, sold_value_cents: giftSales.sold_value_cents, redeemed_value_cents: giftRedeemedCents },
+  });
 }

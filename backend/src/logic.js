@@ -208,6 +208,38 @@ export function validateNotes(value) {
   return { ok: true, notes: trimmed === '' ? null : trimmed };
 }
 
+/**
+ * Validates + normalizes the optional UTM/source-tracking fields a booking
+ * can carry (migrations/0027, BUILD §19 Marketing pass): `utm_source`,
+ * `utm_medium`, `utm_campaign`, `utm_content`, `referrer`, `landing_path`.
+ * Every field is optional and independent (a guest can arrive with a source
+ * but no campaign, etc.). Each present field must be a plain string of at
+ * most UTM_FIELD_MAX_LENGTH characters after trimming; blank/whitespace-only
+ * normalizes to `null` rather than an empty string, so "Sales by source"
+ * never has to special-case `''` alongside `null`.
+ *
+ * Returns { ok: true, utm: {utm_source, utm_medium, utm_campaign,
+ * utm_content, referrer, landing_path} } (every key present, `null` where
+ * absent) or { ok: false, message }.
+ */
+export const UTM_FIELD_MAX_LENGTH = 100;
+
+export function validateUtmFields(body) {
+  const FIELDS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'referrer', 'landing_path'];
+  const out = {};
+  for (const field of FIELDS) {
+    const value = body ? body[field] : undefined;
+    if (value === undefined || value === null || value === '') { out[field] = null; continue; }
+    if (typeof value !== 'string') return { ok: false, message: `${field} must be a string` };
+    const trimmed = value.trim();
+    if (trimmed.length > UTM_FIELD_MAX_LENGTH) {
+      return { ok: false, message: `${field} must be at most ${UTM_FIELD_MAX_LENGTH} characters` };
+    }
+    out[field] = trimmed === '' ? null : trimmed;
+  }
+  return { ok: true, utm: out };
+}
+
 // ---------------------------------------------------------------------------
 // 9.7 isHoldExpired
 // ---------------------------------------------------------------------------
@@ -950,6 +982,194 @@ export function buildBookingAnalytics(rows, opts = {}) {
     discount_usage: [...discountUsage.values()].sort((a, b) => b.uses - a.uses),
     totals: withAvgParty(totals),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Highlights (BUILD §19.4 Highlights pass) — the Wix-style "Key stats" grid
+// + "Track your sales" modules. A SEPARATE pure function from
+// buildBookingAnalytics (not a mode of it): Highlights needs a zero-filled
+// DAILY series (so a sparkline never has a gap), a DISTINCT-customer count
+// per day and per period (buildBookingAnalytics has no notion of this),
+// and per-route/per-UTM-source breakdowns shaped for a %-delta comparison
+// against a second (previous-period) call — different enough from the
+// Sales tab's by_route/by_city/etc. that forcing one function to do both
+// would mean a pile of Highlights-only fields on every Sales caller.
+// ---------------------------------------------------------------------------
+
+/** Grouping label for a booking with no utm_source at all — direct traffic,
+ * a manual/phone booking, or any booking made before migrations/0027
+ * existed. Exported so admin_api.js/db.js and this module's own tests never
+ * drift onto a different string. */
+export const DIRECT_SOURCE_LABEL = 'Direct / unknown';
+
+/**
+ * Orders ÷ sessions, as a plain 0..1+ ratio (the dashboard formats it as a
+ * percentage) — NOT a special "rate" type, just division with the one edge
+ * case that matters: zero sessions must read as 0%, never NaN/Infinity (a
+ * route with no GA4 connected, or a day with real D1 orders but no traffic
+ * data at all, must not show a broken number). `sessions` is treated as
+ * "not tracked" (returns 0) for null/undefined/NaN/<=0 alike.
+ */
+export function computeConversionRate(orders, sessions) {
+  const s = Number(sessions);
+  if (!(s > 0)) return 0;
+  return (Number(orders) || 0) / s;
+}
+
+/**
+ * Percent change from `previous` to `current`, as a plain number (e.g. 12.5
+ * means +12.5%, -8 means -8%) — the dashboard's green/red delta chips.
+ * `previous === 0`: `current === 0` too -> 0 (no change, nothing to report);
+ * `current > 0` -> `null` ("new this period", not a divide-by-zero
+ * infinity — a 0 -> 5 jump isn't meaningfully "+∞%" to an owner reading a
+ * dashboard).
+ */
+export function computePctDelta(current, previous) {
+  const cur = Number(current) || 0;
+  const prev = Number(previous) || 0;
+  if (prev === 0) return cur === 0 ? 0 : null;
+  return ((cur - prev) / prev) * 100;
+}
+
+function emptyHighlightsDay(date) {
+  return { date, orders: 0, guests: 0, revenue_cents: 0, customers: 0 };
+}
+
+/**
+ * Builds the Highlights endpoint's sales-side payload for ONE period
+ * [fromDate, toDate] (inclusive, both 'YYYY-MM-DD') from a set of CONFIRMED
+ * booking rows (same shape buildBookingAnalytics takes, PLUS `email` and
+ * `utm_source` — see admin_api.js:handleAnalyticsHighlights' SELECT).
+ * Call this twice (current period, previous period) — it has no notion of
+ * "previous" itself; the caller matches up `by_route`/`by_source` rows by
+ * key and `logic.js:computePctDelta`s them.
+ *
+ * `opts.dateField` — `'created_at'` (the default; SALE date) or `'date'`
+ * (WALK date). Highlights is deliberately SALE-date throughout, matching
+ * §19.2's KPI endpoint ("last 7 vs previous 7 judged by sale date — rolling
+ * sales velocity") and the fact that `utm_source`/GA4 sessions are both
+ * naturally dated by when the visit/purchase happened, not by some future
+ * walk date — pairing a January booking for a March walk against March's
+ * GA4 sessions (if bucketed by walk date instead) would silently misattribute
+ * both the conversion-rate denominator and the sales-by-source split.
+ *
+ * @returns {
+ *   daily: [{date, orders, guests, revenue_cents, customers}], one row per
+ *     calendar day in [fromDate, toDate] inclusive, ZERO-FILLED (never
+ *     skips a day with no bookings — a sparkline needs every x position).
+ *   totals: {orders, guests, revenue_cents, customers, avg_order_value_cents},
+ *     `customers` here is DISTINCT emails across the WHOLE period (not a
+ *     sum of the daily column, which would double-count a repeat guest).
+ *   by_route: [{route_id, route_name, city, revenue_cents, guests, orders}],
+ *     revenue-descending.
+ *   by_source: [{source, revenue_cents, orders}], revenue-descending —
+ *     `source` is `row.utm_source` or DIRECT_SOURCE_LABEL.
+ *   top_customers: [{email, name, city, total_cents, orders}], up to
+ *     `opts.topCustomersLimit` (default 10), revenue-descending — `name`/
+ *     `city` are that email's MOST RECENT booking's values (a guest who
+ *     once mistyped their name shows their latest, not their first).
+ * }
+ */
+export function buildHighlightsSales(rows, fromDate, toDate, opts = {}) {
+  const limit = opts.topCustomersLimit || 10;
+  const dateField = opts.dateField === 'date' ? 'date' : 'created_at';
+  const dailyMap = new Map();
+  for (let d = fromDate; d <= toDate; d = addDaysToDateStr(d, 1)) {
+    dailyMap.set(d, emptyHighlightsDay(d));
+    if (d === toDate) break; // addDaysToDateStr(toDate, 1) would run one day past toDate otherwise
+  }
+  const dayCustomers = new Map(); // date -> Set(email)
+  const periodCustomers = new Set();
+  const byRoute = new Map();
+  const bySource = new Map();
+  const byCustomer = new Map(); // email -> {email, name, city, total_cents, orders, last_date}
+
+  let totalOrders = 0, totalGuests = 0, totalRevenue = 0;
+
+  for (const row of rows || []) {
+    const day = String(row[dateField] || '').slice(0, 10);
+    const revenue = analyticsRevenueCents(row);
+    const email = row.email ? String(row.email).trim().toLowerCase() : null;
+
+    totalOrders += 1;
+    totalGuests += Number(row.party) || 0;
+    totalRevenue += revenue;
+
+    if (dailyMap.has(day)) {
+      const bucket = dailyMap.get(day);
+      bucket.orders += 1;
+      bucket.guests += Number(row.party) || 0;
+      bucket.revenue_cents += revenue;
+    }
+
+    if (email) {
+      periodCustomers.add(email);
+      if (!dayCustomers.has(day)) dayCustomers.set(day, new Set());
+      dayCustomers.get(day).add(email);
+
+      if (!byCustomer.has(email)) byCustomer.set(email, { email, name: row.name || '', city: row.city || '', total_cents: 0, orders: 0, last_date: '' });
+      const c = byCustomer.get(email);
+      c.total_cents += revenue;
+      c.orders += 1;
+      if (day >= c.last_date) { c.last_date = day; c.name = row.name || c.name; c.city = row.city || c.city; }
+    }
+
+    if (row.route_id) {
+      if (!byRoute.has(row.route_id)) byRoute.set(row.route_id, { route_id: row.route_id, route_name: row.route_name, city: row.city, revenue_cents: 0, guests: 0, orders: 0 });
+      const r = byRoute.get(row.route_id);
+      r.revenue_cents += revenue;
+      r.guests += Number(row.party) || 0;
+      r.orders += 1;
+    }
+
+    const source = row.utm_source || DIRECT_SOURCE_LABEL;
+    if (!bySource.has(source)) bySource.set(source, { source, revenue_cents: 0, orders: 0 });
+    const s = bySource.get(source);
+    s.revenue_cents += revenue;
+    s.orders += 1;
+  }
+
+  for (const [day, bucket] of dailyMap) {
+    bucket.customers = dayCustomers.has(day) ? dayCustomers.get(day).size : 0;
+  }
+
+  const daily = [...dailyMap.values()].sort((a, b) => a.date.localeCompare(b.date));
+
+  return {
+    daily,
+    totals: {
+      orders: totalOrders,
+      guests: totalGuests,
+      revenue_cents: totalRevenue,
+      customers: periodCustomers.size,
+      avg_order_value_cents: totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0,
+    },
+    by_route: [...byRoute.values()].sort((a, b) => b.revenue_cents - a.revenue_cents),
+    by_source: [...bySource.values()].sort((a, b) => b.revenue_cents - a.revenue_cents),
+    top_customers: [...byCustomer.values()]
+      .sort((a, b) => b.total_cents - a.total_cents)
+      .slice(0, limit)
+      .map(({ email, name, city, total_cents, orders }) => ({ email, name, city, total_cents, orders })),
+  };
+}
+
+/**
+ * Groups a GA4 `by_page` report's rows (`{page, views}`, page = a GA4
+ * `pagePath` like '/amsterdam/book/') into WOGO's named cities, by the
+ * page path's FIRST segment — `'/amsterdam/book/'` -> `'amsterdam'`. A path
+ * whose first segment isn't a known city (the homepage '/', '/faq/', a
+ * blog post, …) is dropped, not bucketed into a misleading catch-all — this
+ * is "page views per city", not "page views on every page".
+ */
+const KNOWN_CITIES = ['amsterdam', 'rotterdam', 'utrecht', 'groningen', 'delft', 'london'];
+
+export function pageViewsByCity(byPageRows) {
+  const totals = new Map(KNOWN_CITIES.map((c) => [c, 0]));
+  for (const row of byPageRows || []) {
+    const seg = String(row.page || '').split('/').filter(Boolean)[0];
+    if (seg && totals.has(seg)) totals.set(seg, totals.get(seg) + (Number(row.views) || 0));
+  }
+  return KNOWN_CITIES.map((city) => ({ city, views: totals.get(city) })).filter((r) => r.views > 0);
 }
 
 // ---------------------------------------------------------------------------

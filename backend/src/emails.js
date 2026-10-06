@@ -1514,4 +1514,83 @@ export function renderReviewRequest(booking, route) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Reference-copy fixtures (BUILD §19's Brevo reference-copy pass,
+// POST /admin/api/brevo/push-reference-templates). Realistic SAMPLE data —
+// never real guest/bar/booking rows — fed through the SAME render functions
+// above, so a reference template in Brevo is always byte-for-byte what a
+// real send would look like, never a hand-maintained second copy that can
+// drift from the real templates. Kept in THIS file (not admin_api.js/
+// brevo.js) because it's the one place that already knows every render
+// function's exact argument shape.
+// ---------------------------------------------------------------------------
+
+const REF_ROUTE = {
+  id: 'amsterdam', name: 'WOGO Amsterdam', city: 'Amsterdam',
+  price_cents: 3495, currency: 'EUR', map_url: `${SITE_URL}/maps/amsterdam.pdf`,
+};
+const REF_ROUTE_ROTTERDAM = { id: 'rotterdam-hidden-gems', name: 'Rotterdam Hidden Gems', city: 'Rotterdam', price_cents: 3495, currency: 'EUR' };
+
+const REF_BOOKING = {
+  id: 'b_ref_0001', route_id: REF_ROUTE.id, date: '2026-11-14', slot: '18:00', party: 4,
+  name: 'Sophie de Vries', email: 'sophie.devries@example.com', phone: '+31 6 12345678',
+  locale: 'en', notes: null, discount_code: null, discount_cents: 0, gift_applied_cents: 0, gift_code: null,
+};
+const REF_BOOKING_GIFT = { ...REF_BOOKING, id: 'b_ref_0002', locale: 'nl', gift_code: 'WOGO-7F3K-9QRT', gift_applied_cents: 2000 };
+
+const REF_BAR = { ord: 1, bar_name: 'Door 74', bar_email: 'reservations@example.com', arrival_time: '18:15', locale: 'nl' };
+const REF_BAR_EN = { ...REF_BAR, locale: 'en' };
+
+const REF_GIFT_CARD = {
+  code: 'WOGO-7F3K-9QRT', initial_cents: 6000, balance_cents: 6000, currency: 'EUR', locale: 'en',
+  buyer_name: 'Mark Jansen', buyer_email: 'mark.jansen@example.com',
+  recipient_name: 'Lotte Bakker', recipient_email: 'lotte.bakker@example.com',
+  message: 'Happy birthday! Thought this would be more fun than socks.',
+};
+const REF_GIFT_CARD_NL = { ...REF_GIFT_CARD, locale: 'nl', recipient_name: 'Lotte Bakker' };
+
+const REF_INQUIRY_CONTACT = { kind: 'contact', name: 'Emma Visser', email: 'emma.visser@example.com', phone: null, message: 'Hi, do you also run private walks for a hen party of 12?', locale: 'en' };
+
+const REF_SUBSCRIBER = { email: 'anna.smit@example.com', first_name: 'Anna', locale: 'en' };
+const REF_SUBSCRIBER_NL = { ...REF_SUBSCRIBER, locale: 'nl' };
+
+const REF_ADMIN_USER = { email: 'selin@wogoamsterdam.com', name: 'Selin', locale: 'nl' };
+
+/**
+ * Renders every transactional template with realistic sample data, named
+ * for Brevo as `"[REFERENCE] <name> (EN|NL) — copy only, editing here
+ * changes nothing"`. Returns `[{ name, subject, html }, ...]` — ready for
+ * `src/admin_api.js:handleBrevoPushReferenceTemplates` to upsert one by one
+ * via `brevo.js:upsertTransactionalTemplate`.
+ */
+export function buildReferenceTemplateSet() {
+  const name = (base, lang) => `[REFERENCE] ${base} (${lang}) — copy only, editing here changes nothing`;
+  const entries = [];
+  const push = (base, lang, rendered) => entries.push({ name: name(base, lang), subject: rendered.subject, html: rendered.html });
+
+  push('Guest confirmation', 'EN', renderGuestConfirmation(REF_BOOKING, REF_ROUTE));
+  push('Guest confirmation — with gift card', 'NL', renderGuestConfirmation(REF_BOOKING_GIFT, REF_ROUTE));
+  push('Owner notification', 'EN', renderOwnerNotification(REF_BOOKING, REF_ROUTE, { arrivals: [{ bar_name: REF_BAR.bar_name, arrival_time: REF_BAR.arrival_time }] }));
+  push('Bar notification', 'NL', renderBarNotification(REF_BAR, REF_BOOKING, REF_ROUTE));
+  push('Bar notification', 'EN', renderBarNotification(REF_BAR_EN, REF_BOOKING, REF_ROUTE));
+  push('Bar reschedule', 'NL', renderBarReschedule(REF_BAR, REF_BOOKING, REF_ROUTE, { previous: { date: '2026-11-12', arrival_time: '19:00' } }));
+  push('Bar cancellation', 'NL', renderBarCancellation(REF_BAR, REF_BOOKING, REF_ROUTE));
+  push('Guest reschedule', 'EN', renderGuestReschedule(REF_BOOKING, REF_ROUTE, { previous: { date: '2026-11-12', slot: '19:00' } }));
+  push('Guest cancellation', 'EN', renderGuestCancellation(REF_BOOKING, REF_ROUTE));
+  push('Gift card recipient', 'EN', renderGiftCardRecipient(REF_GIFT_CARD));
+  push('Gift card recipient', 'NL', renderGiftCardRecipient(REF_GIFT_CARD_NL));
+  push('Gift card buyer', 'EN', renderGiftCardBuyer(REF_GIFT_CARD));
+  push('Subscribe confirm', 'EN', renderSubscribeConfirm(REF_SUBSCRIBER, `${SITE_URL}/api/subscribe/confirm?token=reference-sample-token`));
+  push('Subscribe confirm', 'NL', renderSubscribeConfirm(REF_SUBSCRIBER_NL, `${SITE_URL}/api/subscribe/confirm?token=reference-sample-token`));
+  push('Welcome', 'EN', renderSubscribeWelcome(REF_SUBSCRIBER, { unsubscribeUrl: `${SITE_URL}/api/unsubscribe?token=reference-sample-token` }));
+  push('Welcome', 'NL', renderSubscribeWelcome(REF_SUBSCRIBER_NL, { unsubscribeUrl: `${SITE_URL}/api/unsubscribe?token=reference-sample-token` }));
+  push('Contact acknowledgement', 'EN', renderInquiryAutoAck(REF_INQUIRY_CONTACT));
+  push('Inquiry owner mail', 'EN', renderInquiryOwnerNotification(REF_INQUIRY_CONTACT));
+  push('Magic-link login', 'NL', renderAdminLoginLink(REF_ADMIN_USER, 'https://wogo-booking-backend.example.workers.dev/admin/login/magic?token=reference-sample-token'));
+  push('Review request', 'EN', renderReviewRequest(REF_BOOKING, REF_ROUTE_ROTTERDAM));
+  push('Review request', 'NL', renderReviewRequest({ ...REF_BOOKING, locale: 'nl' }, REF_ROUTE_ROTTERDAM));
+
+  return entries;
+}
+
 export { SENDER_NAME };

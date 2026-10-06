@@ -98,6 +98,10 @@ router.put('/admin/api/users/:id', adminApi.handleUpdateUser);
 router.get('/admin/api/analytics', adminApi.handleAnalytics);
 router.get('/admin/api/analytics/kpi', adminApi.handleAnalyticsKpi);
 router.get('/admin/api/analytics/traffic', adminApi.handleAnalyticsTraffic);
+router.get('/admin/api/analytics/highlights', adminApi.handleAnalyticsHighlights);
+router.get('/admin/api/analytics/realtime', adminApi.handleAnalyticsRealtime);
+router.get('/admin/api/analytics/behavior', adminApi.handleAnalyticsBehavior);
+router.get('/admin/api/analytics/marketing', adminApi.handleAnalyticsMarketing);
 router.get('/admin/api/bookings', adminApi.handleListBookings);
 router.get('/admin/api/bookings.csv', adminApi.handleExportCsv);
 router.get('/admin/api/bookings/:id', adminApi.handleGetBooking);
@@ -142,6 +146,7 @@ router.get('/admin/api/inquiries', adminApi.handleListInquiries);
 
 // -- Newsletter subscribers (migrations/0024, BUILD §17) ---------------------
 router.post('/admin/api/brevo/setup', adminApi.handleBrevoSetup);
+router.post('/admin/api/brevo/push-reference-templates', adminApi.handleBrevoPushReferenceTemplates);
 router.post('/admin/api/stripe/ensure-welcome-code', adminApi.handleEnsureWelcomeCode);
 router.get('/admin/api/subscribers', adminApi.handleListSubscribers);
 router.get('/admin/api/subscribers.csv', adminApi.handleSubscribersCsv);

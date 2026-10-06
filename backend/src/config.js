@@ -265,3 +265,13 @@ export const REVIEW_GOOGLE_URL = '';
 // covers "this year" + slack with room to spare; a real owner-facing report
 // never needs more in one call.
 export const ANALYTICS_MAX_RANGE_DAYS = 400;
+
+// --- UTM / source capture on bookings (migrations/0027, BUILD §19 Marketing
+// pass) ------------------------------------------------------------------
+// Captured client-side by the widget (window.__wogoCarry, falling back to
+// this page's own location.search) and POSTed as part of /api/book. The
+// length cap AND the "Direct / unknown" grouping label both live in
+// logic.js (UTM_FIELD_MAX_LENGTH / DIRECT_SOURCE_LABEL, next to the pure
+// validateUtmFields/buildHighlightsSales functions they bound) rather than
+// here, so the one pure module and its own constants can never drift apart
+// the way a cross-file duplicate could.
