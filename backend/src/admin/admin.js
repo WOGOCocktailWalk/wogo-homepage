@@ -1476,6 +1476,11 @@
     const currencyIn = currencySelect(r.currency);
     const timezoneIn = timezoneSelect(r.timezone);
     const activeIn = el("input", { type: "checkbox" }); activeIn.checked = !!r.active;
+    // migrations/0029 — per-route booking cutoff (minutes before a slot's
+    // start it stops being bookable). Mock routes seeded before this field
+    // existed have no value at all, so fall back to the same 60-minute
+    // default the column itself defaults to.
+    const cutoffIn = el("input", { type: "number", min: "0", max: "10080", step: "1", value: r.booking_cutoff_minutes ?? 60 });
 
     wrap.appendChild(el("div", { class: "form-grid" }, [
       field("Display name", nameIn, "wide"),
@@ -1485,6 +1490,7 @@
       field("Seats per departure", capIn),
       field("Max guests per booking", maxIn),
       field("Timezone (bar arrival times + booking calendar)", timezoneIn, "wide"),
+      field("Booking cutoff (minutes before start)", cutoffIn),
       scheduleWrap,
       field("Route map link — English (shown inside the confirmation email)", mapIn, "wide"),
       field("Route map link — Dutch (sent to guests who booked in Dutch; leave blank to use the English map)", mapNlIn, "wide")
@@ -1536,7 +1542,8 @@
               map_url_nl: mapNlIn.value.trim() || null,
               active: activeIn.checked ? 1 : 0,
               currency: currencyIn.value,
-              timezone: timezoneIn.value
+              timezone: timezoneIn.value,
+              booking_cutoff_minutes: Math.min(10080, Math.max(0, parseInt(cutoffIn.value, 10) || 0))
             };
             // Per-weekday seat count only has an editor in "Different times
             // per day" mode. Only include the field at all when there's

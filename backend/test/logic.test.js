@@ -958,6 +958,74 @@ describe('isSlotPastCutoff', () => {
 });
 
 // ---------------------------------------------------------------------------
+// isSlotPastCutoff — multi-day cutoffs (migrations/0029: per-route
+// routes.booking_cutoff_minutes). The predicate itself needed no code change
+// to support a cutoff longer than a day — it was always a real "slot start <
+// now + cutoff" instant comparison — these tests pin that down explicitly
+// for the 10h (Delft) and 24h (Rotterdam Route 3 Premium) real policy
+// values, including a day-boundary crossing and the Europe/Amsterdam
+// CEST->CET fall-back date, where "the same local clock time tomorrow" is
+// NOT 24h away in real elapsed time.
+// ---------------------------------------------------------------------------
+
+describe('isSlotPastCutoff — multi-day cutoffs (10h / 24h routes, day boundaries)', () => {
+  test('a 600-minute (10h) cutoff reaches past midnight into TOMORROW, unlike the 60-minute default', () => {
+    const now = new Date('2026-08-06T20:00:00.000Z'); // 22:00 CEST local, Thursday
+    // 06:00 Friday local is 8h away — inside a 10h cutoff...
+    assert.equal(isSlotPastCutoff('2026-08-07', '06:00', 'Europe/Amsterdam', 600, now), true);
+    // ...but the SAME slot is untouched by the original 60-minute default —
+    // proving the longer cutoff, not a code-path change, is what reaches
+    // into tomorrow.
+    assert.equal(isSlotPastCutoff('2026-08-07', '06:00', 'Europe/Amsterdam', 60, now), false);
+  });
+
+  test('a 600-minute (10h) cutoff still clears a slot 11h out on the next day', () => {
+    const now = new Date('2026-08-06T20:00:00.000Z'); // 22:00 CEST local
+    assert.equal(isSlotPastCutoff('2026-08-07', '09:00', 'Europe/Amsterdam', 600, now), false); // 11h away
+  });
+
+  test('a 1440-minute (24h) cutoff zeroes TOMORROW\'s same-clock-time slot (exactly on the boundary — not strictly less, so still bookable)', () => {
+    const now = new Date('2026-08-06T16:00:00.000Z'); // 18:00 CEST local
+    // Exactly 24h later, same local clock time: the boundary itself is NOT
+    // "strictly less than" the cutoff, so this stays bookable (same
+    // not-strictly-less convention as the existing same-day boundary test
+    // above).
+    assert.equal(isSlotPastCutoff('2026-08-07', '18:00', 'Europe/Amsterdam', 1440, now), false);
+    // One minute inside that boundary flips to rejected.
+    assert.equal(isSlotPastCutoff('2026-08-07', '17:59', 'Europe/Amsterdam', 1440, now), true);
+  });
+
+  test('a 1440-minute (24h) cutoff reaches TWO calendar days out when "now" is late in the day', () => {
+    const now = new Date('2026-08-06T22:30:00.000Z'); // 00:30 CEST local, already into Aug 7
+    // 23:00 local on Aug 7 (the day AFTER "today") is only ~22.5h away —
+    // still inside a 24h cutoff, even though it's two date-string days
+    // ahead of the UTC calendar date "now" falls on.
+    assert.equal(isSlotPastCutoff('2026-08-07', '23:00', 'Europe/Amsterdam', 1440, now), true);
+  });
+
+  test('DST fall-back (Europe/Amsterdam CEST->CET, 25 Oct 2026): a 24h cutoff is judged by REAL elapsed minutes, not naive calendar-day arithmetic', () => {
+    // Clocks fall back 03:00 CEST -> 02:00 CET at 2026-10-25T01:00:00Z, so
+    // this particular calendar day has 25 real hours, not 24. `now` is local
+    // midnight at the very start of that long day.
+    const now = new Date('2026-10-24T22:00:00.000Z'); // 2026-10-25 00:00:00 CEST local
+    // 23:00 local, SAME calendar date as `now` — exactly 1440 real minutes
+    // away (the long day's extra hour is still ahead of this slot) — the
+    // boundary itself, still bookable.
+    assert.equal(isSlotPastCutoff('2026-10-25', '23:00', 'Europe/Amsterdam', 1440, now), false);
+    // One minute inside that same boundary flips to rejected.
+    assert.equal(isSlotPastCutoff('2026-10-25', '22:59', 'Europe/Amsterdam', 1440, now), true);
+    // 00:00 local on 2026-10-26 — "the same clock time, one calendar day
+    // later" — LOOKS like exactly 24h away by naive date+clock arithmetic,
+    // but the fall-back's extra hour makes it actually 25h (1500 real
+    // minutes) away. A naive implementation that counted calendar days
+    // instead of real elapsed time would wrongly treat this as "past
+    // cutoff"; isSlotPastCutoff (real UTC instant math via
+    // zonedDateTimeToUtc) correctly leaves it bookable.
+    assert.equal(isSlotPastCutoff('2026-10-26', '00:00', 'Europe/Amsterdam', 1440, now), false);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // computeRateLimitRetryAfterSeconds (audit item 3 — 429 Retry-After math)
 // ---------------------------------------------------------------------------
 

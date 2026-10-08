@@ -75,13 +75,22 @@ export const META_PIXEL_ID = '652971109400692';
 export const DEFAULT_CAPACITY = 10;
 export const DEFAULT_MAX_PARTY = 6;
 
-// Same-day booking cutoff (audit item 1): a slot whose start time is already
-// within this many minutes — or has already passed — is no longer offered as
+// Booking cutoff (audit item 1): a slot whose start time is already within
+// this many minutes — or has already passed — is no longer offered as
 // bookable (GET /api/slots, GET /api/availability) and is rejected outright
 // by POST /api/book (409 slot_passed). Judged against the ROUTE's own
 // timezone via logic.js:isSlotPastCutoff, so a guest can't book a 17:00
 // Amsterdam slot at 16:30 local time, nor a same-day London slot inside its
 // own last hour.
+//
+// Since migrations/0029, this is only the FALLBACK — each route has its own
+// routes.booking_cutoff_minutes (NOT NULL DEFAULT 60, same number as here),
+// read as `route.booking_cutoff_minutes ?? SAME_DAY_CUTOFF_MINUTES`
+// everywhere this used to be read directly (src/db.js, src/guest_api.js).
+// The `??` only ever matters for a hand-built route object (a test fixture
+// predating 0029) — a real DB row is never NULL. A route with a longer
+// cutoff (e.g. 1440 for 24h) is no longer "same-day" at all — the name is
+// kept only because it's the original audit item's constant.
 export const SAME_DAY_CUTOFF_MINUTES = 60;
 
 export const HOLD_MINUTES = 15;

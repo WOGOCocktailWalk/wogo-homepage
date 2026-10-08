@@ -635,12 +635,20 @@ export async function handleCreateRoute(request, env) {
   } catch {
     return errorJson('bad_request', 'invalid JSON', 400);
   }
-  const { id, name, city, price_cents, capacity, max_party, open_days, slots, slot_capacity, weekday_capacity, map_url, map_url_nl, active, currency, timezone } = body || {};
+  const { id, name, city, price_cents, capacity, max_party, open_days, slots, slot_capacity, weekday_capacity, map_url, map_url_nl, active, currency, timezone, booking_cutoff_minutes } = body || {};
   if (!id || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(id)) {
     return errorJson('bad_request', 'id must be a lowercase-kebab slug', 400);
   }
   if (!name || !city || !Number.isInteger(price_cents)) {
     return errorJson('bad_request', 'name, city, price_cents are required', 400);
+  }
+  // migrations/0029: optional per-route booking cutoff — validated (not
+  // defaulted) when given, same convention as currency/timezone below;
+  // db.createRoute supplies the 60-minute default (mirrors the column's own
+  // SQL DEFAULT) when omitted.
+  if (booking_cutoff_minutes !== undefined) {
+    const cutoffCheck = validateBookingCutoffMinutes(booking_cutoff_minutes);
+    if (!cutoffCheck.ok) return errorJson('bad_request', cutoffCheck.message, 400);
   }
   const slotsResult = parseSlotsField(slots);
   if (!slotsResult.ok) return errorJson('bad_request', slotsResult.message, 400);
@@ -706,8 +714,9 @@ export async function handleCreateRoute(request, env) {
     active: active === undefined ? 1 : (active ? 1 : 0),
     currency,
     timezone,
+    booking_cutoff_minutes,
   });
-  await audit(env, request, 'route.create', 'route', route.id, { name, city, price_cents, currency: route.currency, timezone: route.timezone });
+  await audit(env, request, 'route.create', 'route', route.id, { name, city, price_cents, currency: route.currency, timezone: route.timezone, booking_cutoff_minutes: route.booking_cutoff_minutes });
   return json({ route }, 201);
 }
 
@@ -825,6 +834,20 @@ function validateWeekdayCapacityMap(value) {
   return { ok: true, raw };
 }
 
+/**
+ * Validates routes.booking_cutoff_minutes (migrations/0029) — minutes before
+ * a slot's start it stops being bookable, per route. Must be a non-negative
+ * integer, capped at 10080 (exactly 7 days — generous enough for any real
+ * policy while still bounded, rather than accepting an arbitrary number that
+ * could put a route's ENTIRE booking horizon out of reach).
+ */
+function validateBookingCutoffMinutes(value) {
+  if (!Number.isInteger(value) || value < 0 || value > 10080) {
+    return { ok: false, message: 'booking_cutoff_minutes must be an integer between 0 and 10080' };
+  }
+  return { ok: true };
+}
+
 export async function handleUpdateRoute(request, env, params) {
   if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
   let body;
@@ -905,6 +928,13 @@ export async function handleUpdateRoute(request, env, params) {
       return errorJson('bad_request', 'timezone must be a valid IANA zone (e.g. Europe/London)', 400);
     }
     patch.timezone = body.timezone;
+  }
+  // migrations/0029: per-route booking cutoff — validated the same way as at
+  // creation; a route not touching this field is entirely unaffected.
+  if ('booking_cutoff_minutes' in body) {
+    const cutoffCheck = validateBookingCutoffMinutes(body.booking_cutoff_minutes);
+    if (!cutoffCheck.ok) return errorJson('bad_request', cutoffCheck.message, 400);
+    patch.booking_cutoff_minutes = body.booking_cutoff_minutes;
   }
 
   const route = await db.updateRoute(env.DB, params.id, patch);

@@ -401,11 +401,16 @@ export function todayInTimezone(timeZone = DEFAULT_TIMEZONE, nowDate = new Date(
 /**
  * True when a route-local slot start (`date` + "HH:MM" `slot`, in `timeZone`)
  * is already less than `cutoffMinutes` away from `nowDate` — i.e. it has
- * already started, or starts too soon to realistically book (SAME_DAY_CUTOFF_MINUTES,
- * config.js). Naturally false for any FUTURE date, whose slot start is always
- * far more than a few hours away — callers don't need a separate "is this
- * today?" branch first; the same-day cutoff falls straight out of this one
- * comparison against the real UTC instant (zonedDateTimeToUtc, above).
+ * already started, or starts too soon to realistically book. `cutoffMinutes`
+ * is per-route since migrations/0029 (routes.booking_cutoff_minutes),
+ * falling back to the old global SAME_DAY_CUTOFF_MINUTES (config.js) when a
+ * caller passes none. This is a plain instant comparison against the real
+ * UTC slot start (zonedDateTimeToUtc, above) — callers don't need a separate
+ * "is this today?" branch first, the cutoff falls straight out of it. For a
+ * cutoff of a day or less it's naturally false for any future calendar date
+ * (the historical "same-day cutoff" case); for a LONGER cutoff (e.g. a 24h+
+ * route) it correctly reaches into however many future dates actually fall
+ * inside the window too — there is no "today only" assumption baked in here.
  */
 export function isSlotPastCutoff(date, slot, timeZone, cutoffMinutes, nowDate = new Date()) {
   const slotStartUtc = zonedDateTimeToUtc(date, slot, timeZone || DEFAULT_TIMEZONE);

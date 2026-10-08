@@ -47,7 +47,10 @@
     // untouched. See also the 'slot_capacity_override' date override below, which
     // caps 20:00 further still for one specific Saturday.
     { id: "rotterdam-hidden-gems", name: "Rotterdam Route 2", city: "Rotterdam", price_cents: 2995, capacity: 10, max_party: 6, open_days: "[4,5,6]", slots: '["18:00","18:30","19:00","19:30","20:00"]', slot_capacity: '{"20:00":6}', map_url: "https://maps.wogo/rtm-hidden", active: 1, created_at: "2024-11-01" },
-    { id: "rotterdam-premium-gin", name: "Rotterdam Route 3 Premium", city: "Rotterdam", price_cents: 3495, capacity: 8, max_party: 6, open_days: "[2,3,4,5,6]", slots: '["18:00","19:00","20:00"]', map_url: null, active: 0, created_at: "2025-02-01" }
+    // migrations/0029: this is the real route with a non-default booking
+    // cutoff (24h, mirroring the live Wix policy for the Premium walk) —
+    // demonstrates the "Booking cutoff" field in the route editor.
+    { id: "rotterdam-premium-gin", name: "Rotterdam Route 3 Premium", city: "Rotterdam", price_cents: 3495, capacity: 8, max_party: 6, open_days: "[2,3,4,5,6]", slots: '["18:00","19:00","20:00"]', map_url: null, active: 0, booking_cutoff_minutes: 1440, created_at: "2025-02-01" }
   ];
 
   const bars = {
