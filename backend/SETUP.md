@@ -833,7 +833,7 @@ widget change required for this to work.
      {"email": "bram@example.com"}
    ]
    ```
-3. **Import** (max 2000 rows per call — split a bigger export into chunks):
+3. **Import** (hard cap 2000 rows per call, but keep batches to ~100 rows: each row costs several D1 queries and the Workers free plan limits subrequests per invocation — 500-row batches returned "Too many API requests by single Worker invocation" during the 8 Oct 2026 Wix migration; 108 × 20 rows worked flawlessly):
    ```bash
    curl -X POST https://<your-worker>.workers.dev/admin/api/subscribers/import \
      -H "Content-Type: application/json" \
