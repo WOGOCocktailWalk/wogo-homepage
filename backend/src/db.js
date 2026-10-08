@@ -686,8 +686,8 @@ export async function getRoute(db, id) {
 export async function createRoute(db, route) {
   await run(
     db,
-    `INSERT INTO routes (id, name, city, price_cents, capacity, max_party, open_days, slots, slot_capacity, weekday_capacity, map_url, map_url_nl, active, currency, timezone)
-     VALUES (:id, :name, :city, :price_cents, :capacity, :max_party, :open_days, :slots, :slot_capacity, :weekday_capacity, :map_url, :map_url_nl, :active, :currency, :timezone)`,
+    `INSERT INTO routes (id, name, city, price_cents, capacity, max_party, open_days, slots, slot_capacity, weekday_capacity, map_url, map_url_nl, active, currency, timezone, booking_cutoff_minutes)
+     VALUES (:id, :name, :city, :price_cents, :capacity, :max_party, :open_days, :slots, :slot_capacity, :weekday_capacity, :map_url, :map_url_nl, :active, :currency, :timezone, :booking_cutoff_minutes)`,
     {
       id: route.id,
       name: route.name,
@@ -713,6 +713,11 @@ export async function createRoute(db, route) {
       // unaffected — 'EUR' / 'Europe/Amsterdam'.
       currency: route.currency ?? 'EUR',
       timezone: route.timezone ?? 'Europe/Amsterdam',
+      // migrations/0029: per-route booking cutoff (minutes before a slot's
+      // start it stops being bookable) — default mirrors the column's own
+      // SQL DEFAULT (60, same as SAME_DAY_CUTOFF_MINUTES) so a route created
+      // without opting in behaves exactly like every pre-existing route.
+      booking_cutoff_minutes: route.booking_cutoff_minutes ?? 60,
     }
   );
   return getRoute(db, route.id);
@@ -720,7 +725,7 @@ export async function createRoute(db, route) {
 
 const ROUTE_EDITABLE_COLUMNS = [
   'name', 'city', 'price_cents', 'capacity', 'max_party', 'open_days', 'slots', 'slot_capacity', 'weekday_capacity', 'map_url', 'map_url_nl', 'active',
-  'currency', 'timezone',
+  'currency', 'timezone', 'booking_cutoff_minutes',
 ];
 
 export async function updateRoute(db, id, patch) {
@@ -908,13 +913,20 @@ export async function deleteOverride(db, id) {
 
 /**
  * Slot list for one date, annotated with a live seats_left from real
- * bookings. Same-day cutoff (audit item 1, SAME_DAY_CUTOFF_MINUTES): a slot
- * whose start is already less than the cutoff away (or has already passed)
- * is reported with seats_left forced to 0 — the same shape the widget
- * already renders as "Sold out" / disabled (widget/wogo-calendar.js:
+ * bookings. Booking cutoff (audit item 1, originally SAME_DAY_CUTOFF_MINUTES;
+ * per-route since migrations/0029's routes.booking_cutoff_minutes): a slot
+ * whose start is already less than the route's own cutoff away (or has
+ * already passed) is reported with seats_left forced to 0 — the same shape
+ * the widget already renders as "Sold out" / disabled (widget/wogo-calendar.js:
  * `soldout = s.seats_left <= 0`), so no separate widget change is needed to
- * stop it being offered. isSlotPastCutoff is false for every future date, so
- * this is a no-op for every date except "today" in the route's own timezone.
+ * stop it being offered. isSlotPastCutoff is a real "slot start < now +
+ * cutoff" instant comparison (not a same-calendar-day shortcut), so this
+ * naturally reaches into TOMORROW's slots too once a route's cutoff exceeds
+ * a day (e.g. the 24h Rotterdam Premium cutoff) — no separate "is this
+ * today?" branch needed, same as before this migration for the 1h case.
+ * `route.booking_cutoff_minutes` is only ever undefined for a hand-built
+ * route object in a test fixture predating migrations/0029 — a real DB row
+ * is NOT NULL, defaulted 60.
  */
 export async function getSlotsWithSeatsLeft(db, route, dateOverridesForDate, date) {
   const slots = buildSlotsForDate(route, dateOverridesForDate, date);
@@ -927,9 +939,10 @@ export async function getSlotsWithSeatsLeft(db, route, dateOverridesForDate, dat
     { route_id: route.id, date }
   );
   const usedBySlot = Object.fromEntries(used.map((r) => [r.slot, r.used]));
+  const cutoffMinutes = route.booking_cutoff_minutes ?? SAME_DAY_CUTOFF_MINUTES;
   return slots.map((s) => {
     const rawSeatsLeft = Math.max(0, s.capacity - (usedBySlot[s.slot] || 0));
-    const pastCutoff = isSlotPastCutoff(date, s.slot, route.timezone, SAME_DAY_CUTOFF_MINUTES);
+    const pastCutoff = isSlotPastCutoff(date, s.slot, route.timezone, cutoffMinutes);
     return {
       slot: s.slot,
       capacity: s.capacity,

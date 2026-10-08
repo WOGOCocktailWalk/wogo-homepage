@@ -157,6 +157,11 @@ export async function handleListRoutes(request, env) {
         timezone: r.timezone,
         max_party: r.max_party,
         map_url: r.map_url,
+        // migrations/0029: per-route booking cutoff, minutes before a slot's
+        // start it stops being bookable (default 60, same as the old global
+        // SAME_DAY_CUTOFF_MINUTES). Exposed so the widget can optionally show
+        // a "Book at least Xh before" hint — not consumed by it yet.
+        booking_cutoff_minutes: r.booking_cutoff_minutes,
       })),
     },
     200,
@@ -396,13 +401,17 @@ export async function handleBook(request, env) {
     return errorJson('route_closed', 'this date is not bookable', 409, request);
   }
 
-  // Same-day cutoff (audit item 1, SAME_DAY_CUTOFF_MINUTES): a slot that has
-  // already started, or starts too soon to realistically book, is rejected
-  // outright — judged against the ROUTE's own timezone, same as the horizon
-  // check above. isSlotPastCutoff is false for every future date, so this is
-  // a no-op for anything but "today".
-  if (isSlotPastCutoff(date, slot, route.timezone, SAME_DAY_CUTOFF_MINUTES)) {
-    return errorJson('slot_passed', 'this time slot has already started or is starting too soon to book', 409, request);
+  // Booking cutoff (audit item 1, originally SAME_DAY_CUTOFF_MINUTES;
+  // per-route since migrations/0029's routes.booking_cutoff_minutes): a slot
+  // that has already started, or starts too soon before the ROUTE's own
+  // cutoff, is rejected outright — judged against the route's own timezone,
+  // same as the horizon check above. isSlotPastCutoff is a real "slot start
+  // < now + cutoff" instant comparison, so a route whose cutoff exceeds a
+  // day (e.g. Rotterdam Premium's 24h) correctly rejects a TOMORROW slot
+  // too, not just a same-day one.
+  const cutoffMinutes = route.booking_cutoff_minutes ?? SAME_DAY_CUTOFF_MINUTES;
+  if (isSlotPastCutoff(date, slot, route.timezone, cutoffMinutes)) {
+    return errorJson('slot_passed', 'booking closed for this start time', 409, request);
   }
 
   // Layer 1 — per-IP attempt rate limit (SPEC.md §15.1, sliding window,

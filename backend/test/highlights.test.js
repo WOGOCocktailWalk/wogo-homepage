@@ -26,7 +26,7 @@ const schemaSql = [
   '0012_map_url_nl.sql', '0014_weekday_capacity.sql', '0015_weekday_bars.sql', '0017_map_by_weekday.sql',
   '0018_gift_cards.sql', '0019_gift_card_redemptions.sql', '0020_route_names.sql', '0021_inquiries.sql',
   '0022_bar_locale.sql', '0023_route_names_simple.sql', '0024_subscribers.sql', '0025_admin_users.sql',
-  '0027_booking_utm.sql', '0028_bookings_email_lower_index.sql',
+  '0027_booking_utm.sql', '0028_bookings_email_lower_index.sql', '0029_route_booking_cutoff.sql',
 ].map(migration).join('\n');
 
 function run(db, sql, params = {}) {
