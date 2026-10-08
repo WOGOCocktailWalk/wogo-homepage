@@ -1629,7 +1629,12 @@ export async function anonymizeOldBookings(db, beforeStr) {
 // ---------------------------------------------------------------------------
 
 export async function getSubscriberByEmail(db, email) {
-  return first(db, `SELECT * FROM subscribers WHERE LOWER(email) = LOWER(:email)`, { email });
+  // `subscribers.email` is always stored lowercased (UNIQUE index). Lowercase
+  // the PARAMETER in JS instead of wrapping the column in LOWER(): the latter
+  // defeats the index and full-scans the table on every lookup — during the
+  // 8 Oct 2026 Wix import that alone burned 7.4M row-reads and tripped D1's
+  // free-tier daily read cap, taking the whole API offline until midnight.
+  return first(db, `SELECT * FROM subscribers WHERE email = :email`, { email: String(email || '').toLowerCase() });
 }
 
 export async function getSubscriberById(db, id) {
