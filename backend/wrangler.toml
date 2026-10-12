@@ -18,9 +18,9 @@ database_id = "e0d64847-0183-4ec3-8401-fe6e3a02f475"
 # Until then env.BACKUP_BUCKET is undefined and the daily cron's export step
 # is a harmless no-op — see SETUP.md "Backups & disaster recovery" for the
 # full walkthrough and the restore command.
-# [[r2_buckets]]
-# binding = "BACKUP_BUCKET"
-# bucket_name = "wogo-backups"
+[[r2_buckets]]
+binding = "BACKUP_BUCKET"
+bucket_name = "wogo-backups"
 
 [triggers]
 # Three schedules, all handled by the single scheduled() entry point in
