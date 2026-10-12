@@ -610,6 +610,9 @@
   }
   function closeDrawer() {
     $("#drawer").classList.remove("show");
+    $("#drawer").classList.remove("wide"); // the Blog preview drawer adds "wide" — strip it here too so
+    // #drawer-close/#drawer-scrim/Escape don't leave the next, unrelated drawer
+    // (e.g. a booking detail) stuck open at the wide width.
     $("#drawer").setAttribute("aria-hidden", "true");
     $("#drawer-scrim").classList.remove("show");
   }
@@ -3738,7 +3741,7 @@
         body.appendChild(el("iframe", { class: "blog-preview-frame", srcdoc: data.html, sandbox: "allow-scripts allow-same-origin" }));
         const foot = $("#drawer-foot");
         clear(foot);
-        foot.appendChild(el("button", { class: "btn btn-quiet", text: "Close", onclick: () => { $("#drawer").classList.remove("wide"); closeDrawerGeneric(); } }));
+        foot.appendChild(el("button", { class: "btn btn-quiet", text: "Close", onclick: closeDrawer }));
         $("#drawer").classList.add("show");
         $("#drawer").setAttribute("aria-hidden", "false");
         $("#drawer-scrim").classList.add("show");
@@ -3822,17 +3825,6 @@
     card.appendChild(actions);
 
     root.appendChild(card);
-  }
-
-  /** The shared #drawer is normally closed via the module-top-level
-   * closeDrawer() (wired to #drawer-close/#drawer-scrim once at boot) — this
-   * just also drops the Blog preview's width modifier so a later booking/
-   * customer drawer opens back at its normal size. */
-  function closeDrawerGeneric() {
-    $("#drawer").classList.remove("show");
-    $("#drawer").setAttribute("aria-hidden", "true");
-    $("#drawer-scrim").classList.remove("show");
-    $("#drawer").classList.remove("wide");
   }
 
   /* ======================================================================
