@@ -952,6 +952,71 @@ it's already been sent).
 
 ---
 
+## 22. Blog — writing, previewing and publishing a post (2026-10)
+
+A teammate (e.g. Selin) can write, preview and publish blog posts entirely
+from the dashboard's **Blog** tab — no code, no GitHub account needed for
+day-to-day use.
+
+**The 5 steps, for a teammate:**
+
+1. Open the dashboard → **Blog** → **+ New post**.
+2. Fill in the title (English first — the URL and Dutch title both start
+   from it), pick a category, upload a cover photo (JPG/PNG/WEBP, under
+   2.5MB) and write its description for both languages (this is required
+   before you can publish — it's there for accessibility).
+3. Write the body in English and Dutch using the toolbar (headings, bold,
+   italic, links, lists, quotes, images) — it saves a draft automatically
+   every 30 seconds, and you can hit **Save draft** any time.
+4. Click **Preview EN** / **Preview NL** to see exactly how it will look on
+   the live site before anyone else can.
+5. Click **Publish** when it's ready. It confirms first ("This goes live on
+   the website within ~1 minute") — once you confirm, it's live. Realized
+   you need to fix something? Edit it and click **Publish** again (the same
+   button re-publishes), or **Unpublish** to pull it off the site without
+   deleting it.
+
+One rule: **the URL (the "slug") can only be changed before the first
+publish.** Once a post has ever gone live, renaming it would break the link
+— the dashboard locks that field automatically.
+
+**The two secrets this needs** (already set on the Worker — nothing to do
+unless you're setting up a brand-new Worker from scratch):
+
+| Secret | What it's for | Where to get it |
+|---|---|---|
+| `GITHUB_TOKEN` | Lets the Worker commit a published post's HTML file to the site's GitHub repo | GitHub → Settings → Developer settings → Personal access tokens → generate one with `repo` scope on `WOGOCocktailWalk/wogo-homepage` |
+| `GITHUB_REPO` | Which repo to commit to | `WOGOCocktailWalk/wogo-homepage` (not secret, just stored alongside the token for convenience: `wrangler secret put GITHUB_REPO`) |
+
+**The SITE_NOINDEX cutover flip** — until the real domain
+(wogococktailwalk.com) goes live, `src/config.js`'s `SITE_NOINDEX = true`
+makes every published post carry `<meta name="robots" content="noindex">`
+and skips adding it to `sitemap.xml`, matching the site-wide noindex rule
+every other page already follows. **At cutover**, flip this one line to
+`false`, redeploy, then re-publish (or re-run a one-off re-render pass on)
+every already-published post — noindex/sitemap membership is baked into the
+committed HTML/XML at publish time, not computed when someone visits the
+page, so an old commit keeps its old noindex tag until it's re-published.
+
+**Roles**: anyone who can sign in (viewer+) can read/preview posts; staff and
+owners can write, edit, publish and unpublish; only an owner can permanently
+delete a post (and only once it's unpublished).
+
+**Images**: every image — the cover and anything inserted into the body via
+the toolbar — is committed straight to the site's GitHub repo the moment you
+upload it (so Preview can show it immediately, even on a draft that's never
+been published). There's nothing to clean up by hand if you delete a draft
+before publishing — an unused uploaded image is just an orphaned file, never
+a broken link anyone can reach.
+
+**One-off import**: the 8 posts that existed before the Blog tab shipped
+were imported straight into the new system by
+`backend/scripts/import_blog_posts.mjs` (run once, already done — see that
+file's own comment for what it does and the project history for what came
+out equivalent vs. flagged). You don't need to run it again.
+
+---
+
 ## Moving to another host later
 
 Nothing here locks you into Cloudflare forever — see

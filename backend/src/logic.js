@@ -1208,3 +1208,167 @@ export function generateGiftCardCode() {
 export function normalizeGiftCardCode(code) {
   return String(code == null ? '' : code).trim().toUpperCase();
 }
+
+// ---------------------------------------------------------------------------
+// Blog (migrations/0030_blog_posts.sql, BUILD §21) — slug validation and
+// server-side HTML sanitization. Pure/zero-import on purpose: a teammate's
+// post body is untrusted-ish input (pasted from Word/Docs, or just a typo
+// away from breaking the page), and the sanitizer is the ONE thing standing
+// between a dashboard editor and a live public page — it must be testable
+// under plain `node --test` with no Worker runtime assumptions, same as
+// every other guard in this file.
+// ---------------------------------------------------------------------------
+
+/** [a-z0-9-]{3,80} — the post's folder name under blog/<slug>/. Owned here
+ * (not duplicated in config.js) so there is exactly one definition. */
+export const BLOG_SLUG_RE = /^[a-z0-9-]{3,80}$/;
+
+export function validateBlogSlug(slug) {
+  if (typeof slug !== 'string' || !slug) return { ok: false, message: 'slug is required' };
+  if (!BLOG_SLUG_RE.test(slug)) {
+    return { ok: false, message: 'slug must be 3-80 characters, lowercase letters, numbers and hyphens only' };
+  }
+  return { ok: true, slug };
+}
+
+/** `category` must be exactly one of the dashboard's fixed chips — passed in
+ * by the caller (admin_api.js, from config.js:BLOG_CATEGORIES) rather than
+ * imported here, keeping this module import-free. */
+export function validateBlogCategory(category, allowedCategories) {
+  if (typeof category !== 'string' || !allowedCategories.includes(category)) {
+    return { ok: false, message: `category must be one of: ${allowedCategories.join(', ')}` };
+  }
+  return { ok: true, category };
+}
+
+/** Plain-text fields (title/excerpt/alt text/SEO copy) must never carry
+ * markup — strips every tag, decodes the handful of named entities this
+ * codebase's own editor can produce, trims, and (optionally) caps length.
+ * Not a full HTML-entity table (this is plain text, not an email body) —
+ * just enough for what a browser's contenteditable actually emits. */
+export function stripHtmlTags(value, maxLength) {
+  if (value == null) return '';
+  let text = String(value).replace(/<[^>]*>/g, '');
+  text = text
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
+  if (maxLength && text.length > maxLength) text = text.slice(0, maxLength);
+  return text;
+}
+
+// Tags a blog post body may contain (BUILD §21.2's exact allowlist). Value
+// is the list of attributes THAT tag is allowed to keep — every other
+// attribute (including every `on*` event handler, `style`, `class`, etc.)
+// is dropped regardless of tag.
+const BLOG_ALLOWED_TAGS = {
+  p: [], h2: [], h3: [], strong: [], em: [], ul: [], ol: [], li: [], blockquote: [],
+  figure: [], figcaption: [], br: [], hr: [],
+  a: ['href', 'rel', 'target'],
+  img: ['src', 'alt'],
+};
+const BLOG_SELF_CLOSING_TAGS = new Set(['br', 'hr', 'img']);
+const BLOG_DANGEROUS_URL_SCHEME_RE = /^\s*(javascript|data|vbscript|file)\s*:/i;
+
+function isSafeBlogUrl(value) {
+  return !BLOG_DANGEROUS_URL_SCHEME_RE.test(String(value || ''));
+}
+
+function escapeBlogAttrValue(value) {
+  return String(value)
+    .replace(/&(?!amp;|lt;|gt;|quot;|#39;|apos;|#\d+;|#x[0-9a-fA-F]+;)/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/** Extracts `name="value"`/`name='value'` pairs from a tag's raw attribute
+ * string. Bare attributes (no `=`, e.g. a stray `disabled`) are ignored —
+ * nothing in BLOG_ALLOWED_TAGS has a boolean attribute. */
+function parseBlogAttrs(attrsRaw) {
+  const out = [];
+  const re = /([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*("([^"]*)"|'([^']*)')/g;
+  let m;
+  while ((m = re.exec(attrsRaw)) !== null) {
+    out.push([m[1], m[3] !== undefined ? m[3] : m[4]]);
+  }
+  return out;
+}
+
+/**
+ * Server-side HTML sanitizer for blog_posts.body_en/body_nl — allowlists
+ * exactly the tags/attributes BUILD §21.2 names, drops everything else
+ * (the TAG is dropped for a disallowed element, not its inner text — so
+ * `<div onclick=x>hello</div>` becomes plain `hello`, never executable),
+ * strips `<script>`/`<style>` blocks (tag AND content) and HTML comments
+ * outright before the tag-by-tag pass, rejects `javascript:`/`data:`/
+ * `vbscript:`/`file:` URLs in `href`/`src`, and forces `rel="noopener"` onto
+ * any `<a target="...">` that doesn't already carry its own `rel`.
+ *
+ * Deliberately a hand-rolled allowlist scanner, not a full HTML parser —
+ * Workers has no DOMParser and this file must stay zero-import/pure so it
+ * runs identically under plain `node --test` and the real Worker. This is
+ * "good enough" against careless/accidental markup (pasted Word/Docs HTML,
+ * copy-paste artifacts) and against a straightforwardly malicious payload
+ * (script tags, event handlers, javascript: links) — it is NOT a defense
+ * against a maliciously crafted mXSS/parser-confusion payload the way a
+ * real browser-grade sanitizer (DOMPurify et al.) is. Acceptable here
+ * because body content is staff+-authored (role-gated, audited), not public
+ * user-submitted input.
+ */
+export function sanitizeBlogHtml(html) {
+  if (html == null) return '';
+  let s = String(html);
+  s = s.replace(/<script[\s\S]*?<\/script\s*>/gi, '');
+  s = s.replace(/<style[\s\S]*?<\/style\s*>/gi, '');
+  s = s.replace(/<!--[\s\S]*?-->/g, '');
+
+  let out = '';
+  let i = 0;
+  while (i < s.length) {
+    const lt = s.indexOf('<', i);
+    if (lt === -1) { out += s.slice(i); break; }
+    out += s.slice(i, lt);
+    const gt = s.indexOf('>', lt);
+    if (gt === -1) { i = s.length; break; } // unterminated '<' — drop the remainder, safe default
+
+    const raw = s.slice(lt, gt + 1);
+    const m = /^<\s*(\/)?\s*([a-zA-Z][a-zA-Z0-9]*)([^>]*)>$/.exec(raw);
+    if (!m) { i = gt + 1; continue; } // doesn't look like a real tag — drop it
+
+    const closing = !!m[1];
+    const tagLower = m[2].toLowerCase();
+    if (!Object.prototype.hasOwnProperty.call(BLOG_ALLOWED_TAGS, tagLower)) {
+      i = gt + 1; continue; // disallowed tag: drop the tag, keep surrounding text
+    }
+    if (closing) {
+      out += `</${tagLower}>`;
+      i = gt + 1;
+      continue;
+    }
+
+    const allowedAttrs = BLOG_ALLOWED_TAGS[tagLower];
+    const attrs = parseBlogAttrs(m[3] || '');
+    const keep = [];
+    let hasTarget = false;
+    let hasRel = false;
+    for (const [name, value] of attrs) {
+      const nameLower = name.toLowerCase();
+      if (!allowedAttrs.includes(nameLower)) continue;
+      if ((nameLower === 'href' || nameLower === 'src') && !isSafeBlogUrl(value)) continue;
+      if (nameLower === 'target') hasTarget = true;
+      if (nameLower === 'rel') hasRel = true;
+      keep.push(`${nameLower}="${escapeBlogAttrValue(value)}"`);
+    }
+    if (tagLower === 'a' && hasTarget && !hasRel) keep.push('rel="noopener"');
+
+    const selfClose = BLOG_SELF_CLOSING_TAGS.has(tagLower);
+    out += `<${tagLower}${keep.length ? ' ' + keep.join(' ') : ''}${selfClose ? ' /' : ''}>`;
+    i = gt + 1;
+  }
+  return out;
+}

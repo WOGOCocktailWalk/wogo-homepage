@@ -330,7 +330,14 @@ A redesign changes the *sequence of small decisions* a visitor makes. Each of th
 
 Remove all `noindex`; self-referencing canonicals; `sitemap.xml` (already final); `robots.txt` (already final); hreflang pairs once `/nl/` exists; London pages stay `noindex` until real.
 
+**Blog posts are the ONE exception to "just grep/sed the noindex away"** (backend `BUILD §21`): a published post's `noindex` tag and its `sitemap.xml` entry are baked into the committed HTML/XML at the moment it was published by the admin dashboard, not computed when a visitor requests the page — editing the static file directly would be immediately overwritten the next time anyone re-publishes it from the dashboard. The real fix is backend-side: flip `backend/src/config.js`'s `SITE_NOINDEX` from `true` to `false`, redeploy the Worker (`npx wrangler deploy`), then **re-publish every already-published post** (one click each, from the dashboard) so each one regenerates without `noindex` and gets added to `sitemap.xml`. Until that re-publish happens, an old post keeps showing `noindex` even though the rest of the site has already gone live.
+
 ### 5.3 Scripted checks (dev runs, outputs go in the launch log)
+
+Check #1 will still flag every blog post until the backend-side flip in
+§5.2 is done AND each post has been re-published from the dashboard — that's
+expected, not a script bug; don't add `blog` to the exclusion list below as
+a shortcut, fix it the real way instead.
 
 ```bash
 # 1. no noindex on indexable pages

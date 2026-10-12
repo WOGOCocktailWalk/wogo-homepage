@@ -66,9 +66,11 @@
     subscribers: { list: [], total: 0, counts: null, loaded: false, filters: { status: "", source: "", q: "" } },
     me: null, // {uid, email, name, role} — set by boot(), drives client-side UI hiding (server ROUTE_ROLES is the real control)
     users: { list: [], loaded: false },
-    analytics: { sub: "sales", range: null, group: "day", data: null, kpi: null, loading: false, traffic: null, highlights: null, realtime: null, behavior: null, marketing: null }
+    analytics: { sub: "sales", range: null, group: "day", data: null, kpi: null, loading: false, traffic: null, highlights: null, realtime: null, behavior: null, marketing: null },
+    blog: { list: [], counts: null, loaded: false, statusFilter: "", editing: null, slugLocked: false, slugTouched: false, dirty: false }
   };
   let realtimeTimer = null; // auto-refresh interval while the Real-time page is mounted — cleared on every navigation
+  let blogAutosaveTimer = null; // 30s autosave while the Blog editor is open — cleared on every navigation
 
   /* ---------- date utils (timezone-safe, local) ------------------------- */
   function todayStr() { return dstr(new Date()); }
@@ -161,6 +163,7 @@
 
   function go(view) {
     if (realtimeTimer) { clearInterval(realtimeTimer); realtimeTimer = null; }
+    if (blogAutosaveTimer) { clearInterval(blogAutosaveTimer); blogAutosaveTimer = null; }
     S.view = view;
     NAV.forEach((b) => b.classList.toggle("active", b.dataset.view === view));
     $("#sidebar").classList.remove("open");
@@ -172,6 +175,7 @@
       routes: ["Route manager", "Days, times, seats, bars and one-off date changes"],
       giftcards: ["Gift cards", "Every card sold, its balance, and who it's for"],
       subscribers: ["Subscribers", "The newsletter list — signups, booking opt-ins, and imports"],
+      blog: ["Blog", "Write, preview and publish posts to the website"],
       export: ["Export", "Download bookings as a spreadsheet (CSV)"],
       analytics: ["Analytics", "Business numbers — sales, and (once connected) site traffic"],
       team: ["Team", "Who can sign in, and what they can do"]
@@ -186,6 +190,7 @@
     else if (view === "routes") renderRoutes(target);
     else if (view === "giftcards") renderGiftCards(target);
     else if (view === "subscribers") renderSubscribers(target);
+    else if (view === "blog") renderBlog(target);
     else if (view === "export") renderExport(target);
     else if (view === "analytics") renderAnalytics(target);
     else if (view === "team") renderTeam(target);
@@ -3392,6 +3397,443 @@
     ]));
   }
   function shiftMonth(m, delta) { const [y, mo] = m.split("-").map(Number); const d = new Date(y, mo - 1 + delta, 1); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); }
+
+  /* ======================================================================
+     VIEW — BLOG (migrations/0030_blog_posts.sql, BUILD §21)
+     A non-technical teammate writes/previews/publishes posts without
+     touching code. List view (status chips + table) <-> editor view
+     (toggled via S.blog.editing — not a separate nav item, same pattern
+     routesUI's open/closed route detail uses). The rich-text body editor
+     is a plain contenteditable div + document.execCommand toolbar — zero
+     dependencies, CSP-compliant (no external library, no inline event-
+     handler attributes — every listener is addEventListener'd from JS).
+     ====================================================================== */
+  const BLOG_CATEGORIES = ["City guide", "New route", "Explained", "Recipes", "News"];
+  const BLOG_SITE_BASE = "https://www.wogococktailwalk.com"; // meta/canonical convention — see src/config.js:BLOG_CANONICAL_BASE
+
+  function blogStatusBadge(status) {
+    return el("span", { class: "badge " + (status === "published" ? "confirmed" : "hold"), text: status === "published" ? "Published" : "Draft" });
+  }
+  function slugify(s) {
+    return String(s || "").toLowerCase().trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80);
+  }
+  /** Same api() contract (401 -> login, non-2xx -> Error with the server's
+   * plain-English message) but for a multipart upload — api() always
+   * JSON-stringifies a non-string body, which would corrupt a FormData
+   * upload, so this is a deliberate separate helper rather than a branch
+   * inside api(). */
+  async function apiUpload(path, formData) {
+    const res = await fetch(API + path, {
+      method: "POST",
+      headers: { "X-Requested-With": "wogo-admin" },
+      body: formData,
+      credentials: "same-origin"
+    });
+    if (res.status === 401) { showLogin(); throw new Error("unauthenticated"); }
+    if (!res.ok) {
+      let msg = "Upload failed (" + res.status + ")";
+      try { const j = await res.json(); if (j && j.message) msg = j.message; } catch (e) { /* noop */ }
+      throw new Error(msg);
+    }
+    return res.json();
+  }
+
+  function renderBlog(root) {
+    clear(root);
+    const canWrite = S.me && S.me.role !== "viewer";
+    $("#topbar-actions").innerHTML = "";
+    if (canWrite) {
+      $("#topbar-actions").appendChild(el("button", {
+        class: "btn btn-primary", text: "+ New post",
+        onclick: async () => {
+          try {
+            const slug = "untitled-" + Date.now().toString(36);
+            const data = await api("/admin/api/blog", { method: "POST", body: { title_en: "Untitled post", category: BLOG_CATEGORIES[0], slug } });
+            S.blog.loaded = false;
+            openBlogEditor(data.post.id);
+          } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+        }
+      }));
+    }
+
+    const chips = el("div", { class: "chips" });
+    [["", "All"], ["draft", "Draft"], ["published", "Published"]].forEach(([val, label]) => {
+      chips.appendChild(chip(label, S.blog.statusFilter === val, null, () => { S.blog.statusFilter = val; S.blog.loaded = false; renderBlog(root); }, true));
+    });
+    root.appendChild(el("div", { class: "filters" }, el("div", { class: "filters-row" }, chips)));
+    root.appendChild(el("div", { id: "blog-holder" }));
+
+    if (S.blog.loaded) paintBlogList();
+    else loadBlogPosts();
+  }
+
+  async function loadBlogPosts() {
+    const holder = $("#blog-holder");
+    if (!holder) return;
+    clear(holder);
+    holder.appendChild(skeletonCard());
+    try {
+      const qs = S.blog.statusFilter ? "?status=" + S.blog.statusFilter : "";
+      const data = await api("/admin/api/blog" + qs);
+      S.blog.list = data.posts || [];
+      S.blog.counts = data.counts || null;
+      S.blog.loaded = true;
+      paintBlogList();
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(holder); holder.appendChild(errorCard(e.message, loadBlogPosts)); }
+    }
+  }
+
+  function paintBlogList() {
+    const holder = $("#blog-holder");
+    if (!holder) return;
+    clear(holder);
+    const list = S.blog.list;
+    const counts = S.blog.counts;
+
+    const card = el("div", { class: "card" });
+    card.appendChild(el("div", { class: "card-head" }, [
+      el("h2", { text: "Posts" }),
+      el("span", { class: "count-badge", text: list.length + (list.length === 1 ? " post" : " posts") + (counts ? " · " + counts.draft + " draft, " + counts.published + " published" : "") })
+    ]));
+    if (list.length === 0) {
+      card.appendChild(el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "📝" }),
+        el("div", { text: "No posts yet — click “+ New post” to write the first one." })
+      ]));
+      holder.appendChild(card);
+      return;
+    }
+    const scroll = el("div", { class: "table-scroll" });
+    const t = el("table", { class: "data" });
+    t.appendChild(el("thead", {}, el("tr", {}, [
+      th("Title"), th("Category"), th("Status"), th("Updated"), th("")
+    ])));
+    const tb = el("tbody");
+    list.forEach((p) => {
+      const liveLink = p.status === "published"
+        ? el("a", { href: BLOG_SITE_BASE + "/blog/" + p.slug + "/", target: "_blank", rel: "noopener", class: "btn btn-quiet btn-sm", text: "View live ↗", onclick: (ev) => ev.stopPropagation() })
+        : null;
+      const row = el("tr", { style: "cursor:pointer", onclick: () => openBlogEditor(p.id) }, [
+        el("td", { class: "td-name", text: p.title_en }),
+        el("td", { class: "td-sub", text: p.category }),
+        el("td", {}, blogStatusBadge(p.status)),
+        el("td", { class: "td-sub", text: (p.updated_by || "—") + (p.updated_at ? " · " + String(p.updated_at).slice(0, 16).replace("T", " ") : "") }),
+        el("td", {}, liveLink)
+      ]);
+      tb.appendChild(row);
+    });
+    t.appendChild(tb);
+    scroll.appendChild(t);
+    card.appendChild(scroll);
+    holder.appendChild(card);
+  }
+
+  async function openBlogEditor(id) {
+    const target = $("#view");
+    clear(target);
+    target.appendChild(skeletonCard());
+    try {
+      const data = await api("/admin/api/blog/" + id);
+      S.blog.editing = data.post;
+      S.blog.dirty = false;
+      renderBlogEditor(target, data.post);
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(target); target.appendChild(errorCard(e.message, () => openBlogEditor(id))); }
+    }
+  }
+
+  /** A dependency-free rich-text editor: a contenteditable <div> + a small
+   * execCommand-based toolbar (H2/H3/Bold/Italic/Link/Bullet/Numbered/Quote/
+   * Image). Every toolbar button preventDefault()s its OWN mousedown (not
+   * click) so clicking it never steals focus/selection away from the
+   * editable area first — the standard trick execCommand-based toolbars
+   * need. Pasting strips all formatting down to plain text on purpose (the
+   * task's own "paste-as-plain-text" requirement) — rich paste-through
+   * would otherwise smuggle arbitrary markup past the toolbar's own allow-
+   * list (the server's sanitizeBlogHtml is the real backstop regardless,
+   * but a WYSIWYG that visibly keeps pasted formatting invites more of it). */
+  function buildRichTextEditor(postId, initialHtml) {
+    const editorDiv = el("div", { class: "rte-editor", contenteditable: "true", html: initialHtml || "" });
+    const fileInput = el("input", { type: "file", accept: "image/jpeg,image/png,image/webp", hidden: true });
+
+    function cmd(name, value) {
+      editorDiv.focus();
+      document.execCommand(name, false, value || null);
+      S.blog.dirty = true;
+    }
+    function rteBtn(label, title, onClick) {
+      return el("button", {
+        type: "button", class: "rte-btn", text: label, title: title,
+        onmousedown: (e) => e.preventDefault(),
+        onclick: (e) => { e.preventDefault(); onClick(); }
+      });
+    }
+    const toolbar = el("div", { class: "rte-toolbar" }, [
+      rteBtn("H2", "Heading", () => cmd("formatBlock", "<h2>")),
+      rteBtn("H3", "Subheading", () => cmd("formatBlock", "<h3>")),
+      rteBtn("B", "Bold", () => cmd("bold")),
+      rteBtn("I", "Italic", () => cmd("italic")),
+      rteBtn("Link", "Insert link", () => {
+        const url = window.prompt("Link URL (https://...)");
+        if (url) cmd("createLink", url);
+      }),
+      rteBtn("• List", "Bullet list", () => cmd("insertUnorderedList")),
+      rteBtn("1. List", "Numbered list", () => cmd("insertOrderedList")),
+      rteBtn("Quote", "Quote block", () => cmd("formatBlock", "<blockquote>")),
+      rteBtn("Image", "Insert image", () => { fileInput.click(); }),
+      fileInput
+    ]);
+
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files && fileInput.files[0];
+      fileInput.value = "";
+      if (!file) return;
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { toast("Images must be JPG, PNG or WEBP", "err"); return; }
+      if (file.size > 2.5 * 1024 * 1024) { toast("Images must be 2.5MB or smaller", "err"); return; }
+      try {
+        const fd = new FormData();
+        fd.set("file", file);
+        const data = await apiUpload("/admin/api/blog/" + postId + "/assets", fd);
+        cmd("insertHTML", '<img src="' + data.url + '" alt="">');
+        toast("Image uploaded", "ok");
+      } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+    });
+
+    editorDiv.addEventListener("input", () => { S.blog.dirty = true; });
+    editorDiv.addEventListener("paste", (e) => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData("text/plain");
+      document.execCommand("insertText", false, text);
+    });
+
+    const wrap = el("div", { class: "rte" }, [toolbar, editorDiv]);
+    return { wrap, getHtml: () => editorDiv.innerHTML, setHtml: (html) => { editorDiv.innerHTML = html || ""; } };
+  }
+
+  function counterField(label, initialValue, max, multiline) {
+    const input = multiline ? el("textarea", { rows: 3 }) : el("input", { type: "text" });
+    input.value = initialValue || "";
+    const counter = el("span", { class: "td-sub", text: String((initialValue || "").length) + "/" + max });
+    input.addEventListener("input", () => {
+      counter.textContent = input.value.length + "/" + max;
+      S.blog.dirty = true;
+    });
+    const wrap = el("div", { class: "field" }, [el("label", {}, [label, " ", counter]), input]);
+    return { wrap, input };
+  }
+
+  function renderBlogEditor(root, post) {
+    clear(root);
+    $("#topbar-actions").innerHTML = "";
+    $("#topbar-actions").appendChild(el("button", { class: "btn btn-quiet btn-sm", text: "← Back to posts", onclick: () => { S.blog.editing = null; go("blog"); } }));
+
+    const everPublished = post.status === "published" || !!post.last_published_commit;
+    const canWrite = S.me && S.me.role !== "viewer";
+    const isOwner = S.me && S.me.role === "owner";
+
+    const titleEn = el("input", { type: "text", value: post.title_en || "" });
+    const titleNl = el("input", { type: "text", value: post.title_nl || "" });
+    const slugInput = el("input", { type: "text", value: post.slug || "", disabled: everPublished });
+    let slugTouched = everPublished; // never auto-overwrite a locked/typed slug
+    titleEn.addEventListener("input", () => {
+      S.blog.dirty = true;
+      if (!slugTouched) slugInput.value = slugify(titleEn.value);
+    });
+    slugInput.addEventListener("input", () => { slugTouched = true; S.blog.dirty = true; });
+    titleNl.addEventListener("input", () => { S.blog.dirty = true; });
+
+    const categorySelect = el("select", {}, BLOG_CATEGORIES.map((c) => {
+      const opt = el("option", { value: c, text: c });
+      if (c === post.category) opt.selected = true;
+      return opt;
+    }));
+    categorySelect.addEventListener("change", () => { S.blog.dirty = true; });
+
+    const readMinutes = el("input", { type: "number", min: "1", max: "120", value: String(post.read_minutes || 5) });
+    readMinutes.addEventListener("input", () => { S.blog.dirty = true; });
+
+    // ---- cover image ----
+    const coverPreview = el("img", {
+      src: post.cover_url || "", alt: "", style: "max-width:220px;border-radius:8px;display:" + (post.cover_url ? "block" : "none") + ";margin-bottom:10px"
+    });
+    const coverFileInput = el("input", { type: "file", accept: "image/jpeg,image/png,image/webp" });
+    const coverAltEn = el("input", { type: "text", value: post.cover_alt_en || "", placeholder: "Describe the photo (English) — required to publish" });
+    const coverAltNl = el("input", { type: "text", value: post.cover_alt_nl || "" });
+    coverAltEn.addEventListener("input", () => { S.blog.dirty = true; });
+    coverAltNl.addEventListener("input", () => { S.blog.dirty = true; });
+    coverFileInput.addEventListener("change", async () => {
+      const file = coverFileInput.files && coverFileInput.files[0];
+      if (!file) return;
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { toast("Images must be JPG, PNG or WEBP", "err"); return; }
+      if (file.size > 2.5 * 1024 * 1024) { toast("Images must be 2.5MB or smaller", "err"); return; }
+      try {
+        const fd = new FormData();
+        fd.set("file", file);
+        const data = await apiUpload("/admin/api/blog/" + post.id + "/assets", fd);
+        await api("/admin/api/blog/" + post.id, { method: "PUT", body: { cover_image_path: data.path } });
+        coverPreview.src = data.url;
+        coverPreview.style.display = "block";
+        toast("Cover photo uploaded", "ok");
+      } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+    });
+
+    const excerptEn = counterField("Excerpt (English)", post.excerpt_en, 400, true);
+    const excerptNl = counterField("Excerpt (Dutch)", post.excerpt_nl, 400, true);
+    const seoTitleEn = counterField("SEO title (English)", post.seo_title_en, 70);
+    const seoTitleNl = counterField("SEO title (Dutch)", post.seo_title_nl, 70);
+    const seoDescEn = counterField("SEO description (English)", post.seo_description_en, 160, true);
+    const seoDescNl = counterField("SEO description (Dutch)", post.seo_description_nl, 160, true);
+
+    const bodyEnEditor = buildRichTextEditor(post.id, post.body_en || "");
+    const bodyNlEditor = buildRichTextEditor(post.id, post.body_nl || "");
+
+    function collectFields() {
+      return {
+        title_en: titleEn.value, title_nl: titleNl.value,
+        category: categorySelect.value,
+        excerpt_en: excerptEn.input.value, excerpt_nl: excerptNl.input.value,
+        seo_title_en: seoTitleEn.input.value, seo_title_nl: seoTitleNl.input.value,
+        seo_description_en: seoDescEn.input.value, seo_description_nl: seoDescNl.input.value,
+        body_en: bodyEnEditor.getHtml(), body_nl: bodyNlEditor.getHtml(),
+        cover_alt_en: coverAltEn.value, cover_alt_nl: coverAltNl.value,
+        read_minutes: Number(readMinutes.value) || 5
+      };
+    }
+
+    async function saveDraft(silent) {
+      const patch = collectFields();
+      if (!everPublished) patch.slug = slugInput.value; // slug is only ever sent while it's still editable
+      try {
+        const data = await api("/admin/api/blog/" + post.id, { method: "PUT", body: patch });
+        S.blog.editing = data.post;
+        S.blog.dirty = false;
+        if (!silent) toast("Draft saved", "ok");
+        return data.post;
+      } catch (e) {
+        if (e.message !== "unauthenticated") toast(e.message, "err");
+        return null;
+      }
+    }
+
+    if (blogAutosaveTimer) clearInterval(blogAutosaveTimer);
+    blogAutosaveTimer = setInterval(() => { if (S.blog.dirty) saveDraft(true); }, 30000);
+
+    async function doPreview(lang) {
+      try {
+        const data = await api("/admin/api/blog/" + post.id + "/preview", { method: "POST", body: { lang, overrides: collectFields() } });
+        $("#drawer").classList.add("wide");
+        $("#drawer-title").textContent = "Preview — " + lang.toUpperCase();
+        const body = $("#drawer-body");
+        clear(body);
+        // allow-scripts+allow-same-origin: the shared nav/consent/analytics
+        // chrome needs to actually run for a faithful preview (language
+        // switcher, scroll-reveal, etc.). Safe here because the only
+        // author-controlled content, body_en/body_nl, already went through
+        // sanitizeBlogHtml server-side (script tags stripped) before this
+        // HTML was ever built — nothing user-authored can reach this iframe.
+        body.appendChild(el("iframe", { class: "blog-preview-frame", srcdoc: data.html, sandbox: "allow-scripts allow-same-origin" }));
+        const foot = $("#drawer-foot");
+        clear(foot);
+        foot.appendChild(el("button", { class: "btn btn-quiet", text: "Close", onclick: () => { $("#drawer").classList.remove("wide"); closeDrawerGeneric(); } }));
+        $("#drawer").classList.add("show");
+        $("#drawer").setAttribute("aria-hidden", "false");
+        $("#drawer-scrim").classList.add("show");
+      } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+    }
+
+    async function doPublish() {
+      await saveDraft(true);
+      if (!confirm("This goes live on the website within ~1 minute. Publish now?")) return;
+      try {
+        const data = await api("/admin/api/blog/" + post.id + "/publish", { method: "POST", body: {} });
+        toast("Published", "ok");
+        S.blog.loaded = false;
+        openBlogEditor(data.post.id);
+      } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+    }
+    async function doUnpublish() {
+      if (!confirm("Take this post off the live website? (It stays here as a draft.)")) return;
+      try {
+        const data = await api("/admin/api/blog/" + post.id + "/unpublish", { method: "POST", body: {} });
+        toast("Unpublished", "ok");
+        S.blog.loaded = false;
+        openBlogEditor(data.post.id);
+      } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+    }
+    async function doDelete() {
+      if (!confirm("Delete “" + post.title_en + "”? This cannot be undone.")) return;
+      try {
+        await api("/admin/api/blog/" + post.id, { method: "DELETE" });
+        toast("Post deleted", "ok");
+        S.blog.editing = null;
+        S.blog.loaded = false;
+        go("blog");
+      } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+    }
+
+    const card = el("div", { class: "card" });
+    card.appendChild(el("div", { class: "card-head" }, [
+      el("h2", { text: post.title_en || "Untitled post" }),
+      blogStatusBadge(post.status)
+    ]));
+
+    const grid2 = (a, b) => el("div", { style: "display:flex;gap:16px;flex-wrap:wrap" }, [el("div", { style: "flex:1;min-width:260px" }, a), el("div", { style: "flex:1;min-width:260px" }, b)]);
+
+    card.appendChild(grid2(field("Title (English)", titleEn), field("Title (Dutch, optional)", titleNl)));
+    card.appendChild(grid2(
+      field("URL (can't change after publishing)", slugInput),
+      field("Category", categorySelect)
+    ));
+    card.appendChild(field("Read time (minutes)", readMinutes));
+
+    card.appendChild(el("div", { class: "field" }, [
+      el("label", { text: "Cover photo" }),
+      coverPreview,
+      coverFileInput
+    ]));
+    card.appendChild(grid2(field("Cover photo description (English)", coverAltEn), field("Cover photo description (Dutch)", coverAltNl)));
+
+    card.appendChild(grid2(excerptEn.wrap, excerptNl.wrap));
+
+    card.appendChild(el("div", { class: "field" }, [el("label", { text: "Body (English)" }), bodyEnEditor.wrap]));
+    card.appendChild(el("div", { class: "field" }, [el("label", { text: "Body (Dutch)" }), bodyNlEditor.wrap]));
+
+    card.appendChild(grid2(seoTitleEn.wrap, seoTitleNl.wrap));
+    card.appendChild(grid2(seoDescEn.wrap, seoDescNl.wrap));
+
+    const actions = el("div", { class: "drawer-foot", style: "border-top:none;padding:18px 0 0;flex-wrap:wrap" });
+    if (canWrite) {
+      actions.appendChild(el("button", { class: "btn btn-quiet", text: "Preview EN", onclick: () => doPreview("en") }));
+      actions.appendChild(el("button", { class: "btn btn-quiet", text: "Preview NL", onclick: () => doPreview("nl") }));
+      actions.appendChild(el("button", { class: "btn btn-ghost", text: "Save draft", onclick: () => saveDraft(false) }));
+      if (post.status === "published") {
+        actions.appendChild(el("button", { class: "btn btn-ghost", text: "Unpublish", onclick: doUnpublish }));
+      } else {
+        actions.appendChild(el("button", { class: "btn btn-primary", text: "Publish", onclick: doPublish }));
+      }
+    }
+    if (isOwner && post.status !== "published") {
+      actions.appendChild(el("button", { class: "btn btn-danger", text: "Delete", onclick: doDelete }));
+    }
+    card.appendChild(actions);
+
+    root.appendChild(card);
+  }
+
+  /** The shared #drawer is normally closed via the module-top-level
+   * closeDrawer() (wired to #drawer-close/#drawer-scrim once at boot) — this
+   * just also drops the Blog preview's width modifier so a later booking/
+   * customer drawer opens back at its normal size. */
+  function closeDrawerGeneric() {
+    $("#drawer").classList.remove("show");
+    $("#drawer").setAttribute("aria-hidden", "true");
+    $("#drawer-scrim").classList.remove("show");
+    $("#drawer").classList.remove("wide");
+  }
 
   /* ======================================================================
      boot

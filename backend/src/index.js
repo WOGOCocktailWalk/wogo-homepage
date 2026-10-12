@@ -153,6 +153,17 @@ router.get('/admin/api/subscribers.csv', adminApi.handleSubscribersCsv);
 router.post('/admin/api/subscribers/import', adminApi.handleImportSubscribers);
 router.get('/admin/api/subscribers/sync-queue', adminApi.handleBrevoSyncQueue);
 
+// -- Blog (migrations/0030_blog_posts.sql, BUILD §21) ------------------------
+router.get('/admin/api/blog', adminApi.handleListBlogPosts);
+router.get('/admin/api/blog/:id', adminApi.handleGetBlogPost);
+router.post('/admin/api/blog', adminApi.handleCreateBlogPost);
+router.put('/admin/api/blog/:id', adminApi.handleUpdateBlogPost);
+router.delete('/admin/api/blog/:id', adminApi.handleDeleteBlogPost);
+router.post('/admin/api/blog/:id/preview', adminApi.handlePreviewBlogPost);
+router.post('/admin/api/blog/:id/publish', adminApi.handlePublishBlogPost);
+router.post('/admin/api/blog/:id/unpublish', adminApi.handleUnpublishBlogPost);
+router.post('/admin/api/blog/:id/assets', adminApi.handleUploadBlogAsset);
+
 const ADMIN_API_PREFIX = '/admin/api/';
 const PUBLIC_ADMIN_PATHS = new Set([
   '/admin/login', '/admin/logout', '/admin/public-config',
