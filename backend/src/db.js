@@ -2227,4 +2227,156 @@ export async function markReviewRequestSent(db, id) {
   return result.meta.changes === 1;
 }
 
+// ---------------------------------------------------------------------------
+// Blog (migrations/0030_blog_posts.sql, BUILD §21) — admin-authored posts,
+// published to the static site via the GitHub Contents API (src/github.js).
+// D1 is the editable source of truth; the committed HTML files are a BUILD
+// OUTPUT of a D1 row, regenerated in full on every publish/unpublish — never
+// hand-edited, never read back into D1.
+// ---------------------------------------------------------------------------
+
+const BLOG_POST_COLUMNS = [
+  'id', 'slug', 'status', 'category', 'cover_image_path', 'cover_alt_en', 'cover_alt_nl',
+  'title_en', 'title_nl', 'excerpt_en', 'excerpt_nl', 'body_en', 'body_nl',
+  'seo_title_en', 'seo_title_nl', 'seo_description_en', 'seo_description_nl',
+  'read_minutes', 'published_at', 'created_at', 'updated_at', 'created_by', 'updated_by',
+  'old_wix_slug', 'last_published_commit',
+];
+
+/**
+ * Creates a new blog post row. Every nullable column is bound explicitly as
+ * `null` when absent — toPositional() throws on `undefined`, and this
+ * table's ~20 mostly-optional columns make "just spread the input object"
+ * unsafe (see this file's header comment on toPositional's safety rules).
+ * `status`/`published_at`/`last_published_commit` default to the normal
+ * draft-creation shape; the one-off import script (BUILD §21.5) is the only
+ * caller that ever passes `status:'published'` + the other two pre-filled,
+ * seeding a post that was already live before this table existed.
+ */
+export async function createBlogPost(db, post) {
+  const bound = {
+    id: post.id,
+    slug: post.slug,
+    status: post.status === 'published' ? 'published' : 'draft',
+    category: post.category,
+    cover_image_path: post.cover_image_path ?? null,
+    cover_alt_en: post.cover_alt_en ?? null,
+    cover_alt_nl: post.cover_alt_nl ?? null,
+    title_en: post.title_en,
+    title_nl: post.title_nl ?? null,
+    excerpt_en: post.excerpt_en ?? null,
+    excerpt_nl: post.excerpt_nl ?? null,
+    body_en: post.body_en ?? null,
+    body_nl: post.body_nl ?? null,
+    seo_title_en: post.seo_title_en ?? null,
+    seo_title_nl: post.seo_title_nl ?? null,
+    seo_description_en: post.seo_description_en ?? null,
+    seo_description_nl: post.seo_description_nl ?? null,
+    read_minutes: post.read_minutes ?? 5,
+    published_at: post.published_at ?? null,
+    created_by: post.created_by ?? null,
+    updated_by: post.created_by ?? null,
+    old_wix_slug: post.old_wix_slug ?? null,
+    last_published_commit: post.last_published_commit ?? null,
+  };
+  await run(
+    db,
+    `INSERT INTO blog_posts
+       (id, slug, status, category, cover_image_path, cover_alt_en, cover_alt_nl,
+        title_en, title_nl, excerpt_en, excerpt_nl, body_en, body_nl,
+        seo_title_en, seo_title_nl, seo_description_en, seo_description_nl,
+        read_minutes, published_at, created_at, updated_at, created_by, updated_by,
+        old_wix_slug, last_published_commit)
+     VALUES
+       (:id, :slug, :status, :category, :cover_image_path, :cover_alt_en, :cover_alt_nl,
+        :title_en, :title_nl, :excerpt_en, :excerpt_nl, :body_en, :body_nl,
+        :seo_title_en, :seo_title_nl, :seo_description_en, :seo_description_nl,
+        :read_minutes, :published_at, datetime('now'), datetime('now'), :created_by, :updated_by,
+        :old_wix_slug, :last_published_commit)`,
+    bound
+  );
+  return getBlogPost(db, post.id);
+}
+
+export async function getBlogPost(db, id) {
+  return first(db, `SELECT * FROM blog_posts WHERE id = :id`, { id });
+}
+
+export async function getBlogPostBySlug(db, slug) {
+  return first(db, `SELECT * FROM blog_posts WHERE slug = :slug`, { slug });
+}
+
+export async function listBlogPosts(db, filters = {}) {
+  const clauses = ['1=1'];
+  const bound = {};
+  if (filters.status) { clauses.push('status = :status'); bound.status = filters.status; }
+  return all(
+    db,
+    `SELECT * FROM blog_posts WHERE ${clauses.join(' AND ')} ORDER BY updated_at DESC`,
+    bound
+  );
+}
+
+/** `{draft, published}` counts for the list view's status chips. Two tiny
+ * aggregate reads rather than one GROUP BY — this table is small (a blog,
+ * not bookings) and it keeps the result shape trivial to consume. */
+export async function countBlogPostsByStatus(db) {
+  const draft = await first(db, `SELECT COUNT(*) AS n FROM blog_posts WHERE status = 'draft'`, {});
+  const published = await first(db, `SELECT COUNT(*) AS n FROM blog_posts WHERE status = 'published'`, {});
+  return { draft: draft.n, published: published.n };
+}
+
+const BLOG_POST_EDITABLE_COLUMNS = BLOG_POST_COLUMNS.filter(
+  (c) => !['id', 'created_at', 'created_by'].includes(c)
+);
+
+/**
+ * Patches only the columns present in `patch` (same dynamic-SET idiom as
+ * updateRoute above) and always bumps `updated_at`. Callers (admin_api.js)
+ * are responsible for setting `updated_by` themselves and for NEVER
+ * including `slug` once a post has ever been published (enforced at the
+ * handler layer, not here, so this stays a plain data-access function).
+ */
+export async function updateBlogPost(db, id, patch) {
+  const cols = Object.keys(patch).filter((k) => BLOG_POST_EDITABLE_COLUMNS.includes(k));
+  const bound = { id };
+  const sets = ['updated_at = datetime(\'now\')'];
+  for (const c of cols) {
+    sets.push(`${c} = :${c}`);
+    bound[c] = patch[c];
+  }
+  if (cols.length === 0 && sets.length === 1) return getBlogPost(db, id); // nothing to do at all
+  await run(db, `UPDATE blog_posts SET ${sets.join(', ')} WHERE id = :id`, bound);
+  return getBlogPost(db, id);
+}
+
+export async function deleteBlogPost(db, id) {
+  const result = await run(db, `DELETE FROM blog_posts WHERE id = :id`, { id });
+  return result.meta.changes === 1;
+}
+
+export async function insertBlogAsset(db, asset) {
+  await run(
+    db,
+    `INSERT INTO blog_assets (id, post_id, path, bytes, created_at)
+     VALUES (:id, :post_id, :path, :bytes, datetime('now'))`,
+    { id: asset.id, post_id: asset.post_id, path: asset.path, bytes: asset.bytes }
+  );
+  return first(db, `SELECT * FROM blog_assets WHERE id = :id`, { id: asset.id });
+}
+
+export async function listBlogAssets(db, postId) {
+  return all(db, `SELECT * FROM blog_assets WHERE post_id = :post_id ORDER BY created_at`, { post_id: postId });
+}
+
+/** Deletes every blog_assets row for a post — blog_assets.post_id is a REAL
+ * foreign key against blog_posts(id) (migrations/0030), and real D1
+ * enforces it (unlike this repo's test sqlite adapter, which runs with
+ * `PRAGMA foreign_keys = OFF`) — admin_api.js:handleDeleteBlogPost calls
+ * this BEFORE deleteBlogPost, or the post delete itself fails with a
+ * foreign-key-constraint error on any post that ever had an image uploaded. */
+export async function deleteBlogAssetsForPost(db, postId) {
+  await run(db, `DELETE FROM blog_assets WHERE post_id = :post_id`, { post_id: postId });
+}
+
 export { nowSqlite };

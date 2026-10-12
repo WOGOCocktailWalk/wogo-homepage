@@ -35,9 +35,23 @@ const API_CSP = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'";
 // src/admin/build.mjs) — there is no nonce plumbing today, so script-src/
 // style-src need 'unsafe-inline'. Everything else stays locked down: no
 // external scripts, no framing, fetches only back to same-origin /admin/api.
+//
+// img-src additionally allows the site's own two image hosts (BUILD §21,
+// Blog) — the Blog editor's "Preview EN/NL" panel is an <iframe> whose
+// content is set via `.srcdoc` (no response headers of its own); per the
+// CSP spec a local-scheme document like that inherits the EMBEDDING
+// document's policy, i.e. THIS one. A rendered post's <img> tags point at
+// the real site (staging: wogococktailwalk.github.io; production:
+// www.wogococktailwalk.com / wogococktailwalk.com — same pair
+// config.js:ALLOWED_ORIGINS already trusts), so without this the preview
+// would render with every image broken. A <meta> CSP inside the srcdoc
+// itself could NOT fix this instead — multiple active policies intersect
+// (AND), they don't override each other, so only widening the policy
+// actually enforced on the embedding document works.
 const ADMIN_HTML_CSP =
   "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; " +
-  "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'";
+  "img-src 'self' data: https://www.wogococktailwalk.com https://wogococktailwalk.com https://wogococktailwalk.github.io; " +
+  "connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'";
 
 /**
  * Returns a NEW Response with security headers added on top of `response`'s

@@ -275,6 +275,72 @@ export const REVIEW_GOOGLE_URL = '';
 // never needs more in one call.
 export const ANALYTICS_MAX_RANGE_DAYS = 400;
 
+// --- Blog (migrations/0030_blog_posts.sql, BUILD §21) ------------------------
+
+// Site-wide launch gate (SETUP.md "cutover" list): the ENTIRE static site
+// still ships `<meta name="robots" content="noindex">` on every page until
+// the real domain goes live (see every existing page's head comment,
+// `blog/best-cocktail-bars-in-rotterdam/index.html` included). The blog
+// renderer (src/blog_render.js) and the publish endpoint mirror that SAME
+// rule for posts it generates: while this is `true`, every rendered post
+// carries `noindex` and is never added to sitemap.xml, regardless of its own
+// `status`. FLIP THIS TO `false` AT CUTOVER (the one line SETUP.md points
+// at) — every post already marked 'published' then needs one real
+// re-publish (or a one-off re-render pass) to pick up the change, since
+// noindex/sitemap membership is baked into the committed HTML/XML at publish
+// time, not computed at request time (the files are static).
+export const SITE_NOINDEX = true;
+
+// The dashboard's fixed category chips (BUILD §21.4) — validated server-side
+// on every blog_posts write so a typo'd category can't silently create a
+// new, uncategorized bucket. Adding a category later is a one-line change
+// here, no migration needed (the column is plain TEXT).
+export const BLOG_CATEGORIES = ['City guide', 'New route', 'Explained', 'Recipes', 'News'];
+
+// Slug shape (BUILD §21.2) — lowercase letters/digits/hyphens, 3-80 chars,
+// immutable after a post's first publish — lives in src/logic.js as
+// `BLOG_SLUG_RE`/`validateBlogSlug` (a pure, zero-import module) rather than
+// here, so there is exactly ONE definition instead of two that could drift.
+
+// Asset upload limits (BUILD §21's "multipart image upload ≤ 2.5MB, jpg/png/
+// webp") — kept here, not hardcoded in admin_api.js, so the dashboard's own
+// client-side pre-check (admin.js) and the server's real guard can never
+// silently drift, same pattern as GIFT_CARD_TIERS_CENTS etc. above.
+export const BLOG_ASSET_MAX_BYTES = 2.5 * 1024 * 1024;
+export const BLOG_ASSET_ALLOWED_TYPES = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
+
+// Field length caps — same "kept in config.js so client and server can't
+// drift" pattern as CONTACT_NAME_MAX_LENGTH etc. above.
+export const BLOG_TITLE_MAX_LENGTH = 200;
+export const BLOG_EXCERPT_MAX_LENGTH = 400;
+export const BLOG_SEO_TITLE_MAX_LENGTH = 70;
+export const BLOG_SEO_DESCRIPTION_MAX_LENGTH = 160;
+export const BLOG_ALT_MAX_LENGTH = 160;
+export const BLOG_BODY_MAX_LENGTH = 50000; // sanity cap, well above any real post
+
+// The real, production domain — used ONLY in meta/OG/canonical/JSON-LD tags
+// on a rendered blog post (src/blog_render.js), matching the convention
+// every hand-built page already follows (e.g. every existing /blog/*/
+// post's <meta property="og:image"> already points at
+// www.wogococktailwalk.com, not SITE_ASSET_BASE, even though that domain
+// isn't live yet — the site-wide noindex is what covers for that until
+// cutover). NEVER used for an actual fetched resource (<img src>, <link
+// preload>) — those use SITE_ASSET_BASE below, which resolves RIGHT NOW.
+export const BLOG_CANONICAL_BASE = 'https://www.wogococktailwalk.com';
+
+// GitHub Contents API (src/github.js) — the publish/unpublish/asset-upload
+// write path to the static site's repo. `GITHUB_TOKEN` (repo scope) and
+// `GITHUB_REPO` ("owner/repo", e.g. 'WOGOCocktailWalk/wogo-homepage') are
+// both Worker SECRETS (`wrangler secret put ...`), never written here — see
+// SETUP.md. This constant is just the stable, non-secret API host.
+export const GITHUB_API_BASE = 'https://api.github.com';
+export const GITHUB_COMMIT_BRANCH_DEFAULT = 'main';
+export const GITHUB_COMMIT_AUTHOR = { name: 'WOGO Admin', email: 'info@wogoamsterdam.com' };
+
 // --- UTM / source capture on bookings (migrations/0027, BUILD §19 Marketing
 // pass) ------------------------------------------------------------------
 // Captured client-side by the widget (window.__wogoCarry, falling back to

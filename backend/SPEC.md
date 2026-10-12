@@ -1202,6 +1202,163 @@ EN/NL rendering (incl. the Google button's presence/absence and the never-an-uns
 
 ---
 
+## 21. Blog (`migrations/0030_blog_posts.sql`, 2026-10)
+
+### 21.1 What it does
+
+A non-technical teammate writes, previews and publishes blog posts to the
+static site entirely from the admin dashboard's **Blog** tab — no GitHub UI,
+no code. D1 (`blog_posts`) is the editable source of truth; the committed
+`blog/<slug>/index.html`, `blog/index.html` and (post-cutover)
+`sitemap.xml` entry are a BUILD OUTPUT regenerated in full on every
+publish/unpublish, never hand-edited and never read back into D1. The write
+path to GitHub is the Contents API (`src/github.js`), authenticated with the
+`GITHUB_TOKEN` secret (repo scope) against the repo named by the
+`GITHUB_REPO` secret — one real commit per file, with a 409/stale-sha retry.
+
+### 21.2 Schema
+
+`blog_posts`: `id`, `slug` (UNIQUE, `[a-z0-9-]{3,80}`, immutable after the
+post's first publish — enforced in `admin_api.js:handleUpdateBlogPost`, not
+the schema), `status` (`'draft'|'published'`), `category` (one of
+`config.js:BLOG_CATEGORIES` — City guide / New route / Explained / Recipes /
+News), `cover_image_path`, `cover_alt_en`/`_nl`, `title_en`/`_nl`,
+`excerpt_en`/`_nl`, `body_en`/`_nl` (sanitized HTML — see §21.3), SEO
+title/description per language, `read_minutes`, `published_at` (set ONCE, on
+first publish, never moved by a later re-publish), `created_at`/`updated_at`,
+`created_by`/`updated_by` (actor email, same convention as
+`admin_audit.actor`), `old_wix_slug` (import-only), `last_published_commit`.
+`blog_assets`: one row per uploaded image, `post_id` a REAL foreign key
+(real D1 enforces it — `admin_api.js:handleDeleteBlogPost` deletes a post's
+`blog_assets` rows first, or the delete fails the constraint on any post
+that ever had an image).
+
+Every field is EN-required/NL-optional-with-EN-fallback EXCEPT `body_en`
+itself, which is required before publish — a missing `_nl` field (title,
+excerpt, body, SEO, cover alt) renders the EN version in that slot, so a post
+can go live before its Dutch copy is ready, matching how the rest of the
+site already treats a missing translation.
+
+### 21.3 Sanitization (`src/logic.js:sanitizeBlogHtml`)
+
+A hand-rolled allowlist scanner (Workers has no DOMParser; this file is
+zero-import/pure so it runs under plain `node --test` too) — allows exactly
+`p h2 h3 strong em a ul ol li blockquote figure figcaption img br hr`, with
+`a` keeping only `href|rel|target` and `img` keeping only `src|alt`. Every
+`on*` handler and every other attribute is dropped regardless of tag;
+`javascript:`/`data:`/`vbscript:`/`file:` URLs in `href`/`src` are rejected;
+a disallowed TAG is dropped but its inner TEXT is kept (so a stray
+`<div onclick=x>hello</div>` becomes plain `hello`, never executable); a
+`target="_blank"` link with no `rel` of its own gets `rel="noopener"` forced
+on. Re-run on EVERY write (create/update), never trusted from what's already
+stored. Deliberately not a full browser-grade sanitizer (no mXSS defense) —
+acceptable because body content is staff+-authored and role-gated/audited,
+not public user input.
+
+### 21.4 Renderer (`src/blog_render.js`) + templates
+
+`blog/_template/post.html` / `blog/_template/index.html` were built by
+COPYING a real page and swapping only the post-specific content for
+`{{TOKEN}}` placeholders — the shared NAV/FOOTER/CONSENT/ANALYTICS chrome is
+byte-identical to every hand-built page of the same type (confirmed against
+two real posts before freezing the rule; a ROUTE page's NAV is NOT a valid
+comparison — its nav CTA legitimately targets a different anchor by page
+type). `scripts/build_blog_templates.mjs` embeds both template files into
+`src/blog_templates_data.js` at build time (re-run after any template edit,
+then redeploy) — the same "hand-edited source → generated module" pattern
+`src/admin/build.mjs` already uses, so preview/publish never need a live
+GitHub fetch just to render.
+
+i18n: the post body is rendered TWICE — `<div data-lang="en">`/`<div
+data-lang="nl" hidden>` — rather than per-paragraph `data-i18n` keys, since
+the editor produces one HTML blob per language, not individually-keyed
+paragraphs. The shared `setLang()` script (identical mechanism to every
+other page) gained two small, additive capabilities for this: toggling
+`hidden` on `[data-lang]` elements, and setting an `<img>`'s `alt` from
+`[data-i18n-alt]` (an attribute can't hold translated text as element
+content the way `data-i18n`'s `innerHTML` swap does). Every other post-
+specific string (title, excerpt, category, SEO fields) still uses the
+existing EN-in-DOM + NL-dictionary-override pattern.
+
+Every blog image reference (cover AND in-body) is resolved through
+`assetUrl()` against `config.js:SITE_ASSET_BASE` (the functional,
+cutover-aware host) for anything the browser actually fetches, but
+`config.js:BLOG_CANONICAL_BASE` (always the production domain) for
+meta/OG/canonical/JSON-LD tags — matching the convention every hand-built
+post already follows (its `og:image` points at `www.wogococktailwalk.com`
+even pre-cutover; the site-wide noindex covers for that). The admin
+dashboard's "Preview EN/NL" needs the FIRST of those two to actually render
+images inside its `<iframe srcdoc>` — see `security_headers.js`'s
+`ADMIN_HTML_CSP` doc comment for why `img-src` had to widen to include both
+site hosts (multiple active CSPs intersect; a `<meta>` CSP inside the
+srcdoc itself cannot widen what the embedding document already enforces).
+A `<base>` tag is injected ONLY in preview renders (`opts.preview`) so the
+chrome's relative asset paths resolve inside the iframe — the committed
+file keeps the exact `../../`-relative convention every other post uses.
+
+`SITE_NOINDEX` (`config.js`, currently `true`) mirrors the site-wide
+pre-cutover noindex rule for every rendered post AND decides whether
+`sitemap.xml` gets a `<url>` entry — flip it at cutover (SETUP.md §22).
+
+### 21.5 Admin API (roles diverge from the usual "owner = structure change" reading — BUILD §21's own spec)
+
+| Role | Can do |
+|---|---|
+| viewer | `GET /admin/api/blog`, `GET /admin/api/blog/:id`, `POST /admin/api/blog/:id/preview` (a POST only because it needs a body, not because it mutates) |
+| staff+ | create, edit (`PUT`), publish, unpublish, upload an asset |
+| owner | delete (and only once unpublished); the one EXTRA restriction on top of the table — creating a post pre-seeded `status:'published'` (the import script's path, §21.6) — is enforced INSIDE `handleCreateBlogPost`, since `ROUTE_ROLES` can't see into a request body |
+
+`POST /admin/api/blog/:id/publish` and `.../unpublish` both accept an
+optional `{ branch }` (defaults to `main`) — the end-to-end test (§21.7)
+publishes to a scratch branch instead, so a test run never touches the live
+site.
+
+### 21.6 Import (`backend/scripts/import_blog_posts.mjs`, one-off, already run)
+
+Parsed the 8 pre-existing hand-built `/blog/<slug>/index.html` pages
+straight from their real markup (title/meta description/category/read
+time/hook→excerpt/hero image+alt/JSON-LD `datePublished`/the head comment's
+"OLD URL") and POSTed them to the admin API as OWNER with
+`status:'published'` + `last_published_commit` set to the commit HEAD at
+import time — the "already live, no commit needed" seed path. The Dutch
+body was built by evaluating each page's own embedded `NL = {...}` dictionary
+with `node:vm` (real JS, not a hand-rolled parser) and substituting it into
+the SAME extracted English body structure element-by-element, so EN/NL stay
+structurally identical (same images, same paragraph order). Verified: every
+one of the 8 posts' sanitized body text is a 100% match (ignoring tags) with
+its original un-sanitized source — no content was dropped by the sanitizer
+pass. `blog/summer-cocktail-recipes/index.html` — already flagged inside its
+own file as a near-duplicate of `blog/utrecht-night-out-cocktails/` awaiting
+an owner decision, and already excluded from the live index/sitemap — was
+imported as a **draft**, not published, to match how it already behaves on
+the live site.
+
+### 21.7 Tests
+
+`test/blog_sanitize.test.js` (30 tests): the sanitizer's full allowlist
+behavior, slug/category validators. `test/blog_render.test.js` (18 tests):
+both renderers against the REAL template files (no unfilled tokens,
+noindex/`<base>` toggle, valid JSON-LD, the EN/NL dual-body structure and its
+EN-fallback, NL-dictionary JS-string-literal escaping, the sitemap entry
+shape). `test/blog_api.test.js` (26 tests): the full role matrix end-to-end
+through `worker.fetch`, create/update validation (plain-English messages),
+slug immutability after first publish, the publish-readiness gate, GitHub
+publish/unpublish against a mocked `fetch` (including the 409/sha-refresh
+retry and a scratch-branch publish), delete rules (must unpublish first;
+the `blog_assets` foreign-key regression — reproduced by turning
+`PRAGMA foreign_keys = ON` on the test adapter, which normally runs with it
+off), and asset upload validation (type/size/missing-file).
+
+A real end-to-end run (create → upload a cover → preview → publish to a
+scratch branch → verify the committed file passes the same shared-block-hash
++ JSON-LD checks as the test suite → unpublish → delete → delete the scratch
+branch) was also run once, by hand, directly against the deployed Worker and
+GitHub, before this feature shipped.
+
+Full suite: **785 passing, 0 failing** (up from 711).
+
+---
+
 ## PORTABILITY.md (to be created verbatim as its own file)
 
 ```markdown

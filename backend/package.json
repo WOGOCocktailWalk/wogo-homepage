@@ -5,6 +5,7 @@
   "scripts": {
     "test": "node --test test/*.test.js",
     "build:admin": "node src/admin/build.mjs",
+    "build:blog-templates": "node scripts/build_blog_templates.mjs",
     "build:emails-preview": "node src/emails_preview.mjs"
   },
   "devDependencies": {

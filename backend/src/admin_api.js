@@ -7,6 +7,7 @@ import {
   toCsv, aggregateCustomers, computeLoginLockout, nowSqlite, sqliteMinutesAgo, sqliteMinutesFromNow,
   validateNotes, isValidCurrencyCode, isValidIanaTimeZone, buildBookingAnalytics, addDaysToDateStr,
   buildHighlightsSales, computePctDelta, pageViewsByCity,
+  validateBlogSlug, validateBlogCategory, sanitizeBlogHtml, stripHtmlTags,
 } from './logic.js';
 import {
   LOGIN_FAIL_THRESHOLD,
@@ -53,6 +54,15 @@ import { sendReviewRequestForBooking } from './reviews.js';
 import { posterUrlFor, EMAIL_SENDER } from './config.js';
 import { upsertTransactionalTemplate } from './brevo.js';
 import { buildReferenceTemplateSet } from './emails.js';
+import {
+  BLOG_CATEGORIES, BLOG_ASSET_MAX_BYTES, BLOG_ASSET_ALLOWED_TYPES, SITE_NOINDEX,
+  BLOG_TITLE_MAX_LENGTH, BLOG_EXCERPT_MAX_LENGTH, BLOG_SEO_TITLE_MAX_LENGTH,
+  BLOG_SEO_DESCRIPTION_MAX_LENGTH, BLOG_ALT_MAX_LENGTH, BLOG_BODY_MAX_LENGTH,
+  GITHUB_COMMIT_BRANCH_DEFAULT,
+} from './config.js';
+import { putFile, deleteFile, getFile } from './github.js';
+import { renderPostPage, renderIndexPage, buildSitemapUrlEntry, assetUrl as blogAssetUrl } from './blog_render.js';
+import { BLOG_POST_TEMPLATE, BLOG_INDEX_TEMPLATE } from './blog_templates_data.js';
 
 // ---------------------------------------------------------------------------
 // Admin mutation audit trail (owner audit item #8, migrations/0007). Called
@@ -277,6 +287,25 @@ export const ROUTE_ROLES = {
   'GET /admin/api/users': 'owner',
   'POST /admin/api/users': 'owner',
   'PUT /admin/api/users/:id': 'owner',
+
+  // Blog (migrations/0030_blog_posts.sql, BUILD §21) — diverges from the
+  // "owner = structure change" reading above on purpose: list/get/preview
+  // are read-only (preview commits nothing, even though it's a POST — it
+  // needs a body for `lang`/`overrides`, not because it mutates); create/
+  // edit/publish/unpublish/upload-asset are staff-level day-to-day content
+  // ops; only delete is owner-only. The one EXTRA restriction — only an
+  // owner may create a post pre-seeded as `status:'published'` (the import
+  // script's path) — is enforced inside handleCreateBlogPost itself, since
+  // ROUTE_ROLES can't see into a request body.
+  'GET /admin/api/blog': 'viewer',
+  'GET /admin/api/blog/:id': 'viewer',
+  'POST /admin/api/blog/:id/preview': 'viewer',
+  'POST /admin/api/blog': 'staff',
+  'PUT /admin/api/blog/:id': 'staff',
+  'POST /admin/api/blog/:id/publish': 'staff',
+  'POST /admin/api/blog/:id/unpublish': 'staff',
+  'POST /admin/api/blog/:id/assets': 'staff',
+  'DELETE /admin/api/blog/:id': 'owner',
 };
 
 /**
@@ -2058,4 +2087,525 @@ export async function handleAnalyticsMarketing(request, env) {
     discount_usage: walkAnalytics.discount_usage,
     gift_cards: { sold_count: giftSales.sold_count, sold_value_cents: giftSales.sold_value_cents, redeemed_value_cents: giftRedeemedCents },
   });
+}
+
+// ---------------------------------------------------------------------------
+// Blog (migrations/0030_blog_posts.sql, BUILD §21) — a non-technical
+// teammate writes/previews/publishes blog posts without touching code. D1
+// is the editable source of truth; the committed blog/<slug>/index.html,
+// blog/index.html and (post-launch) sitemap.xml entries are a BUILD OUTPUT
+// regenerated in full on every publish/unpublish via the GitHub Contents
+// API (src/github.js) — never hand-edited, never read back into D1.
+//
+// Roles diverge from this table's usual "owner = structure change" reading,
+// on purpose, matching BUILD §21's own spec:
+//   viewer  — list/get/preview (preview never mutates anything — it renders
+//             either the stored row or a POST body's draft fields, commits
+//             nothing)
+//   staff+  — create/edit/publish/unpublish/upload-asset (day-to-day
+//             content ops, same tier as manual booking / date overrides)
+//   owner   — delete, AND the one-off import script's "seed as already-
+//             published" create path (a bulk write that bypasses the normal
+//             publish-commit flow entirely — see handleCreateBlogPost)
+// ---------------------------------------------------------------------------
+
+/** Decorates a post row with `cover_url` — the absolute URL the dashboard's
+ * editor/list view can drop straight into an `<img src>`, computed with the
+ * SAME `assetUrl()` the renderer itself uses, so the admin preview thumbnail
+ * and the eventual live page always agree on where the image lives.
+ * `null` when the post has no cover yet (list/editor render a placeholder). */
+function withCoverUrl(post) {
+  if (!post) return post;
+  return { ...post, cover_url: post.cover_image_path ? blogAssetUrl(post.cover_image_path) : null };
+}
+
+export async function handleListBlogPosts(request, env) {
+  const url = new URL(request.url);
+  const status = url.searchParams.get('status');
+  if (status && status !== 'draft' && status !== 'published') {
+    return errorJson('bad_request', "status must be 'draft' or 'published'", 400);
+  }
+  const [posts, counts] = await Promise.all([
+    db.listBlogPosts(env.DB, status ? { status } : {}),
+    db.countBlogPostsByStatus(env.DB),
+  ]);
+  return json({ posts: posts.map(withCoverUrl), counts });
+}
+
+export async function handleGetBlogPost(request, env, params) {
+  const post = await db.getBlogPost(env.DB, params.id);
+  if (!post) return errorJson('not_found', 'post not found', 404);
+  return json({ post: withCoverUrl(post) });
+}
+
+/**
+ * Validates + normalizes the blog_posts fields a create/update/preview body
+ * can carry. `requireCore` (create only) demands title_en + category;
+ * everything else is optional on every call, so a PUT only touching one
+ * field never has to resend the whole post. Plain-English messages
+ * throughout (BUILD §21's own requirement) — this is the ONE place that
+ * decides them, so create/update/preview can never disagree on wording.
+ * Returns `{ ok: true, fields }` (only the KEYS actually present in `body`
+ * are in `fields`, so callers can tell "omitted" from "cleared to empty"
+ * — matches db.js:updateBlogPost's own "only patch what's present" shape)
+ * or `{ ok: false, message }`.
+ */
+function validateBlogFields(body, { requireCore } = {}) {
+  const b = body || {};
+  const fields = {};
+
+  const has = (k) => Object.prototype.hasOwnProperty.call(b, k);
+
+  if (requireCore || has('title_en')) {
+    const titleEn = typeof b.title_en === 'string' ? b.title_en.trim() : '';
+    if (!titleEn) return { ok: false, message: 'please give the post a title' };
+    if (titleEn.length > BLOG_TITLE_MAX_LENGTH) {
+      return { ok: false, message: `the title must be at most ${BLOG_TITLE_MAX_LENGTH} characters` };
+    }
+    fields.title_en = titleEn;
+  }
+  if (has('title_nl')) {
+    const v = typeof b.title_nl === 'string' ? b.title_nl.trim() : '';
+    if (v.length > BLOG_TITLE_MAX_LENGTH) return { ok: false, message: `the Dutch title must be at most ${BLOG_TITLE_MAX_LENGTH} characters` };
+    fields.title_nl = v || null;
+  }
+
+  if (requireCore || has('category')) {
+    const catCheck = validateBlogCategory(b.category, BLOG_CATEGORIES);
+    if (!catCheck.ok) return { ok: false, message: catCheck.message };
+    fields.category = catCheck.category;
+  }
+
+  for (const [key, max, label] of [
+    ['excerpt_en', BLOG_EXCERPT_MAX_LENGTH, 'the excerpt'],
+    ['excerpt_nl', BLOG_EXCERPT_MAX_LENGTH, 'the Dutch excerpt'],
+    ['seo_title_en', BLOG_SEO_TITLE_MAX_LENGTH, 'the SEO title'],
+    ['seo_title_nl', BLOG_SEO_TITLE_MAX_LENGTH, 'the Dutch SEO title'],
+    ['seo_description_en', BLOG_SEO_DESCRIPTION_MAX_LENGTH, 'the SEO description'],
+    ['seo_description_nl', BLOG_SEO_DESCRIPTION_MAX_LENGTH, 'the Dutch SEO description'],
+    ['cover_alt_en', BLOG_ALT_MAX_LENGTH, 'the cover photo description'],
+    ['cover_alt_nl', BLOG_ALT_MAX_LENGTH, 'the Dutch cover photo description'],
+  ]) {
+    if (!has(key)) continue;
+    const plain = stripHtmlTags(b[key], max);
+    if (String(b[key] ?? '').trim().length > max) {
+      return { ok: false, message: `${label} must be at most ${max} characters` };
+    }
+    fields[key] = plain || null;
+  }
+
+  for (const key of ['body_en', 'body_nl']) {
+    if (!has(key)) continue;
+    const raw = typeof b[key] === 'string' ? b[key] : '';
+    if (raw.length > BLOG_BODY_MAX_LENGTH) {
+      return { ok: false, message: `the ${key === 'body_en' ? 'English' : 'Dutch'} post body is too long` };
+    }
+    // Re-sanitize on EVERY write — never trust what the client sent, and
+    // never trust what's already stored either (same "sanitize at the
+    // write edge, always" posture as validateNotes elsewhere in this file).
+    fields[key] = sanitizeBlogHtml(raw) || null;
+  }
+
+  if (has('read_minutes')) {
+    const n = Number(b.read_minutes);
+    if (!Number.isInteger(n) || n < 1 || n > 120) {
+      return { ok: false, message: 'read time must be a whole number of minutes between 1 and 120' };
+    }
+    fields.read_minutes = n;
+  }
+
+  // Normally set by POST /admin/api/blog/:id/assets' own follow-up PUT (the
+  // dashboard's cover-upload flow — see admin.js) rather than typed by hand,
+  // but the one-off import script (BUILD §21.5) also sets this directly for
+  // the 8 pre-existing posts' already-live cover photos. A plain repo-
+  // relative path check — no `..` traversal, reasonable length — not a
+  // real filesystem check (GitHub's own API is the real existence check,
+  // at publish time).
+  if (has('cover_image_path')) {
+    const v = b.cover_image_path;
+    if (v !== null && (typeof v !== 'string' || !v || v.includes('..') || v.length > 300)) {
+      return { ok: false, message: 'cover photo path is invalid' };
+    }
+    fields.cover_image_path = v || null;
+  }
+
+  return { ok: true, fields };
+}
+
+/**
+ * POST /admin/api/blog (staff+ normally). Creates a new draft. The ONE
+ * exception — `status: 'published'` + `last_published_commit` in the body —
+ * seeds a post that is ALREADY live on the site (the one-off import script,
+ * backend/scripts/import_blog_posts.mjs, for the 8 pre-existing hand-built
+ * posts): no GitHub commit happens on this path, it only writes D1 metadata
+ * for content that's already sitting on disk. That bypasses every one of
+ * the normal publish-time checks (cover photo present, etc.), so it is
+ * gated to OWNER ONLY, on top of this route's normal staff+ minimum.
+ */
+export async function handleCreateBlogPost(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return errorJson('bad_request', 'invalid JSON', 400);
+  }
+
+  const slugCheck = validateBlogSlug(body && body.slug);
+  if (!slugCheck.ok) return errorJson('bad_request', slugCheck.message, 400);
+  const existing = await db.getBlogPostBySlug(env.DB, slugCheck.slug);
+  if (existing) return errorJson('slug_taken', 'that URL is already used by another post', 409);
+
+  const fieldsCheck = validateBlogFields(body, { requireCore: true });
+  if (!fieldsCheck.ok) return errorJson('bad_request', fieldsCheck.message, 400);
+
+  const wantsPublishedSeed = body && body.status === 'published';
+  const session = request.adminSession;
+  if (wantsPublishedSeed && !(session && session.role === 'owner')) {
+    return errorJson('forbidden', 'only an owner can import a post as already published', 403);
+  }
+
+  const id = `blogpost_${crypto.randomUUID()}`;
+  const actor = session && session.email ? session.email : 'token';
+  const post = await db.createBlogPost(env.DB, {
+    id,
+    slug: slugCheck.slug,
+    ...fieldsCheck.fields,
+    status: wantsPublishedSeed ? 'published' : 'draft',
+    published_at: wantsPublishedSeed ? (body.published_at || nowSqlite()) : null,
+    last_published_commit: wantsPublishedSeed ? (body.last_published_commit || null) : null,
+    old_wix_slug: wantsPublishedSeed ? (body.old_wix_slug || null) : null,
+    created_by: actor,
+  });
+
+  await audit(env, request, 'blog.create', 'blog_post', id, { slug: slugCheck.slug, seeded_published: !!wantsPublishedSeed });
+  return json({ post: withCoverUrl(post) }, 201);
+}
+
+/**
+ * PUT /admin/api/blog/:id (staff+) — the dashboard's "Save draft" action
+ * (also used for any edit to an already-published post, which does NOT
+ * republish it — the teammate must click Publish again for a change to go
+ * live; this just updates the editable D1 row). `slug` is accepted only
+ * while the post has never been published (no `last_published_commit` and
+ * `status !== 'published'`) — editable until first publish, immutable
+ * after, per BUILD §21's own rule (renaming would break any link already
+ * out in the world).
+ */
+export async function handleUpdateBlogPost(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const existing = await db.getBlogPost(env.DB, params.id);
+  if (!existing) return errorJson('not_found', 'post not found', 404);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return errorJson('bad_request', 'invalid JSON', 400);
+  }
+
+  const patch = {};
+  if (Object.prototype.hasOwnProperty.call(body || {}, 'slug')) {
+    const everPublished = existing.status === 'published' || !!existing.last_published_commit;
+    if (everPublished) {
+      return errorJson(
+        'slug_immutable',
+        'the URL can no longer be changed — this post has already been published and changing it would break the link',
+        400
+      );
+    }
+    const slugCheck = validateBlogSlug(body.slug);
+    if (!slugCheck.ok) return errorJson('bad_request', slugCheck.message, 400);
+    if (slugCheck.slug !== existing.slug) {
+      const clash = await db.getBlogPostBySlug(env.DB, slugCheck.slug);
+      if (clash) return errorJson('slug_taken', 'that URL is already used by another post', 409);
+    }
+    patch.slug = slugCheck.slug;
+  }
+
+  const fieldsCheck = validateBlogFields(body, { requireCore: false });
+  if (!fieldsCheck.ok) return errorJson('bad_request', fieldsCheck.message, 400);
+  Object.assign(patch, fieldsCheck.fields);
+
+  const session = request.adminSession;
+  patch.updated_by = session && session.email ? session.email : 'token';
+
+  const post = await db.updateBlogPost(env.DB, params.id, patch);
+  await audit(env, request, 'blog.update', 'blog_post', params.id, { fields: Object.keys(patch) });
+  return json({ post: withCoverUrl(post) });
+}
+
+/**
+ * DELETE /admin/api/blog/:id (owner only). A PUBLISHED post must be
+ * unpublished first — deleting its D1 row out from under a live committed
+ * file would leave the site serving a page the dashboard no longer knows
+ * about. Deleting never removes any already-committed image from GitHub
+ * (an orphaned upload is harmless; see SETUP.md).
+ */
+export async function handleDeleteBlogPost(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const existing = await db.getBlogPost(env.DB, params.id);
+  if (!existing) return errorJson('not_found', 'post not found', 404);
+  if (existing.status === 'published') {
+    return errorJson('bad_request', 'unpublish this post before deleting it', 400);
+  }
+  // blog_assets.post_id is a real foreign key (migrations/0030) — must go
+  // first, or deleting a post that ever had an image uploaded fails the
+  // constraint on real D1 (the test sqlite adapter runs with foreign_keys
+  // OFF, which is why this only ever surfaces against the live database).
+  await db.deleteBlogAssetsForPost(env.DB, params.id);
+  await db.deleteBlogPost(env.DB, params.id);
+  await audit(env, request, 'blog.delete', 'blog_post', params.id, { slug: existing.slug });
+  return json({ ok: true });
+}
+
+/**
+ * Publish-readiness check (BUILD §21.2) — separate from validateBlogFields
+ * above because these rules apply only at the moment of going live, never
+ * while saving a draft in progress. `post` here is the fields AFTER any
+ * pending patch has been merged in (handlePublishBlogPost merges first).
+ */
+function checkPublishReady(post) {
+  if (!post.title_en || !post.title_en.trim()) return { ok: false, message: 'add a title before publishing' };
+  if (!post.category) return { ok: false, message: 'choose a category before publishing' };
+  if (!post.body_en || !post.body_en.trim()) return { ok: false, message: 'the post needs some body text before publishing' };
+  if (!post.cover_image_path) return { ok: false, message: 'upload a cover photo before publishing' };
+  if (!post.cover_alt_en || !post.cover_alt_en.trim()) {
+    return { ok: false, message: 'describe the cover photo (alt text) before publishing' };
+  }
+  return { ok: true };
+}
+
+/**
+ * POST /admin/api/blog/:id/preview (viewer+ — read-only, renders but never
+ * commits or writes anything). Body: `{ lang: 'en'|'nl', overrides?: {...} }`
+ * — `overrides` lets the editor preview UNSAVED changes (any of the same
+ * fields PUT accepts) without a save round-trip first. Returns
+ * `{ html }` — the dashboard assigns this straight to an `<iframe>`'s
+ * `.srcdoc` (see security_headers.js's ADMIN_HTML_CSP doc comment for why
+ * that iframe's images still load).
+ */
+export async function handlePreviewBlogPost(request, env, params) {
+  const existing = await db.getBlogPost(env.DB, params.id);
+  if (!existing) return errorJson('not_found', 'post not found', 404);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return errorJson('bad_request', 'invalid JSON', 400);
+  }
+  const lang = body && body.lang === 'nl' ? 'nl' : 'en';
+
+  let merged = existing;
+  if (body && body.overrides) {
+    const fieldsCheck = validateBlogFields(body.overrides, { requireCore: false });
+    if (!fieldsCheck.ok) return errorJson('bad_request', fieldsCheck.message, 400);
+    merged = { ...existing, ...fieldsCheck.fields };
+  }
+
+  let html;
+  try {
+    html = renderPostPage(BLOG_POST_TEMPLATE, merged, { siteNoindex: SITE_NOINDEX, preview: true });
+  } catch (err) {
+    return errorJson('render_failed', err.message, 500);
+  }
+  return json({ html, lang });
+}
+
+/** Rebuilds blog/index.html from the CURRENT list of published posts
+ * (newest-first by published_at) and commits it. Shared by publish and
+ * unpublish — both end with "the post list changed, regenerate the index." */
+async function republishBlogIndex(env, branch, actor) {
+  const published = (await db.listBlogPosts(env.DB, { status: 'published' })).sort(
+    (a, b) => String(b.published_at || '').localeCompare(String(a.published_at || ''))
+  );
+  const html = renderIndexPage(BLOG_INDEX_TEMPLATE, published, { siteNoindex: SITE_NOINDEX });
+  return putFile(env, 'blog/index.html', html, `Update blog index (${actor})`, { branch });
+}
+
+/**
+ * Adds (if missing) or removes this post's `<url>` block in sitemap.xml —
+ * a no-op while config.js:SITE_NOINDEX is true (BUILD §21's cutover rule:
+ * "while noindex, don't add to sitemap"). Idempotent either direction, so
+ * re-publishing an already-listed post or re-unpublishing an already-absent
+ * one never duplicates or errors.
+ */
+async function updateSitemapForPost(env, post, branch, { add }) {
+  if (SITE_NOINDEX) return { skipped: true };
+  const file = await getFile(env, 'sitemap.xml', branch);
+  if (!file) return { skipped: true }; // sitemap.xml doesn't exist on this branch — nothing to patch
+  const loc = `${post.slug}`;
+  const locTag = `<loc>https://www.wogococktailwalk.com/blog/${loc}/</loc>`;
+  const alreadyPresent = file.content.includes(locTag);
+
+  let next = file.content;
+  if (add && !alreadyPresent) {
+    const entry = buildSitemapUrlEntry(post);
+    next = file.content.replace('</urlset>', `${entry}\n</urlset>`);
+  } else if (!add && alreadyPresent) {
+    // Remove the whole <url>...</url> block containing this loc.
+    const blockRe = new RegExp(`\\s*<url>\\s*${locTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*?</url>`, 'm');
+    next = file.content.replace(blockRe, '');
+  } else {
+    return { skipped: true };
+  }
+  if (next === file.content) return { skipped: true };
+  return putFile(env, 'sitemap.xml', next, `${add ? 'Add' : 'Remove'} blog post from sitemap: ${post.slug}`, { branch, sha: file.sha });
+}
+
+/**
+ * POST /admin/api/blog/:id/publish (staff+). Body: `{ branch? }` — defaults
+ * to GITHUB_COMMIT_BRANCH_DEFAULT ('main'); the scratch-branch end-to-end
+ * test (SETUP.md) passes its own throwaway branch so a test run never
+ * touches the live site. Renders the post, commits
+ * blog/<slug>/index.html, regenerates blog/index.html, and (post-cutover
+ * only) adds the sitemap.xml entry — then marks the row published in D1.
+ * `published_at` is set ONLY the first time (never moved by a re-publish);
+ * `last_published_commit` is always updated to the post page's own commit.
+ */
+export async function handlePublishBlogPost(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const existing = await db.getBlogPost(env.DB, params.id);
+  if (!existing) return errorJson('not_found', 'post not found', 404);
+
+  let body = {};
+  try {
+    body = (await request.json()) || {};
+  } catch {
+    body = {};
+  }
+  const branch = body.branch || GITHUB_COMMIT_BRANCH_DEFAULT;
+
+  const readyCheck = checkPublishReady(existing);
+  if (!readyCheck.ok) return errorJson('not_ready', readyCheck.message, 400);
+
+  let html;
+  try {
+    html = renderPostPage(BLOG_POST_TEMPLATE, existing, { siteNoindex: SITE_NOINDEX, preview: false });
+  } catch (err) {
+    return errorJson('render_failed', err.message, 500);
+  }
+
+  const session = request.adminSession;
+  const actor = session && session.email ? session.email : 'token';
+  const postResult = await putFile(env, `blog/${existing.slug}/index.html`, html, `Publish blog post: ${existing.title_en}`, { branch });
+
+  const wasFirstPublish = existing.status !== 'published' && !existing.published_at;
+  const patch = {
+    status: 'published',
+    last_published_commit: postResult.commit_sha || existing.last_published_commit,
+    updated_by: actor,
+  };
+  if (wasFirstPublish) patch.published_at = nowSqlite();
+  const post = await db.updateBlogPost(env.DB, params.id, patch);
+
+  await republishBlogIndex(env, branch, actor);
+  await updateSitemapForPost(env, post, branch, { add: true });
+
+  await audit(env, request, 'blog.publish', 'blog_post', params.id, { slug: post.slug, branch, commit: postResult.commit_sha });
+  return json({ post: withCoverUrl(post), commit_sha: postResult.commit_sha });
+}
+
+/**
+ * POST /admin/api/blog/:id/unpublish (staff+). Body: `{ branch? }`, same
+ * default/override as publish. Removes blog/<slug>/index.html from the
+ * site, regenerates blog/index.html without it, and (post-cutover) removes
+ * its sitemap.xml entry. `published_at`/`last_published_commit` are left
+ * as history, not cleared — the migration's own doc comment says why.
+ */
+export async function handleUnpublishBlogPost(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const existing = await db.getBlogPost(env.DB, params.id);
+  if (!existing) return errorJson('not_found', 'post not found', 404);
+  if (existing.status !== 'published') {
+    return errorJson('bad_request', 'this post is not currently published', 400);
+  }
+
+  let body = {};
+  try {
+    body = (await request.json()) || {};
+  } catch {
+    body = {};
+  }
+  const branch = body.branch || GITHUB_COMMIT_BRANCH_DEFAULT;
+
+  await deleteFile(env, `blog/${existing.slug}/index.html`, `Unpublish blog post: ${existing.title_en}`, { branch });
+
+  const session = request.adminSession;
+  const actor = session && session.email ? session.email : 'token';
+  const post = await db.updateBlogPost(env.DB, params.id, { status: 'draft', updated_by: actor });
+
+  await republishBlogIndex(env, branch, actor);
+  await updateSitemapForPost(env, existing, branch, { add: false });
+
+  await audit(env, request, 'blog.unpublish', 'blog_post', params.id, { slug: post.slug, branch });
+  return json({ post: withCoverUrl(post) });
+}
+
+/** Builds a collision-safe, URL-safe filename from an uploaded file's own
+ * name: strip the extension, lowercase, replace anything that isn't
+ * [a-z0-9-] with '-', collapse repeats, cap length, then append a short
+ * random suffix (so two guests — or one teammate twice — uploading
+ * "cover.jpg" never overwrite each other) and the EXTENSION THE SERVER
+ * DECIDED FROM THE MIME TYPE, not whatever the original filename claimed. */
+function buildAssetFilename(originalName, ext) {
+  const base = String(originalName || 'image')
+    .replace(/\.[a-zA-Z0-9]+$/, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40) || 'image';
+  const suffix = crypto.randomUUID().slice(0, 8);
+  return `${base}-${suffix}.${ext}`;
+}
+
+/**
+ * POST /admin/api/blog/:id/assets (staff+, multipart/form-data) — uploads
+ * ONE image (cover or in-body), committing it to GitHub IMMEDIATELY (not
+ * batched with a later publish) so "Preview EN/NL" can show it right away,
+ * even on a still-unpublished draft. Form fields: `file` (required), `branch`
+ * (optional, same default/override as publish/unpublish — the e2e test
+ * uploads its test image to the scratch branch). Returns `{ url, path, bytes }`
+ * — `url` is the absolute, already-live image URL (src/blog_render.js's
+ * `assetUrl()`, so the editor can paste it straight into the rich-text body
+ * via its own "insert image" toolbar button without any extra lookup).
+ */
+export async function handleUploadBlogAsset(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const existing = await db.getBlogPost(env.DB, params.id);
+  if (!existing) return errorJson('not_found', 'post not found', 404);
+
+  let form;
+  try {
+    form = await request.formData();
+  } catch {
+    return errorJson('bad_request', 'expected a multipart/form-data upload', 400);
+  }
+  const file = form.get('file');
+  if (!file || typeof file.arrayBuffer !== 'function') {
+    return errorJson('bad_request', 'no file was uploaded', 400);
+  }
+  const ext = BLOG_ASSET_ALLOWED_TYPES[file.type];
+  if (!ext) {
+    return errorJson('bad_request', 'images must be JPG, PNG or WEBP', 400);
+  }
+  if (file.size > BLOG_ASSET_MAX_BYTES) {
+    return errorJson('bad_request', `images must be ${Math.round(BLOG_ASSET_MAX_BYTES / 1024 / 1024 * 10) / 10}MB or smaller`, 400);
+  }
+  const branch = (form.get('branch') || GITHUB_COMMIT_BRANCH_DEFAULT).toString();
+
+  const filename = buildAssetFilename(file.name, ext);
+  const path = `blog/${existing.slug}/${filename}`;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+
+  await putFile(env, path, bytes, `Upload blog image: ${path}`, { branch });
+
+  const assetId = `blogasset_${crypto.randomUUID()}`;
+  await db.insertBlogAsset(env.DB, { id: assetId, post_id: existing.id, path, bytes: file.size });
+
+  const url = blogAssetUrl(path);
+  await audit(env, request, 'blog.upload_asset', 'blog_post', existing.id, { path, bytes: file.size, branch });
+  return json({ url, path, bytes: file.size }, 201);
 }
