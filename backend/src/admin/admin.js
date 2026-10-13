@@ -178,6 +178,7 @@
       blog: ["Blog", "Write, preview and publish posts to the website"],
       export: ["Export", "Download bookings as a spreadsheet (CSV)"],
       analytics: ["Analytics", "Business numbers — sales, and (once connected) site traffic"],
+      tools: ["Tools", "Every outside tool WOGO uses, and what each one is for"],
       team: ["Team", "Who can sign in, and what they can do"]
     };
     $("#page-title").textContent = titles[view][0];
@@ -193,6 +194,7 @@
     else if (view === "blog") renderBlog(target);
     else if (view === "export") renderExport(target);
     else if (view === "analytics") renderAnalytics(target);
+    else if (view === "tools") renderTools(target);
     else if (view === "team") renderTeam(target);
   }
 
@@ -334,7 +336,7 @@
     const scroll = el("div", { class: "table-scroll" });
     const t = el("table", { class: "data" });
     t.appendChild(el("thead", {}, el("tr", {}, [
-      th("When"), th("Route"), th("City"), th("Guest"), th("Party"), th("Status"), th("Booked")
+      th("When"), th("Route"), th("City"), th("Guest"), th("Party", "metric"), th("Status"), th("Booked")
     ])));
     const tb = el("tbody");
     list.forEach((b) => {
@@ -344,7 +346,7 @@
         el("td", {}, el("span", { class: "route-tag" }, [dot(b.route_id), shortRoute(b.route_name || (r && r.name) || b.route_id)])),
         el("td", { class: "td-sub", text: b.city || (r && r.city) || "" }),
         el("td", {}, [el("div", { class: "td-name", text: b.name }), el("div", { class: "td-sub", text: b.email })]),
-        el("td", { class: "num", text: b.party }),
+        el("td", { class: "num metric", text: b.party }),
         el("td", {}, el("div", { class: "badge-stack" }, [
           badge(b.status),
           b.source === "manual" ? el("span", { class: "tag-mini src", text: "Manual" }) : null,
@@ -1138,7 +1140,7 @@
       if (editing) list.appendChild(slotEditor(route, slot, info, overrides));
     });
     card.appendChild(list);
-    card.appendChild(el("div", { class: "capacity-hint", style: "padding:6px 18px 16px",
+    card.appendChild(el("div", { class: "capacity-hint", style: "padding:6px var(--card-pad-x) 16px",
       text: "Tap a start time to change its seats or close it for " + prettyDate(S.hours.date) + " only — the route’s normal seats stay as they are." }));
     return card;
   }
@@ -1173,7 +1175,7 @@
       el("div", { class: "grow" }),
       el("span", { class: "count-badge", text: rows.reduce((a, r) => a + r.guests, 0) + " guests" })
     ]));
-    const body = el("div", { style: "padding:16px 18px 8px" });
+    const body = el("div", { style: "padding:16px var(--card-pad-x) 8px" });
 
     if (rows.length === 0) {
       card.appendChild(el("div", { class: "empty" }, [
@@ -1216,7 +1218,7 @@
       ]));
     });
     card.appendChild(body);
-    card.appendChild(el("div", { class: "capacity-hint", style: "padding:4px 18px 16px", text: "Bar length is relative to the busiest hour (" + maxTotal + " guests). Each colour is a route." }));
+    card.appendChild(el("div", { class: "capacity-hint", style: "padding:4px var(--card-pad-x) 16px", text: "Bar length is relative to the busiest hour (" + maxTotal + " guests). Each colour is a route." }));
     return card;
   }
 
@@ -1871,6 +1873,147 @@
   /* ======================================================================
      VIEW 4 — EXPORT
      ====================================================================== */
+  /* ======================================================================
+     VIEW — TOOLS (launchpad)
+     A plain, honest index of every tool that lives OUTSIDE this dashboard,
+     so nobody has to remember which website does what. These are outbound
+     links, not embeds: Brevo, Stripe, Google and Meta all send
+     X-Frame-Options / frame-ancestors, so none of them can be put in an
+     iframe — and this Worker's own CSP forbids framing anyway.
+     Every deep link below was opened in a real browser and lands on the
+     product's own sign-in with the destination preserved (Brevo ?target=,
+     Stripe ?redirect=, Google continue=, Meta next=), so one sign-in puts
+     you on the right page.
+     ====================================================================== */
+  const BREVO_LIST_ID = 4; // "WOGO subscribers" — settings.brevo_list_id
+  const TOOL_LINKS = {
+    brevoCampaigns: "https://app.brevo.com/campaigns",
+    brevoTemplates: "https://app.brevo.com/templates/listing",
+    brevoContacts: "https://app.brevo.com/contact/list",
+    stripePayments: "https://dashboard.stripe.com/payments",
+    stripePayouts: "https://dashboard.stripe.com/payouts",
+    stripePromos: "https://dashboard.stripe.com/promotion_codes",
+    ga: "https://analytics.google.com/analytics/web/",
+    gbp: "https://business.google.com/dashboard",
+    gbpReviews: "https://business.google.com/reviews",
+    metaAds: "https://adsmanager.facebook.com/adsmanager",
+    // Spelled out rather than reusing BLOG_SITE_BASE: that const is declared
+    // further down this file, so reading it here would hit the temporal dead
+    // zone and break the whole app at load. Keep the two in step.
+    site: "https://www.wogococktailwalk.com/"
+  };
+
+  const EXTERNAL_TOOLS = [
+    {
+      name: "Brevo",
+      tagline: "Newsletters & marketing email",
+      icon: ["M3 5h18v14H3z", "M3 7l9 6 9-6"],
+      what: "Build and send newsletters to the WOGO subscriber list.",
+      links: [
+        ["Campaigns", TOOL_LINKS.brevoCampaigns, "Write, schedule and send a newsletter."],
+        ["Email templates", TOOL_LINKS.brevoTemplates,
+          "The 21 [REFERENCE] WOGO designs live here — duplicate one to start a newsletter. Editing a [REFERENCE] template changes nothing in the real booking emails."],
+        ["Contacts & lists", TOOL_LINKS.brevoContacts,
+          "Open the “WOGO subscribers” list (list " + BREVO_LIST_ID + ") to see who is on it."]
+      ],
+      caution: "Booking, bar, gift-card and review emails are NOT sent from here — they come from this dashboard's own system. Don't rebuild them in Brevo."
+    },
+    {
+      name: "Stripe",
+      tagline: "Payments",
+      icon: ["M3 6h18v12H3z", "M3 10h18"],
+      what: "Every payment guests make, plus refunds, payouts to the bank, and discount codes.",
+      links: [
+        ["Payments", TOOL_LINKS.stripePayments, "Find a guest's payment, and refund it here."],
+        ["Payouts", TOOL_LINKS.stripePayouts, "What Stripe has paid into the WOGO bank account, and when."],
+        ["Promotion codes", TOOL_LINKS.stripePromos, "Create or switch off a discount code."]
+      ],
+      caution: "Refunds are done here by hand. Cancelling a booking in this dashboard frees the seats and emails everyone — it does NOT refund the money."
+    },
+    {
+      name: "Google Analytics",
+      tagline: "Full visitor reports",
+      icon: ["M4 20V9", "M10 20V4", "M16 20v-6", "M22 20V11"],
+      what: "The deep version of the numbers in this dashboard's Analytics section — every page, source and funnel.",
+      links: [["Open Analytics", TOOL_LINKS.ga, "Reports for the whole website."]],
+      note: "The Analytics section here already shows the key numbers — only come here when you need more detail."
+    },
+    {
+      name: "Google Business Profile",
+      tagline: "Reviews & the Maps listing",
+      icon: ["M12 3l2.6 5.4 6 .9-4.3 4.2 1 6-5.3-2.8-5.3 2.8 1-6-4.3-4.2 6-.9z"],
+      what: "What people see when they Google WOGO: the Maps listing, opening hours, photos and reviews.",
+      links: [
+        ["Reviews", TOOL_LINKS.gbpReviews, "Read and reply to Google reviews."],
+        ["Business Profile", TOOL_LINKS.gbp, "Photos, hours and listing details."]
+      ]
+    },
+    {
+      name: "Meta Ads Manager",
+      tagline: "Facebook & Instagram ads",
+      icon: ["M3 11v2a1 1 0 001 1h2l5 4V6L6 10H4a1 1 0 00-1 1z", "M16.5 9a4 4 0 010 6"],
+      what: "The paid ad campaigns that bring people to the booking pages.",
+      links: [["Ads Manager", TOOL_LINKS.metaAds, "Campaigns, budgets and results."]],
+      caution: "Changing a budget or switching a campaign off spends — or stops spending — real money straight away."
+    },
+    {
+      name: "The website",
+      tagline: "wogococktailwalk.com",
+      icon: ["M12 3a9 9 0 100 18 9 9 0 000-18z", "M3 12h18", "M12 3c2.6 2.8 2.6 15.2 0 18"],
+      what: "The live site guests book on — exactly what they see.",
+      links: [["Open the website", TOOL_LINKS.site, "Check a page the way a guest sees it."]],
+      note: "This dashboard is the door marked /admin on that same site. Bookmark it — there is no link to it from the public pages."
+    }
+  ];
+
+  function toolIcon(paths) {
+    const s = svgEl("svg", { class: "tool-ico", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.7", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" });
+    paths.forEach((d) => s.appendChild(svgEl("path", { d })));
+    return s;
+  }
+
+  /** An outbound link styled as a quiet button. Always a real <a> (keyboard
+   *  + middle-click + "open in new tab" all keep working) and always
+   *  rel="noopener" so the opened tab can never touch this one. */
+  function externalLink(label, href) {
+    return el("a", {
+      class: "btn btn-quiet btn-sm tool-link", href, target: "_blank", rel: "noopener noreferrer"
+    }, [label, el("span", { "aria-hidden": "true", text: " ↗" }), el("span", { class: "visually-hidden", text: " (opens in a new tab)" })]);
+  }
+
+  function renderTools(root) {
+    clear(root);
+    root.appendChild(el("div", { class: "tools-intro" },
+      el("p", { text: "Everything WOGO uses that lives outside this dashboard. Each one opens in a new tab — you sign in there with your own account." })));
+
+    const grid = el("div", { class: "tool-grid" });
+    EXTERNAL_TOOLS.forEach((t) => {
+      const card = el("div", { class: "card tool-card" });
+      card.appendChild(el("div", { class: "card-head" }, [
+        el("span", { class: "tool-badge" }, toolIcon(t.icon)),
+        el("div", { class: "grow" }, [
+          el("h2", { text: t.name }),
+          el("div", { class: "tool-tagline", text: t.tagline })
+        ])
+      ]));
+      const body = el("div", { class: "card-body" });
+      body.appendChild(el("p", { class: "tool-what", text: t.what }));
+      const list = el("div", { class: "tool-links" });
+      t.links.forEach(([label, href, desc]) => {
+        list.appendChild(el("div", { class: "tool-link-row" }, [
+          externalLink(label, href),
+          el("div", { class: "tool-link-desc", text: desc })
+        ]));
+      });
+      body.appendChild(list);
+      if (t.note) body.appendChild(el("p", { class: "tool-note", text: t.note }));
+      if (t.caution) body.appendChild(el("p", { class: "tool-note warn" }, [el("b", { text: "Careful: " }), t.caution]));
+      card.appendChild(body);
+      grid.appendChild(card);
+    });
+    root.appendChild(grid);
+  }
+
   function renderExport(root) {
     const f = {};
     const routeSel = selectField("Route", "", ["All routes"].concat(S.routes.map((r) => r.name)), (v) => {
@@ -1971,7 +2114,9 @@
     const card = el("div", { class: "card" });
     card.appendChild(el("div", { class: "card-head" }, [
       el("h2", { text: "Gift cards" }),
-      el("span", { class: "count-badge", text: list.length + (list.length === 1 ? " card" : " cards") })
+      el("span", { class: "count-badge", text: list.length + (list.length === 1 ? " card" : " cards") }),
+      el("div", { class: "grow" }),
+      externalLink("Open Stripe", TOOL_LINKS.stripePayments)
     ]));
     if (list.length === 0) {
       card.appendChild(el("div", { class: "empty" }, [
@@ -1984,7 +2129,7 @@
     const scroll = el("div", { class: "table-scroll" });
     const t = el("table", { class: "data" });
     t.appendChild(el("thead", {}, el("tr", {}, [
-      th("Code"), th("Initial"), th("Balance"), th("Status"), th("Recipient"), th("Buyer"), th("Created"), th("")
+      th("Code"), th("Initial", "metric"), th("Balance", "metric"), th("Status"), th("Recipient"), th("Buyer"), th("Created"), th("")
     ])));
     const tb = el("tbody");
     list.forEach((c) => {
@@ -2004,8 +2149,8 @@
       });
       tb.appendChild(el("tr", {}, [
         el("td", { class: "td-name", style: "font-family:ui-monospace,Menlo,monospace;font-size:12.5px", text: c.code }),
-        el("td", { class: "num", text: euros(c.initial_cents) }),
-        el("td", { class: "num td-name", text: euros(c.balance_cents) }),
+        el("td", { class: "num metric", text: euros(c.initial_cents) }),
+        el("td", { class: "num td-name metric", text: euros(c.balance_cents) }),
         el("td", {}, giftStatusTag(c.status)),
         el("td", {}, [el("div", { class: "td-name", text: c.recipient_name || "—" }), el("div", { class: "td-sub", text: c.recipient_email || "" })]),
         el("td", {}, [el("div", { class: "td-name", text: c.buyer_name || "—" }), el("div", { class: "td-sub", text: c.buyer_email || "" })]),
@@ -2049,7 +2194,7 @@
   function brevoReferenceTemplatesCard() {
     const card = el("div", { class: "card", style: "margin-bottom:18px" });
     card.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Brevo reference copies" })));
-    card.appendChild(el("div", { style: "padding:4px 18px 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap" }, [
+    card.appendChild(el("div", { style: "padding:4px var(--card-pad-x) 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap" }, [
       el("p", { style: "margin:0;flex:1;min-width:220px;font-size:13.5px;line-height:1.55;color:var(--brown)", text:
         "Creates a reviewable copy of every email WOGO can send — booking confirmations, bar notifications, gift cards, reschedules and more — inside your Brevo account's own Templates list, named \"[REFERENCE] …\". They're inactive and never used to actually send anything; editing one there changes nothing about real emails, which are always built and sent straight from this codebase." }),
       el("button", {
@@ -2184,7 +2329,9 @@
     const card = el("div", { class: "card" });
     card.appendChild(el("div", { class: "card-head" }, [
       el("h2", { text: "Subscribers" }),
-      el("span", { class: "count-badge", text: list.length + (list.length === 1 ? " shown" : " shown") + " · " + S.subscribers.total + " total" })
+      el("span", { class: "count-badge", text: list.length + (list.length === 1 ? " shown" : " shown") + " · " + S.subscribers.total + " total" }),
+      el("div", { class: "grow" }),
+      externalLink("Open this list in Brevo", TOOL_LINKS.brevoContacts)
     ]));
     if (list.length === 0) {
       card.appendChild(el("div", { class: "empty" }, [
@@ -2305,7 +2452,7 @@
     clear(body);
     const card = el("div", { class: "card" });
     card.appendChild(el("div", { class: "card-head" }, el("h2", { text: "All reports" })));
-    const list = el("div", { style: "padding:6px 18px 18px" });
+    const list = el("div", { style: "padding:6px var(--card-pad-x) 18px" });
     ANALYTICS_SUBPAGES.filter((s) => s[0] !== "all").forEach(([key, label, desc]) => {
       list.appendChild(el("div", { style: "padding:10px 0;border-top:1px solid var(--line)" }, [
         el("button", { class: "btn btn-quiet btn-sm", text: label, onclick: () => { S.analytics.sub = key; renderAnalytics($("#view")); } }),
@@ -2369,7 +2516,7 @@
       el("span", { class: "grow" }),
       el("button", { class: "btn btn-quiet btn-sm", text: "⬇ CSV (by route)", onclick: () => downloadAnalyticsCsv(d) })
     ]));
-    const chartBody = el("div", { style: "padding:6px 18px 16px" });
+    const chartBody = el("div", { style: "padding:6px var(--card-pad-x) 16px" });
     const maxGuests = Math.max(1, ...d.series_by_booking_date.map((s) => s.guests));
     d.series_by_booking_date.forEach((s) => {
       const w = (s.guests / maxGuests) * 100;
@@ -2405,6 +2552,22 @@
     }
   }
 
+  /** True when every value in a column is a number or a formatted number
+   *  (€1.234,56 / 12,5% / 1.234). Used instead of "every column after the
+   *  first" because several breakdown tables have a SECOND text column —
+   *  "By route" has City, "Sessions by source / medium" has Medium — and
+   *  right-aligning those into a numeric column would be wrong. */
+  function isMetricColumn(rows, i) {
+    let seen = 0;
+    for (const row of rows) {
+      const v = row[i];
+      if (v === null || v === undefined || v === "" || v === "—") continue;
+      if (typeof v !== "number" && !/^[€$£]?\s?-?[\d.,\s]+\s?%?$/.test(String(v))) return false;
+      seen++;
+    }
+    return seen > 0;
+  }
+
   function breakdownTable(title, headers, rows) {
     const card = el("div", { class: "card" });
     card.appendChild(el("div", { class: "card-head" }, el("h2", { text: title })));
@@ -2412,12 +2575,18 @@
       card.appendChild(el("div", { class: "empty", style: "padding:18px" }, el("div", { text: "Nothing in this range." })));
       return card;
     }
+    // Column roles are decided once per table: the first label column grows to
+    // fill, every metric column is pinned to --metric-col so the numbers line
+    // up across every table on the page.
+    const metric = headers.map((_, i) => i > 0 && isMetricColumn(rows, i));
+    const roleFor = (i) => (metric[i] ? " metric" : i === 0 ? " grow" : "");
     const scroll = el("div", { class: "table-scroll" });
-    const t = el("table", { class: "data" });
-    t.appendChild(el("thead", {}, el("tr", {}, headers.map((h) => th(h)))));
+    const t = el("table", { class: "data breakdown" });
+    t.appendChild(el("thead", {}, el("tr", {}, headers.map((h, i) => th(h, roleFor(i))))));
     const tb = el("tbody");
     rows.forEach((row) => {
-      tb.appendChild(el("tr", {}, row.map((v, i) => el("td", { class: i === 0 ? "td-name" : "td-sub num", text: String(v) }))));
+      tb.appendChild(el("tr", {}, row.map((v, i) =>
+        el("td", { class: (i === 0 ? "td-name" : "td-sub") + roleFor(i), text: String(v) }))));
     });
     t.appendChild(tb);
     scroll.appendChild(t);
@@ -2486,7 +2655,7 @@
 
     const funnelCard = el("div", { class: "card" });
     funnelCard.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Funnel: view → checkout → purchase" })));
-    const fb = el("div", { style: "padding:6px 18px 16px" });
+    const fb = el("div", { style: "padding:6px var(--card-pad-x) 16px" });
     const steps = [["View item", t.funnel.view_item], ["Begin checkout", t.funnel.begin_checkout], ["Purchase", t.funnel.purchase]];
     const maxStep = Math.max(1, steps[0][1]);
     steps.forEach(([label, n]) => {
@@ -2686,7 +2855,7 @@
 
     const sourceCard = el("div", { class: "card" });
     sourceCard.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Sales by source" })));
-    const sourceBody = el("div", { style: "padding:6px 18px 16px" });
+    const sourceBody = el("div", { style: "padding:6px var(--card-pad-x) 16px" });
     const maxSourceRevenue = Math.max(1, ...d.sales_by_source.map((s) => s.revenue_cents));
     if (d.sales_by_source.length === 0) sourceBody.appendChild(el("div", { class: "capacity-hint", text: "No confirmed bookings in this range." }));
     d.sales_by_source.forEach((s) => sourceBody.appendChild(barRow(s.source, s.revenue_cents, maxSourceRevenue, euros(s.revenue_cents), s.pct_delta)));
@@ -2819,7 +2988,7 @@
 
     const funnelCard = el("div", { class: "card" });
     funnelCard.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Funnel: view item → begin checkout → purchase" })));
-    const fb = el("div", { style: "padding:6px 18px 16px" });
+    const fb = el("div", { style: "padding:6px var(--card-pad-x) 16px" });
     const steps = [
       ["View item", b.funnel.view_item, null],
       ["Begin checkout", b.funnel.begin_checkout, b.funnel.pct_checkout_of_view],
@@ -2885,7 +3054,7 @@
 
     const subCard = el("div", { class: "card" });
     subCard.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Subscriber growth" })));
-    const subBody = el("div", { style: "padding:6px 18px 16px" });
+    const subBody = el("div", { style: "padding:6px var(--card-pad-x) 16px" });
     const maxGrowth = Math.max(1, ...m.subscribers.growth.map((g) => g.new_subscribers));
     m.subscribers.growth.forEach((g) => subBody.appendChild(barRow(g.date, g.new_subscribers, maxGrowth, String(g.new_subscribers))));
     subCard.appendChild(subBody);
@@ -2929,7 +3098,7 @@
     const card = el("div", { class: "card", style: "margin-bottom:18px" });
     card.appendChild(el("div", { class: "card-head" }, [el("h2", { text: "Invite a teammate" }), el("span", { class: "grow" }),
       el("button", { class: "icon-btn", text: "✕", onclick: () => { S.inviteFormOpen = false; renderTeam(root); } })]));
-    card.appendChild(el("div", { style: "padding:14px 18px;display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end" }, [
+    card.appendChild(el("div", { style: "padding:14px var(--card-pad-x);display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end" }, [
       field("Name", nameI), field("Email", emailI), field("Role", roleSel),
       el("button", {
         class: "btn btn-primary", text: "Send invite", onclick: async () => {
@@ -3106,7 +3275,7 @@
     const scroll = el("div", { class: "table-scroll" });
     const t = el("table", { class: "data" });
     t.appendChild(el("thead", {}, el("tr", {}, [
-      th("Customer"), th("Email"), th("Bookings"), th("Total spent"), th("Discount"), th("Last booking")
+      th("Customer"), th("Email"), th("Bookings", "metric"), th("Total spent", "metric"), th("Discount"), th("Last booking")
     ])));
     const tb = el("tbody");
     list.forEach((c) => {
@@ -3123,8 +3292,8 @@
       tb.appendChild(el("tr", { onclick: () => openCustomerDrawer(c.email) }, [
         el("td", {}, [el("div", { class: "td-name", text: c.name || "(no name)" }), el("div", { class: "td-sub", text: c.phone || "" })]),
         el("td", { class: "td-sub", text: c.email }),
-        el("td", {}, [el("div", { class: "td-name num", text: c.bookings_count }), el("div", { class: "td-sub num", text: c.guests + " guest" + (c.guests === 1 ? "" : "s") })]),
-        el("td", { class: "num td-name", text: euros(c.total_spent_cents) }),
+        el("td", { class: "metric" }, [el("div", { class: "td-name num", text: c.bookings_count }), el("div", { class: "td-sub num", text: c.guests + " guest" + (c.guests === 1 ? "" : "s") })]),
+        el("td", { class: "num td-name metric", text: euros(c.total_spent_cents) }),
         discCell,
         el("td", { class: "td-sub num", text: c.last_booking ? prettyDate(c.last_booking) : "—" })
       ]));
@@ -3379,7 +3548,7 @@
     sel.value = current || "Europe/Amsterdam";
     return sel;
   }
-  function th(t) { return el("th", { scope: "col", text: t }); }
+  function th(t, extraClass) { return el("th", { scope: "col", text: t, class: (extraClass || "").trim() || null }); }
   function badge(status) { return el("span", { class: "badge " + status, text: prettyStatus(status) }); }
   function prettyStatus(s) { return { confirmed: "Confirmed", hold: "Hold", cancelled: "Cancelled", expired: "Expired", confirmed_conflict: "Conflict" }[s] || s; }
   function stat(k, v, d) { return el("div", { class: "stat" }, [el("div", { class: "k", text: k }), el("div", { class: "v", text: v }), el("div", { class: "d", text: d })]); }
@@ -3784,31 +3953,38 @@
       blogStatusBadge(post.status)
     ]));
 
-    const grid2 = (a, b) => el("div", { style: "display:flex;gap:16px;flex-wrap:wrap" }, [el("div", { style: "flex:1;min-width:260px" }, a), el("div", { style: "flex:1;min-width:260px" }, b)]);
+    // Everything below lives inside a padded body — appended straight onto the
+    // card, the fields ran flush against the card border on every side.
+    const form = el("div", { class: "card-body" });
+    card.appendChild(form);
 
-    card.appendChild(grid2(field("Title (English)", titleEn), field("Title (Dutch, optional)", titleNl)));
-    card.appendChild(grid2(
+    const grid2 = (a, b) => el("div", { class: "field-pair" }, [el("div", {}, a), el("div", {}, b)]);
+
+    form.appendChild(grid2(field("Title (English)", titleEn), field("Title (Dutch, optional)", titleNl)));
+    form.appendChild(grid2(
       field("URL (can't change after publishing)", slugInput),
       field("Category", categorySelect)
     ));
-    card.appendChild(field("Read time (minutes)", readMinutes));
+    // Paired with an empty cell so a 2-digit number field doesn't stretch the
+    // full width of the card.
+    form.appendChild(grid2(field("Read time (minutes)", readMinutes), el("div")));
 
-    card.appendChild(el("div", { class: "field" }, [
+    form.appendChild(el("div", { class: "field" }, [
       el("label", { text: "Cover photo" }),
       coverPreview,
       coverFileInput
     ]));
-    card.appendChild(grid2(field("Cover photo description (English)", coverAltEn), field("Cover photo description (Dutch)", coverAltNl)));
+    form.appendChild(grid2(field("Cover photo description (English)", coverAltEn), field("Cover photo description (Dutch)", coverAltNl)));
 
-    card.appendChild(grid2(excerptEn.wrap, excerptNl.wrap));
+    form.appendChild(grid2(excerptEn.wrap, excerptNl.wrap));
 
-    card.appendChild(el("div", { class: "field" }, [el("label", { text: "Body (English)" }), bodyEnEditor.wrap]));
-    card.appendChild(el("div", { class: "field" }, [el("label", { text: "Body (Dutch)" }), bodyNlEditor.wrap]));
+    form.appendChild(el("div", { class: "field" }, [el("label", { text: "Body (English)" }), bodyEnEditor.wrap]));
+    form.appendChild(el("div", { class: "field" }, [el("label", { text: "Body (Dutch)" }), bodyNlEditor.wrap]));
 
-    card.appendChild(grid2(seoTitleEn.wrap, seoTitleNl.wrap));
-    card.appendChild(grid2(seoDescEn.wrap, seoDescNl.wrap));
+    form.appendChild(grid2(seoTitleEn.wrap, seoTitleNl.wrap));
+    form.appendChild(grid2(seoDescEn.wrap, seoDescNl.wrap));
 
-    const actions = el("div", { class: "drawer-foot", style: "border-top:none;padding:18px 0 0;flex-wrap:wrap" });
+    const actions = el("div", { class: "editor-actions" });
     if (canWrite) {
       actions.appendChild(el("button", { class: "btn btn-quiet", text: "Preview EN", onclick: () => doPreview("en") }));
       actions.appendChild(el("button", { class: "btn btn-quiet", text: "Preview NL", onclick: () => doPreview("nl") }));
@@ -3822,7 +3998,7 @@
     if (isOwner && post.status !== "published") {
       actions.appendChild(el("button", { class: "btn btn-danger", text: "Delete", onclick: doDelete }));
     }
-    card.appendChild(actions);
+    form.appendChild(actions);
 
     root.appendChild(card);
   }
