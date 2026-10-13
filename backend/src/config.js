@@ -266,7 +266,10 @@ export function routePathFor(route) {
 // omits that second button rather than linking somewhere wrong.
 export const REVIEW_TRUSTPILOT_URL_EN = 'https://www.trustpilot.com/evaluate/wogoamsterdam.com';
 export const REVIEW_TRUSTPILOT_URL_NL = 'https://nl.trustpilot.com/evaluate/wogoamsterdam.com';
-export const REVIEW_GOOGLE_URL = '';
+// WOGO's Google Business Profile write-a-review deep link. Place ID resolved
+// 13 Oct 2026 from the live Maps listing ("WOGO", Tour agency, 4.4★) — Google
+// asks the guest to sign in first, then drops them straight on the star form.
+export const REVIEW_GOOGLE_URL = 'https://search.google.com/local/writereview?placeid=ChIJ1wXRBqXvxUcRbYfPMEY-eVg';
 
 // --- Analytics (BUILD §19, GET /admin/api/analytics) ------------------------
 // A wide-open date range would scan an unbounded number of booking rows (and
