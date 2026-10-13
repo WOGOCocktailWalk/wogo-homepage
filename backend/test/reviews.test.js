@@ -16,6 +16,7 @@ import { toPositional } from '../src/db.js';
 import * as db from '../src/db.js';
 import { sendReviewRequestForBooking, sendDailyReviewRequests } from '../src/reviews.js';
 import { renderReviewRequest } from '../src/emails.js';
+import { REVIEW_GOOGLE_URL } from '../src/config.js';
 import { handleSendReviewRequest } from '../src/admin_api.js';
 import { todayInTimezone, addDaysToDateStr } from '../src/logic.js';
 
@@ -56,16 +57,25 @@ function fakeSendTransactional(env, msg) {
 beforeEach(() => { testDb = makeTestDb(schemaSql); sentEmails.length = 0; });
 
 // ---------------------------------------------------------------------------
-// renderReviewRequest — EN/NL, Google button omitted when REVIEW_GOOGLE_URL is empty
+// renderReviewRequest — EN/NL. The Google button is conditional on
+// REVIEW_GOOGLE_URL (set to the real Place-ID deep link on 13 Oct 2026). The
+// assertion below is written against the constant rather than against today's
+// value, so it keeps testing the real invariant — button present exactly when
+// a URL is configured — if that setting is ever cleared or changed again.
 // ---------------------------------------------------------------------------
 
 describe('renderReviewRequest', () => {
-  test('EN: Trustpilot button present, Google button omitted (REVIEW_GOOGLE_URL is empty by default)', () => {
+  test('EN: Trustpilot button always present; Google button present iff REVIEW_GOOGLE_URL is set', () => {
     const mail = renderReviewRequest({ locale: 'en', name: 'Anna' }, { name: 'WOGO Amsterdam', city: 'Amsterdam' });
     assert.match(mail.subject, /How was your WOGO Cocktail Walk/);
     assert.match(mail.html, /trustpilot\.com\/evaluate\/wogoamsterdam\.com/);
-    assert.doesNotMatch(mail.html, /Review on Google/);
     assert.match(mail.html, /Thanks for walking with us, Anna/);
+    if (REVIEW_GOOGLE_URL) {
+      assert.match(mail.html, /Review on Google/);
+      assert.ok(mail.html.includes(REVIEW_GOOGLE_URL), 'the configured Google URL is the button target');
+    } else {
+      assert.doesNotMatch(mail.html, /Review on Google/);
+    }
   });
 
   test('NL: Dutch subject/copy and the NL Trustpilot domain', () => {
