@@ -1,0 +1,32 @@
+<!-- ============================================================================
+     /admin/ — a memorable door to the WOGO team dashboard.
+     The dashboard itself lives on the Cloudflare Worker (bookings, analytics,
+     gift cards, subscribers, blog, team). Staff should never have to remember
+     the workers.dev address, so this page just forwards them there.
+     AT CUTOVER: if the Worker gets its own domain (admin.wogococktailwalk.com),
+     change the one URL below — see MIGRATION-PLAYBOOK.md.
+     noindex: this is an internal door, never a search result.
+     ========================================================================= -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>WOGO team dashboard</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.png" type="image/png" sizes="64x64">
+<meta http-equiv="refresh" content="0; url=https://wogo-booking-backend.purple-glitter-720e.workers.dev/admin">
+<style>
+  :root { color-scheme: light; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+         background:#3f2b21; color:#fffaf6; font:500 15px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; text-align:center; padding:24px; }
+  .w { max-width:420px; }
+  .logo { font:900 30px/1 ui-sans-serif,system-ui,sans-serif; letter-spacing:.12em; margin-bottom:22px; }
+  .logo span { color:#ffaa81; }
+  a { display:inline-block; margin-top:18px; background:#ffaa81; color:#3f2b21; text-decoration:none;
+      padding:13px 26px; border-radius:999px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; font-size:13px; }
+  p { color:rgba(255,250,246,.78); }
+</style>
+<div class="w">
+  <div class="logo">WO<span>G</span>O</div>
+  <p>Taking you to the team dashboard…</p>
+  <a href="https://wogo-booking-backend.purple-glitter-720e.workers.dev/admin">Open the dashboard</a>
+</div>
