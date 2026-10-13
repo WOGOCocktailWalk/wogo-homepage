@@ -12,8 +12,20 @@
 # Jekyll already ignores paths starting with "_" or "." — these are the rest.
 # Anything listed here stays in git and keeps working; it is simply not copied
 # into the published site.
+# NOTE: backend/widget/ is NOT excluded — the booking calendar on every /book/
+# page is served from there by Pages (src="../../backend/widget/wogo-calendar.js").
+# Excluding all of backend/ 404s the widget and the calendar never loads, so the
+# exclusions below are per-subfolder on purpose. Verified 13 Oct 2026.
 exclude:
-  - backend/          # the whole Worker: source, migrations, tests, docs
+  - backend/src/        # Worker source
+  - backend/test/       # tests
+  - backend/migrations/ # database schema
+  - backend/preview/    # admin preview build
+  - backend/scripts/
+  - backend/node_modules/
+  - backend/package.json
+  - backend/package-lock.json
+  - backend/wrangler.toml
   - "*.md"            # internal specs, playbooks, plans
   - OLD-URLS.txt      # the Wix URL inventory (internal)
   - CNAME.example
