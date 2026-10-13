@@ -1,0 +1,20 @@
+# GitHub Pages (Jekyll) build config.
+#
+# WHY THIS FILE EXISTS: the repository root is also the published web root, so
+# without this every internal file was downloadable from the live site —
+# backend/src/*.js, all the migrations, SPEC.md, SETUP.md and (worst)
+# OWNER-SECURITY-TODO.md, which lists the security work still outstanding.
+# No credentials were ever exposed (every secret is read from env at runtime),
+# but publishing the database schema, the admin route/role matrix and a to-do
+# list of unfinished hardening is free reconnaissance. Found in the Wix-parity
+# audit, 13 Oct 2026.
+#
+# Jekyll already ignores paths starting with "_" or "." — these are the rest.
+# Anything listed here stays in git and keeps working; it is simply not copied
+# into the published site.
+exclude:
+  - backend/          # the whole Worker: source, migrations, tests, docs
+  - "*.md"            # internal specs, playbooks, plans
+  - OLD-URLS.txt      # the Wix URL inventory (internal)
+  - CNAME.example
+  - .claude/
