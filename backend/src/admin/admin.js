@@ -947,6 +947,10 @@
      VIEW 2 — PARTICIPANTS PER HOUR
      ====================================================================== */
   function renderHours(root) {
+    // Every route chip re-renders this whole view. Without the clear, each
+    // click APPENDED a second filter card + holder (two route pickers, two
+    // date pickers, stacked) — every other render* function clears first.
+    clear(root);
     const routeChips = el("div", { class: "chips" });
     routeChips.appendChild(chip("All routes", !S.hours.route, dot("--none"), () => { S.hours.route = ""; S.hours.editSlot = null; renderHours(root); }, true));
     S.routes.forEach((r) => routeChips.appendChild(
@@ -2558,14 +2562,16 @@
    *  "By route" has City, "Sessions by source / medium" has Medium — and
    *  right-aligning those into a numeric column would be wrong. */
   function isMetricColumn(rows, i) {
-    let seen = 0;
     for (const row of rows) {
       const v = row[i];
       if (v === null || v === undefined || v === "" || v === "—") continue;
       if (typeof v !== "number" && !/^[€$£]?\s?-?[\d.,\s]+\s?%?$/.test(String(v))) return false;
-      seen++;
     }
-    return seen > 0;
+    // An all-empty column is still a metric column: nothing disqualified it,
+    // and a column of dashes belongs right-aligned on the same width floor as
+    // its siblings. Returning false here would silently un-align a page the
+    // day one of its metrics comes back empty.
+    return true;
   }
 
   function breakdownTable(title, headers, rows) {
