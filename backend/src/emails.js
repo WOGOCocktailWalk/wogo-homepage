@@ -1554,15 +1554,15 @@ const ABANDONED_STRINGS = {
     footer: 'Questions? Just reply to this email, we read every one.',
     first: {
       subject: (r) => `Your WOGO table in ${r.city} is still free 🍸`,
-      preheader: 'You started booking a cocktail walk — it is still available.',
+      preheader: 'You started booking a cocktail walk — there is still room at that start time.',
       heading: (n) => `Still thinking it over${n ? ', ' + n : ''}?`,
-      intro: 'You started booking a WOGO Cocktail Walk and did not quite finish. Good news — the table is still available.',
+      intro: 'You started booking a WOGO Cocktail Walk and did not quite finish. Good news — there is still room at that start time.',
     },
     followup: {
       subject: (r) => `Still thinking about ${r.city}?`,
-      preheader: 'Your spot is still open, for now.',
+      preheader: 'There is still room at that start time.',
       heading: (n) => `Still thinking about it${n ? ', ' + n : ''}?`,
-      intro: 'We held off reaching out again, but your spot is still open in case you want to lock in your night out.',
+      intro: 'We held off reaching out again, but there is still room at that start time, in case you still fancy a night out.',
     },
   },
   nl: {
@@ -1576,15 +1576,15 @@ const ABANDONED_STRINGS = {
     footer: 'Vragen? Beantwoord gewoon deze e-mail, we lezen ze allemaal.',
     first: {
       subject: (r) => `Je WOGO tafel in ${r.city} is nog vrij 🍸`,
-      preheader: 'Je was een cocktail walk aan het boeken. De tafel staat nog klaar.',
+      preheader: 'Je was een cocktail walk aan het boeken. Er is nog plek op die starttijd.',
       heading: (n) => `Nog aan het twijfelen${n ? ', ' + n : ''}?`,
-      intro: 'Je was een WOGO Cocktail Walk aan het boeken, maar kwam er niet helemaal uit. Goed nieuws: de tafel staat nog vrij.',
+      intro: 'Je was een WOGO Cocktail Walk aan het boeken, maar kwam er niet helemaal uit. Goed nieuws: er is nog plek op die starttijd.',
     },
     followup: {
       subject: (r) => `Twijfel je nog over ${r.city}?`,
-      preheader: 'Je plekje staat nog open, voorlopig.',
+      preheader: 'Er is nog plek op die starttijd.',
       heading: (n) => `Nog steeds aan het twijfelen${n ? ', ' + n : ''}?`,
-      intro: 'We hebben nog even gewacht met een tweede mailtje, maar je plekje staat nog open, voor als je toch zin hebt in een avondje uit.',
+      intro: 'We hebben nog even gewacht met een tweede mailtje, maar er is nog plek op die starttijd, voor als je toch zin hebt in een avondje uit.',
     },
   },
 };
@@ -1718,24 +1718,26 @@ const WALK_REMINDER_STRINGS = {
 };
 
 /** `opts.firstBarName` (string|null) is resolved by the caller — this file
- * stays pure, no DB/logic.js:computeBarArrivals call here. Falls back to the
- * route name if the caller has no bar data (e.g. a route whose bars are
- * still placeholders) so the row is never blank. `opts.unsubscribeUrl` is
- * the SAME reminder opt-out as the abandoned mails (migrations/0031). */
+ * stays pure, no DB/logic.js:computeBarArrivals call here. If the caller has
+ * no bar data (a route whose bars are still placeholders) the meeting-point
+ * row is OMITTED rather than falling back to the route name: "Meeting point:
+ * Rotterdam Route 2" tells a guest standing on a street corner nothing, and a
+ * wrong-looking answer is worse than no row. `opts.unsubscribeUrl` is the
+ * SAME reminder opt-out as the abandoned mails (migrations/0031). */
 export function renderWalkReminder(booking, route, opts = {}) {
   const lang = loc(opts.locale || booking.locale);
   const t = WALK_REMINDER_STRINGS[lang];
   const gt = { ...GUEST_STRINGS[lang], ...(t.map || {}) };
   const firstName = booking.name ? String(booking.name).trim().split(/\s+/)[0] : '';
-  const meetingPoint = opts.firstBarName || route.name;
+  const meetingPoint = opts.firstBarName || null;
 
   const rows = [
     [t.labels.route, escapeHtml(route.name)],
     [t.labels.date, escapeHtml(formatLongDate(booking.date, lang))],
     [t.labels.time, escapeHtml(booking.slot)],
     [t.labels.party, escapeHtml(t.guests(booking.party))],
-    [t.labels.meet, escapeHtml(meetingPoint)],
   ];
+  if (meetingPoint) rows.push([t.labels.meet, escapeHtml(meetingPoint)]);
 
   const content = `
     ${detailPanel(rows, C.salmonDeep)}
