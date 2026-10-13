@@ -651,8 +651,10 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .cal-head {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 18px;
+  flex-wrap: wrap;          /* month title + arrows + the route legend must
+                               stack on a phone, not burst out of the card */
+  gap: 10px 14px;
+  padding: 14px var(--card-pad-x);
   border-bottom: 1px solid var(--line);
 }
 .cal-head h2 { margin: 0; font-size: 16px; font-weight: 800; color: var(--ink); min-width: 190px; }
@@ -1154,7 +1156,11 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .wk-title { margin: 0; font-size: 17px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
 
 .wk-layout { display: grid; grid-template-columns: 234px minmax(0, 1fr); gap: 16px; align-items: start; }
-.wk-side { display: grid; gap: 12px; position: sticky; top: 86px; }
+/* minmax(0,1fr), not the default auto track: the side cards' min-content
+   (the 7-column mini-calendar) is wider than the 234px column, so an auto
+   track let every side card stick ~44px out past the column and over the
+   week grid's gutter. */
+.wk-side { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; position: sticky; top: 86px; }
 
 .side-card {
   background: var(--panel);
@@ -1188,7 +1194,10 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .mc-day.today { box-shadow: inset 0 0 0 1.5px var(--salmon-deep); }
 
 /* route filter (colour key + checkboxes) */
-.rf-list { display: grid; padding: 8px 8px 10px; }
+/* minmax(0,1fr): without it the implicit auto track is sized by the widest
+   row's min-content, so long route names pushed each row past the card and
+   .side-card's overflow:hidden silently clipped the city label off. */
+.rf-list { display: grid; grid-template-columns: minmax(0, 1fr); padding: 8px 8px 10px; }
 .rf-item {
   display: flex; align-items: center; gap: 9px;
   padding: 7px 8px; border-radius: var(--r-sm);
@@ -1198,7 +1207,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .rf-item:hover { background: var(--panel-2); }
 .rf-item .sw { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 11px; }
 .rf-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rf-city { margin-left: auto; font-size: 11px; color: var(--muted); font-weight: 600; }
+.rf-city { margin-left: auto; font-size: 11px; color: var(--muted); font-weight: 600; white-space: nowrap; flex: none; }
 .rf-all { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--brown); cursor: pointer; }
 .rf-item input[type="checkbox"], .rf-all input[type="checkbox"] {
   accent-color: var(--salmon-deep);
@@ -1206,7 +1215,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
 }
 
 /* upcoming departures */
-.up-list { display: grid; gap: 4px; padding: 8px 8px 10px; }
+.up-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 8px 8px 10px; }
 .up-item {
   display: flex; align-items: center; gap: 8px;
   border: none; background: transparent; font: inherit; text-align: left;
@@ -1449,13 +1458,18 @@ table.data tbody tr:last-child td { border-bottom: none; }
   .filter-actions { margin-left: 0; width: 100%; }
   .bar-item { grid-template-columns: 26px 1fr; grid-auto-flow: row; }
   .kv { grid-template-columns: 100px 1fr; }
+  .cal-head h2 { min-width: 0; }
   .cap-row { grid-template-columns: 46px 1fr; }
   .cap-right { grid-column: 1 / -1; justify-content: space-between; }
 }
 
 @media (max-width: 1080px) {
-  .wk-layout { grid-template-columns: 1fr; }
-  .wk-side { position: static; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  /* minmax(0,…) so the track can't be forced open by .wk-grid's min-width:
+     780px — a plain 1fr is minmax(auto,1fr), whose min is min-content, which
+     used to push the WHOLE page 406px wide on a phone instead of letting
+     .wk-scroll scroll inside its own box. */
+  .wk-layout { grid-template-columns: minmax(0, 1fr); }
+  .wk-side { position: static; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
