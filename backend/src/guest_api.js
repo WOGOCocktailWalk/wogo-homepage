@@ -48,6 +48,7 @@ import { sendTransactional } from './brevo.js';
 import { sendWithRetry } from './email_retry.js';
 import { renderInquiryOwnerNotification, renderInquiryAutoAck, renderSubscribeConfirm, renderSubscribeWelcome } from './emails.js';
 import { generateToken, syncConfirmedSubscriber, syncUnsubscribe } from './subscribers.js';
+import { verifyReminderUnsubscribeToken } from './reminder_optout.js';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH_RE = /^\d{4}-\d{2}$/;
@@ -936,5 +937,32 @@ export async function handleUnsubscribe(request, env) {
     await syncUnsubscribe(env, result.email);
   }
 
+  return Response.redirect(`${SITE_URL}/subscribed/?state=unsubscribed`, 302);
+}
+
+/**
+ * GET /api/reminders/unsubscribe?token=... (migrations/0031) — the one-click
+ * out embedded in the abandoned-booking mails and the walk reminder. NOT the
+ * marketing subscribers table above — see migrations/0031's own comment for
+ * why these are deliberately separate. The token is self-contained (HMAC of
+ * the email, src/reminder_optout.js) so, unlike handleUnsubscribe above,
+ * there is no DB round-trip needed just to find out whose link this is —
+ * verification alone tells us the email. Always a 302 redirect (a link
+ * clicked out of an email), idempotent (opting out twice is still just
+ * "opted out"), and reuses the SAME `?state=unsubscribed` page state the
+ * newsletter unsubscribe uses — see this feature's own report for why a
+ * second, reminder-specific page state wasn't added (that's a frontend
+ * decision, not a backend one).
+ */
+export async function handleReminderUnsubscribe(request, env) {
+  const url = new URL(request.url);
+  const token = url.searchParams.get('token');
+
+  const email = await verifyReminderUnsubscribeToken(env, token);
+  if (!email) {
+    return Response.redirect(`${SITE_URL}/subscribed/?state=invalid`, 302);
+  }
+
+  await db.recordReminderOptOut(env.DB, email);
   return Response.redirect(`${SITE_URL}/subscribed/?state=unsubscribed`, 302);
 }

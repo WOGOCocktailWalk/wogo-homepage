@@ -26,12 +26,18 @@ bucket_name = "wogo-backups"
 # Three schedules, all handled by the single scheduled() entry point in
 # src/index.js (see runScheduled() there for exactly what each fires):
 #   */5 * * * *  — hold-expiry sweep, security-table pruning, failed-email
-#                  retry drain, health check. Correctness does NOT depend on
-#                  this cadence (see SPEC.md §7.2) — it's a latency choice.
+#                  retry drain, health check, and (migrations/0031) the
+#                  abandoned-booking sweep (the 1h "still free" nudge + the
+#                  ~24h follow-up). Correctness does NOT depend on this
+#                  cadence (see SPEC.md §7.2) — it's a latency choice, and
+#                  the Workers free plan already caps at a small number of
+#                  triggers, so new daily/sub-daily jobs piggyback on one of
+#                  these three rather than adding a 4th.
 #   0 3 * * *    — once/day: GDPR retention, R2 backup export, long-retention
 #                  audit/error/email-log pruning.
 #   0 9 * * *    — once/day, at a guest-friendly hour: the "how was your
-#                  walk?" review-request send (BUILD §20) — 09:00 UTC is
+#                  walk?" review-request send (BUILD §20) and (migrations/
+#                  0031) the "your walk is in 2 days" reminder — 09:00 UTC is
 #                  10:00 Amsterdam in winter (CET) / 11:00 in summer (CEST).
 crons = ["*/5 * * * *", "0 3 * * *", "0 9 * * *"]
 

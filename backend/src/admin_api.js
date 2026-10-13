@@ -44,7 +44,7 @@ import { ensureContactFolder, ensureContactList, ensureContactAttribute, sendTra
 import { ensureWelcomePromotionCode } from './stripe.js';
 import { importSubscribers, handleConfirmedBookingOptIn } from './subscribers.js';
 import { sendWithRetry } from './email_retry.js';
-import { renderAdminLoginLink } from './emails.js';
+import { renderAdminLoginLink, renderReviewThankYou } from './emails.js';
 import {
   getTrafficSummary, isGa4Configured, CACHE_TTL_SECONDS as GA4_CACHE_TTL_SECONDS,
   getRealtimeSummary, REALTIME_CACHE_TTL_SECONDS,
@@ -254,6 +254,7 @@ export const ROUTE_ROLES = {
   'POST /admin/api/bookings/:id/reschedule': 'staff',
   'POST /admin/api/bookings/:id/cancel': 'staff',
   'POST /admin/api/bookings/:id/send-review': 'staff',
+  'POST /admin/api/bookings/:id/thank-review': 'staff',
   'POST /admin/api/bookings/manual': 'staff',
   'GET /admin/api/date-overrides': 'staff',
   'POST /admin/api/date-overrides': 'staff',
@@ -1372,6 +1373,52 @@ export async function handleSendReviewRequest(request, env, params) {
   const result = await sendReviewRequestForBooking(env, { ...booking, route_name: route.name, city: route.city, route_id: route.id });
   if (!result.sent) return errorJson(result.reason || 'not_sent', 'could not send a review request for this booking', 409);
   await audit(env, request, 'booking.send_review', 'booking', params.id, { email: booking.email });
+  return json({ ok: true });
+}
+
+/**
+ * POST /admin/api/bookings/:id/thank-review (migrations/0031) — there is no
+ * review webhook from Trustpilot/Google, so staff trigger this by hand after
+ * spotting a review naming the guest. Idempotent via the atomic
+ * review_thanked_at claim (db.js:claimReviewThanked) — a second click just
+ * 409s, same contract as the review-request endpoint above. The invite
+ * route is ALWAYS the most recently added active route, pulled fresh from
+ * the DB (db.js:getNewestActiveRouteExcluding) rather than hardcoded, so it
+ * never goes stale as new cities launch.
+ *
+ * NOTE for the UI agent: this wires the backend only — there is no dashboard
+ * button yet. A booking-detail "Thank for review" action (mirroring the
+ * existing "Send review request" button) still needs to be added to
+ * src/admin/admin.html/admin.js and rebuilt via `node src/admin/build.mjs`.
+ */
+export async function handleThankReview(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const booking = await db.getBooking(env.DB, params.id);
+  if (!booking) return errorJson('not_found', null, 404);
+
+  // The thank-you mail carries a soft upsell to the newest route (and an
+  // optional discount, THANKYOU_CODE) — the most marketing-flavored of the
+  // three new mails in this migration, so it honours the SAME reminder
+  // opt-out the abandoned-booking/walk-reminder flows do (migrations/0031,
+  // BUILD item 4: "honour the flag in all three flows"). Checked BEFORE the
+  // atomic claim so a blocked send doesn't burn the one-shot
+  // review_thanked_at guard — staff can still mark it handled by hand if
+  // needed, but this call itself stays a no-op for an opted-out guest.
+  if (await db.isReminderOptedOut(env.DB, booking.email)) {
+    return errorJson('reminder_opted_out', 'this guest opted out of reminder emails', 409);
+  }
+
+  const claimed = await db.claimReviewThanked(env.DB, params.id);
+  if (!claimed) return errorJson('already_thanked_or_not_confirmed', 'a thank-you was already sent for this booking', 409);
+
+  const newRoute = await db.getNewestActiveRouteExcluding(env.DB, booking.route_id);
+  const mail = renderReviewThankYou(booking, newRoute);
+  await sendWithRetry(
+    env,
+    { to: booking.email, subject: mail.subject, htmlContent: mail.html },
+    { database: db, sendTransactional, kind: 'review_thank_you' }
+  );
+  await audit(env, request, 'booking.thank_review', 'booking', params.id, { email: booking.email, invited_route: newRoute ? newRoute.id : null });
   return json({ ok: true });
 }
 
