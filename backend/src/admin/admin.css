@@ -790,6 +790,10 @@ table.data tbody tr:last-child td { border-bottom: none; }
 /* Labels like "Real-time" and "All reports" must not break mid-word when the
    bar scrolls horizontally on a phone. */
 .rc-tab { white-space: nowrap; }
+/* The route-card tab row has no scroller of its own, and now that the labels
+   can't break mid-word it is only ~7px inside a 390px card. Let it scroll
+   rather than burst the card open the day a fourth tab is added. */
+.route-card .rc-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
 .legend {
   display: flex;
