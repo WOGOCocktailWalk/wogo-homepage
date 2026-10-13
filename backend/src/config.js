@@ -353,3 +353,50 @@ export const GITHUB_COMMIT_AUTHOR = { name: 'WOGO Admin', email: 'info@wogoamste
 // validateUtmFields/buildHighlightsSales functions they bound) rather than
 // here, so the one pure module and its own constants can never drift apart
 // the way a cross-file duplicate could.
+
+// --- Abandoned-booking reminders (migrations/0031, src/abandoned.js) -------
+// A 'hold'/'expired' booking with a real email that never became confirmed.
+// Sent at most twice: one "still free" nudge ~1h after the hold was created,
+// one follow-up ~24h after — both only if the guest still hasn't booked (see
+// src/abandoned.js's blocking-booking check) and the slot still has seats.
+// The lower bound of each window is exact ("at least this old"); the upper
+// bound (ABANDONED_WINDOW_MAX_MINUTES) is a safety backstop so a cron outage
+// lasting days doesn't suddenly fire a pile of stale nudges once it recovers.
+export const ABANDONED_FIRST_EMAIL_MIN_MINUTES = 60;        // send the 1st mail once the hold is at least this old
+export const ABANDONED_FOLLOWUP_MIN_MINUTES = 24 * 60;      // send the follow-up once the hold is at least this old
+export const ABANDONED_WINDOW_MAX_MINUTES = 48 * 60;        // never consider a hold older than this (stale safety cap)
+// Owner policy default: NO discount in either abandoned-booking email. Kept
+// as a named constant (not a bare '' inline in emails.js) so turning one on
+// later is a one-line change here — when empty, src/emails.js renders no
+// discount block at all, never an empty/broken one.
+export const ABANDONED_DISCOUNT_CODE = '';
+
+// --- Walk reminder, 2 days before (migrations/0031, src/reminders.js) ------
+export const WALK_REMINDER_DAYS_BEFORE = 2;
+
+// --- Post-review thank-you (migrations/0031, POST /admin/api/bookings/:id/
+// thank-review) -------------------------------------------------------------
+// Owner policy default: no discount in the thank-you mail either, same
+// empty-string-means-no-block pattern as ABANDONED_DISCOUNT_CODE above.
+export const THANKYOU_CODE = '';
+
+// --- Reminder opt-out (migrations/0031) -------------------------------------
+// A one-click unsubscribe shared by all three flows above (NOT the marketing
+// `subscribers` list — see migrations/0031's own comment on why these are
+// deliberately separate tables). The token is self-contained (no DB lookup
+// needed to find "which email is this"): see src/reminder_optout.js.
+export const REMINDER_UNSUBSCRIBE_PATH = '/api/reminders/unsubscribe';
+
+// The Worker's own public base URL — needed by cron-triggered sends (the
+// abandoned-booking sweep, the walk-reminder cron) to build the reminder-
+// unsubscribe link; unlike every admin-login/subscribe link elsewhere in
+// this codebase, there is no incoming `request` to read an origin off
+// inside a scheduled() run. Prefers env.HEALTH_CHECK_BASE_URL — SETUP.md
+// §14's existing "the Worker's own public base URL" var, already exactly
+// this value once the owner sets it — falling back to this constant, the
+// real workers.dev URL `widget/wogo-calendar.js`'s WOGO_API currently points
+// at. Update BOTH if the Worker's URL ever changes (custom domain, rename).
+export const WORKER_BASE_URL_FALLBACK = 'https://wogo-booking-backend.purple-glitter-720e.workers.dev';
+export function workerBaseUrl(env) {
+  return (env && env.HEALTH_CHECK_BASE_URL) ? env.HEALTH_CHECK_BASE_URL.replace(/\/$/, '') : WORKER_BASE_URL_FALLBACK;
+}

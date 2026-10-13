@@ -9,8 +9,11 @@
 // No business-logic math lives here beyond what SQL itself expresses; pure
 // aggregation/formatting is delegated to src/logic.js.
 
-import { nowSqlite, buildSlotsForDate, isSlotPastCutoff, aggregateCustomers, generateGiftCardCode, normalizeGiftCardCode } from './logic.js';
-import { SAME_DAY_CUTOFF_MINUTES } from './config.js';
+import { nowSqlite, sqliteMinutesAgo, buildSlotsForDate, isSlotPastCutoff, aggregateCustomers, generateGiftCardCode, normalizeGiftCardCode } from './logic.js';
+import {
+  SAME_DAY_CUTOFF_MINUTES,
+  ABANDONED_FIRST_EMAIL_MIN_MINUTES, ABANDONED_FOLLOWUP_MIN_MINUTES, ABANDONED_WINDOW_MAX_MINUTES,
+} from './config.js';
 
 // ---------------------------------------------------------------------------
 // Named-param → positional translation (real-D1 compatibility)
@@ -2377,6 +2380,211 @@ export async function listBlogAssets(db, postId) {
  * foreign-key-constraint error on any post that ever had an image uploaded. */
 export async function deleteBlogAssetsForPost(db, postId) {
   await run(db, `DELETE FROM blog_assets WHERE post_id = :post_id`, { post_id: postId });
+}
+
+// ---------------------------------------------------------------------------
+// Abandoned-booking reminders (migrations/0031, src/abandoned.js) — a
+// 'hold'/'expired' booking with a real email that never became confirmed.
+// Two sends per GUEST (not per row — see the sibling-stamp functions below),
+// both atomically claimed before the email actually goes out, same
+// "mark-then-send" idiom as redeemGiftCard/markReviewRequestSent elsewhere
+// in this file.
+// ---------------------------------------------------------------------------
+
+/**
+ * First-email candidates: a 'hold'/'expired' WEB booking (never a manual
+ * phone booking — that's not an abandoned online checkout) with a real
+ * email, old enough to be genuinely abandoned (>= ABANDONED_FIRST_EMAIL_MIN_MINUTES)
+ * but not so old it's stale (<= ABANDONED_WINDOW_MAX_MINUTES — a safety cap
+ * so a cron outage lasting days doesn't fire a pile of nudges once it
+ * recovers), never sent one yet. Ordered NEWEST first so the caller's
+ * dedupe-by-email (several hold rows from the same retrying guest) keeps the
+ * most relevant one.
+ */
+export async function listAbandonedFirstCandidates(db) {
+  return all(
+    db,
+    `SELECT * FROM bookings
+       WHERE status IN ('hold','expired')
+         AND source = 'web'
+         AND email IS NOT NULL AND TRIM(email) != ''
+         AND abandoned_sent_at IS NULL
+         AND created_at <= :min_age
+         AND created_at >= :max_age
+       ORDER BY created_at DESC`,
+    { min_age: sqliteMinutesAgo(ABANDONED_FIRST_EMAIL_MIN_MINUTES), max_age: sqliteMinutesAgo(ABANDONED_WINDOW_MAX_MINUTES) }
+  );
+}
+
+/** Follow-up candidates: same shape, but already got the first email and
+ * hasn't booked since, old enough for the ~24h follow-up. */
+export async function listAbandonedFollowupCandidates(db) {
+  return all(
+    db,
+    `SELECT * FROM bookings
+       WHERE status IN ('hold','expired')
+         AND source = 'web'
+         AND email IS NOT NULL AND TRIM(email) != ''
+         AND abandoned_sent_at IS NOT NULL
+         AND abandoned_followup_sent_at IS NULL
+         AND created_at <= :min_age
+         AND created_at >= :max_age
+       ORDER BY created_at DESC`,
+    { min_age: sqliteMinutesAgo(ABANDONED_FOLLOWUP_MIN_MINUTES), max_age: sqliteMinutesAgo(ABANDONED_WINDOW_MAX_MINUTES) }
+  );
+}
+
+/**
+ * True if this email should NOT be nagged: either they already have a
+ * CONFIRMED (or confirmed-but-double-booked, confirmed_conflict — they paid,
+ * they're not a prospect anymore) booking for this exact route+date+slot, OR
+ * they have any confirmed booking at all created AFTER this abandoned
+ * attempt (they went on to book something else — don't nag someone who
+ * already came back). `createdAt` must be the row's own `created_at`
+ * (SQLite datetime text), so the string comparison sorts correctly.
+ */
+export async function hasBlockingConfirmedBooking(db, email, routeId, date, slot, createdAt) {
+  const row = await first(
+    db,
+    `SELECT 1 FROM bookings
+       WHERE LOWER(email) = LOWER(:email)
+         AND status IN ('confirmed','confirmed_conflict')
+         AND ((route_id = :route_id AND date = :date AND slot = :slot) OR created_at > :created_at)
+       LIMIT 1`,
+    { email, route_id: routeId, date, slot, created_at: createdAt }
+  );
+  return !!row;
+}
+
+/** Atomic claim for the 1h "still free" email — changes===1 means THIS call
+ * won the claim. */
+export async function claimAbandonedFirstSent(db, id) {
+  const result = await run(
+    db,
+    `UPDATE bookings SET abandoned_sent_at = datetime('now')
+       WHERE id = :id AND abandoned_sent_at IS NULL AND status IN ('hold','expired')`,
+    { id }
+  );
+  return result.meta.changes === 1;
+}
+
+/** Atomic claim for the ~24h follow-up. */
+export async function claimAbandonedFollowupSent(db, id) {
+  const result = await run(
+    db,
+    `UPDATE bookings SET abandoned_followup_sent_at = datetime('now')
+       WHERE id = :id AND abandoned_followup_sent_at IS NULL AND abandoned_sent_at IS NOT NULL
+         AND status IN ('hold','expired')`,
+    { id }
+  );
+  return result.meta.changes === 1;
+}
+
+/**
+ * One GUEST can have several 'hold'/'expired' rows (retried checkout a few
+ * times) — ONE email per guest, not one per row. After winning the claim on
+ * the row we actually email, best-effort-stamp every OTHER unsent hold/
+ * expired row for the same email as "sent" too, so a later sweep tick never
+ * independently re-discovers a sibling row and sends a second mail. Not
+ * itself atomic (a lost race here just means a future tick stamps the
+ * remainder) — that's fine, this is suppression, not a side effect the guest
+ * would ever notice either way.
+ */
+export async function stampAbandonedFirstSentForSiblings(db, email, excludeId) {
+  await run(
+    db,
+    `UPDATE bookings SET abandoned_sent_at = datetime('now')
+       WHERE LOWER(email) = LOWER(:email) AND id != :exclude_id
+         AND status IN ('hold','expired') AND abandoned_sent_at IS NULL`,
+    { email, exclude_id: excludeId }
+  );
+}
+
+/** Same sibling-suppression, for the follow-up stage. */
+export async function stampAbandonedFollowupSentForSiblings(db, email, excludeId) {
+  await run(
+    db,
+    `UPDATE bookings SET abandoned_followup_sent_at = datetime('now')
+       WHERE LOWER(email) = LOWER(:email) AND id != :exclude_id
+         AND status IN ('hold','expired') AND abandoned_sent_at IS NOT NULL
+         AND abandoned_followup_sent_at IS NULL`,
+    { email, exclude_id: excludeId }
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Walk reminder, 2 days before (migrations/0031, src/reminders.js) — mirrors
+// listBookingsNeedingReviewRequest's shape exactly, just a different status/
+// date/column triple.
+// ---------------------------------------------------------------------------
+
+export async function listBookingsNeedingWalkReminder(db, dateStr) {
+  return all(
+    db,
+    `SELECT b.*, r.name AS route_name, r.city, r.id AS route_id, r.timezone,
+            r.map_url, r.map_url_nl, r.map_url_by_weekday, r.currency, r.price_cents
+       FROM bookings b JOIN routes r ON r.id = b.route_id
+      WHERE b.status = 'confirmed' AND b.date = :date AND b.reminder_sent_at IS NULL
+        AND b.source IN ('web', 'manual')`,
+    { date: dateStr }
+  );
+}
+
+/** Atomic claim, same idiom as markReviewRequestSent. */
+export async function claimReminderSent(db, id) {
+  const result = await run(
+    db,
+    `UPDATE bookings SET reminder_sent_at = datetime('now')
+       WHERE id = :id AND status = 'confirmed' AND reminder_sent_at IS NULL`,
+    { id }
+  );
+  return result.meta.changes === 1;
+}
+
+// ---------------------------------------------------------------------------
+// Post-review thank-you (migrations/0031) — staff-triggered (no review
+// webhook exists), so the atomic claim guards against a double-click, not a
+// cron race, but it's the exact same idiom for the exact same reason.
+// ---------------------------------------------------------------------------
+
+export async function claimReviewThanked(db, id) {
+  const result = await run(
+    db,
+    `UPDATE bookings SET review_thanked_at = datetime('now')
+       WHERE id = :id AND review_thanked_at IS NULL AND status IN ('confirmed','confirmed_conflict')`,
+    { id }
+  );
+  return result.meta.changes === 1;
+}
+
+/** The most recently added ACTIVE route, for the thank-you mail's "come try
+ * our newest route" invite — excludes the booking's OWN route first (inviting
+ * someone back to the walk they just did reads oddly); if that leaves
+ * nothing (e.g. only one active route exists at all), falls back to the
+ * newest active route overall. */
+export async function getNewestActiveRouteExcluding(db, excludeRouteId) {
+  const excluding = await first(
+    db,
+    `SELECT * FROM routes WHERE active = 1 AND id != :exclude_id ORDER BY created_at DESC, id DESC LIMIT 1`,
+    { exclude_id: excludeRouteId }
+  );
+  if (excluding) return excluding;
+  return first(db, `SELECT * FROM routes WHERE active = 1 ORDER BY created_at DESC, id DESC LIMIT 1`, {});
+}
+
+// ---------------------------------------------------------------------------
+// Reminder opt-out (migrations/0031) — shared by the abandoned-booking mails
+// and the walk reminder ONLY. See migrations/0031's own comment for why this
+// is a separate table from `subscribers` (marketing consent).
+// ---------------------------------------------------------------------------
+
+export async function isReminderOptedOut(db, email) {
+  const row = await first(db, `SELECT 1 FROM reminder_optouts WHERE email_lower = LOWER(:email)`, { email });
+  return !!row;
+}
+
+export async function recordReminderOptOut(db, email) {
+  await run(db, `INSERT OR IGNORE INTO reminder_optouts (email_lower, created_at) VALUES (LOWER(:email), datetime('now'))`, { email });
 }
 
 export { nowSqlite };

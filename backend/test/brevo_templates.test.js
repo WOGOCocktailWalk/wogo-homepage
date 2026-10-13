@@ -105,7 +105,7 @@ describe('upsertTransactionalTemplate', () => {
 describe('buildReferenceTemplateSet', () => {
   test('renders every expected reference template, each named/tagged distinctly, never used to actually send', () => {
     const set = buildReferenceTemplateSet();
-    assert.equal(set.length, 21);
+    assert.equal(set.length, 29);
     const names = set.map((t) => t.name);
     assert.equal(new Set(names).size, names.length, 'no duplicate template names');
     names.forEach((n) => {
@@ -152,16 +152,16 @@ describe('POST /admin/api/brevo/push-reference-templates', () => {
     const first = await handleBrevoPushReferenceTemplates(pushRequest(), env);
     assert.equal(first.status, 200);
     const firstBody = await first.json();
-    assert.equal(firstBody.pushed, 21);
+    assert.equal(firstBody.pushed, 29);
     assert.equal(firstBody.failed, 0);
-    assert.equal(fake.templates.length, 21);
+    assert.equal(fake.templates.length, 29);
     assert.ok(fake.templates.every((t) => t.isActive === false), 'every reference template is created INACTIVE');
     assert.ok(fake.templates.every((t) => t.sender.email === 'info@wogoamsterdam.com'));
 
     const second = await handleBrevoPushReferenceTemplates(pushRequest(), env);
     const secondBody = await second.json();
-    assert.equal(secondBody.pushed, 21);
-    assert.equal(fake.templates.length, 21, 'still 21 — the second run updated in place');
+    assert.equal(secondBody.pushed, 29);
+    assert.equal(fake.templates.length, 29, 'still 29 — the second run updated in place');
   });
 
   test('a per-template Brevo failure is reported, not fatal to the rest of the run', async () => {
@@ -183,7 +183,7 @@ describe('POST /admin/api/brevo/push-reference-templates', () => {
     assert.equal(res.status, 200);
     const body = await res.json();
     assert.equal(body.failed, 1);
-    assert.equal(body.pushed, 20);
+    assert.equal(body.pushed, 28);
     assert.ok(body.templates.find((t) => t.error));
   });
 });

@@ -27,6 +27,8 @@ import { runGdprRetention } from './retention.js';
 import { exportBackupToR2 } from './backup.js';
 import { retryBrevoSyncQueue } from './brevo_sync.js';
 import { sendDailyReviewRequests } from './reviews.js';
+import { sendAbandonedSweep } from './abandoned.js';
+import { sendDailyWalkReminders } from './reminders.js';
 
 // Second, less-frequent cron for daily housekeeping (GDPR retention, R2
 // backup export, pruning the long-retention audit/error/email-log tables) —
@@ -60,6 +62,7 @@ router.post('/api/contact', guestApi.handleContact);
 router.post('/api/subscribe', guestApi.handleSubscribe);
 router.get('/api/subscribe/confirm', guestApi.handleSubscribeConfirm);
 router.get('/api/unsubscribe', guestApi.handleUnsubscribe);
+router.get('/api/reminders/unsubscribe', guestApi.handleReminderUnsubscribe);
 
 // -- Webhook ------------------------------------------------------------------
 router.post('/webhooks/stripe', (request, env) => handleWebhook(request, env));
@@ -113,6 +116,7 @@ router.post('/admin/api/bookings/:id/resend', adminApi.handleResendConfirmation)
 router.post('/admin/api/bookings/:id/reschedule', adminApi.handleRescheduleBooking);
 router.post('/admin/api/bookings/:id/cancel', adminApi.handleCancelBooking);
 router.post('/admin/api/bookings/:id/send-review', adminApi.handleSendReviewRequest);
+router.post('/admin/api/bookings/:id/thank-review', adminApi.handleThankReview);
 router.get('/admin/api/routes/:id/bars', adminApi.handleListBars);
 router.post('/admin/api/routes/:id/bars', adminApi.handleAddBar);
 router.put('/admin/api/routes/:id/bars', adminApi.handleReplaceBars);
@@ -304,6 +308,12 @@ async function runScheduled(event, env) {
     await retryFailedEmails(env);
     await retryBrevoSyncQueue(env);
     await runHealthCheck(env);
+    // Abandoned-booking sweep (migrations/0031, BUILD items 1+4): the 1h
+    // "still free" nudge + the ~24h follow-up. Reuses this existing 5-minute
+    // cadence rather than a dedicated trigger — correctness doesn't depend
+    // on exact timing (same reasoning as the hold-expiry sweep above), and
+    // the Workers free plan is already at 3 triggers (see wrangler.toml).
+    await sendAbandonedSweep(env);
 
     if (event.cron === DAILY_CRON) {
       // Once/day: GDPR retention anonymization, the R2 backup export
@@ -323,6 +333,10 @@ async function runScheduled(event, env) {
       // Once/day, at a guest-friendly hour (not 3am) — the "how was your
       // walk?" review-request send (migrations/0026, BUILD §20).
       await sendDailyReviewRequests(env);
+      // Piggybacks the SAME guest-friendly hour rather than a 4th cron
+      // trigger (migrations/0031, BUILD item 2) — the "your walk is in 2
+      // days" reminder.
+      await sendDailyWalkReminders(env);
     }
   } catch (err) {
     console.error('scheduled_error', err);

@@ -1017,6 +1017,68 @@ out equivalent vs. flagged). You don't need to run it again.
 
 ---
 
+## 23. Abandoned booking, walk reminder, review thank-you (2026-10)
+
+Three new automatic emails, live the moment you load the migration below and
+redeploy — nothing else to click on. Load the new migration once (after
+every earlier one you haven't loaded yet, in order):
+
+```bash
+npx wrangler d1 execute wogo-bookings --remote --file=./migrations/0031_abandoned_reminders.sql
+```
+
+**What each one does, automatically:**
+- **Abandoned booking** — if a guest starts checking out and never finishes,
+  they get one friendly "your table is still free" email about an hour
+  later, and ONE follow-up about a day after that if they still haven't
+  booked. No discount in either by default.
+- **Walk reminder** — every confirmed guest gets a "your walk is in 2 days"
+  email with the essentials and the route map, 2 days before their walk.
+- **Review thank-you** — NOT automatic (there's no way to detect a real
+  Trustpilot/Google review landing). After you spot one and want to thank
+  that guest, open their booking in the dashboard and use the thank-you
+  action once it's wired up in the admin UI (see the note below), or call:
+  ```bash
+  curl -X POST https://<your-worker>.workers.dev/admin/api/bookings/<booking-id>/thank-review \
+    -H "Cookie: <your admin session cookie>" \
+    -H "X-Requested-With: wogo-admin"
+  ```
+  It only works once per booking — a second call just tells you it's
+  already been sent. **Dashboard button not built yet** — this curl command
+  (or your own session's next admin-UI pass) is the only way to trigger it
+  today.
+
+### Turning on a discount code (off by default)
+
+Neither the abandoned-booking emails nor the thank-you email offer a
+discount out of the box — that matches your "no discounting by default"
+policy. To turn one on later:
+
+1. Create the real promo code in Stripe first (Stripe Dashboard →
+   Products → Coupons/Promotion codes, or reuse the existing
+   `POST /admin/api/stripe/ensure-welcome-code` pattern as a template for a
+   new one).
+2. Open `backend/src/config.js`, find `ABANDONED_DISCOUNT_CODE = ''` (for
+   the two abandoned-booking emails) or `THANKYOU_CODE = ''` (for the
+   thank-you email), and paste your code between the quotes.
+3. Redeploy (`npx wrangler deploy`). The next email of that kind shows the
+   code; every email already sent is unaffected. Leave either blank to keep
+   it off — that's the current, recommended default.
+
+### How the opt-out works
+
+The abandoned-booking emails and the walk reminder both carry a small
+"don't want reminders like this? unsubscribe" link in the footer — separate
+from your newsletter (clicking it never touches a guest's newsletter
+subscription, and unsubscribing from the newsletter never silences these).
+One click is permanent (no account, no password) and takes effect
+immediately for any future abandoned/reminder email to that address;
+booking confirmations, reschedule/cancellation emails, and bar emails are
+never affected by it. There's nothing for you to manage here day-to-day —
+if a guest ever asks "why am I still getting reminder emails after I
+unsubscribed," check the address actually clicked the link in that specific
+email (each email's link is correct for its own `To:` address only).
+
 ## Moving to another host later
 
 Nothing here locks you into Cloudflare forever — see

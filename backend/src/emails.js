@@ -35,8 +35,9 @@
 
 import { isoWeekday, formatMoney } from './logic.js';
 import {
-  EMAIL_LOGO_URL, posterUrlFor, SITE_URL, WELCOME_CODE,
+  EMAIL_LOGO_URL, posterUrlFor, SITE_URL, WELCOME_CODE, routePathFor,
   REVIEW_TRUSTPILOT_URL_EN, REVIEW_TRUSTPILOT_URL_NL, REVIEW_GOOGLE_URL,
+  ABANDONED_DISCOUNT_CODE, THANKYOU_CODE,
 } from './config.js';
 
 // ---------------------------------------------------------------------------
@@ -302,6 +303,22 @@ function allergiesNotesBlock(notes, lang = 'en') {
     <tr><td style="padding:14px 16px;">
       <div style="font-size:13px;font-weight:800;letter-spacing:.02em;color:${C.amberInk};">&#9888;&#65039; ${label}</div>
       <div style="margin-top:6px;font-size:14.5px;font-weight:700;line-height:1.5;color:${C.ink};">${notesToHtml(notes)}</div>
+    </td></tr>
+  </table>`;
+}
+
+/** A dashed-border code callout (migrations/0031) — shared by the abandoned-
+ * booking mails (ABANDONED_DISCOUNT_CODE) and the review thank-you
+ * (THANKYOU_CODE). Both constants default to '' in config.js, and this is
+ * only ever called when the caller already checked the code is non-empty —
+ * no empty/dangling code block ever renders. `lang` only picks the one
+ * label string; the code itself is never translated. */
+function discountBlock(code, lang) {
+  const label = lang === 'nl' ? 'Gebruik deze code bij het boeken:' : 'Use this code when you book:';
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.blush};border:1px dashed ${C.salmonDeep};border-radius:12px;margin:0 0 18px;">
+    <tr><td style="padding:14px 16px;text-align:center;">
+      <div style="font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:${C.brown};">${escapeHtml(label)}</div>
+      <div style="margin-top:6px;font:800 20px/1.2 ui-monospace,Menlo,monospace;color:${C.ink};letter-spacing:.06em;">${escapeHtml(code)}</div>
     </td></tr>
   </table>`;
 }
@@ -1515,6 +1532,309 @@ export function renderReviewRequest(booking, route) {
 }
 
 // ---------------------------------------------------------------------------
+// 16. Abandoned booking (migrations/0031, src/abandoned.js) — a guest who
+// reached Stripe checkout (or didn't quite) and never came back. TWO mails:
+// the 1h "still free" nudge and the ~24h follow-up, same visual language as
+// every other guest mail, deliberately NEVER saying "reserved"/"held" (see
+// GUEST_STRINGS above) — nothing is held for them, it's just still open.
+// NO discount by default (ABANDONED_DISCOUNT_CODE, config.js, '' = no
+// block). Carries the reminder-unsubscribe link (opts.unsubscribeUrl) —
+// NOT the marketing `subscribers` unsubscribe (migrations/0031's own note).
+// ---------------------------------------------------------------------------
+
+const ABANDONED_STRINGS = {
+  en: {
+    chip: (r) => `${r.city} · Still available`,
+    labels: { route: 'Experience', date: 'Date', time: 'Start time', party: 'Guests', price: 'Total' },
+    guests: (p) => `${p} ${p === 1 ? 'guest' : 'guests'}`,
+    ctaButton: 'Finish booking your walk',
+    alreadyBooked: "Already booked this one? Just ignore this email, you're all set.",
+    unsubscribe: "Don't want reminders like this?",
+    unsubscribeLink: 'Unsubscribe',
+    footer: 'Questions? Just reply to this email, we read every one.',
+    first: {
+      subject: (r) => `Your WOGO table in ${r.city} is still free 🍸`,
+      preheader: 'You started booking a cocktail walk — it is still available.',
+      heading: (n) => `Still thinking it over${n ? ', ' + n : ''}?`,
+      intro: 'You started booking a WOGO Cocktail Walk and did not quite finish. Good news — the table is still available.',
+    },
+    followup: {
+      subject: (r) => `Still thinking about ${r.city}?`,
+      preheader: 'Your spot is still open, for now.',
+      heading: (n) => `Still thinking about it${n ? ', ' + n : ''}?`,
+      intro: 'We held off reaching out again, but your spot is still open in case you want to lock in your night out.',
+    },
+  },
+  nl: {
+    chip: (r) => `${r.city} · Nog beschikbaar`,
+    labels: { route: 'Ervaring', date: 'Datum', time: 'Starttijd', party: 'Gasten', price: 'Totaal' },
+    guests: (p) => `${p} ${p === 1 ? 'gast' : 'gasten'}`,
+    ctaButton: 'Boeking afronden',
+    alreadyBooked: 'Heb je deze al geboekt? Dan kun je deze mail negeren, je zit al goed.',
+    unsubscribe: 'Geen herinneringen zoals deze meer ontvangen?',
+    unsubscribeLink: 'Afmelden',
+    footer: 'Vragen? Beantwoord gewoon deze e-mail, we lezen ze allemaal.',
+    first: {
+      subject: (r) => `Je WOGO tafel in ${r.city} is nog vrij 🍸`,
+      preheader: 'Je was een cocktail walk aan het boeken. De tafel staat nog klaar.',
+      heading: (n) => `Nog aan het twijfelen${n ? ', ' + n : ''}?`,
+      intro: 'Je was een WOGO Cocktail Walk aan het boeken, maar kwam er niet helemaal uit. Goed nieuws: de tafel staat nog vrij.',
+    },
+    followup: {
+      subject: (r) => `Twijfel je nog over ${r.city}?`,
+      preheader: 'Je plekje staat nog open, voorlopig.',
+      heading: (n) => `Nog steeds aan het twijfelen${n ? ', ' + n : ''}?`,
+      intro: 'We hebben nog even gewacht met een tweede mailtje, maar je plekje staat nog open, voor als je toch zin hebt in een avondje uit.',
+    },
+  },
+};
+
+/** Builds the "finish booking" link back to the route's own page, with UTM
+ * tags so Analytics can tell these nudges apart from a cold visit — the
+ * widget already reads utm_* off its own page's query string (see
+ * widget/wogo-calendar.js:captureUtm), so no widget change is needed. There
+ * is NO `?date=`/`?slot=` preselect param in the widget today — see this
+ * file's/BUILD report's note — so this deliberately lands on the plain
+ * route page, not a pre-filled calendar. */
+function abandonedBookUrl(route, campaign) {
+  return `${SITE_URL}${routePathFor(route)}?utm_source=email&utm_medium=reminder&utm_campaign=${campaign}`;
+}
+
+function renderAbandonedCore(variant, booking, route, opts = {}) {
+  const lang = loc(opts.locale || booking.locale);
+  const t = ABANDONED_STRINGS[lang];
+  const v = t[variant];
+  const firstName = booking.name ? String(booking.name).trim().split(/\s+/)[0] : '';
+  const bookUrl = opts.bookUrl || abandonedBookUrl(route, variant === 'first' ? 'abandoned_booking' : 'abandoned_followup');
+  const price = formatMoney((route.price_cents || 0) * (booking.party || 0), route.currency || 'EUR');
+
+  const rows = [
+    [t.labels.route, escapeHtml(route.name)],
+    [t.labels.date, escapeHtml(formatLongDate(booking.date, lang))],
+    [t.labels.time, escapeHtml(booking.slot)],
+    [t.labels.party, escapeHtml(t.guests(booking.party))],
+    [t.labels.price, escapeHtml(price)],
+  ];
+
+  const content = `
+    ${detailPanel(rows, C.salmonDeep)}
+    ${ABANDONED_DISCOUNT_CODE ? discountBlock(ABANDONED_DISCOUNT_CODE, lang) : ''}
+    ${primaryButton(bookUrl, t.ctaButton)}
+    <p style="margin:14px 0 0;font-size:13px;line-height:1.55;color:${C.muted};">${escapeHtml(t.alreadyBooked)}</p>`;
+
+  const unsubscribeUrl = opts.unsubscribeUrl;
+  const footerHtml = `<p style="margin:0;font-size:12px;line-height:1.5;color:${C.muted};">${escapeHtml(t.footer)}${
+    unsubscribeUrl
+      ? `<br>${escapeHtml(t.unsubscribe)} <a href="${escapeHtml(unsubscribeUrl)}" style="color:${C.muted};text-decoration:underline;">${escapeHtml(t.unsubscribeLink)}</a>`
+      : ''
+  }</p>`;
+
+  return {
+    subject: v.subject(route),
+    html: layout({
+      preheader: v.preheader,
+      hero: { chip: t.chip(route) },
+      posterRoute: route,
+      heading: v.heading(firstName),
+      intro: v.intro,
+      contentHtml: content,
+      footerHtml,
+    }),
+  };
+}
+
+/** The ~1h "still free" nudge. `opts.unsubscribeUrl` / `opts.bookUrl` are
+ * built by the caller (src/abandoned.js) — this stays a pure renderer. */
+export function renderAbandonedBooking(booking, route, opts = {}) {
+  return renderAbandonedCore('first', booking, route, opts);
+}
+
+/** The ~24h follow-up — same shape, only sent if the first nudge went out
+ * and the guest still hasn't booked. */
+export function renderAbandonedFollowup(booking, route, opts = {}) {
+  return renderAbandonedCore('followup', booking, route, opts);
+}
+
+// ---------------------------------------------------------------------------
+// 17. Walk reminder, 2 days before (migrations/0031, src/reminders.js).
+// Reuses GUEST_STRINGS' own mapTitle/mapIntro/mapButton/mapSave copy (via
+// guestMapSection) so the map section is byte-identical in tone to the
+// confirmation email — only the surrounding content differs. Only the START
+// time is stated (never a bar-2/3 arrival rhythm — owner policy). The
+// reschedule line states the real rule: once, 24h notice, non-refundable,
+// non-transferable.
+// ---------------------------------------------------------------------------
+
+const WALK_REMINDER_STRINGS = {
+  en: {
+    subject: 'Your cocktail walk is in 2 days 🍸',
+    preheader: 'Everything you need for your night out, inside.',
+    chip: (r) => `${r.city} · In 2 days`,
+    heading: (n) => `Almost time${n ? ', ' + n : ''}! 🍸`,
+    intro: 'Your WOGO Cocktail Walk is coming up in two days. Here is everything you need before you go.',
+    labels: { route: 'Experience', date: 'Date', time: 'Start time', party: 'Guests', meet: 'Meeting point' },
+    guests: (p) => `${p} ${p === 1 ? 'guest' : 'guests'}`,
+    bringPhone: 'Bring your phone along — your route map lives in your inbox.',
+    goodToKnowTitle: 'Good to know',
+    goodToKnow: [
+      'Only the start time is fixed — walk between bars at your own pace.',
+      'This walk is for 18+ guests only.',
+      'Need to change your date? One reschedule is allowed with at least 24 hours notice. Tickets are non-refundable and non-transferable.',
+    ],
+    signoff: (city) => `See you in ${city} soon!`,
+    unsubscribe: "Don't want reminder emails like this?",
+    unsubscribeLink: 'Unsubscribe',
+    footer: 'Questions? Just reply to this email, we read every one.',
+  },
+  nl: {
+    subject: 'Over 2 dagen loop je je cocktail walk 🍸',
+    preheader: 'Alles wat je nodig hebt voor je avondje uit, hierin.',
+    chip: (r) => `${r.city} · Over 2 dagen`,
+    heading: (n) => `Bijna tijd${n ? ', ' + n : ''}! 🍸`,
+    intro: 'Je WOGO Cocktail Walk is over twee dagen. Hier is alles wat je nodig hebt voordat je gaat.',
+    labels: { route: 'Ervaring', date: 'Datum', time: 'Starttijd', party: 'Gasten', meet: 'Verzamelpunt' },
+    guests: (p) => `${p} ${p === 1 ? 'gast' : 'gasten'}`,
+    bringPhone: 'Neem je telefoon mee, je routekaart staat in je inbox.',
+    goodToKnowTitle: 'Goed om te weten',
+    goodToKnow: [
+      'Alleen de starttijd ligt vast, wandel in je eigen tempo tussen de bars.',
+      'Deze walk is alleen voor gasten van 18 jaar en ouder.',
+      'Wil je je datum nog veranderen? Je kunt één keer verzetten, met minstens 24 uur van tevoren. Tickets zijn niet terugbetaalbaar en niet overdraagbaar.',
+    ],
+    signoff: (city) => `Tot snel in ${city}!`,
+    unsubscribe: 'Geen herinneringsmails zoals deze meer ontvangen?',
+    unsubscribeLink: 'Afmelden',
+    footer: 'Vragen? Beantwoord gewoon deze e-mail, we lezen ze allemaal.',
+    // Overrides ONLY the two GUEST_STRINGS.nl map-section lines that contain
+    // an em-dash — the confirmation email's own copy stays byte-identical
+    // (GUEST_STRINGS.nl itself is untouched), but this is a NEW mail, so it
+    // follows the owner's no-em-dash NL rule from the start rather than
+    // inheriting the older copy's style.
+    map: {
+      mapIntro: 'Je volledige route staat hier: de bars, de volgorde en het eigen WOGO-cocktailmenu van elke bar.',
+      mapSave: 'Bewaar deze e-mail, dit is de enige plek waar je volledige route staat.',
+    },
+  },
+};
+
+/** `opts.firstBarName` (string|null) is resolved by the caller — this file
+ * stays pure, no DB/logic.js:computeBarArrivals call here. Falls back to the
+ * route name if the caller has no bar data (e.g. a route whose bars are
+ * still placeholders) so the row is never blank. `opts.unsubscribeUrl` is
+ * the SAME reminder opt-out as the abandoned mails (migrations/0031). */
+export function renderWalkReminder(booking, route, opts = {}) {
+  const lang = loc(opts.locale || booking.locale);
+  const t = WALK_REMINDER_STRINGS[lang];
+  const gt = { ...GUEST_STRINGS[lang], ...(t.map || {}) };
+  const firstName = booking.name ? String(booking.name).trim().split(/\s+/)[0] : '';
+  const meetingPoint = opts.firstBarName || route.name;
+
+  const rows = [
+    [t.labels.route, escapeHtml(route.name)],
+    [t.labels.date, escapeHtml(formatLongDate(booking.date, lang))],
+    [t.labels.time, escapeHtml(booking.slot)],
+    [t.labels.party, escapeHtml(t.guests(booking.party))],
+    [t.labels.meet, escapeHtml(meetingPoint)],
+  ];
+
+  const content = `
+    ${detailPanel(rows, C.salmonDeep)}
+    ${guestMapSection(gt, route, lang, booking.date)}
+    <p style="margin:0 0 20px;font-size:13.5px;line-height:1.5;color:${C.brown};">${escapeHtml(t.bringPhone)}</p>
+    ${quietSection(t.goodToKnowTitle, t.goodToKnow)}
+    <p style="margin:8px 0 0;font-size:16px;line-height:1.5;font-weight:800;color:${C.ink};">${escapeHtml(t.signoff(route.city))}</p>`;
+
+  const unsubscribeUrl = opts.unsubscribeUrl;
+  const footerHtml = `<p style="margin:0;font-size:13px;line-height:1.5;color:${C.brown};">${escapeHtml(t.footer)}${
+    unsubscribeUrl
+      ? `<br><span style="font-size:12px;color:${C.muted};">${escapeHtml(t.unsubscribe)} <a href="${escapeHtml(unsubscribeUrl)}" style="color:${C.muted};text-decoration:underline;">${escapeHtml(t.unsubscribeLink)}</a></span>`
+      : ''
+  }</p>`;
+
+  return {
+    subject: t.subject,
+    html: layout({
+      preheader: t.preheader,
+      hero: { chip: t.chip(route) },
+      posterRoute: route,
+      heading: t.heading(firstName),
+      intro: t.intro,
+      contentHtml: content,
+      footerHtml,
+    }),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 18. Post-review thank-you (migrations/0031) — staff-triggered from the
+// dashboard (no review webhook exists), one-off and transactional like
+// renderReviewRequest, so NO unsubscribe link here (this isn't governed by
+// the reminder opt-out or the marketing subscribers list). `newRoute` is the
+// most recently added ACTIVE route (src/db.js:getNewestActiveRouteExcluding)
+// — resolved by the caller, never hardcoded here. No discount unless
+// THANKYOU_CODE (config.js) is non-empty.
+// ---------------------------------------------------------------------------
+
+const REVIEW_THANKYOU_STRINGS = {
+  en: {
+    subject: 'Thank you for your review! 🍸',
+    preheader: 'It genuinely helps a small Amsterdam business.',
+    chip: 'Thank you',
+    heading: (n) => `Thank you${n ? ', ' + n : ''}!`,
+    intro: 'We just saw your review and we really appreciate you taking the time. It genuinely helps a small Amsterdam business like ours get discovered by more people.',
+    inviteIntro: (routeName, city) => `While you're here — our newest route, ${routeName} in ${city}, is now open for booking.`,
+    inviteButton: 'Explore the new route',
+    signoff: 'See you again soon!',
+    footer: 'Questions? Just reply to this email, we read every one.',
+  },
+  nl: {
+    subject: 'Bedankt voor je review! 🍸',
+    preheader: 'Het helpt een klein Amsterdams bedrijf echt verder.',
+    chip: 'Dankjewel',
+    heading: (n) => `Dankjewel${n ? ', ' + n : ''}!`,
+    intro: 'We zagen net je review en we waarderen het enorm dat je de tijd hebt genomen. Het helpt een klein Amsterdams bedrijf zoals wij echt om door meer mensen gevonden te worden.',
+    inviteIntro: (routeName, city) => `Nu je hier toch bent: onze nieuwste route, ${routeName} in ${city}, is nu te boeken.`,
+    inviteButton: 'Bekijk de nieuwe route',
+    signoff: 'Tot de volgende keer!',
+    footer: 'Vragen? Beantwoord gewoon deze e-mail, we lezen ze allemaal.',
+  },
+};
+
+/** `booking` only needs {name, locale} — the review-thanked booking itself.
+ * `newRoute` may be null (e.g. a brand-new install with only one route
+ * total, excluded as "the one they just walked") — the invite section is
+ * simply omitted, never a broken link. */
+export function renderReviewThankYou(booking, newRoute, opts = {}) {
+  const lang = loc(opts.locale || booking.locale);
+  const t = REVIEW_THANKYOU_STRINGS[lang];
+  const firstName = booking.name ? String(booking.name).trim().split(/\s+/)[0] : '';
+  const inviteUrl = opts.inviteUrl || (newRoute ? `${SITE_URL}${routePathFor(newRoute)}` : '');
+
+  const inviteSection = newRoute
+    ? `<p style="margin:0 0 16px;font-size:14.5px;line-height:1.55;color:${C.brown};">${escapeHtml(t.inviteIntro(newRoute.name, newRoute.city))}</p>
+       ${THANKYOU_CODE ? discountBlock(THANKYOU_CODE, lang) : ''}
+       ${primaryButton(inviteUrl, t.inviteButton)}`
+    : '';
+
+  const content = `
+    ${inviteSection}
+    <p style="margin:18px 0 0;font-size:16px;line-height:1.5;font-weight:800;color:${C.ink};">${escapeHtml(t.signoff)}</p>`;
+
+  return {
+    subject: t.subject,
+    html: layout({
+      preheader: t.preheader,
+      hero: { chip: t.chip },
+      posterRoute: newRoute || null,
+      heading: t.heading(firstName),
+      intro: t.intro,
+      contentHtml: content,
+      footerHtml: `<p style="margin:0;font-size:13px;line-height:1.5;color:${C.brown};">${escapeHtml(t.footer)}</p>`,
+    }),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Reference-copy fixtures (BUILD §19's Brevo reference-copy pass,
 // POST /admin/api/brevo/push-reference-templates). Realistic SAMPLE data —
 // never real guest/bar/booking rows — fed through the SAME render functions
@@ -1589,6 +1909,14 @@ export function buildReferenceTemplateSet() {
   push('Magic-link login', 'NL', renderAdminLoginLink(REF_ADMIN_USER, 'https://wogo-booking-backend.example.workers.dev/admin/login/magic?token=reference-sample-token'));
   push('Review request', 'EN', renderReviewRequest(REF_BOOKING, REF_ROUTE_ROTTERDAM));
   push('Review request', 'NL', renderReviewRequest({ ...REF_BOOKING, locale: 'nl' }, REF_ROUTE_ROTTERDAM));
+  push('Abandoned booking', 'EN', renderAbandonedBooking(REF_BOOKING, REF_ROUTE));
+  push('Abandoned booking', 'NL', renderAbandonedBooking({ ...REF_BOOKING, locale: 'nl' }, REF_ROUTE));
+  push('Abandoned booking follow-up', 'EN', renderAbandonedFollowup(REF_BOOKING, REF_ROUTE));
+  push('Abandoned booking follow-up', 'NL', renderAbandonedFollowup({ ...REF_BOOKING, locale: 'nl' }, REF_ROUTE));
+  push('Walk reminder (2 days)', 'EN', renderWalkReminder(REF_BOOKING, REF_ROUTE, { firstBarName: REF_BAR.bar_name }));
+  push('Walk reminder (2 days)', 'NL', renderWalkReminder({ ...REF_BOOKING, locale: 'nl' }, REF_ROUTE, { firstBarName: REF_BAR.bar_name }));
+  push('Review thank-you', 'EN', renderReviewThankYou(REF_BOOKING, REF_ROUTE_ROTTERDAM));
+  push('Review thank-you', 'NL', renderReviewThankYou({ ...REF_BOOKING, locale: 'nl' }, REF_ROUTE_ROTTERDAM));
 
   return entries;
 }

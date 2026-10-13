@@ -1359,6 +1359,214 @@ Full suite: **785 passing, 0 failing** (up from 711).
 
 ---
 
+## 22. Abandoned booking, walk reminder, review thank-you, reminder opt-out (`migrations/0031_abandoned_reminders.sql`, 2026-10)
+
+Three new automated guest-facing mails, plus the one-click opt-out that two
+of them carry. New columns on `bookings`: `abandoned_sent_at`,
+`abandoned_followup_sent_at`, `reminder_sent_at`, `review_thanked_at` (all
+`TEXT NULL`) + `idx_bookings_abandoned_sweep (status, created_at)`. New
+table: `reminder_optouts (email_lower TEXT PRIMARY KEY, created_at)`.
+
+### 22.1 Abandoned booking (`src/abandoned.js`)
+
+A booking that reached `'hold'` (or `'expired'` — the */5 sweep's own
+expiry, SPEC.md §6.5, routinely flips one to the other before this ever
+runs) with a real email and never became confirmed. TWO sends per GUEST
+(never per row — see below), both through the atomic
+claim-then-send idiom (§20.2's `markReviewRequestSent` pattern, applied to
+`abandoned_sent_at`/`abandoned_followup_sent_at`):
+
+- **1h nudge** — `db.js:listAbandonedFirstCandidates`: `status IN
+  ('hold','expired')`, `source='web'` (never a manual/phone booking — that's
+  not an abandoned online checkout), a real email, `abandoned_sent_at IS
+  NULL`, `created_at` between `ABANDONED_FIRST_EMAIL_MIN_MINUTES` (60) and
+  `ABANDONED_WINDOW_MAX_MINUTES` (2880/48h — a safety cap so a multi-day
+  cron outage doesn't fire a pile of stale nudges on recovery) ago.
+- **~24h follow-up** — `listAbandonedFollowupCandidates`: same shape, but
+  `abandoned_sent_at IS NOT NULL AND abandoned_followup_sent_at IS NULL`,
+  `created_at` at least `ABANDONED_FOLLOWUP_MIN_MINUTES` (1440/24h) ago.
+- **One mail per GUEST, not per row** — a guest who retried checkout a few
+  times can have several `hold`/`expired` rows.
+  `src/abandoned.js:dedupeByEmailNewestFirst` (pure, newest-row-per-email)
+  is applied to BOTH candidate lists before claiming. After winning a claim on
+  the row actually emailed, every OTHER unsent sibling row for the same
+  email is best-effort stamped too (`stampAbandonedFirstSentForSiblings`/
+  `stampAbandonedFollowupSentForSiblings`) — so a later sweep tick never
+  independently rediscovers a sibling and double-sends. `sendAbandonedSweep`
+  also excludes, from the SAME tick's follow-up pass, any row just claimed
+  by that tick's first-email pass (a hold old enough to satisfy both windows
+  at once — e.g. the cron catching up after being down — would otherwise get
+  both mails seconds apart).
+- **Suppression (never nag someone who already booked)** —
+  `db.js:hasBlockingConfirmedBooking`: skip if this email has a `'confirmed'`
+  OR `'confirmed_conflict'` booking (they paid — not a prospect, even if
+  double-booked) for the EXACT same route+date+slot, OR any confirmed
+  booking at all created AFTER the abandoned attempt.
+- **Still genuinely bookable** — `src/abandoned.js:checkStillBookable`
+  reuses `db.js:getSlotsWithSeatsLeft` verbatim (the SAME seats_left the
+  guest calendar itself computes, already zeroed past a route's booking
+  cutoff per §16.1) — a route gone inactive, a closed/removed-slot override,
+  or zero seats left all silently skip the nudge. This is also what makes
+  "the walk date is still in the future and still bookable" fall out for
+  free — no separate date comparison needed.
+- **Copy** (`emails.js:renderAbandonedBooking`/`renderAbandonedFollowup`,
+  EN/NL) — never says "reserved"/"held" (nothing is held for them), names
+  the route/city/date/start-time/party/price, one button back to the
+  route's own page (`config.js:routePathFor` + `SITE_URL`, with
+  `utm_source=email&utm_medium=reminder&utm_campaign=abandoned_booking|
+  abandoned_followup` for Analytics — the EXISTING widget already reads
+  `utm_*` off its own page's query string, zero widget change needed), a
+  plain "already booked? ignore this" line, and the reminder-unsubscribe
+  link (§22.4). Subjects exactly as specified: EN "Your WOGO table in
+  {city} is still free 🍸" / "Still thinking about {city}?"; NL "Je WOGO
+  tafel in {stad} is nog vrij 🍸" / "Twijfel je nog over {stad}?". NO
+  discount in either — `ABANDONED_DISCOUNT_CODE` (`config.js`, default
+  `''`) renders no discount block at all when empty; set it to a real code
+  to turn one on later with zero template changes.
+- **Cadence**: reuses the EXISTING `*/5 * * * *` cron (no new trigger) —
+  correctness doesn't depend on exact timing, same reasoning as the
+  hold-expiry sweep, and the Workers free plan is already at 3 triggers.
+
+### 22.2 Walk reminder, 2 days before (`src/reminders.js`)
+
+Daily: every CONFIRMED `'web'`/`'manual'` booking whose `date` is exactly
+`WALK_REMINDER_DAYS_BEFORE` (`config.js`, 2) days from today in
+Europe/Amsterdam (`logic.js:todayInTimezone`/`addDaysToDateStr`, DST-safe),
+not yet sent (`db.js:listBookingsNeedingWalkReminder`/`claimReminderSent`,
+same atomic claim idiom as §20.2). Piggybacks the EXISTING `0 9 * * *`
+review-request cron rather than a 4th trigger (`src/index.js:runScheduled`).
+
+Content (`emails.js:renderWalkReminder`, EN/NL): date, the START time ONLY
+(never a bar-2/3 arrival rhythm — owner policy), party size, the route map
+button (reuses `resolveMapUrl`/`guestMapSection` — the SAME weekday-aware
+logic the confirmation email uses, so a Thursday route correctly gets its
+Thursday map), the first bar's name as the meeting point (`logic.js:
+computeBarArrivals(route, bars, overridesForDate, booking)[0].bar_name` —
+resolved by `src/reminders.js`, not inside the pure email renderer; falls
+back to the route name if no bar data exists yet), "bring your phone", 18+,
+and the accurate reschedule rule (once, 24h notice, non-refundable,
+non-transferable). Subjects: EN "Your cocktail walk is in 2 days 🍸" / NL
+"Over 2 dagen loop je je cocktail walk 🍸". Also carries the
+reminder-unsubscribe link (§22.4).
+
+**No bar street address exists in the schema** (`routes_bars` has no
+address column — confirmed by inspection before building this) — the
+"meeting point" row names the bar only, not a street address. Flagged
+rather than silently printing a blank; adding `routes_bars.bar_address`
+would be a natural follow-up migration if the owner wants one.
+
+### 22.3 Post-review thank-you (`POST /admin/api/bookings/:id/thank-review`)
+
+There is no review webhook from Trustpilot/Google, so this is
+staff-triggered from the dashboard (staff+, CSRF-guarded, audited as
+`booking.thank_review`) — mirrors `POST .../send-review`'s shape exactly.
+Idempotent via the new `review_thanked_at` claim
+(`db.js:claimReviewThanked`, same atomic idiom, requires
+`status IN ('confirmed','confirmed_conflict')`) — a repeat click 409s.
+
+The invite route is ALWAYS the most recently added ACTIVE route, pulled
+fresh from the DB (`db.js:getNewestActiveRouteExcluding`, `ORDER BY
+created_at DESC`, excluding the booking's OWN route first — inviting
+someone back to the walk they just did would read oddly; falls back to the
+newest route overall if that leaves nothing, e.g. a one-route install) —
+never hardcoded, so it can't go stale as new cities launch.
+
+Copy (`emails.js:renderReviewThankYou`, EN/NL): thanks the guest by name,
+one line that it genuinely helps a small Amsterdam business, a soft invite
+to the newest route with one button, NO discount unless `THANKYOU_CODE`
+(`config.js`, default `''`) is non-empty. The mail itself carries NO
+unsubscribe link (it's a one-off reply to a specific review, not a
+recurring reminder) — but the endpoint DOES check the reminder opt-out
+(`db.js:isReminderOptedOut`) BEFORE the atomic claim and 409s
+(`reminder_opted_out`) if the guest has opted out: this mail's route-invite
++ optional discount is the most marketing-flavored of the three new mails,
+so it honours the same flag (§22.4) even though the review-request mail it
+otherwise mirrors doesn't need to (that one carries no upsell at all). A
+blocked send does NOT burn the `review_thanked_at` claim, so a later
+genuine attempt (e.g. after the owner clears the opt-out by hand) stays
+possible.
+
+**Dashboard button not yet wired** — the backend endpoint is done and
+tested; a "Thank for review" action in the booking-detail panel (mirroring
+the existing "Send review request" button) still needs adding to
+`src/admin/admin.html`/`admin.js` and a rebuild via `node
+src/admin/build.mjs` — left for whoever next touches the admin UI source.
+
+### 22.4 Reminder opt-out (`GET /api/reminders/unsubscribe?token=…`)
+
+A one-click out shared by the abandoned-booking mails, the walk reminder,
+and the review thank-you's route-invite — deliberately NOT the marketing
+`subscribers` table (§17): these are transactional-adjacent reminders about
+a specific booking, not a newsletter, and opting out of them must never
+create, touch, or imply anything about the guest's newsletter subscription
+(or vice versa) — covered explicitly by `test/reminder_optout.test.js`.
+
+The token is SELF-CONTAINED (`src/reminder_optout.js`):
+`"<b64url(lowercased email)>.<hmac-sha256(ADMIN_SESSION_SECRET, that
+payload)>"` — the exact same `<payload>.<sig>` shape `auth.js`'s admin
+session cookie already uses, reusing its `hmacSign`/`b64urlEncode`/
+`b64urlDecode` helpers verbatim. Unlike the `subscribers` table's opaque
+random `confirm_token`/`unsubscribe_token` (which MUST be looked up in the
+DB since nothing else identifies the row), no DB round-trip is needed just
+to find out whose link this is — verification alone recovers the email; a
+forged/tampered token simply fails the HMAC check (`constantTimeEqual`).
+
+`GET /api/reminders/unsubscribe?token=…` (`src/guest_api.js:
+handleReminderUnsubscribe`) verifies the token, records the email in the
+new `reminder_optouts` table (`db.js:recordReminderOptOut`, `INSERT OR
+IGNORE` — idempotent), and always 302-redirects: a valid token to
+`${SITE_URL}/subscribed/?state=unsubscribed` (reusing the EXISTING page
+state the newsletter unsubscribe already uses — no new site page needed,
+though a reminder-specific state/copy would be a small frontend follow-up
+if the owner wants one), an invalid/missing token to `?state=invalid`.
+
+All three flows above check `db.js:isReminderOptedOut` before sending
+(abandoned: inside `src/abandoned.js:processCandidate`; walk reminder:
+inside `src/reminders.js:sendWalkReminderForBooking`; thank-you: inside
+`admin_api.js:handleThankReview`) — gated at exactly those three call
+sites, nowhere lower in the stack (`sendWithRetry`/`sendTransactional` are
+untouched), so booking confirmations, reschedules, cancellations, and bar
+mails are never affected by an opt-out row.
+
+### 22.5 Config constants (`src/config.js`)
+
+`ABANDONED_FIRST_EMAIL_MIN_MINUTES` (60), `ABANDONED_FOLLOWUP_MIN_MINUTES`
+(1440), `ABANDONED_WINDOW_MAX_MINUTES` (2880), `ABANDONED_DISCOUNT_CODE`
+(`''`), `WALK_REMINDER_DAYS_BEFORE` (2), `THANKYOU_CODE` (`''`),
+`WORKER_BASE_URL_FALLBACK` + `workerBaseUrl(env)` (the Worker's own public
+base URL, needed by the two cron-triggered flows to build the
+reminder-unsubscribe link — there's no incoming `request` inside
+`scheduled()` to read an origin off, unlike every other one-click link in
+this codebase; prefers `env.HEALTH_CHECK_BASE_URL` — SETUP.md §14's
+existing var, already exactly this value once the owner sets it — falling
+back to the real current workers.dev URL).
+
+### 22.6 Tests
+
+`test/abandoned.test.js` (29), `test/reminders.test.js` (10),
+`test/thank_review.test.js` (13), `test/reminder_optout.test.js` (11) — 63
+new tests. Covers: the 1h/24h windows and the 48h stale-safety cap; the
+one-mail-per-guest dedupe + sibling suppression (three hold rows, one
+email, zero on the next tick); the same-tick double-send guard; the
+`confirmed`/`confirmed_conflict` blocking-booking exclusion including a
+different-route-booked-after case; the seats-left/cutoff/inactive-route
+gate; the reminder opt-out honoured in both flows; a DST pin on the
+Europe/Amsterdam 25 Oct 2026 fall-back date (both the abandoned flow's
+UTC-instant cutoff check and, lightly, the reminder's pure calendar-string
+date math); EN/NL rendering including the no-em-dash rule for all
+NEWLY-authored copy (the walk reminder's reused map-section copy, inherited
+verbatim from the existing confirmation email, is deliberately left as-is);
+the no-discount-when-empty default for both `ABANDONED_DISCOUNT_CODE` and
+`THANKYOU_CODE`; the thank-review endpoint's CSRF/404/409/audit/
+newest-route-exclusion/no-other-route-fallback; and the opt-out token's
+round-trip, tamper-rejection, wrong-secret-rejection, and the guest endpoint's
+idempotent redirect behavior, including proof it never touches the
+marketing `subscribers` table.
+
+Full suite: **848 passing, 0 failing** (up from 785).
+
+---
+
 ## PORTABILITY.md (to be created verbatim as its own file)
 
 ```markdown
