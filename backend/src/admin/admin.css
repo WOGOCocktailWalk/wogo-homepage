@@ -58,6 +58,19 @@
   --sidebar-w: 236px;
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   --speed: 160ms;
+
+  /* ---- Spacing rhythm -------------------------------------------------
+     One horizontal inset for EVERYTHING that sits inside a card (title,
+     table cells, form fields, list rows) so the first column of a table
+     lines up exactly under the card's own heading. One vertical gap
+     between stacked cards. One fixed width for metric columns so the
+     numbers in every breakdown table on a page land in the same place
+     instead of each table inventing its own column widths. */
+  --card-pad-x: 18px;
+  --card-pad-y: 16px;
+  --card-gap: 18px;
+  --page-pad-x: 28px;
+  --metric-col: 112px;
 }
 
 * { box-sizing: border-box; }
@@ -314,7 +327,7 @@ input:focus, select:focus, textarea:focus {
   background: rgba(246, 233, 220, 0.86);
   backdrop-filter: saturate(1.4) blur(8px);
   border-bottom: 1px solid var(--line);
-  padding: 16px 26px;
+  padding: 16px var(--page-pad-x);
   display: flex;
   align-items: center;
   gap: 16px;
@@ -342,7 +355,7 @@ input:focus, select:focus, textarea:focus {
   cursor: pointer;
 }
 
-.content { padding: 22px 26px 60px; }
+.content { padding: 22px var(--page-pad-x) 64px; }
 
 /* ==========================================================================
    STAT ROW
@@ -481,13 +494,29 @@ input:focus, select:focus, textarea:focus {
   box-shadow: var(--shadow-card);
   overflow: hidden;
 }
+/* Stacked cards always breathe — several views (every analytics report page)
+   append card after card as plain siblings, which used to butt them together
+   into one slab. */
+.card + .card,
+.card + .filters,
+.filters + .card,
+.stat-row + .card,
+.kpi-grid + .card { margin-top: var(--card-gap); }
+
 .card-head {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 18px;
+  flex-wrap: wrap;          /* title + count badge + an action button must be
+                               able to stack on a phone instead of squashing */
+  gap: 10px 12px;
+  padding: 14px var(--card-pad-x);
   border-bottom: 1px solid var(--line);
 }
+
+/* Padded body for cards whose content is NOT a table (forms, prose, lists).
+   Without it, fields butt straight up against the card border. */
+.card-body { padding: var(--card-pad-y) var(--card-pad-x) 20px; }
+.card-body > :last-child { margin-bottom: 0; }
 .card-head h2 {
   margin: 0;
   font-size: 15px;
@@ -502,6 +531,7 @@ input:focus, select:focus, textarea:focus {
   background: var(--surface-tint);
   padding: 3px 10px;
   border-radius: var(--pill);
+  white-space: nowrap;
 }
 
 .table-scroll { overflow-x: auto; }
@@ -530,6 +560,33 @@ table.data td {
   vertical-align: middle;
   white-space: nowrap;
 }
+/* The outer cells share the card's own inset, so the first column's text sits
+   exactly under the card title and the last column ends on the same line as
+   the title row's right edge. */
+table.data th:first-child,
+table.data td:first-child { padding-left: var(--card-pad-x); }
+table.data th:last-child,
+table.data td:last-child { padding-right: var(--card-pad-x); }
+
+/* Metric (numeric) columns: right-aligned, tabular figures, never wrapped. */
+table.data th.metric,
+table.data td.metric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* Breakdown tables (one label column + metrics) put every metric column on the
+   same width floor and let the label column absorb all remaining space. That
+   snaps the numbers onto a shared grid anchored to the card's right edge, so
+   "By page", "By country" and "By device" show their value in the SAME place
+   instead of each table computing its own widths.
+   NOTE: `min-width` rather than `width` — in CSS auto table layout a plain
+   `width` loses to the 100% label column and collapses back to min-content,
+   while `min-width` is honoured as a real floor. */
+table.data.breakdown th.metric,
+table.data.breakdown td.metric { min-width: var(--metric-col); }
+table.data.breakdown th.grow,
+table.data.breakdown td.grow { width: 100%; }
 table.data tbody tr { cursor: pointer; transition: background var(--speed); }
 table.data tbody tr:hover { background: var(--panel-2); }
 table.data tbody tr:last-child td { border-bottom: none; }
@@ -728,6 +785,9 @@ table.data tbody tr:last-child td { border-bottom: none; }
    on narrow screens rather than wrapping (seven labels is a lot). */
 .analytics-subnav { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .analytics-subnav .rc-tabs { flex-wrap: nowrap; }
+/* Labels like "Real-time" and "All reports" must not break mid-word when the
+   bar scrolls horizontally on a phone. */
+.rc-tab { white-space: nowrap; }
 
 .legend {
   display: flex;
@@ -1360,6 +1420,14 @@ table.data tbody tr:last-child td { border-bottom: none; }
    RESPONSIVE
    ========================================================================== */
 @media (max-width: 900px) {
+  /* Tighter — but still consistent — rhythm on phones. Every inset below is
+     derived from these three tokens, so nothing drifts out of alignment. */
+  :root {
+    --page-pad-x: 14px;
+    --card-pad-x: 14px;
+    --card-gap: 14px;
+    --metric-col: 84px;
+  }
   .app.show { grid-template-columns: 1fr; }
   .sidebar {
     position: fixed; left: 0; top: 0; z-index: 120;
@@ -1369,8 +1437,8 @@ table.data tbody tr:last-child td { border-bottom: none; }
   }
   .sidebar.open { transform: translateX(0); }
   .mobile-menu-btn { display: inline-flex; }
-  .content { padding: 16px 14px 60px; }
-  .topbar { padding: 12px 14px; }
+  .content { padding: 16px var(--page-pad-x) 60px; }
+  .topbar { padding: 12px var(--page-pad-x); }
   .filter-actions { margin-left: 0; width: 100%; }
   .bar-item { grid-template-columns: 26px 1fr; grid-auto-flow: row; }
   .kv { grid-template-columns: 100px 1fr; }
@@ -1419,6 +1487,89 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .rte-editor ul, .rte-editor ol { margin: 0 0 10px 20px; }
 .rte-editor img { max-width: 100%; border-radius: 8px; margin: 8px 0; }
 .rte-editor a { color: var(--brown); text-decoration: underline; }
+
+/* ==========================================================================
+   TOOLS — launchpad for everything that lives outside this dashboard
+   ========================================================================== */
+.tools-intro { max-width: 62ch; margin: 0 0 var(--card-gap); }
+.tools-intro p { margin: 0; color: var(--brown); font-size: 14px; }
+
+.tool-grid {
+  display: grid;
+  /* min() so the track collapses below 400px on a phone instead of forcing
+     the page to scroll sideways. */
+  grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr));
+  gap: var(--card-gap);
+  align-items: start;
+}
+/* The grid already supplies the gap — don't double it with the stacked-card rule. */
+.tool-grid .card + .card { margin-top: 0; }
+
+.tool-card .card-head { align-items: flex-start; }
+.tool-card .card-head h2 { line-height: 1.25; }
+.tool-tagline { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+.tool-badge {
+  width: 36px; height: 36px; flex: 0 0 36px;
+  display: grid; place-items: center;
+  border-radius: var(--r-md);
+  background: var(--surface-tint);
+  color: var(--brown);
+}
+.tool-ico { width: 19px; height: 19px; }
+
+.tool-what { margin: 0 0 14px; font-size: 14px; color: var(--espresso); }
+
+.tool-links { display: grid; gap: 10px; }
+.tool-link-row {
+  display: grid;
+  grid-template-columns: minmax(130px, max-content) 1fr;
+  gap: 4px 14px;
+  align-items: center;
+}
+.tool-link { justify-content: flex-start; }
+.tool-link-desc { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+
+.tool-note {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--brown);
+  background: var(--panel-2);
+  border-left: 3px solid var(--line-strong);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  padding: 10px 12px;
+}
+/* Amber carries the warning as background + rule only. The text stays
+   espresso: --hold on --hold-bg is 3.2:1, which fails WCAG AA for body-size
+   copy, and a caution line is the last thing that should be hard to read. */
+.tool-note.warn {
+  color: var(--espresso);
+  background: var(--hold-bg);
+  border-left-color: var(--hold);
+}
+.tool-note.warn b { color: var(--ink); }
+
+@media (max-width: 560px) {
+  .tool-link-row { grid-template-columns: 1fr; }
+  .tool-link { justify-self: start; }
+}
+
+/* Two fields side by side in the blog editor — collapses to one column well
+   before the inputs get too narrow to type in. */
+.field-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0 18px;
+}
+.editor-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+  padding-top: 18px;
+}
 
 .drawer.wide { width: min(900px, 96vw); }
 .blog-preview-frame { width: 100%; height: calc(100vh - 160px); border: 0; display: block; background: #fff; }

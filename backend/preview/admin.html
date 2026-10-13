@@ -65,6 +65,19 @@
   --sidebar-w: 236px;
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   --speed: 160ms;
+
+  /* ---- Spacing rhythm -------------------------------------------------
+     One horizontal inset for EVERYTHING that sits inside a card (title,
+     table cells, form fields, list rows) so the first column of a table
+     lines up exactly under the card's own heading. One vertical gap
+     between stacked cards. One fixed width for metric columns so the
+     numbers in every breakdown table on a page land in the same place
+     instead of each table inventing its own column widths. */
+  --card-pad-x: 18px;
+  --card-pad-y: 16px;
+  --card-gap: 18px;
+  --page-pad-x: 28px;
+  --metric-col: 112px;
 }
 
 * { box-sizing: border-box; }
@@ -321,7 +334,7 @@ input:focus, select:focus, textarea:focus {
   background: rgba(246, 233, 220, 0.86);
   backdrop-filter: saturate(1.4) blur(8px);
   border-bottom: 1px solid var(--line);
-  padding: 16px 26px;
+  padding: 16px var(--page-pad-x);
   display: flex;
   align-items: center;
   gap: 16px;
@@ -349,7 +362,7 @@ input:focus, select:focus, textarea:focus {
   cursor: pointer;
 }
 
-.content { padding: 22px 26px 60px; }
+.content { padding: 22px var(--page-pad-x) 64px; }
 
 /* ==========================================================================
    STAT ROW
@@ -488,13 +501,29 @@ input:focus, select:focus, textarea:focus {
   box-shadow: var(--shadow-card);
   overflow: hidden;
 }
+/* Stacked cards always breathe — several views (every analytics report page)
+   append card after card as plain siblings, which used to butt them together
+   into one slab. */
+.card + .card,
+.card + .filters,
+.filters + .card,
+.stat-row + .card,
+.kpi-grid + .card { margin-top: var(--card-gap); }
+
 .card-head {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 18px;
+  flex-wrap: wrap;          /* title + count badge + an action button must be
+                               able to stack on a phone instead of squashing */
+  gap: 10px 12px;
+  padding: 14px var(--card-pad-x);
   border-bottom: 1px solid var(--line);
 }
+
+/* Padded body for cards whose content is NOT a table (forms, prose, lists).
+   Without it, fields butt straight up against the card border. */
+.card-body { padding: var(--card-pad-y) var(--card-pad-x) 20px; }
+.card-body > :last-child { margin-bottom: 0; }
 .card-head h2 {
   margin: 0;
   font-size: 15px;
@@ -509,6 +538,7 @@ input:focus, select:focus, textarea:focus {
   background: var(--surface-tint);
   padding: 3px 10px;
   border-radius: var(--pill);
+  white-space: nowrap;
 }
 
 .table-scroll { overflow-x: auto; }
@@ -537,6 +567,33 @@ table.data td {
   vertical-align: middle;
   white-space: nowrap;
 }
+/* The outer cells share the card's own inset, so the first column's text sits
+   exactly under the card title and the last column ends on the same line as
+   the title row's right edge. */
+table.data th:first-child,
+table.data td:first-child { padding-left: var(--card-pad-x); }
+table.data th:last-child,
+table.data td:last-child { padding-right: var(--card-pad-x); }
+
+/* Metric (numeric) columns: right-aligned, tabular figures, never wrapped. */
+table.data th.metric,
+table.data td.metric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* Breakdown tables (one label column + metrics) put every metric column on the
+   same width floor and let the label column absorb all remaining space. That
+   snaps the numbers onto a shared grid anchored to the card's right edge, so
+   "By page", "By country" and "By device" show their value in the SAME place
+   instead of each table computing its own widths.
+   NOTE: `min-width` rather than `width` — in CSS auto table layout a plain
+   `width` loses to the 100% label column and collapses back to min-content,
+   while `min-width` is honoured as a real floor. */
+table.data.breakdown th.metric,
+table.data.breakdown td.metric { min-width: var(--metric-col); }
+table.data.breakdown th.grow,
+table.data.breakdown td.grow { width: 100%; }
 table.data tbody tr { cursor: pointer; transition: background var(--speed); }
 table.data tbody tr:hover { background: var(--panel-2); }
 table.data tbody tr:last-child td { border-bottom: none; }
@@ -735,6 +792,9 @@ table.data tbody tr:last-child td { border-bottom: none; }
    on narrow screens rather than wrapping (seven labels is a lot). */
 .analytics-subnav { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .analytics-subnav .rc-tabs { flex-wrap: nowrap; }
+/* Labels like "Real-time" and "All reports" must not break mid-word when the
+   bar scrolls horizontally on a phone. */
+.rc-tab { white-space: nowrap; }
 
 .legend {
   display: flex;
@@ -1367,6 +1427,14 @@ table.data tbody tr:last-child td { border-bottom: none; }
    RESPONSIVE
    ========================================================================== */
 @media (max-width: 900px) {
+  /* Tighter — but still consistent — rhythm on phones. Every inset below is
+     derived from these three tokens, so nothing drifts out of alignment. */
+  :root {
+    --page-pad-x: 14px;
+    --card-pad-x: 14px;
+    --card-gap: 14px;
+    --metric-col: 84px;
+  }
   .app.show { grid-template-columns: 1fr; }
   .sidebar {
     position: fixed; left: 0; top: 0; z-index: 120;
@@ -1376,8 +1444,8 @@ table.data tbody tr:last-child td { border-bottom: none; }
   }
   .sidebar.open { transform: translateX(0); }
   .mobile-menu-btn { display: inline-flex; }
-  .content { padding: 16px 14px 60px; }
-  .topbar { padding: 12px 14px; }
+  .content { padding: 16px var(--page-pad-x) 60px; }
+  .topbar { padding: 12px var(--page-pad-x); }
   .filter-actions { margin-left: 0; width: 100%; }
   .bar-item { grid-template-columns: 26px 1fr; grid-auto-flow: row; }
   .kv { grid-template-columns: 100px 1fr; }
@@ -1426,6 +1494,89 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .rte-editor ul, .rte-editor ol { margin: 0 0 10px 20px; }
 .rte-editor img { max-width: 100%; border-radius: 8px; margin: 8px 0; }
 .rte-editor a { color: var(--brown); text-decoration: underline; }
+
+/* ==========================================================================
+   TOOLS — launchpad for everything that lives outside this dashboard
+   ========================================================================== */
+.tools-intro { max-width: 62ch; margin: 0 0 var(--card-gap); }
+.tools-intro p { margin: 0; color: var(--brown); font-size: 14px; }
+
+.tool-grid {
+  display: grid;
+  /* min() so the track collapses below 400px on a phone instead of forcing
+     the page to scroll sideways. */
+  grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr));
+  gap: var(--card-gap);
+  align-items: start;
+}
+/* The grid already supplies the gap — don't double it with the stacked-card rule. */
+.tool-grid .card + .card { margin-top: 0; }
+
+.tool-card .card-head { align-items: flex-start; }
+.tool-card .card-head h2 { line-height: 1.25; }
+.tool-tagline { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+.tool-badge {
+  width: 36px; height: 36px; flex: 0 0 36px;
+  display: grid; place-items: center;
+  border-radius: var(--r-md);
+  background: var(--surface-tint);
+  color: var(--brown);
+}
+.tool-ico { width: 19px; height: 19px; }
+
+.tool-what { margin: 0 0 14px; font-size: 14px; color: var(--espresso); }
+
+.tool-links { display: grid; gap: 10px; }
+.tool-link-row {
+  display: grid;
+  grid-template-columns: minmax(130px, max-content) 1fr;
+  gap: 4px 14px;
+  align-items: center;
+}
+.tool-link { justify-content: flex-start; }
+.tool-link-desc { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+
+.tool-note {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--brown);
+  background: var(--panel-2);
+  border-left: 3px solid var(--line-strong);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  padding: 10px 12px;
+}
+/* Amber carries the warning as background + rule only. The text stays
+   espresso: --hold on --hold-bg is 3.2:1, which fails WCAG AA for body-size
+   copy, and a caution line is the last thing that should be hard to read. */
+.tool-note.warn {
+  color: var(--espresso);
+  background: var(--hold-bg);
+  border-left-color: var(--hold);
+}
+.tool-note.warn b { color: var(--ink); }
+
+@media (max-width: 560px) {
+  .tool-link-row { grid-template-columns: 1fr; }
+  .tool-link { justify-self: start; }
+}
+
+/* Two fields side by side in the blog editor — collapses to one column well
+   before the inputs get too narrow to type in. */
+.field-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0 18px;
+}
+.editor-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+  padding-top: 18px;
+}
 
 .drawer.wide { width: min(900px, 96vw); }
 .blog-preview-frame { width: 100%; height: calc(100vh - 160px); border: 0; display: block; background: #fff; }
@@ -1496,6 +1647,10 @@ table.data tbody tr:last-child td { border-bottom: none; }
         <button class="nav-item" data-view="export">
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
           Export
+        </button>
+        <button class="nav-item" data-view="tools">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          Tools
         </button>
         <button class="nav-item" data-view="team" id="nav-team">
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M19 3.13a4 4 0 010 7.75"/></svg>
@@ -2370,6 +2525,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
       blog: ["Blog", "Write, preview and publish posts to the website"],
       export: ["Export", "Download bookings as a spreadsheet (CSV)"],
       analytics: ["Analytics", "Business numbers — sales, and (once connected) site traffic"],
+      tools: ["Tools", "Every outside tool WOGO uses, and what each one is for"],
       team: ["Team", "Who can sign in, and what they can do"]
     };
     $("#page-title").textContent = titles[view][0];
@@ -2385,6 +2541,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
     else if (view === "blog") renderBlog(target);
     else if (view === "export") renderExport(target);
     else if (view === "analytics") renderAnalytics(target);
+    else if (view === "tools") renderTools(target);
     else if (view === "team") renderTeam(target);
   }
 
@@ -2526,7 +2683,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
     const scroll = el("div", { class: "table-scroll" });
     const t = el("table", { class: "data" });
     t.appendChild(el("thead", {}, el("tr", {}, [
-      th("When"), th("Route"), th("City"), th("Guest"), th("Party"), th("Status"), th("Booked")
+      th("When"), th("Route"), th("City"), th("Guest"), th("Party", "metric"), th("Status"), th("Booked")
     ])));
     const tb = el("tbody");
     list.forEach((b) => {
@@ -2536,7 +2693,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
         el("td", {}, el("span", { class: "route-tag" }, [dot(b.route_id), shortRoute(b.route_name || (r && r.name) || b.route_id)])),
         el("td", { class: "td-sub", text: b.city || (r && r.city) || "" }),
         el("td", {}, [el("div", { class: "td-name", text: b.name }), el("div", { class: "td-sub", text: b.email })]),
-        el("td", { class: "num", text: b.party }),
+        el("td", { class: "num metric", text: b.party }),
         el("td", {}, el("div", { class: "badge-stack" }, [
           badge(b.status),
           b.source === "manual" ? el("span", { class: "tag-mini src", text: "Manual" }) : null,
@@ -3330,7 +3487,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
       if (editing) list.appendChild(slotEditor(route, slot, info, overrides));
     });
     card.appendChild(list);
-    card.appendChild(el("div", { class: "capacity-hint", style: "padding:6px 18px 16px",
+    card.appendChild(el("div", { class: "capacity-hint", style: "padding:6px var(--card-pad-x) 16px",
       text: "Tap a start time to change its seats or close it for " + prettyDate(S.hours.date) + " only — the route’s normal seats stay as they are." }));
     return card;
   }
@@ -3365,7 +3522,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
       el("div", { class: "grow" }),
       el("span", { class: "count-badge", text: rows.reduce((a, r) => a + r.guests, 0) + " guests" })
     ]));
-    const body = el("div", { style: "padding:16px 18px 8px" });
+    const body = el("div", { style: "padding:16px var(--card-pad-x) 8px" });
 
     if (rows.length === 0) {
       card.appendChild(el("div", { class: "empty" }, [
@@ -3408,7 +3565,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
       ]));
     });
     card.appendChild(body);
-    card.appendChild(el("div", { class: "capacity-hint", style: "padding:4px 18px 16px", text: "Bar length is relative to the busiest hour (" + maxTotal + " guests). Each colour is a route." }));
+    card.appendChild(el("div", { class: "capacity-hint", style: "padding:4px var(--card-pad-x) 16px", text: "Bar length is relative to the busiest hour (" + maxTotal + " guests). Each colour is a route." }));
     return card;
   }
 
@@ -4063,6 +4220,147 @@ table.data tbody tr:last-child td { border-bottom: none; }
   /* ======================================================================
      VIEW 4 — EXPORT
      ====================================================================== */
+  /* ======================================================================
+     VIEW — TOOLS (launchpad)
+     A plain, honest index of every tool that lives OUTSIDE this dashboard,
+     so nobody has to remember which website does what. These are outbound
+     links, not embeds: Brevo, Stripe, Google and Meta all send
+     X-Frame-Options / frame-ancestors, so none of them can be put in an
+     iframe — and this Worker's own CSP forbids framing anyway.
+     Every deep link below was opened in a real browser and lands on the
+     product's own sign-in with the destination preserved (Brevo ?target=,
+     Stripe ?redirect=, Google continue=, Meta next=), so one sign-in puts
+     you on the right page.
+     ====================================================================== */
+  const BREVO_LIST_ID = 4; // "WOGO subscribers" — settings.brevo_list_id
+  const TOOL_LINKS = {
+    brevoCampaigns: "https://app.brevo.com/campaigns",
+    brevoTemplates: "https://app.brevo.com/templates/listing",
+    brevoContacts: "https://app.brevo.com/contact/list",
+    stripePayments: "https://dashboard.stripe.com/payments",
+    stripePayouts: "https://dashboard.stripe.com/payouts",
+    stripePromos: "https://dashboard.stripe.com/promotion_codes",
+    ga: "https://analytics.google.com/analytics/web/",
+    gbp: "https://business.google.com/dashboard",
+    gbpReviews: "https://business.google.com/reviews",
+    metaAds: "https://adsmanager.facebook.com/adsmanager",
+    // Spelled out rather than reusing BLOG_SITE_BASE: that const is declared
+    // further down this file, so reading it here would hit the temporal dead
+    // zone and break the whole app at load. Keep the two in step.
+    site: "https://www.wogococktailwalk.com/"
+  };
+
+  const EXTERNAL_TOOLS = [
+    {
+      name: "Brevo",
+      tagline: "Newsletters & marketing email",
+      icon: ["M3 5h18v14H3z", "M3 7l9 6 9-6"],
+      what: "Build and send newsletters to the WOGO subscriber list.",
+      links: [
+        ["Campaigns", TOOL_LINKS.brevoCampaigns, "Write, schedule and send a newsletter."],
+        ["Email templates", TOOL_LINKS.brevoTemplates,
+          "The 21 [REFERENCE] WOGO designs live here — duplicate one to start a newsletter. Editing a [REFERENCE] template changes nothing in the real booking emails."],
+        ["Contacts & lists", TOOL_LINKS.brevoContacts,
+          "Open the “WOGO subscribers” list (list " + BREVO_LIST_ID + ") to see who is on it."]
+      ],
+      caution: "Booking, bar, gift-card and review emails are NOT sent from here — they come from this dashboard's own system. Don't rebuild them in Brevo."
+    },
+    {
+      name: "Stripe",
+      tagline: "Payments",
+      icon: ["M3 6h18v12H3z", "M3 10h18"],
+      what: "Every payment guests make, plus refunds, payouts to the bank, and discount codes.",
+      links: [
+        ["Payments", TOOL_LINKS.stripePayments, "Find a guest's payment, and refund it here."],
+        ["Payouts", TOOL_LINKS.stripePayouts, "What Stripe has paid into the WOGO bank account, and when."],
+        ["Promotion codes", TOOL_LINKS.stripePromos, "Create or switch off a discount code."]
+      ],
+      caution: "Refunds are done here by hand. Cancelling a booking in this dashboard frees the seats and emails everyone — it does NOT refund the money."
+    },
+    {
+      name: "Google Analytics",
+      tagline: "Full visitor reports",
+      icon: ["M4 20V9", "M10 20V4", "M16 20v-6", "M22 20V11"],
+      what: "The deep version of the numbers in this dashboard's Analytics section — every page, source and funnel.",
+      links: [["Open Analytics", TOOL_LINKS.ga, "Reports for the whole website."]],
+      note: "The Analytics section here already shows the key numbers — only come here when you need more detail."
+    },
+    {
+      name: "Google Business Profile",
+      tagline: "Reviews & the Maps listing",
+      icon: ["M12 3l2.6 5.4 6 .9-4.3 4.2 1 6-5.3-2.8-5.3 2.8 1-6-4.3-4.2 6-.9z"],
+      what: "What people see when they Google WOGO: the Maps listing, opening hours, photos and reviews.",
+      links: [
+        ["Reviews", TOOL_LINKS.gbpReviews, "Read and reply to Google reviews."],
+        ["Business Profile", TOOL_LINKS.gbp, "Photos, hours and listing details."]
+      ]
+    },
+    {
+      name: "Meta Ads Manager",
+      tagline: "Facebook & Instagram ads",
+      icon: ["M3 11v2a1 1 0 001 1h2l5 4V6L6 10H4a1 1 0 00-1 1z", "M16.5 9a4 4 0 010 6"],
+      what: "The paid ad campaigns that bring people to the booking pages.",
+      links: [["Ads Manager", TOOL_LINKS.metaAds, "Campaigns, budgets and results."]],
+      caution: "Changing a budget or switching a campaign off spends — or stops spending — real money straight away."
+    },
+    {
+      name: "The website",
+      tagline: "wogococktailwalk.com",
+      icon: ["M12 3a9 9 0 100 18 9 9 0 000-18z", "M3 12h18", "M12 3c2.6 2.8 2.6 15.2 0 18"],
+      what: "The live site guests book on — exactly what they see.",
+      links: [["Open the website", TOOL_LINKS.site, "Check a page the way a guest sees it."]],
+      note: "This dashboard is the door marked /admin on that same site. Bookmark it — there is no link to it from the public pages."
+    }
+  ];
+
+  function toolIcon(paths) {
+    const s = svgEl("svg", { class: "tool-ico", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.7", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" });
+    paths.forEach((d) => s.appendChild(svgEl("path", { d })));
+    return s;
+  }
+
+  /** An outbound link styled as a quiet button. Always a real <a> (keyboard
+   *  + middle-click + "open in new tab" all keep working) and always
+   *  rel="noopener" so the opened tab can never touch this one. */
+  function externalLink(label, href) {
+    return el("a", {
+      class: "btn btn-quiet btn-sm tool-link", href, target: "_blank", rel: "noopener noreferrer"
+    }, [label, el("span", { "aria-hidden": "true", text: " ↗" }), el("span", { class: "visually-hidden", text: " (opens in a new tab)" })]);
+  }
+
+  function renderTools(root) {
+    clear(root);
+    root.appendChild(el("div", { class: "tools-intro" },
+      el("p", { text: "Everything WOGO uses that lives outside this dashboard. Each one opens in a new tab — you sign in there with your own account." })));
+
+    const grid = el("div", { class: "tool-grid" });
+    EXTERNAL_TOOLS.forEach((t) => {
+      const card = el("div", { class: "card tool-card" });
+      card.appendChild(el("div", { class: "card-head" }, [
+        el("span", { class: "tool-badge" }, toolIcon(t.icon)),
+        el("div", { class: "grow" }, [
+          el("h2", { text: t.name }),
+          el("div", { class: "tool-tagline", text: t.tagline })
+        ])
+      ]));
+      const body = el("div", { class: "card-body" });
+      body.appendChild(el("p", { class: "tool-what", text: t.what }));
+      const list = el("div", { class: "tool-links" });
+      t.links.forEach(([label, href, desc]) => {
+        list.appendChild(el("div", { class: "tool-link-row" }, [
+          externalLink(label, href),
+          el("div", { class: "tool-link-desc", text: desc })
+        ]));
+      });
+      body.appendChild(list);
+      if (t.note) body.appendChild(el("p", { class: "tool-note", text: t.note }));
+      if (t.caution) body.appendChild(el("p", { class: "tool-note warn" }, [el("b", { text: "Careful: " }), t.caution]));
+      card.appendChild(body);
+      grid.appendChild(card);
+    });
+    root.appendChild(grid);
+  }
+
   function renderExport(root) {
     const f = {};
     const routeSel = selectField("Route", "", ["All routes"].concat(S.routes.map((r) => r.name)), (v) => {
@@ -4163,7 +4461,9 @@ table.data tbody tr:last-child td { border-bottom: none; }
     const card = el("div", { class: "card" });
     card.appendChild(el("div", { class: "card-head" }, [
       el("h2", { text: "Gift cards" }),
-      el("span", { class: "count-badge", text: list.length + (list.length === 1 ? " card" : " cards") })
+      el("span", { class: "count-badge", text: list.length + (list.length === 1 ? " card" : " cards") }),
+      el("div", { class: "grow" }),
+      externalLink("Open Stripe", TOOL_LINKS.stripePayments)
     ]));
     if (list.length === 0) {
       card.appendChild(el("div", { class: "empty" }, [
@@ -4176,7 +4476,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
     const scroll = el("div", { class: "table-scroll" });
     const t = el("table", { class: "data" });
     t.appendChild(el("thead", {}, el("tr", {}, [
-      th("Code"), th("Initial"), th("Balance"), th("Status"), th("Recipient"), th("Buyer"), th("Created"), th("")
+      th("Code"), th("Initial", "metric"), th("Balance", "metric"), th("Status"), th("Recipient"), th("Buyer"), th("Created"), th("")
     ])));
     const tb = el("tbody");
     list.forEach((c) => {
@@ -4196,8 +4496,8 @@ table.data tbody tr:last-child td { border-bottom: none; }
       });
       tb.appendChild(el("tr", {}, [
         el("td", { class: "td-name", style: "font-family:ui-monospace,Menlo,monospace;font-size:12.5px", text: c.code }),
-        el("td", { class: "num", text: euros(c.initial_cents) }),
-        el("td", { class: "num td-name", text: euros(c.balance_cents) }),
+        el("td", { class: "num metric", text: euros(c.initial_cents) }),
+        el("td", { class: "num td-name metric", text: euros(c.balance_cents) }),
         el("td", {}, giftStatusTag(c.status)),
         el("td", {}, [el("div", { class: "td-name", text: c.recipient_name || "—" }), el("div", { class: "td-sub", text: c.recipient_email || "" })]),
         el("td", {}, [el("div", { class: "td-name", text: c.buyer_name || "—" }), el("div", { class: "td-sub", text: c.buyer_email || "" })]),
@@ -4241,7 +4541,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
   function brevoReferenceTemplatesCard() {
     const card = el("div", { class: "card", style: "margin-bottom:18px" });
     card.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Brevo reference copies" })));
-    card.appendChild(el("div", { style: "padding:4px 18px 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap" }, [
+    card.appendChild(el("div", { style: "padding:4px var(--card-pad-x) 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap" }, [
       el("p", { style: "margin:0;flex:1;min-width:220px;font-size:13.5px;line-height:1.55;color:var(--brown)", text:
         "Creates a reviewable copy of every email WOGO can send — booking confirmations, bar notifications, gift cards, reschedules and more — inside your Brevo account's own Templates list, named \"[REFERENCE] …\". They're inactive and never used to actually send anything; editing one there changes nothing about real emails, which are always built and sent straight from this codebase." }),
       el("button", {
@@ -4376,7 +4676,9 @@ table.data tbody tr:last-child td { border-bottom: none; }
     const card = el("div", { class: "card" });
     card.appendChild(el("div", { class: "card-head" }, [
       el("h2", { text: "Subscribers" }),
-      el("span", { class: "count-badge", text: list.length + (list.length === 1 ? " shown" : " shown") + " · " + S.subscribers.total + " total" })
+      el("span", { class: "count-badge", text: list.length + (list.length === 1 ? " shown" : " shown") + " · " + S.subscribers.total + " total" }),
+      el("div", { class: "grow" }),
+      externalLink("Open this list in Brevo", TOOL_LINKS.brevoContacts)
     ]));
     if (list.length === 0) {
       card.appendChild(el("div", { class: "empty" }, [
@@ -4497,7 +4799,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
     clear(body);
     const card = el("div", { class: "card" });
     card.appendChild(el("div", { class: "card-head" }, el("h2", { text: "All reports" })));
-    const list = el("div", { style: "padding:6px 18px 18px" });
+    const list = el("div", { style: "padding:6px var(--card-pad-x) 18px" });
     ANALYTICS_SUBPAGES.filter((s) => s[0] !== "all").forEach(([key, label, desc]) => {
       list.appendChild(el("div", { style: "padding:10px 0;border-top:1px solid var(--line)" }, [
         el("button", { class: "btn btn-quiet btn-sm", text: label, onclick: () => { S.analytics.sub = key; renderAnalytics($("#view")); } }),
@@ -4561,7 +4863,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
       el("span", { class: "grow" }),
       el("button", { class: "btn btn-quiet btn-sm", text: "⬇ CSV (by route)", onclick: () => downloadAnalyticsCsv(d) })
     ]));
-    const chartBody = el("div", { style: "padding:6px 18px 16px" });
+    const chartBody = el("div", { style: "padding:6px var(--card-pad-x) 16px" });
     const maxGuests = Math.max(1, ...d.series_by_booking_date.map((s) => s.guests));
     d.series_by_booking_date.forEach((s) => {
       const w = (s.guests / maxGuests) * 100;
@@ -4597,6 +4899,22 @@ table.data tbody tr:last-child td { border-bottom: none; }
     }
   }
 
+  /** True when every value in a column is a number or a formatted number
+   *  (€1.234,56 / 12,5% / 1.234). Used instead of "every column after the
+   *  first" because several breakdown tables have a SECOND text column —
+   *  "By route" has City, "Sessions by source / medium" has Medium — and
+   *  right-aligning those into a numeric column would be wrong. */
+  function isMetricColumn(rows, i) {
+    let seen = 0;
+    for (const row of rows) {
+      const v = row[i];
+      if (v === null || v === undefined || v === "" || v === "—") continue;
+      if (typeof v !== "number" && !/^[€$£]?\s?-?[\d.,\s]+\s?%?$/.test(String(v))) return false;
+      seen++;
+    }
+    return seen > 0;
+  }
+
   function breakdownTable(title, headers, rows) {
     const card = el("div", { class: "card" });
     card.appendChild(el("div", { class: "card-head" }, el("h2", { text: title })));
@@ -4604,12 +4922,18 @@ table.data tbody tr:last-child td { border-bottom: none; }
       card.appendChild(el("div", { class: "empty", style: "padding:18px" }, el("div", { text: "Nothing in this range." })));
       return card;
     }
+    // Column roles are decided once per table: the first label column grows to
+    // fill, every metric column is pinned to --metric-col so the numbers line
+    // up across every table on the page.
+    const metric = headers.map((_, i) => i > 0 && isMetricColumn(rows, i));
+    const roleFor = (i) => (metric[i] ? " metric" : i === 0 ? " grow" : "");
     const scroll = el("div", { class: "table-scroll" });
-    const t = el("table", { class: "data" });
-    t.appendChild(el("thead", {}, el("tr", {}, headers.map((h) => th(h)))));
+    const t = el("table", { class: "data breakdown" });
+    t.appendChild(el("thead", {}, el("tr", {}, headers.map((h, i) => th(h, roleFor(i))))));
     const tb = el("tbody");
     rows.forEach((row) => {
-      tb.appendChild(el("tr", {}, row.map((v, i) => el("td", { class: i === 0 ? "td-name" : "td-sub num", text: String(v) }))));
+      tb.appendChild(el("tr", {}, row.map((v, i) =>
+        el("td", { class: (i === 0 ? "td-name" : "td-sub") + roleFor(i), text: String(v) }))));
     });
     t.appendChild(tb);
     scroll.appendChild(t);
@@ -4678,7 +5002,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
 
     const funnelCard = el("div", { class: "card" });
     funnelCard.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Funnel: view → checkout → purchase" })));
-    const fb = el("div", { style: "padding:6px 18px 16px" });
+    const fb = el("div", { style: "padding:6px var(--card-pad-x) 16px" });
     const steps = [["View item", t.funnel.view_item], ["Begin checkout", t.funnel.begin_checkout], ["Purchase", t.funnel.purchase]];
     const maxStep = Math.max(1, steps[0][1]);
     steps.forEach(([label, n]) => {
@@ -4878,7 +5202,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
 
     const sourceCard = el("div", { class: "card" });
     sourceCard.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Sales by source" })));
-    const sourceBody = el("div", { style: "padding:6px 18px 16px" });
+    const sourceBody = el("div", { style: "padding:6px var(--card-pad-x) 16px" });
     const maxSourceRevenue = Math.max(1, ...d.sales_by_source.map((s) => s.revenue_cents));
     if (d.sales_by_source.length === 0) sourceBody.appendChild(el("div", { class: "capacity-hint", text: "No confirmed bookings in this range." }));
     d.sales_by_source.forEach((s) => sourceBody.appendChild(barRow(s.source, s.revenue_cents, maxSourceRevenue, euros(s.revenue_cents), s.pct_delta)));
@@ -5011,7 +5335,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
 
     const funnelCard = el("div", { class: "card" });
     funnelCard.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Funnel: view item → begin checkout → purchase" })));
-    const fb = el("div", { style: "padding:6px 18px 16px" });
+    const fb = el("div", { style: "padding:6px var(--card-pad-x) 16px" });
     const steps = [
       ["View item", b.funnel.view_item, null],
       ["Begin checkout", b.funnel.begin_checkout, b.funnel.pct_checkout_of_view],
@@ -5077,7 +5401,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
 
     const subCard = el("div", { class: "card" });
     subCard.appendChild(el("div", { class: "card-head" }, el("h2", { text: "Subscriber growth" })));
-    const subBody = el("div", { style: "padding:6px 18px 16px" });
+    const subBody = el("div", { style: "padding:6px var(--card-pad-x) 16px" });
     const maxGrowth = Math.max(1, ...m.subscribers.growth.map((g) => g.new_subscribers));
     m.subscribers.growth.forEach((g) => subBody.appendChild(barRow(g.date, g.new_subscribers, maxGrowth, String(g.new_subscribers))));
     subCard.appendChild(subBody);
@@ -5121,7 +5445,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
     const card = el("div", { class: "card", style: "margin-bottom:18px" });
     card.appendChild(el("div", { class: "card-head" }, [el("h2", { text: "Invite a teammate" }), el("span", { class: "grow" }),
       el("button", { class: "icon-btn", text: "✕", onclick: () => { S.inviteFormOpen = false; renderTeam(root); } })]));
-    card.appendChild(el("div", { style: "padding:14px 18px;display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end" }, [
+    card.appendChild(el("div", { style: "padding:14px var(--card-pad-x);display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end" }, [
       field("Name", nameI), field("Email", emailI), field("Role", roleSel),
       el("button", {
         class: "btn btn-primary", text: "Send invite", onclick: async () => {
@@ -5298,7 +5622,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
     const scroll = el("div", { class: "table-scroll" });
     const t = el("table", { class: "data" });
     t.appendChild(el("thead", {}, el("tr", {}, [
-      th("Customer"), th("Email"), th("Bookings"), th("Total spent"), th("Discount"), th("Last booking")
+      th("Customer"), th("Email"), th("Bookings", "metric"), th("Total spent", "metric"), th("Discount"), th("Last booking")
     ])));
     const tb = el("tbody");
     list.forEach((c) => {
@@ -5315,8 +5639,8 @@ table.data tbody tr:last-child td { border-bottom: none; }
       tb.appendChild(el("tr", { onclick: () => openCustomerDrawer(c.email) }, [
         el("td", {}, [el("div", { class: "td-name", text: c.name || "(no name)" }), el("div", { class: "td-sub", text: c.phone || "" })]),
         el("td", { class: "td-sub", text: c.email }),
-        el("td", {}, [el("div", { class: "td-name num", text: c.bookings_count }), el("div", { class: "td-sub num", text: c.guests + " guest" + (c.guests === 1 ? "" : "s") })]),
-        el("td", { class: "num td-name", text: euros(c.total_spent_cents) }),
+        el("td", { class: "metric" }, [el("div", { class: "td-name num", text: c.bookings_count }), el("div", { class: "td-sub num", text: c.guests + " guest" + (c.guests === 1 ? "" : "s") })]),
+        el("td", { class: "num td-name metric", text: euros(c.total_spent_cents) }),
         discCell,
         el("td", { class: "td-sub num", text: c.last_booking ? prettyDate(c.last_booking) : "—" })
       ]));
@@ -5571,7 +5895,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
     sel.value = current || "Europe/Amsterdam";
     return sel;
   }
-  function th(t) { return el("th", { scope: "col", text: t }); }
+  function th(t, extraClass) { return el("th", { scope: "col", text: t, class: (extraClass || "").trim() || null }); }
   function badge(status) { return el("span", { class: "badge " + status, text: prettyStatus(status) }); }
   function prettyStatus(s) { return { confirmed: "Confirmed", hold: "Hold", cancelled: "Cancelled", expired: "Expired", confirmed_conflict: "Conflict" }[s] || s; }
   function stat(k, v, d) { return el("div", { class: "stat" }, [el("div", { class: "k", text: k }), el("div", { class: "v", text: v }), el("div", { class: "d", text: d })]); }
@@ -5976,31 +6300,38 @@ table.data tbody tr:last-child td { border-bottom: none; }
       blogStatusBadge(post.status)
     ]));
 
-    const grid2 = (a, b) => el("div", { style: "display:flex;gap:16px;flex-wrap:wrap" }, [el("div", { style: "flex:1;min-width:260px" }, a), el("div", { style: "flex:1;min-width:260px" }, b)]);
+    // Everything below lives inside a padded body — appended straight onto the
+    // card, the fields ran flush against the card border on every side.
+    const form = el("div", { class: "card-body" });
+    card.appendChild(form);
 
-    card.appendChild(grid2(field("Title (English)", titleEn), field("Title (Dutch, optional)", titleNl)));
-    card.appendChild(grid2(
+    const grid2 = (a, b) => el("div", { class: "field-pair" }, [el("div", {}, a), el("div", {}, b)]);
+
+    form.appendChild(grid2(field("Title (English)", titleEn), field("Title (Dutch, optional)", titleNl)));
+    form.appendChild(grid2(
       field("URL (can't change after publishing)", slugInput),
       field("Category", categorySelect)
     ));
-    card.appendChild(field("Read time (minutes)", readMinutes));
+    // Paired with an empty cell so a 2-digit number field doesn't stretch the
+    // full width of the card.
+    form.appendChild(grid2(field("Read time (minutes)", readMinutes), el("div")));
 
-    card.appendChild(el("div", { class: "field" }, [
+    form.appendChild(el("div", { class: "field" }, [
       el("label", { text: "Cover photo" }),
       coverPreview,
       coverFileInput
     ]));
-    card.appendChild(grid2(field("Cover photo description (English)", coverAltEn), field("Cover photo description (Dutch)", coverAltNl)));
+    form.appendChild(grid2(field("Cover photo description (English)", coverAltEn), field("Cover photo description (Dutch)", coverAltNl)));
 
-    card.appendChild(grid2(excerptEn.wrap, excerptNl.wrap));
+    form.appendChild(grid2(excerptEn.wrap, excerptNl.wrap));
 
-    card.appendChild(el("div", { class: "field" }, [el("label", { text: "Body (English)" }), bodyEnEditor.wrap]));
-    card.appendChild(el("div", { class: "field" }, [el("label", { text: "Body (Dutch)" }), bodyNlEditor.wrap]));
+    form.appendChild(el("div", { class: "field" }, [el("label", { text: "Body (English)" }), bodyEnEditor.wrap]));
+    form.appendChild(el("div", { class: "field" }, [el("label", { text: "Body (Dutch)" }), bodyNlEditor.wrap]));
 
-    card.appendChild(grid2(seoTitleEn.wrap, seoTitleNl.wrap));
-    card.appendChild(grid2(seoDescEn.wrap, seoDescNl.wrap));
+    form.appendChild(grid2(seoTitleEn.wrap, seoTitleNl.wrap));
+    form.appendChild(grid2(seoDescEn.wrap, seoDescNl.wrap));
 
-    const actions = el("div", { class: "drawer-foot", style: "border-top:none;padding:18px 0 0;flex-wrap:wrap" });
+    const actions = el("div", { class: "editor-actions" });
     if (canWrite) {
       actions.appendChild(el("button", { class: "btn btn-quiet", text: "Preview EN", onclick: () => doPreview("en") }));
       actions.appendChild(el("button", { class: "btn btn-quiet", text: "Preview NL", onclick: () => doPreview("nl") }));
@@ -6014,7 +6345,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
     if (isOwner && post.status !== "published") {
       actions.appendChild(el("button", { class: "btn btn-danger", text: "Delete", onclick: doDelete }));
     }
-    card.appendChild(actions);
+    form.appendChild(actions);
 
     root.appendChild(card);
   }
