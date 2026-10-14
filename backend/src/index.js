@@ -116,7 +116,6 @@ router.post('/admin/api/bookings/:id/resend', adminApi.handleResendConfirmation)
 router.post('/admin/api/bookings/:id/reschedule', adminApi.handleRescheduleBooking);
 router.post('/admin/api/bookings/:id/cancel', adminApi.handleCancelBooking);
 router.post('/admin/api/bookings/:id/send-review', adminApi.handleSendReviewRequest);
-router.post('/admin/api/bookings/:id/thank-review', adminApi.handleThankReview);
 router.get('/admin/api/routes/:id/bars', adminApi.handleListBars);
 router.post('/admin/api/routes/:id/bars', adminApi.handleAddBar);
 router.put('/admin/api/routes/:id/bars', adminApi.handleReplaceBars);

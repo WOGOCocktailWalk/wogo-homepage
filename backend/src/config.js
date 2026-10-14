@@ -69,6 +69,113 @@ export function posterUrlFor(route) {
   return (route && (route.poster_url || POSTER_BY_ROUTE[route.id])) || EMAIL_BANNER_URL;
 }
 
+// --- Per-email-type imagery (2026-10-14) -----------------------------------
+// BEFORE: every guest mail called posterUrlFor(route), so the confirmation,
+// both abandoned nudges, the 2-day reminder and the review request all showed
+// the IDENTICAL city poster (or the one generic banner.jpg for a route with
+// no poster). It read like a template — the owner's words: "i don't like it
+// that every mail uses the same picture".
+//
+// NOW: each email KIND gets its own photograph, chosen to match the moment,
+// and prefers one of the guest's OWN city where we have a good one. The
+// files live in /email/ as email-safe JPEGs (≤180KB, ≤1200px) prepared from
+// photography already on the site — see the table in SPEC.md.
+//
+// `confirmation` is the deliberate exception: it KEEPS the route poster. It
+// is the guest's "ticket" and the single most informative image we have, and
+// posterUrlFor() also honours the per-route `routes.poster_url` DB override,
+// which this static map cannot. emailImageFor() therefore DELEGATES that
+// kind rather than reimplementing the lookup.
+//
+// Shape: EMAIL_IMAGE_BY_KIND_AND_ROUTE[kind] = { _default, [routeId]: url }.
+// Resolution order is exact (kind, route) -> that kind's _default ->
+// EMAIL_BANNER_URL, so there is no (kind, route) pair — including a route id
+// that does not exist yet — that can resolve to an empty or broken URL.
+const IMG = (name) => `${SITE_ASSET_BASE}/email/${name}`;
+
+// The three Rotterdam routes share a city, so they share Rotterdam's photos.
+const RTM = ['rotterdam-witte-de-with', 'rotterdam-hidden-gems', 'rotterdam-premium-gin'];
+/** Spreads one url across every Rotterdam route id. */
+const forRotterdam = (url) => Object.fromEntries(RTM.map((id) => [id, url]));
+
+export const EMAIL_IMAGE_BY_KIND_AND_ROUTE = {
+  // Booked, paid, going: the route poster (the "ticket"). Handled by
+  // posterUrlFor() in emailImageFor — this entry documents the intent and
+  // keeps the kind list complete.
+  confirmation: {},
+
+  // "Come join" — warm, social, people visibly enjoying themselves.
+  abandoned: {
+    _default: IMG('mail-group-toast.jpg'),            // five friends clinking glasses
+    ...forRotterdam(IMG('mail-lounge-friends.jpg')),  // red-velvet lounge, mid-conversation
+    utrecht: IMG('mail-terrace-sun-utrecht.jpg'),     // sunlit terrace, friends laughing
+    amsterdam: IMG('mail-bar-overhead-amsterdam.jpg'),// a buzzing bar from above
+    groningen: IMG('mail-gin-bar-friends.jpg'),       // two guys laughing over gin
+    delft: IMG('mail-golden-cheers.jpg'),             // two friends toasting in golden light
+  },
+
+  // The second (24h) nudge. MUST differ from `abandoned` — the same guest
+  // receives both, which is exactly the repetition this change exists to end.
+  abandoned_followup: {
+    _default: IMG('mail-bar-cheers-warm.jpg'),        // intimate candlelit toast
+    ...forRotterdam(IMG('mail-rooftop-cheers.jpg')),  // rooftop cheers over the skyline
+  },
+
+  // Two days out: anticipation. Evening light, a drink waiting to be had.
+  reminder: {
+    _default: IMG('mail-cocktail-bokeh.jpg'),         // cocktail close-up, warm bokeh
+    ...forRotterdam(IMG('mail-neon-bar-night.jpg')),  // smiling guest, drinks in hand
+    amsterdam: IMG('mail-neon-bar-night.jpg'),
+    utrecht: IMG('mail-candlelit-utrecht.jpg'),       // savouring a coupe by candlelight
+    delft: IMG('mail-flame-cocktail-delft.jpg'),      // a drink being flamed at the bar
+  },
+
+  // The day after: a warm "cheers, thank you".
+  review_request: {
+    _default: IMG('mail-golden-hour-toast.jpg'),      // golden-hour clink, two glasses
+    groningen: IMG('mail-floral-toast.jpg'),          // toast beside a bunch of flowers
+  },
+
+  // Moved, not lost: calm and forward-looking. Never festive.
+  reschedule: {
+    _default: IMG('mail-cocktail-tray-sun.jpg'),      // cocktails on a tray in sunlight
+    ...forRotterdam(IMG('mail-skybar-rotterdam.jpg')),// drinks against the Erasmus bridge
+    delft: IMG('mail-calm-interior-delft.jpg'),       // quiet, empty, elegant interior
+  },
+
+  // Cancelled: quiet and neutral. A celebration photo here would be tone-deaf,
+  // so the default is a still life with no people in it at all.
+  cancellation: {
+    _default: IMG('mail-studio-cocktail.jpg'),        // single cocktail, deep blue studio
+    ...forRotterdam(IMG('mail-calm-bar-rotterdam.jpg')), // calm, empty, pale bar room
+  },
+
+  // The gift-card and list mails carry no route at all, so these are
+  // single-image kinds (the _default is the only entry there can be).
+  giftcard_recipient: { _default: IMG('mail-floral-coupes.jpg') },  // flower-garnished coupes being finished
+  giftcard_buyer: { _default: IMG('mail-bartender-garnish.jpg') },  // a bartender finishing the drink you bought
+  subscribe_confirm: { _default: IMG('mail-dark-bar-pour.jpg') },   // quiet, dark, elegant
+  welcome: { _default: IMG('mail-golden-cheers.jpg') },             // golden-light toast
+};
+
+/**
+ * The hero image for one email KIND, preferring the guest's own city.
+ *
+ * @param kind  one of the EMAIL_IMAGE_BY_KIND_AND_ROUTE keys
+ * @param route the booking's route row (may be null/undefined for the
+ *              gift-card and newsletter mails, which have no route)
+ * @returns an always-resolvable absolute URL — never '' and never undefined.
+ */
+export function emailImageFor(kind, route) {
+  // The confirmation keeps the route poster, including any per-route
+  // routes.poster_url override that only the DB knows about.
+  if (kind === 'confirmation') return posterUrlFor(route);
+  const byRoute = EMAIL_IMAGE_BY_KIND_AND_ROUTE[kind];
+  if (!byRoute) return EMAIL_BANNER_URL;         // unknown kind: branded banner
+  const exact = route && route.id ? byRoute[route.id] : null;
+  return exact || byRoute._default || EMAIL_BANNER_URL;
+}
+
 // Public — already present in the site's client-side Meta Pixel snippet.
 export const META_PIXEL_ID = '652971109400692';
 
@@ -374,11 +481,10 @@ export const ABANDONED_DISCOUNT_CODE = '';
 // --- Walk reminder, 2 days before (migrations/0031, src/reminders.js) ------
 export const WALK_REMINDER_DAYS_BEFORE = 2;
 
-// --- Post-review thank-you (migrations/0031, POST /admin/api/bookings/:id/
-// thank-review) -------------------------------------------------------------
-// Owner policy default: no discount in the thank-you mail either, same
-// empty-string-means-no-block pattern as ABANDONED_DISCOUNT_CODE above.
-export const THANKYOU_CODE = '';
+// REMOVED 2026-10-14 — `THANKYOU_CODE`, the discount constant for the
+// post-review thank-you mail. That whole flow is gone (no system ever learns
+// that a review was left, so it required the owner to spot one and press a
+// button by hand). See src/emails.js §18 and src/admin_api.js.
 
 // --- Reminder opt-out (migrations/0031) -------------------------------------
 // A one-click unsubscribe shared by all three flows above (NOT the marketing
