@@ -35,9 +35,9 @@
 
 import { isoWeekday, formatMoney } from './logic.js';
 import {
-  EMAIL_LOGO_URL, posterUrlFor, SITE_URL, WELCOME_CODE, routePathFor,
+  EMAIL_LOGO_URL, posterUrlFor, emailImageFor, SITE_URL, WELCOME_CODE, routePathFor,
   REVIEW_TRUSTPILOT_URL_EN, REVIEW_TRUSTPILOT_URL_NL, REVIEW_GOOGLE_URL,
-  ABANDONED_DISCOUNT_CODE, THANKYOU_CODE,
+  ABANDONED_DISCOUNT_CODE,
 } from './config.js';
 
 // ---------------------------------------------------------------------------
@@ -152,13 +152,14 @@ function heroBand(hero = {}) {
 }
 
 /**
- * The marketing poster, CONTAINED. Tall route posters read as a framed hero at
- * ~240px; the landscape fallback banner reads as a deliberate accent at the
- * same width. Sits on the cream body, just under the espresso band. Never
+ * The hero image, CONTAINED. Tall route posters read as a framed hero at
+ * ~240px; a landscape photograph reads as a deliberate accent at the same
+ * width. Sits on the cream body, just under the espresso band. Never
  * full-bleed — the content below must not be pushed past the fold.
+ * `url` is already resolved by the caller (layout → emailImageFor /
+ * posterUrlFor), so this helper never has to know which kind of mail it's in.
  */
-function posterBanner(route) {
-  const url = posterUrlFor(route);
+function heroImage(url, route) {
   const alt = `WOGO Cocktail Walk${route && route.city ? ' ' + route.city : ''}`;
   return `<tr><td style="background:${C.cream};padding:24px 30px 4px;text-align:center;">
     <img src="${escapeHtml(url)}" width="240" alt="${escapeHtml(alt)}" style="display:block;width:240px;max-width:100%;height:auto;margin:0 auto;border-radius:14px;border:1px solid ${C.line};">
@@ -168,15 +169,27 @@ function posterBanner(route) {
 /**
  * @param opts.preheader   hidden inbox-preview line
  * @param opts.hero        { badge?, title?, chip? } for the branded top band
- * @param opts.posterRoute route whose poster shows under the header (omit → none)
+ * @param opts.imageKind   email KIND whose own photograph shows under the
+ *                         header (config.js:emailImageFor) — this is what
+ *                         stops every mail from reusing the city poster.
+ *                         Pass it for every GUEST-facing mail.
+ * @param opts.posterRoute the booking's route. With `imageKind` it only
+ *                         selects the guest's city (and supplies the alt
+ *                         text); WITHOUT one it means "show this route's
+ *                         poster", which is what the BAR and OWNER mails
+ *                         still want — their image is reference material,
+ *                         not atmosphere. Omit both → no image at all.
  * @param opts.heading     big heading inside the body (personal greeting)
  * @param opts.intro       one-line intro sentence
  * @param opts.contentHtml main body (already-safe HTML)
  * @param opts.footerHtml  optional footer note (already-safe HTML)
  */
 function layout(opts) {
-  const { preheader = '', hero = {}, posterRoute = null, heading = '', intro = '', contentHtml = '', footerHtml = '' } = opts;
-  const poster = posterRoute ? posterBanner(posterRoute) : '';
+  const { preheader = '', hero = {}, posterRoute = null, imageKind = null, heading = '', intro = '', contentHtml = '', footerHtml = '' } = opts;
+  const imageUrl = imageKind
+    ? emailImageFor(imageKind, posterRoute)
+    : (posterRoute ? posterUrlFor(posterRoute) : null);
+  const poster = imageUrl ? heroImage(imageUrl, posterRoute) : '';
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -307,12 +320,11 @@ function allergiesNotesBlock(notes, lang = 'en') {
   </table>`;
 }
 
-/** A dashed-border code callout (migrations/0031) — shared by the abandoned-
- * booking mails (ABANDONED_DISCOUNT_CODE) and the review thank-you
- * (THANKYOU_CODE). Both constants default to '' in config.js, and this is
- * only ever called when the caller already checked the code is non-empty —
- * no empty/dangling code block ever renders. `lang` only picks the one
- * label string; the code itself is never translated. */
+/** A dashed-border code callout (migrations/0031) — used by the abandoned-
+ * booking mails (ABANDONED_DISCOUNT_CODE, which defaults to '' in config.js).
+ * Only ever called when the caller already checked the code is non-empty, so
+ * no empty/dangling code block ever renders. `lang` only picks the one label
+ * string; the code itself is never translated. */
 function discountBlock(code, lang) {
   const label = lang === 'nl' ? 'Gebruik deze code bij het boeken:' : 'Use this code when you book:';
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.blush};border:1px dashed ${C.salmonDeep};border-radius:12px;margin:0 0 18px;">
@@ -484,6 +496,8 @@ export function renderGuestConfirmation(booking, route, opts = {}) {
     html: layout({
       preheader: t.preheader,
       hero: { chip: t.chip(route) },
+      // The ONE mail that keeps the route poster: it is the guest's ticket.
+      imageKind: 'confirmation',
       posterRoute: route,
       heading: t.heading(firstName),
       intro: t.intro,
@@ -808,6 +822,7 @@ export function renderGuestReschedule(booking, route, opts = {}) {
     html: layout({
       preheader: t.preheader,
       hero: { chip: t.chip(route) },
+      imageKind: 'reschedule',
       posterRoute: route,
       heading: t.heading(firstName),
       intro: t.intro,
@@ -931,6 +946,7 @@ export function renderGuestCancellation(booking, route, opts = {}) {
     html: layout({
       preheader: t.preheader,
       hero: { chip: t.chip(route) },
+      imageKind: 'cancellation',
       posterRoute: route,
       heading: t.heading,
       intro: t.intro,
@@ -1102,6 +1118,7 @@ export function renderGiftCardRecipient(giftCard, opts = {}) {
     html: layout({
       preheader: t.preheaderRecipient,
       hero: { chip: t.chip },
+      imageKind: 'giftcard_recipient',
       heading: t.headingRecipient(firstName),
       intro: t.introRecipient(buyerName),
       contentHtml: content,
@@ -1128,6 +1145,7 @@ export function renderGiftCardBuyer(giftCard, opts = {}) {
     html: layout({
       preheader: t.introBuyer(giftCard.recipient_email),
       hero: { chip: t.chip },
+      imageKind: 'giftcard_buyer',
       heading: t.headingBuyer,
       intro: t.introBuyer(giftCard.recipient_email),
       contentHtml: content,
@@ -1330,6 +1348,7 @@ export function renderSubscribeConfirm(subscriber, confirmUrl) {
     html: layout({
       preheader: t.preheader,
       hero: { chip: t.chip },
+      imageKind: 'subscribe_confirm',
       heading: t.heading(firstName),
       intro: t.intro,
       contentHtml: content,
@@ -1402,6 +1421,7 @@ export function renderSubscribeWelcome(subscriber, opts = {}) {
     html: layout({
       preheader: t.preheader(WELCOME_CODE),
       hero: { chip: t.chip },
+      imageKind: 'welcome',
       heading: t.heading(firstName),
       intro: t.intro,
       contentHtml: content,
@@ -1523,6 +1543,7 @@ export function renderReviewRequest(booking, route) {
     html: layout({
       preheader: t.preheader,
       hero: { chip: t.chip },
+      imageKind: 'review_request',
       posterRoute: route,
       heading: t.heading(firstName),
       intro: t.intro(route.name),
@@ -1634,6 +1655,9 @@ function renderAbandonedCore(variant, booking, route, opts = {}) {
     html: layout({
       preheader: v.preheader,
       hero: { chip: t.chip(route) },
+      // The 1h nudge and the 24h follow-up deliberately show DIFFERENT
+      // photographs — the same guest receives both.
+      imageKind: variant === 'first' ? 'abandoned' : 'abandoned_followup',
       posterRoute: route,
       heading: v.heading(firstName),
       intro: v.intro,
@@ -1758,6 +1782,7 @@ export function renderWalkReminder(booking, route, opts = {}) {
     html: layout({
       preheader: t.preheader,
       hero: { chip: t.chip(route) },
+      imageKind: 'reminder',
       posterRoute: route,
       heading: t.heading(firstName),
       intro: t.intro,
@@ -1767,74 +1792,14 @@ export function renderWalkReminder(booking, route, opts = {}) {
   };
 }
 
-// ---------------------------------------------------------------------------
-// 18. Post-review thank-you (migrations/0031) — staff-triggered from the
-// dashboard (no review webhook exists), one-off and transactional like
-// renderReviewRequest, so NO unsubscribe link here (this isn't governed by
-// the reminder opt-out or the marketing subscribers list). `newRoute` is the
-// most recently added ACTIVE route (src/db.js:getNewestActiveRouteExcluding)
-// — resolved by the caller, never hardcoded here. No discount unless
-// THANKYOU_CODE (config.js) is non-empty.
-// ---------------------------------------------------------------------------
-
-const REVIEW_THANKYOU_STRINGS = {
-  en: {
-    subject: 'Thank you for your review! 🍸',
-    preheader: 'It genuinely helps a small Amsterdam business.',
-    chip: 'Thank you',
-    heading: (n) => `Thank you${n ? ', ' + n : ''}!`,
-    intro: 'We just saw your review and we really appreciate you taking the time. It genuinely helps a small Amsterdam business like ours get discovered by more people.',
-    inviteIntro: (routeName, city) => `While you're here — our newest route, ${routeName} in ${city}, is now open for booking.`,
-    inviteButton: 'Explore the new route',
-    signoff: 'See you again soon!',
-    footer: 'Questions? Just reply to this email, we read every one.',
-  },
-  nl: {
-    subject: 'Bedankt voor je review! 🍸',
-    preheader: 'Het helpt een klein Amsterdams bedrijf echt verder.',
-    chip: 'Dankjewel',
-    heading: (n) => `Dankjewel${n ? ', ' + n : ''}!`,
-    intro: 'We zagen net je review en we waarderen het enorm dat je de tijd hebt genomen. Het helpt een klein Amsterdams bedrijf zoals wij echt om door meer mensen gevonden te worden.',
-    inviteIntro: (routeName, city) => `Nu je hier toch bent: onze nieuwste route, ${routeName} in ${city}, is nu te boeken.`,
-    inviteButton: 'Bekijk de nieuwe route',
-    signoff: 'Tot de volgende keer!',
-    footer: 'Vragen? Beantwoord gewoon deze e-mail, we lezen ze allemaal.',
-  },
-};
-
-/** `booking` only needs {name, locale} — the review-thanked booking itself.
- * `newRoute` may be null (e.g. a brand-new install with only one route
- * total, excluded as "the one they just walked") — the invite section is
- * simply omitted, never a broken link. */
-export function renderReviewThankYou(booking, newRoute, opts = {}) {
-  const lang = loc(opts.locale || booking.locale);
-  const t = REVIEW_THANKYOU_STRINGS[lang];
-  const firstName = booking.name ? String(booking.name).trim().split(/\s+/)[0] : '';
-  const inviteUrl = opts.inviteUrl || (newRoute ? `${SITE_URL}${routePathFor(newRoute)}` : '');
-
-  const inviteSection = newRoute
-    ? `<p style="margin:0 0 16px;font-size:14.5px;line-height:1.55;color:${C.brown};">${escapeHtml(t.inviteIntro(newRoute.name, newRoute.city))}</p>
-       ${THANKYOU_CODE ? discountBlock(THANKYOU_CODE, lang) : ''}
-       ${primaryButton(inviteUrl, t.inviteButton)}`
-    : '';
-
-  const content = `
-    ${inviteSection}
-    <p style="margin:18px 0 0;font-size:16px;line-height:1.5;font-weight:800;color:${C.ink};">${escapeHtml(t.signoff)}</p>`;
-
-  return {
-    subject: t.subject,
-    html: layout({
-      preheader: t.preheader,
-      hero: { chip: t.chip },
-      posterRoute: newRoute || null,
-      heading: t.heading(firstName),
-      intro: t.intro,
-      contentHtml: content,
-      footerHtml: `<p style="margin:0;font-size:13px;line-height:1.5;color:${C.brown};">${escapeHtml(t.footer)}</p>`,
-    }),
-  };
-}
+// 18. REMOVED 2026-10-14 — the post-review thank-you mail
+// (`renderReviewThankYou`) and its `POST /admin/api/bookings/:id/thank-review`
+// endpoint. Nothing tells this system that a review was left (no Trustpilot
+// or Google webhook), so sending it meant the owner spotting a review,
+// matching it to a guest by hand and pressing a button — busywork, not a
+// feature. The automatic post-walk review REQUEST (renderReviewRequest, §15
+// above) is unaffected. `bookings.review_thanked_at` stays in the schema,
+// unused — see migrations/0031 and src/db.js.
 
 // ---------------------------------------------------------------------------
 // Reference-copy fixtures (BUILD §19's Brevo reference-copy pass,
@@ -1917,8 +1882,6 @@ export function buildReferenceTemplateSet() {
   push('Abandoned booking follow-up', 'NL', renderAbandonedFollowup({ ...REF_BOOKING, locale: 'nl' }, REF_ROUTE));
   push('Walk reminder (2 days)', 'EN', renderWalkReminder(REF_BOOKING, REF_ROUTE, { firstBarName: REF_BAR.bar_name }));
   push('Walk reminder (2 days)', 'NL', renderWalkReminder({ ...REF_BOOKING, locale: 'nl' }, REF_ROUTE, { firstBarName: REF_BAR.bar_name }));
-  push('Review thank-you', 'EN', renderReviewThankYou(REF_BOOKING, REF_ROUTE_ROTTERDAM));
-  push('Review thank-you', 'NL', renderReviewThankYou({ ...REF_BOOKING, locale: 'nl' }, REF_ROUTE_ROTTERDAM));
 
   return entries;
 }

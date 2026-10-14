@@ -2541,36 +2541,11 @@ export async function claimReminderSent(db, id) {
   return result.meta.changes === 1;
 }
 
-// ---------------------------------------------------------------------------
-// Post-review thank-you (migrations/0031) — staff-triggered (no review
-// webhook exists), so the atomic claim guards against a double-click, not a
-// cron race, but it's the exact same idiom for the exact same reason.
-// ---------------------------------------------------------------------------
-
-export async function claimReviewThanked(db, id) {
-  const result = await run(
-    db,
-    `UPDATE bookings SET review_thanked_at = datetime('now')
-       WHERE id = :id AND review_thanked_at IS NULL AND status IN ('confirmed','confirmed_conflict')`,
-    { id }
-  );
-  return result.meta.changes === 1;
-}
-
-/** The most recently added ACTIVE route, for the thank-you mail's "come try
- * our newest route" invite — excludes the booking's OWN route first (inviting
- * someone back to the walk they just did reads oddly); if that leaves
- * nothing (e.g. only one active route exists at all), falls back to the
- * newest active route overall. */
-export async function getNewestActiveRouteExcluding(db, excludeRouteId) {
-  const excluding = await first(
-    db,
-    `SELECT * FROM routes WHERE active = 1 AND id != :exclude_id ORDER BY created_at DESC, id DESC LIMIT 1`,
-    { exclude_id: excludeRouteId }
-  );
-  if (excluding) return excluding;
-  return first(db, `SELECT * FROM routes WHERE active = 1 ORDER BY created_at DESC, id DESC LIMIT 1`, {});
-}
+// REMOVED 2026-10-14 — `claimReviewThanked` and `getNewestActiveRouteExcluding`
+// existed ONLY for the post-review thank-you mail, which is gone (see
+// src/admin_api.js's note where the endpoint used to be). `bookings
+// .review_thanked_at` is deliberately left in the schema but is now never
+// read or written. Nothing else ever called either helper.
 
 // ---------------------------------------------------------------------------
 // Reminder opt-out (migrations/0031) — shared by the abandoned-booking mails

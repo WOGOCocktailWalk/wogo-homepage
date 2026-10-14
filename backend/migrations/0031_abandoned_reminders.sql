@@ -9,10 +9,14 @@
 --   elsewhere in this schema). NULL means "not sent yet" for both.
 -- bookings.reminder_sent_at — the 2-days-before walk reminder
 --   (src/reminders.js), same atomic-claim idiom, one send per booking.
--- bookings.review_thanked_at — idempotency marker for the dashboard's
---   "thank you for the review" button (POST /admin/api/bookings/:id/
---   thank-review) — there is no review webhook, so this is staff-triggered,
---   not cron-triggered, but still needs a one-send guard.
+-- bookings.review_thanked_at — UNUSED since 2026-10-14. It was the
+--   idempotency marker for the dashboard's "thank you for the review"
+--   button (POST /admin/api/bookings/:id/thank-review); that whole flow was
+--   removed because detecting a review is entirely manual, so the mail
+--   required the owner to spot one and press a button by hand. The COLUMN
+--   is deliberately kept — this migration is already applied remotely and
+--   dropping a column is riskier than leaving an unused one — but nothing
+--   reads or writes it any more. See SPEC.md §22.3.
 --
 -- idx_bookings_abandoned_sweep: the */5 cron sweep's hot query is
 -- `status IN ('hold','expired') AND created_at BETWEEN ? AND ?` — this index

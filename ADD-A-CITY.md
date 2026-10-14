@@ -235,3 +235,34 @@ exactly what the London example is right now.
 - **Copy a finished city** (`london/` or `rotterdam/`), change only the `CITY-EDIT` /
   `ROUTE-EDIT` bits, keep the shared menu/footer untouched.
 - **`noindex` until launch** — ship quietly, flip it on when it's ready.
+
+---
+
+## Optional: give the new city its own email photos
+
+Nothing here is required — a brand-new route already sends seven *different*
+pictures across the guest journey, because each email type has its own
+default photograph (`backend/src/config.js`,
+`EMAIL_IMAGE_BY_KIND_AND_ROUTE`). You only do this if you want the mails to
+show **that city** rather than the generic ones.
+
+1. Pick photos you already have on the site for that city. Match the
+   moment, not just the place:
+   - **abandoned** ("you didn't finish booking") — social, inviting, people
+     clearly enjoying themselves.
+   - **reminder** (2 days before) — anticipation, evening, a drink waiting.
+   - **review_request** (day after) — a warm "cheers".
+   - **reschedule / cancellation** — calm and neutral. Never a party photo
+     on a cancellation.
+2. Make an email-safe copy of each, into the repo-root `email/` folder:
+   ```bash
+   sips -Z 1200 -s format jpeg -s formatOptions 78 CITY/photo.jpg --out email/mail-something.jpg
+   ```
+   Name it after what's *in* it, not which email it's for. Keep every file
+   **under 180,000 bytes** — if it's over, shrink the pixels (`-Z 900`)
+   before you lower the quality.
+3. Add the lines to the map in `backend/src/config.js`, under the kinds you
+   made photos for, keyed by the route id.
+4. `npm test` in `backend/`. The suite fails if a file is missing, too big,
+   or if two of that city's emails would end up showing the same picture.
+5. Deploy the backend (`npx wrangler deploy`) and push the images.

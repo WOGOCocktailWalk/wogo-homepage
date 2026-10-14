@@ -1034,36 +1034,28 @@ npx wrangler d1 execute wogo-bookings --remote --file=./migrations/0031_abandone
   booked. No discount in either by default.
 - **Walk reminder** — every confirmed guest gets a "your walk is in 2 days"
   email with the essentials and the route map, 2 days before their walk.
-- **Review thank-you** — NOT automatic (there's no way to detect a real
-  Trustpilot/Google review landing). After you spot one and want to thank
-  that guest, open their booking in the dashboard and use the thank-you
-  action once it's wired up in the admin UI (see the note below), or call:
-  ```bash
-  curl -X POST https://<your-worker>.workers.dev/admin/api/bookings/<booking-id>/thank-review \
-    -H "Cookie: <your admin session cookie>" \
-    -H "X-Requested-With: wogo-admin"
-  ```
-  It only works once per booking — a second call just tells you it's
-  already been sent. **Dashboard button not built yet** — this curl command
-  (or your own session's next admin-UI pass) is the only way to trigger it
-  today.
+
+> **Removed 2026-10-14 — the "thank you for your review" email.** Nothing
+> tells this system when someone leaves a Trustpilot or Google review, so
+> sending that mail meant spotting a review yourself, matching it to a
+> guest and pressing a button. That's work, not automation, so the whole
+> flow is gone. The automatic **review request** that goes out the day
+> after each walk is untouched and still runs.
 
 ### Turning on a discount code (off by default)
 
-Neither the abandoned-booking emails nor the thank-you email offer a
-discount out of the box — that matches your "no discounting by default"
-policy. To turn one on later:
+The abandoned-booking emails don't offer a discount out of the box — that
+matches your "no discounting by default" policy. To turn one on later:
 
 1. Create the real promo code in Stripe first (Stripe Dashboard →
    Products → Coupons/Promotion codes, or reuse the existing
    `POST /admin/api/stripe/ensure-welcome-code` pattern as a template for a
    new one).
 2. Open `backend/src/config.js`, find `ABANDONED_DISCOUNT_CODE = ''` (for
-   the two abandoned-booking emails) or `THANKYOU_CODE = ''` (for the
-   thank-you email), and paste your code between the quotes.
+   the two abandoned-booking emails) and paste your code between the quotes.
 3. Redeploy (`npx wrangler deploy`). The next email of that kind shows the
-   code; every email already sent is unaffected. Leave either blank to keep
-   it off — that's the current, recommended default.
+   code; every email already sent is unaffected. Leave it blank to keep it
+   off — that's the current, recommended default.
 
 ### How the opt-out works
 

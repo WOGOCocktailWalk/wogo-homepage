@@ -1359,12 +1359,12 @@ Full suite: **785 passing, 0 failing** (up from 711).
 
 ---
 
-## 22. Abandoned booking, walk reminder, review thank-you, reminder opt-out (`migrations/0031_abandoned_reminders.sql`, 2026-10)
+## 22. Abandoned booking, walk reminder, reminder opt-out (`migrations/0031_abandoned_reminders.sql`, 2026-10)
 
-Three new automated guest-facing mails, plus the one-click opt-out that two
-of them carry. New columns on `bookings`: `abandoned_sent_at`,
-`abandoned_followup_sent_at`, `reminder_sent_at`, `review_thanked_at` (all
-`TEXT NULL`) + `idx_bookings_abandoned_sweep (status, created_at)`. New
+Automated guest-facing mails, plus the one-click opt-out they carry. New
+columns on `bookings`: `abandoned_sent_at`, `abandoned_followup_sent_at`,
+`reminder_sent_at`, `review_thanked_at` (all `TEXT NULL`; `review_thanked_at`
+is UNUSED since the thank-you flow was removed — see §22.3) + `idx_bookings_abandoned_sweep (status, created_at)`. New
 table: `reminder_optouts (email_lower TEXT PRIMARY KEY, created_at)`.
 
 ### 22.1 Abandoned booking (`src/abandoned.js`)
@@ -1455,42 +1455,24 @@ address column — confirmed by inspection before building this) — the
 rather than silently printing a blank; adding `routes_bars.bar_address`
 would be a natural follow-up migration if the owner wants one.
 
-### 22.3 Post-review thank-you (`POST /admin/api/bookings/:id/thank-review`)
+### 22.3 Post-review thank-you — REMOVED (2026-10-14)
 
-There is no review webhook from Trustpilot/Google, so this is
-staff-triggered from the dashboard (staff+, CSRF-guarded, audited as
-`booking.thank_review`) — mirrors `POST .../send-review`'s shape exactly.
-Idempotent via the new `review_thanked_at` claim
-(`db.js:claimReviewThanked`, same atomic idiom, requires
-`status IN ('confirmed','confirmed_conflict')`) — a repeat click 409s.
+`POST /admin/api/bookings/:id/thank-review` and its
+`emails.js:renderReviewThankYou` mail have been **removed**, along with
+`config.js:THANKYOU_CODE`, `db.js:claimReviewThanked`,
+`db.js:getNewestActiveRouteExcluding` and `test/thank_review.test.js`.
 
-The invite route is ALWAYS the most recently added ACTIVE route, pulled
-fresh from the DB (`db.js:getNewestActiveRouteExcluding`, `ORDER BY
-created_at DESC`, excluding the booking's OWN route first — inviting
-someone back to the walk they just did would read oddly; falls back to the
-newest route overall if that leaves nothing, e.g. a one-route install) —
-never hardcoded, so it can't go stale as new cities launch.
+Reason (owner decision): nothing tells this system that a review was left —
+there is no Trustpilot or Google webhook — so the flow only worked if the
+owner spotted a review, matched it to a guest by hand and pressed a button.
+That is busywork, not automation, and the dashboard button was never wired.
 
-Copy (`emails.js:renderReviewThankYou`, EN/NL): thanks the guest by name,
-one line that it genuinely helps a small Amsterdam business, a soft invite
-to the newest route with one button, NO discount unless `THANKYOU_CODE`
-(`config.js`, default `''`) is non-empty. The mail itself carries NO
-unsubscribe link (it's a one-off reply to a specific review, not a
-recurring reminder) — but the endpoint DOES check the reminder opt-out
-(`db.js:isReminderOptedOut`) BEFORE the atomic claim and 409s
-(`reminder_opted_out`) if the guest has opted out: this mail's route-invite
-+ optional discount is the most marketing-flavored of the three new mails,
-so it honours the same flag (§22.4) even though the review-request mail it
-otherwise mirrors doesn't need to (that one carries no upsell at all). A
-blocked send does NOT burn the `review_thanked_at` claim, so a later
-genuine attempt (e.g. after the owner clears the opt-out by hand) stays
-possible.
+The automatic post-walk **review request** (§22.2, `src/reviews.js`,
+`POST .../send-review`) is unaffected and still runs.
 
-**Dashboard button not yet wired** — the backend endpoint is done and
-tested; a "Thank for review" action in the booking-detail panel (mirroring
-the existing "Send review request" button) still needs adding to
-`src/admin/admin.html`/`admin.js` and a rebuild via `node
-src/admin/build.mjs` — left for whoever next touches the admin UI source.
+`bookings.review_thanked_at` is deliberately LEFT IN THE SCHEMA
+(migrations/0031 is already applied remotely; dropping a column is riskier
+than leaving an unused one). It is now never read and never written.
 
 ### 22.4 Reminder opt-out (`GET /api/reminders/unsubscribe?token=…`)
 
@@ -1532,7 +1514,7 @@ mails are never affected by an opt-out row.
 
 `ABANDONED_FIRST_EMAIL_MIN_MINUTES` (60), `ABANDONED_FOLLOWUP_MIN_MINUTES`
 (1440), `ABANDONED_WINDOW_MAX_MINUTES` (2880), `ABANDONED_DISCOUNT_CODE`
-(`''`), `WALK_REMINDER_DAYS_BEFORE` (2), `THANKYOU_CODE` (`''`),
+(`''`), `WALK_REMINDER_DAYS_BEFORE` (2),
 `WORKER_BASE_URL_FALLBACK` + `workerBaseUrl(env)` (the Worker's own public
 base URL, needed by the two cron-triggered flows to build the
 reminder-unsubscribe link — there's no incoming `request` inside
@@ -1544,8 +1526,8 @@ back to the real current workers.dev URL).
 ### 22.6 Tests
 
 `test/abandoned.test.js` (29), `test/reminders.test.js` (10),
-`test/thank_review.test.js` (13), `test/reminder_optout.test.js` (11) — 63
-new tests. Covers: the 1h/24h windows and the 48h stale-safety cap; the
+`test/reminder_optout.test.js` (11) — 50 tests. (`test/thank_review.test.js`,
+13 tests, was deleted with the thank-you flow — see §22.3.) Covers: the 1h/24h windows and the 48h stale-safety cap; the
 one-mail-per-guest dedupe + sibling suppression (three hold rows, one
 email, zero on the next tick); the same-tick double-send guard; the
 `confirmed`/`confirmed_conflict` blocking-booking exclusion including a
@@ -1556,9 +1538,8 @@ UTC-instant cutoff check and, lightly, the reminder's pure calendar-string
 date math); EN/NL rendering including the no-em-dash rule for all
 NEWLY-authored copy (the walk reminder's reused map-section copy, inherited
 verbatim from the existing confirmation email, is deliberately left as-is);
-the no-discount-when-empty default for both `ABANDONED_DISCOUNT_CODE` and
-`THANKYOU_CODE`; the thank-review endpoint's CSRF/404/409/audit/
-newest-route-exclusion/no-other-route-fallback; and the opt-out token's
+the no-discount-when-empty default for `ABANDONED_DISCOUNT_CODE`; and the
+opt-out token's
 round-trip, tamper-rejection, wrong-secret-rejection, and the guest endpoint's
 idempotent redirect behavior, including proof it never touches the
 marketing `subscribers` table.
@@ -1566,6 +1547,91 @@ marketing `subscribers` table.
 Full suite: **848 passing, 0 failing** (up from 785).
 
 ---
+
+## 23. Per-email-type hero imagery (`config.js:EMAIL_IMAGE_BY_KIND_AND_ROUTE`, 2026-10-14)
+
+**Before:** every guest mail called `posterUrlFor(route)`, so the booking
+confirmation, both abandoned nudges, the 2-day reminder and the review
+request all showed the IDENTICAL city poster (or the single generic
+`banner.jpg` for a route with no poster of its own). It read like a
+template. Owner's words: *"i don't like it that every mail uses the same
+picture"*.
+
+**Now:** each email KIND has its own photograph, chosen for the moment it
+describes, preferring one of the guest's OWN city where a good one exists.
+
+### 23.1 Resolution
+
+`emailImageFor(kind, route)` resolves, in order:
+
+1. exact `(kind, route.id)` entry,
+2. that kind's `_default`,
+3. `EMAIL_BANNER_URL`.
+
+So no `(kind, route)` pair — including a route id that does not exist yet —
+can ever return an empty or undefined URL. A broken `<img>` in a live guest
+email is worse than a repeated one.
+
+`confirmation` is the deliberate exception: it **delegates to
+`posterUrlFor(route)`** rather than reading the map, because the poster is
+the guest's "ticket" (the most informative image we have) AND because
+`posterUrlFor` honours the per-route `routes.poster_url` DB override that a
+static map cannot see. Do not "simplify" that into a map lookup.
+
+The **bar and owner** mails also keep the route poster — they pass
+`posterRoute` with NO `imageKind`. Their image is reference material, not
+atmosphere.
+
+### 23.2 The map
+
+| kind | default | per-city overrides |
+|---|---|---|
+| `confirmation` | *(route poster — see above)* | — |
+| `abandoned` | group toast | RTM lounge · UTR terrace · AMS overhead bar · GRN gin bar · DLF golden cheers |
+| `abandoned_followup` | candlelit toast | RTM rooftop cheers |
+| `reminder` | cocktail bokeh | RTM + AMS neon bar · UTR candlelit · DLF flamed drink |
+| `review_request` | golden-hour toast | GRN floral toast |
+| `reschedule` | cocktail tray in sun | RTM skybar · DLF calm interior |
+| `cancellation` | studio still life | RTM calm empty bar |
+| `giftcard_recipient` | floral coupes | *(no route available)* |
+| `giftcard_buyer` | bartender garnishing | *(no route available)* |
+| `subscribe_confirm` | dark bar pour | *(no route available)* |
+| `welcome` | golden cheers | *(no route available)* |
+
+Tone rules baked into those picks: `cancellation` and `reschedule` are calm
+and neutral (the cancellation default has no people in it at all — a festive
+photo there is tone-deaf); `abandoned` is social and inviting; `reminder` is
+anticipation/evening; `review_request` is a warm "cheers".
+
+### 23.3 The invariant that matters
+
+**Within one city, every email a single guest can receive must resolve to a
+DIFFERENT image.** That is the owner's complaint, stated precisely, and it
+is pinned by `test/email_images.test.js` rather than by careful reading:
+the suite walks every route id (real, unknown, and empty) across the seven
+guest-journey kinds and fails on any collision. It also asserts the kind
+`_default`s are mutually distinct — if two kinds shared one, every city
+falling through for both would silently repeat.
+
+Adding a city therefore needs no map entries at all (it inherits seven
+distinct defaults); adding entries is purely an upgrade. See ADD-A-CITY.md.
+
+### 23.4 The files
+
+21 email-safe JPEGs in the repo-root `/email/` folder (published by GitHub
+Pages, which is what `SITE_ASSET_BASE` points at), built from photography
+already on the site with
+`sips -Z <w> -s format jpeg -s formatOptions <q> SRC --out email/NAME.jpg`.
+Every file is **under 180,000 bytes** at quality >=74 and >=600px wide —
+dimensions were traded down before quality, since the hero renders at 240px
+CSS width and a low-quality JPEG bands visibly in the dark bar shots.
+`test/email_images.test.js` asserts both the existence and the size cap, so
+a typo'd filename fails the build rather than reaching a guest's inbox.
+
+Filenames describe their CONTENT, not their slot (`mail-rooftop-cheers.jpg`,
+not `mail-followup-rotterdam.jpg`): the map is where "which kind, which
+city" is expressed, and one file can serve several slots without
+duplicating bytes.
 
 ## PORTABILITY.md (to be created verbatim as its own file)
 
