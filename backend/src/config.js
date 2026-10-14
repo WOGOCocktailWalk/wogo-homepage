@@ -125,6 +125,11 @@ export const EMAIL_IMAGE_BY_KIND_AND_ROUTE = {
   reminder: {
     _default: IMG('mail-cocktail-bokeh.jpg'),         // cocktail close-up, warm bokeh
     ...forRotterdam(IMG('mail-neon-bar-night.jpg')),  // smiling guest, drinks in hand
+    // NOT a copy-paste slip: this exact photograph ships in the site repo
+    // twice, as rotterdam/route-1/ AND amsterdam/cocktails-neon-bar-night.jpg.
+    // One email-safe copy serves both cities rather than two identical files.
+    // Cross-CITY reuse is harmless — an Amsterdam guest never receives
+    // Rotterdam's mail. Only repeats WITHIN a city matter (see the test).
     amsterdam: IMG('mail-neon-bar-night.jpg'),
     utrecht: IMG('mail-candlelit-utrecht.jpg'),       // savouring a coupe by candlelight
     delft: IMG('mail-flame-cocktail-delft.jpg'),      // a drink being flamed at the bar
@@ -155,6 +160,11 @@ export const EMAIL_IMAGE_BY_KIND_AND_ROUTE = {
   giftcard_recipient: { _default: IMG('mail-floral-coupes.jpg') },  // flower-garnished coupes being finished
   giftcard_buyer: { _default: IMG('mail-bartender-garnish.jpg') },  // a bartender finishing the drink you bought
   subscribe_confirm: { _default: IMG('mail-dark-bar-pour.jpg') },   // quiet, dark, elegant
+  // Shares its photo with `abandoned.delft` on purpose. These are different
+  // journeys (newsletter vs. an unfinished booking) and the overlap only
+  // shows if one Delft guest both abandons a booking AND joins the list, so
+  // it is not worth spending another photo on. The within-a-city rule above
+  // is the one that must hold.
   welcome: { _default: IMG('mail-golden-cheers.jpg') },             // golden-light toast
 };
 
