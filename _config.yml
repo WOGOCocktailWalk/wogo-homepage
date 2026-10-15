@@ -28,5 +28,7 @@ exclude:
   - backend/wrangler.toml
   - "*.md"            # internal specs, playbooks, plans
   - OLD-URLS.txt      # the Wix URL inventory (internal)
+  - CONSENT-SNIPPET.html    # copy-paste reference fragments, not pages
+  - ANALYTICS-SNIPPET.html
   - CNAME.example
   - .claude/
