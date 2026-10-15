@@ -190,7 +190,7 @@
   .w-nav-country + .w-nav-country, li.w-nav-country ~ li.w-nav-country { margin-top: 4px; }
   .w-nav-ov-country { width: 100%; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #8a7066; margin: 6px 0 2px; }
   .w-footer-routes { display: flex; flex-direction: column; gap: 10px; }
-  .w-footer-routes .w-footer-country { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,201,168,0.55); margin-top: 6px; }
+  .w-footer-routes .w-footer-country { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,229,217,0.7); margin-top: 6px; }
   .w-nav-right { display: flex; align-items: center; gap: 10px; }
   .w-nav-cta { background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 11px 20px; border-radius: 999px; font-size: 13px; font-weight: 800; letter-spacing: 0.03em; white-space: nowrap; box-shadow: var(--wogo-cta-shadow); min-height: 44px; display: inline-flex; align-items: center; justify-content: center; transition: transform 0.2s, background 0.2s; }
   .w-nav-cta:hover { background: var(--wogo-cta-bg-hover); color: var(--wogo-cta-ink); transform: translateY(-2px); }
@@ -309,7 +309,7 @@
          the route list, content pages link {BASE}#cities); route pages scroll to
          the real #book section and keep "Book now" / "Boek nu". -->
     <div class="w-nav-right">
-      <div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"></ul></div>
+      <div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language: EN"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"></ul></div>
       <a href="#cities" class="w-nav-cta w-scroll" data-i18n="nav_cta">View dates</a>
       <button class="w-nav-burger" id="wNavBurger" aria-label="Open menu" aria-controls="wNavOverlay" aria-expanded="false"><span></span><span></span><span></span></button>
     </div>
@@ -328,7 +328,7 @@
       <li><a href="faq/" class="w-navlink w-nav-ov-link" data-i18n="foot_faq">FAQ</a></li>
       <li><a href="blog/" class="w-navlink w-nav-ov-link" data-i18n="foot_blog">Blog</a></li>
       <li><a href="contact/" class="w-navlink w-nav-ov-link" data-i18n="foot_contact">Contact</a></li>
-      <li class="w-nav-ov-lang"><div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"></ul></div></li>
+      <li class="w-nav-ov-lang"><div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language: EN"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"></ul></div></li>
     </ul>
     <a href="#cities" class="w-nav-cta w-scroll" data-i18n="nav_cta">View dates</a>
   </div>
@@ -799,7 +799,12 @@
       a.href = url;
     });
     document.documentElement.lang = lang;
-    document.querySelectorAll('.w-lang').forEach(function (w) { var c = w.querySelector('.w-lang-code'); if (c) c.textContent = lang.toUpperCase(); var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-label', 'Change language (' + lang.toUpperCase() + ')'); w.querySelectorAll('.w-lang-opt').forEach(function (o) { o.setAttribute('aria-selected', o.getAttribute('data-lang') === lang ? 'true' : 'false'); }); });
+    // The button's visible label is just the code ("EN"/"NL"). An accessible name
+    // must CONTAIN that visible text, or voice control breaks: the user says
+    // "click EN" and nothing happens. Parentheses do not count — axe strips
+    // parentheticals before comparing, so "Change language (EN)" read as just
+    // "Change language". Keep the colon form, and keep it translated.
+    document.querySelectorAll('.w-lang').forEach(function (w) { var c = w.querySelector('.w-lang-code'); if (c) c.textContent = lang.toUpperCase(); var b = w.querySelector('.w-lang-btn'); if (b) b.setAttribute('aria-label', ({ en: 'Change language', nl: 'Taal wijzigen' }[lang] || 'Change language') + ': ' + lang.toUpperCase()); w.querySelectorAll('.w-lang-opt').forEach(function (o) { o.setAttribute('aria-selected', o.getAttribute('data-lang') === lang ? 'true' : 'false'); }); });
     try { localStorage.setItem('wogoLang', lang); } catch (e) {}
     // Tell any mounted component (the booking calendar widget) that the page
     // language changed, so it re-renders its own strings instead of staying
@@ -1124,7 +1129,7 @@
 <div id="wogo-consent" class="wogo-consent" hidden>
 
   <!-- Banner -->
-  <div class="wogo-cc-banner" id="wogoCcBanner" role="region" aria-label="Cookie consent" tabindex="-1" hidden>
+  <div class="wogo-cc-banner" id="wogoCcBanner" role="region" aria-label="Cookie consent" data-cc-aria="region_label" tabindex="-1" hidden>
     <div class="wogo-cc-banner-text">
       <h2 class="wogo-cc-h" data-cc="banner_title">We value your privacy</h2>
       <p class="wogo-cc-p" data-cc="banner_body">We use cookies to keep the site working and, only if you agree, to understand our audience and improve our ads. You choose what to allow.</p>
@@ -1226,6 +1231,7 @@
       modal_title:  "Cookie preferences",
       modal_intro:  "Choose which cookies WOGO may use. You can change this anytime via “Cookie settings” in the footer.",
       close_label:  "Close cookie preferences",
+      region_label: "Cookie consent",
       always_on:    "Always on",
       cat_necessary_h: "Necessary",
       cat_necessary_d: "Required for the site to work: security, language choice and remembering this cookie preference. No tracking.",
@@ -1246,6 +1252,7 @@
       modal_title:  "Cookievoorkeuren",
       modal_intro:  "Kies welke cookies WOGO mag gebruiken. Je past dit altijd aan via “Cookie-instellingen” in de footer.",
       close_label:  "Cookievoorkeuren sluiten",
+      region_label: "Cookietoestemming",
       always_on:    "Altijd aan",
       cat_necessary_h: "Noodzakelijk",
       cat_necessary_d: "Nodig om de site te laten werken: beveiliging, taalkeuze en het onthouden van deze cookievoorkeur. Geen tracking.",
@@ -1434,7 +1441,16 @@
     /* footer "Cookie settings" link hook */
     window.wogoOpenConsent = function () { openModal(); };
 
-    /* re-localize the (hidden) widget if the visitor flips EN/NL after we booted */
+    /* Localize up front from the STORED language, so a returning Dutch visitor
+       never sees the English default that sits in the markup. */
+    applyText();
+
+    /* Re-localize whenever the visitor flips EN/NL. The page's own setLang()
+       fires "wogo:langchange" on every switch; without this listener the banner
+       keeps whatever language it first rendered in — an English cookie notice on
+       a Dutch page, i.e. the one element that legally must be understood. The
+       "storage" event covers a switch made in another tab. */
+    document.addEventListener("wogo:langchange", applyText);
     window.addEventListener("storage", function (e) { if (e.key === "wogoLang") applyText(); });
 
     /* First-visit gate: show the banner only when no valid choice is stored. */
