@@ -11,6 +11,7 @@ import { sendTransactional } from './brevo.js';
 import * as db from './db.js';
 import { nowSqlite, sqliteMinutesBetween } from './logic.js';
 import { OWNER_ALERT_EMAIL } from './config.js';
+import { notifyAdmins } from './notifications.js';
 
 /**
  * Sends one owner alert email, at most once per `throttleMinutes` per `key`.
@@ -34,6 +35,22 @@ export async function alertOwnerThrottled(env, key, throttleMinutes, subject, ht
     // successful alert".
     await database.setSetting(env.DB, settingKey, now);
     await brevoSend(env, { to: OWNER_ALERT_EMAIL, subject, htmlContent: html });
+    // Push "problem" notification (BUILD: PWA/push build, migrations/0032) —
+    // same throttle window as the email above (this whole function already
+    // returned early if we're inside one), so a flapping check fans out at
+    // most one tickle per window too. Deliberately its OWN try/catch, not
+    // routed through src/errors.js:captureError — that function is what
+    // CALLS alertOwnerThrottled in the first place (via the 'crash' key), so
+    // looping a push failure back through it would recurse.
+    try {
+      await notifyAdmins(env, {
+        kind: 'problem',
+        title: `⚠️ ${subject}`,
+        body: 'Tap to open the dashboard for details.',
+      }, deps);
+    } catch (err) {
+      console.error('alert_owner_push_failed', key, String(err && err.message ? err.message : err));
+    }
     return { sent: true };
   } catch (err) {
     console.error('alert_owner_failed', key, String(err && err.message ? err.message : err));

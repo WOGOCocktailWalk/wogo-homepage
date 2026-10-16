@@ -320,6 +320,36 @@ function allergiesNotesBlock(notes, lang = 'en') {
   </table>`;
 }
 
+const ADDONS_TITLE = { en: 'Extras ordered', nl: "Bestelde extra's" };
+
+/**
+ * The "extras ordered" list (migrations/0033) — one line per add-on line
+ * item: "2× Bites — €11,95". `lines` is whatever src/db.js:getAddonsForBooking
+ * returned, OR a caller-filtered subset (notifyBars/notifyBarsReschedule pass
+ * only the lines belonging to THAT bar — see src/webhook.js). Reads ONLY
+ * guest-facing fields (qty, name_snapshot_en/nl, unit_price_cents, currency)
+ * — unit_cost_cents may be present on the row (admin queries sometimes carry
+ * it) but is NEVER read here, in any render function, guest- or bar-facing.
+ * Returns '' for an empty/missing array, so a booking with no add-ons (or a
+ * bar that owns none of this booking's add-ons) renders NO extras section
+ * at all — same "nothing to show ⇒ nothing rendered" rule every other
+ * optional block in this file follows.
+ */
+function addonsBlock(lines, lang = 'en') {
+  if (!Array.isArray(lines) || lines.length === 0) return '';
+  const rows = lines
+    .map((l) => {
+      const name =
+        (lang === 'nl' ? l.name_snapshot_nl || l.name_snapshot_en : l.name_snapshot_en || l.name_snapshot_nl) || '';
+      const money = formatMoney((l.unit_price_cents || 0) * (l.qty || 0), l.currency || 'EUR');
+      return `<tr><td style="padding:5px 0;font-size:14px;line-height:1.5;color:${C.brown};">
+        <span style="color:${C.salmonDeep};font-weight:800;">&#8226;</span>&nbsp;&nbsp;<strong style="color:${C.ink};">${escapeHtml(String(l.qty))}&times;</strong> ${escapeHtml(name)} &mdash; ${escapeHtml(money)}</td></tr>`;
+    })
+    .join('');
+  return `<h3 style="margin:0 0 6px;font-size:13px;font-weight:800;letter-spacing:.02em;color:${C.ink};text-transform:uppercase;">${escapeHtml(ADDONS_TITLE[lang] || ADDONS_TITLE.en)}</h3>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">${rows}</table>`;
+}
+
 /** A dashed-border code callout (migrations/0031) — used by the abandoned-
  * booking mails (ABANDONED_DISCOUNT_CODE, which defaults to '' in config.js).
  * Only ever called when the caller already checked the code is non-empty, so
@@ -483,9 +513,16 @@ export function renderGuestConfirmation(booking, route, opts = {}) {
     </table>`
     : '';
 
+  // Add-ons (migrations/0033) — "what they ordered" + the allergy note they
+  // left (a SEPARATE field from the general notes above). opts.addons is
+  // whatever src/db.js:getAddonsForBooking returned for this booking — [] for
+  // the overwhelming majority of bookings, in which case both render to ''.
+  const addonsSection = addonsBlock(opts.addons, lang);
+  const addonAllergiesSection = allergiesNotesBlock(booking.addon_notes, lang);
+
   const content = `
     ${detailPanel(rows, C.salmonDeep)}
-    ${notesSection}${mapSection}
+    ${notesSection}${addonAllergiesSection}${addonsSection}${mapSection}
     <div style="border-top:1px solid ${C.line};margin:26px 0 22px;"></div>
     ${quietSection(t.goodToKnowTitle, t.goodToKnow)}
     ${quietSection(t.howItWorksTitle, t.howItWorks)}
@@ -556,8 +593,16 @@ export function renderOwnerNotification(booking, route, opts = {}) {
        ${detailPanel(arrivals.map((a) => [a.bar_name, `<span style="font-variant-numeric:tabular-nums;">${escapeHtml(a.arrival_time)}</span>`]), C.brownSoft)}`
     : '';
 
+  // Add-ons (migrations/0033) — the owner sees everything on the booking,
+  // every bar's items included, plus the allergy note (own column from
+  // bookings.notes). opts.addons is [] for the overwhelming majority of
+  // bookings, so this is a no-op for every booking without add-ons.
+  const addonsSection = addonsBlock(opts.addons, 'en');
+  const addonAllergiesSection = allergiesNotesBlock(booking.addon_notes);
+
   const content = `
-    ${allergiesNotesBlock(booking.notes)}${detailPanel(rows, C.salmonDeep)}
+    ${allergiesNotesBlock(booking.notes)}${addonAllergiesSection}${detailPanel(rows, C.salmonDeep)}
+    ${addonsSection}
     ${sectionTitle('Customer')}
     ${detailPanel(customerRows, C.brownSoft)}
     ${arrivalsHtml}`;
@@ -615,7 +660,7 @@ const BAR_NOTIFICATION_STRINGS = {
   },
 };
 
-export function renderBarNotification(bar, booking, route) {
+export function renderBarNotification(bar, booking, route, opts = {}) {
   const lang = bar.locale === 'en' ? 'en' : 'nl';
   const t = BAR_NOTIFICATION_STRINGS[lang];
 
@@ -642,11 +687,23 @@ export function renderBarNotification(bar, booking, route) {
     [t.labels.guestContact, guestContact],
   ];
 
+  // Add-ons (migrations/0033) — opts.addons must ALREADY be filtered to only
+  // this bar's own items (notifyBars in src/webhook.js does the filtering —
+  // a bar that doesn't own any of this booking's add-ons gets an empty
+  // array here, so addonsSection renders '' and this mail is byte-for-byte
+  // what it was before add-ons existed). The dietary/allergy note rides
+  // ALONGSIDE this bar's own items — "2× Bites plus the allergy note" per
+  // the owner's spec — never shown to a bar that owns nothing on this
+  // booking, even if the guest left one.
+  const barAddons = Array.isArray(opts.addons) ? opts.addons : [];
+  const addonsSection = addonsBlock(barAddons, lang);
+  const addonAllergiesSection = barAddons.length > 0 ? allergiesNotesBlock(booking.addon_notes, lang) : '';
+
   // The allergies/notes block goes FIRST — above even the arrival hero — so
   // bar staff scanning the email can't miss "nut allergy" (the entire reason
   // this field exists). Empty notes ⇒ no block at all.
   const content = `
-    ${allergiesNotesBlock(booking.notes, lang)}${arrivalHero}
+    ${allergiesNotesBlock(booking.notes, lang)}${addonAllergiesSection}${addonsSection}${arrivalHero}
     ${detailPanel(rows, C.salmonDeep)}
     <p style="margin:0;font-size:13.5px;line-height:1.55;color:${C.brown};">
       ${t.closing(escapeHtml(String(booking.party)), escapeHtml(bar.arrival_time))}
@@ -812,9 +869,19 @@ export function renderGuestReschedule(booking, route, opts = {}) {
     [t.labels.party, escapeHtml(gt.guests(booking.party))],
     [t.labels.ref, `<span style="font-family:ui-monospace,Menlo,monospace;font-size:12px;color:${C.muted};">${escapeHtml(booking.id)}</span>`],
   ];
+  // Add-ons move WITH the booking (migrations/0033) — shown again here so a
+  // reschedule email still confirms exactly what's included, same as the
+  // original confirmation. The admin reschedule endpoint re-validates
+  // cutoff/capacity for every line item BEFORE this email ever sends (see
+  // src/admin_api.js:handleRescheduleBooking + src/db.js:checkAddonsFitSlot)
+  // — by the time this renders, every item here is guaranteed to still fit.
+  const addonsSection = addonsBlock(opts.addons, lang);
+  const addonAllergiesSection = allergiesNotesBlock(booking.addon_notes, lang);
+
   const content = `
     ${wasLine}
     ${detailPanel(rows, C.salmonDeep)}
+    ${addonAllergiesSection}${addonsSection}
     ${guestMapSection(gt, route, lang, booking.date)}
     <p style="margin:18px 0 0;font-size:16px;line-height:1.5;font-weight:800;color:${C.ink};">${escapeHtml(t.signoff(route.city))}</p>`;
   return {
@@ -893,8 +960,16 @@ export function renderBarReschedule(bar, booking, route, opts = {}) {
     [t.labels.guestName, escapeHtml(booking.name)],
     [t.labels.guestContact, guestContact],
   ];
+  // Add-ons (migrations/0033) — same bar-filtered opts.addons contract as
+  // renderBarNotification: already filtered to only THIS bar's items by the
+  // caller (notifyBarsReschedule in src/webhook.js), so a bar owning none
+  // of this booking's add-ons sees neither the extras list nor the allergy
+  // note, exactly as before this feature existed.
+  const barAddons = Array.isArray(opts.addons) ? opts.addons : [];
+  const addonsSection = addonsBlock(barAddons, lang);
+  const addonAllergiesSection = barAddons.length > 0 ? allergiesNotesBlock(booking.addon_notes, lang) : '';
   const content = `
-    ${allergiesNotesBlock(booking.notes, lang)}${wasLine}${arrivalHero}
+    ${allergiesNotesBlock(booking.notes, lang)}${addonAllergiesSection}${addonsSection}${wasLine}${arrivalHero}
     ${detailPanel(rows, C.salmonDeep)}
     <p style="margin:0;font-size:13.5px;line-height:1.55;color:${C.brown};">
       ${t.closing}
@@ -1763,8 +1838,14 @@ export function renderWalkReminder(booking, route, opts = {}) {
   ];
   if (meetingPoint) rows.push([t.labels.meet, escapeHtml(meetingPoint)]);
 
+  // Add-ons (migrations/0033) — the 2-day reminder lists what they ordered
+  // too, same as the original confirmation, so it's never a surprise.
+  const addonsSection = addonsBlock(opts.addons, lang);
+  const addonAllergiesSection = allergiesNotesBlock(booking.addon_notes, lang);
+
   const content = `
     ${detailPanel(rows, C.salmonDeep)}
+    ${addonAllergiesSection}${addonsSection}
     ${guestMapSection(gt, route, lang, booking.date)}
     <p style="margin:0 0 20px;font-size:13.5px;line-height:1.5;color:${C.brown};">${escapeHtml(t.bringPhone)}</p>
     ${quietSection(t.goodToKnowTitle, t.goodToKnow)}

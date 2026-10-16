@@ -25,7 +25,7 @@ const schemaSql = [
   '0009_webhook_processing_status.sql', '0010_booking_notes.sql', '0011_currency_timezone.sql',
   '0012_map_url_nl.sql', '0014_weekday_capacity.sql', '0015_weekday_bars.sql', '0017_map_by_weekday.sql',
   '0022_bar_locale.sql', '0025_admin_users.sql', '0026_review_requests.sql', '0029_route_booking_cutoff.sql',
-  '0031_abandoned_reminders.sql',
+  '0031_abandoned_reminders.sql', '0033_addons.sql',
 ].map(migration).join('\n');
 
 function run(testDb, sql, params = {}) {

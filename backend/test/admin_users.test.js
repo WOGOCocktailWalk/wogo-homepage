@@ -40,6 +40,7 @@ const schemaSql = [
   '0018_gift_cards.sql', '0019_gift_card_redemptions.sql', '0020_route_names.sql', '0021_inquiries.sql',
   '0022_bar_locale.sql', '0023_route_names_simple.sql', '0024_subscribers.sql', '0025_admin_users.sql',
   '0026_review_requests.sql', '0027_booking_utm.sql', '0028_bookings_email_lower_index.sql', '0029_route_booking_cutoff.sql',
+  '0033_addons.sql',
 ].map(migration).join('\n');
 
 const SESSION_SECRET = 'test-session-secret';

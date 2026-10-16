@@ -866,6 +866,359 @@ export async function replaceBars(db, routeId, bars, weekday = null) {
 }
 
 // ---------------------------------------------------------------------------
+// Add-ons (migrations/0033) — bar-fulfilled booking upsells. See that
+// migration's header comment for the full business-model + schema writeup;
+// this section is the CRUD + the two load-bearing atomic/read paths
+// (capacity reservation at hold time, capacity+cutoff re-check at
+// reschedule time) that mirror createHold/rescheduleBooking's own guards.
+// ---------------------------------------------------------------------------
+
+/** Every add-on row for a route, ANY active state — the admin editor's full
+ * picture (mirrors listBars). Ordered by sort_order, same convention as
+ * routes_bars.ord. */
+export async function listAddonsForRoute(db, routeId) {
+  return all(db, `SELECT * FROM addons WHERE route_id = :route_id ORDER BY sort_order, created_at`, { route_id: routeId });
+}
+
+export async function getAddon(db, id) {
+  return first(db, `SELECT * FROM addons WHERE id = :id`, { id });
+}
+
+export async function createAddon(db, routeId, addon) {
+  const id = `addon_${crypto.randomUUID()}`;
+  await run(
+    db,
+    `INSERT INTO addons
+      (id, route_id, bar_id, name_en, name_nl, description_en, description_nl, image_url,
+       price_cents, cost_cents, currency, vat_rate, is_food, unit, max_qty_per_booking,
+       capacity_per_slot, cutoff_hours, sort_order, active, created_at, updated_at)
+     VALUES
+      (:id, :route_id, :bar_id, :name_en, :name_nl, :description_en, :description_nl, :image_url,
+       :price_cents, :cost_cents, :currency, :vat_rate, :is_food, :unit, :max_qty_per_booking,
+       :capacity_per_slot, :cutoff_hours, :sort_order, :active, datetime('now'), datetime('now'))`,
+    {
+      id,
+      route_id: routeId,
+      // Number(), not a bare passthrough: bar_id is an INTEGER column
+      // (routes_bars.id's own type) — a string digit from a JSON body must
+      // be coerced, not stored as text (see the migration's own doc
+      // comment on why the column's affinity matters here).
+      bar_id: addon.bar_id != null ? Number(addon.bar_id) : null,
+      name_en: addon.name_en,
+      name_nl: addon.name_nl,
+      description_en: addon.description_en ?? null,
+      description_nl: addon.description_nl ?? null,
+      image_url: addon.image_url ?? null,
+      price_cents: addon.price_cents,
+      cost_cents: addon.cost_cents,
+      currency: addon.currency || 'EUR',
+      vat_rate: addon.vat_rate,
+      is_food: addon.is_food ? 1 : 0,
+      unit: addon.unit === 'per_booking' ? 'per_booking' : 'per_person',
+      max_qty_per_booking: addon.max_qty_per_booking,
+      capacity_per_slot: addon.capacity_per_slot ?? null,
+      cutoff_hours: addon.cutoff_hours,
+      sort_order: Number.isInteger(addon.sort_order) ? addon.sort_order : 0,
+      active: addon.active ? 1 : 0,
+    }
+  );
+  return getAddon(db, id);
+}
+
+const ADDON_PATCH_COLUMNS = [
+  'bar_id', 'name_en', 'name_nl', 'description_en', 'description_nl', 'image_url',
+  'price_cents', 'cost_cents', 'currency', 'vat_rate', 'is_food', 'unit',
+  'max_qty_per_booking', 'capacity_per_slot', 'cutoff_hours', 'sort_order', 'active',
+];
+
+export async function updateAddon(db, id, patch) {
+  const cols = ADDON_PATCH_COLUMNS.filter((k) => k in patch);
+  if (cols.length === 0) return getAddon(db, id);
+  const setClause = cols.map((c) => `${c} = :${c}`).join(', ');
+  const bound = { id };
+  for (const c of cols) {
+    let v = patch[c];
+    if (c === 'is_food' || c === 'active') v = v ? 1 : 0;
+    if (c === 'unit') v = v === 'per_booking' ? 'per_booking' : 'per_person';
+    if (c === 'bar_id') v = v != null ? Number(v) : null;
+    bound[c] = v;
+  }
+  await run(db, `UPDATE addons SET ${setClause}, updated_at = datetime('now') WHERE id = :id`, bound);
+  return getAddon(db, id);
+}
+
+export async function deleteAddon(db, id) {
+  const result = await run(db, `DELETE FROM addons WHERE id = :id`, { id });
+  return result.meta.changes === 1;
+}
+
+/** Cheap existence check powering GET /api/routes' `has_addons` flag — lets
+ * the widget skip GET /api/addons entirely for a route with none, so "a
+ * route with no active add-ons is byte-for-byte identical to today" holds
+ * at the network layer, not just in the rendered DOM. */
+export async function routeHasActiveAddons(db, routeId) {
+  const row = await first(db, `SELECT 1 AS x FROM addons WHERE route_id = :route_id AND active = 1 LIMIT 1`, { route_id: routeId });
+  return !!row;
+}
+
+/**
+ * Guest-facing candidates for one (route, date, slot): every ACTIVE add-on
+ * on the route, with `reserved_qty` — the total already committed for this
+ * exact slot (confirmed, or a still-live hold) — so the caller can derive
+ * remaining capacity. Cutoff is deliberately NOT filtered here: SQLite has
+ * no per-route-timezone clock, so src/guest_api.js:handleListAddons filters
+ * the returned rows through logic.js:isSlotPastCutoff (route.timezone,
+ * addon.cutoff_hours * 60), the same division of labor every other
+ * cutoff check in this codebase already uses.
+ */
+export async function listAddonsForSlot(db, routeId, date, slot) {
+  return all(
+    db,
+    `SELECT a.*,
+        (SELECT COALESCE(SUM(ba.qty), 0)
+           FROM booking_addons ba
+           JOIN bookings b ON b.id = ba.booking_id
+          WHERE ba.addon_id = a.id
+            AND b.route_id = :route_id AND b.date = :date AND b.slot = :slot
+            AND (b.status = 'confirmed' OR (b.status = 'hold' AND b.hold_expires > datetime('now')))
+        ) AS reserved_qty
+       FROM addons a
+      WHERE a.route_id = :route_id AND a.active = 1
+      ORDER BY a.sort_order, a.created_at`,
+    { route_id: routeId, date, slot }
+  );
+}
+
+// Atomic add-on capacity reservation at hold time — the exact same
+// "INSERT ... SELECT ... WHERE capacity allows it" idiom CREATE_HOLD_SQL
+// uses for seats, so two simultaneous requests for the last unit of a
+// capacity-limited add-on can never both succeed. `capacity_per_slot IS
+// NULL` (unlimited) short-circuits the whole guard. The status set
+// (confirmed OR live hold) mirrors CREATE_HOLD_SQL's own set exactly —
+// this call happens at the same moment in the booking flow (right after a
+// seat hold is created), so it must count exactly the same competing rows.
+const CREATE_BOOKING_ADDON_SQL = `
+INSERT INTO booking_addons
+  (id, booking_id, addon_id, qty, unit_price_cents, unit_cost_cents, currency, vat_rate, name_snapshot_en, name_snapshot_nl, created_at)
+SELECT
+  :id, :booking_id, :addon_id, :qty, :unit_price_cents, :unit_cost_cents, :currency, :vat_rate, :name_snapshot_en, :name_snapshot_nl, datetime('now')
+WHERE
+  (SELECT capacity_per_slot FROM addons WHERE id = :addon_id) IS NULL
+  OR (
+    (SELECT COALESCE(SUM(ba.qty), 0)
+       FROM booking_addons ba
+       JOIN bookings b ON b.id = ba.booking_id
+      WHERE ba.addon_id = :addon_id
+        AND b.route_id = :route_id AND b.date = :date AND b.slot = :slot
+        AND (b.status = 'confirmed' OR (b.status = 'hold' AND b.hold_expires > datetime('now')))
+    ) + :qty
+  ) <= (SELECT capacity_per_slot FROM addons WHERE id = :addon_id);
+`;
+
+/**
+ * Atomically reserves one add-on line item against a just-created hold.
+ * Returns { created: true, id } or { created: false } (capacity guard
+ * rejected it — caller's responsibility to release the seat hold, same
+ * "hold stays, expires naturally OR is explicitly cancelled" contract as
+ * every other post-hold failure in guest_api.js:handleBook).
+ */
+export async function createBookingAddon(db, params) {
+  const id = `ba_${crypto.randomUUID()}`;
+  const result = await run(db, CREATE_BOOKING_ADDON_SQL, {
+    id,
+    booking_id: params.booking_id,
+    addon_id: params.addon_id,
+    qty: params.qty,
+    unit_price_cents: params.unit_price_cents,
+    unit_cost_cents: params.unit_cost_cents,
+    currency: params.currency || 'EUR',
+    vat_rate: params.vat_rate,
+    name_snapshot_en: params.name_snapshot_en,
+    name_snapshot_nl: params.name_snapshot_nl,
+    route_id: params.route_id,
+    date: params.date,
+    slot: params.slot,
+  });
+  if (result.meta.changes === 1) return { created: true, id };
+  return { created: false };
+}
+
+/**
+ * Every add-on line item for EVERY booking, grouped into a plain
+ * `{ [booking_id]: [line, ...] }` object — the bookings CSV export's bulk
+ * read (src/admin_api.js:handleExportCsv), so a 10,000-row export costs ONE
+ * extra query total, not one per row. `booking_addons` stays small relative
+ * to `bookings` (the overwhelming majority of bookings carry zero add-ons),
+ * so one full scan here is cheap even as the export grows.
+ */
+export async function listAddonsGroupedByBooking(db) {
+  const rows = await all(db, `SELECT * FROM booking_addons ORDER BY booking_id, created_at`, {});
+  const grouped = {};
+  for (const row of rows) {
+    (grouped[row.booking_id] = grouped[row.booking_id] || []).push(row);
+  }
+  return grouped;
+}
+
+/** Records the guest's optional allergy/dietary free text — a SEPARATE
+ * column from bookings.notes (see migrations/0033's header comment).
+ * Called only when there's something to write (src/guest_api.js), so a
+ * booking with no add-ons never touches this column at all. */
+export async function setBookingAddonNotes(db, id, addonNotes) {
+  await run(db, `UPDATE bookings SET addon_notes = :addon_notes WHERE id = :id`, { id, addon_notes: addonNotes ?? null });
+}
+
+/** All add-on line items for one booking — admin booking detail, every
+ * email renderer, and the bookings CSV export all share this one read.
+ * LEFT JOINs the live `addons` row for its current bar_id/is_food/image_url
+ * (a deleted add-on still returns its booking_addons row, just with those
+ * three columns NULL — renderers fall back to the snapshot name). */
+export async function getAddonsForBooking(db, bookingId) {
+  return all(
+    db,
+    `SELECT ba.*, a.bar_id AS bar_id, a.is_food AS is_food, a.image_url AS image_url
+       FROM booking_addons ba
+       LEFT JOIN addons a ON a.id = ba.addon_id
+      WHERE ba.booking_id = :booking_id
+      ORDER BY ba.created_at`,
+    { booking_id: bookingId }
+  );
+}
+
+/**
+ * Read-only check: can every add-on line item already on this booking still
+ * be honoured at (newDate, newSlot)? Checks BOTH halves — cutoff (needs
+ * `timezone`, the route's own IANA zone, same DST-safe logic.js:
+ * isSlotPastCutoff every other cutoff check in this codebase uses) AND
+ * capacity. Used ONLY by the admin reschedule endpoint (src/admin_api.js:
+ * handleRescheduleBooking), called BEFORE db.rescheduleBooking actually
+ * moves the booking — "fail loudly" per the owner's requirement, rather
+ * than moving the booking and silently stranding a paid add-on.
+ *
+ * Capacity's status set + self-exclusion mirror RESCHEDULE_BOOKING_SQL's own
+ * seat guard exactly (confirmed/confirmed_conflict/live hold,
+ * `b.id != :booking_id`) — a booking moving into a slot where it is the
+ * ONLY order on this add-on must never fail against its own, about-to-move
+ * reservation.
+ *
+ * A line item whose add-on has since been DELETED is skipped — there's no
+ * live cutoff_hours/capacity_per_slot left to re-check it against, and
+ * nothing meaningful to say about it either way.
+ *
+ * Returns [] when everything fits, else one entry per line item that
+ * doesn't: { addon_id, name_en, reason: 'cutoff' | 'capacity',
+ * requested_qty, capacity_per_slot, available_qty }  (capacity_per_slot/
+ * available_qty are only present for a 'capacity' problem).
+ */
+export async function checkAddonsFitSlot(db, bookingId, routeId, newDate, newSlot, timezone) {
+  const lines = await all(
+    db,
+    `SELECT ba.addon_id, ba.qty, ba.name_snapshot_en, a.capacity_per_slot, a.cutoff_hours
+       FROM booking_addons ba
+       JOIN addons a ON a.id = ba.addon_id
+      WHERE ba.booking_id = :booking_id`,
+    { booking_id: bookingId }
+  );
+  const problems = [];
+  for (const line of lines) {
+    const cutoffMinutes = (line.cutoff_hours || 0) * 60;
+    if (isSlotPastCutoff(newDate, newSlot, timezone, cutoffMinutes)) {
+      problems.push({ addon_id: line.addon_id, name_en: line.name_snapshot_en, reason: 'cutoff', requested_qty: line.qty });
+      continue;
+    }
+    if (line.capacity_per_slot == null) continue; // unlimited
+    const usedRow = await first(
+      db,
+      `SELECT COALESCE(SUM(ba.qty), 0) AS used
+         FROM booking_addons ba
+         JOIN bookings b ON b.id = ba.booking_id
+        WHERE ba.addon_id = :addon_id AND b.id != :booking_id
+          AND b.route_id = :route_id AND b.date = :date AND b.slot = :slot
+          AND (b.status = 'confirmed' OR b.status = 'confirmed_conflict'
+               OR (b.status = 'hold' AND b.hold_expires > datetime('now')))`,
+      { addon_id: line.addon_id, booking_id: bookingId, route_id: routeId, date: newDate, slot: newSlot }
+    );
+    const used = usedRow ? usedRow.used : 0;
+    const available = Math.max(0, line.capacity_per_slot - used);
+    if (line.qty > available) {
+      problems.push({
+        reason: 'capacity',
+        addon_id: line.addon_id,
+        name_en: line.name_snapshot_en,
+        requested_qty: line.qty,
+        capacity_per_slot: line.capacity_per_slot,
+        available_qty: available,
+      });
+    }
+  }
+  return problems;
+}
+
+/**
+ * Analytics → Sales add-on rollup (SPEC.md): per add-on, units sold, guest
+ * revenue, bar cost, WOGO margin, and take-rate — the share of CONFIRMED
+ * bookings on that add-on's route (same date window, judged by WALK date
+ * like every other Analytics query here) that included it at least once.
+ * Revenue/cost are GROSS — deliberately not netted against any gift-card
+ * amount applied to the booking (migrations/0033's header comment explains
+ * why: attributing a gift card's discount between the ticket and an add-on
+ * is an unresolved, owner-level allocation question, not something to guess
+ * at silently here). A deleted add-on still contributes its historical
+ * revenue/cost (name_snapshot_en, via COALESCE) but take_rate reads 0 —
+ * there's no live `addons` row left to compute it from.
+ */
+export async function listAddonSalesAnalytics(db, fromDate, toDate) {
+  const sales = await all(
+    db,
+    `SELECT ba.addon_id,
+            COALESCE(a.name_en, ba.name_snapshot_en) AS name_en,
+            a.route_id AS route_id,
+            SUM(ba.qty) AS units,
+            SUM(ba.qty * ba.unit_price_cents) AS revenue_cents,
+            SUM(ba.qty * ba.unit_cost_cents) AS cost_cents
+       FROM booking_addons ba
+       JOIN bookings b ON b.id = ba.booking_id
+       LEFT JOIN addons a ON a.id = ba.addon_id
+      WHERE b.status IN ('confirmed', 'confirmed_conflict')
+        AND b.date >= :from_date AND b.date <= :to_date
+      GROUP BY ba.addon_id
+      ORDER BY revenue_cents DESC`,
+    { from_date: fromDate, to_date: toDate }
+  );
+
+  const takeRateRows = await all(
+    db,
+    `SELECT a.id AS addon_id,
+            (SELECT COUNT(*) FROM bookings b2
+               WHERE b2.route_id = a.route_id AND b2.status IN ('confirmed', 'confirmed_conflict')
+                 AND b2.date >= :from_date AND b2.date <= :to_date) AS route_bookings,
+            (SELECT COUNT(DISTINCT ba2.booking_id) FROM booking_addons ba2
+               JOIN bookings b3 ON b3.id = ba2.booking_id
+              WHERE ba2.addon_id = a.id AND b3.status IN ('confirmed', 'confirmed_conflict')
+                AND b3.date >= :from_date AND b3.date <= :to_date) AS addon_bookings
+       FROM addons a`,
+    { from_date: fromDate, to_date: toDate }
+  );
+  const takeRateByAddon = new Map(takeRateRows.map((r) => [r.addon_id, r]));
+
+  return sales.map((row) => {
+    const tr = takeRateByAddon.get(row.addon_id);
+    const routeBookings = tr ? tr.route_bookings : 0;
+    const addonBookings = tr ? tr.addon_bookings : 0;
+    return {
+      addon_id: row.addon_id,
+      name_en: row.name_en,
+      route_id: row.route_id,
+      units: row.units,
+      revenue_cents: row.revenue_cents,
+      cost_cents: row.cost_cents,
+      margin_cents: row.revenue_cents - row.cost_cents,
+      take_rate: routeBookings > 0 ? addonBookings / routeBookings : 0,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // date_overrides
 // ---------------------------------------------------------------------------
 
@@ -976,7 +1329,13 @@ export async function listBookings(db, filters = {}) {
   bound.offset = filters.offset ?? 0;
   return all(
     db,
-    `SELECT b.*, r.name AS route_name, r.city
+    // migrations/0033: addons_count is a cheap correlated-subquery indicator
+    // for the bookings LIST view (a small "2 extras" badge) — bounded by
+    // the same LIMIT as every other row here, so it's never an unbounded
+    // scan. The DETAIL view (handleGetBooking) fetches the full line items
+    // separately via db.getAddonsForBooking.
+    `SELECT b.*, r.name AS route_name, r.city,
+        (SELECT COUNT(*) FROM booking_addons ba WHERE ba.booking_id = b.id) AS addons_count
        FROM bookings b JOIN routes r ON r.id = b.route_id
       WHERE ${clauses.join(' AND ')}
       ORDER BY b.date DESC, b.slot DESC
@@ -2560,6 +2919,158 @@ export async function isReminderOptedOut(db, email) {
 
 export async function recordReminderOptOut(db, email) {
   await run(db, `INSERT OR IGNORE INTO reminder_optouts (email_lower, created_at) VALUES (LOWER(:email), datetime('now'))`, { email });
+}
+
+// ---------------------------------------------------------------------------
+// Push subscriptions + in-dashboard notifications (migrations/0032, the PWA
+// + Web Push build). See that migration's doc comment for the full schema
+// rationale. Per-user KIND PREFERENCES are NOT a new table — five booleans
+// don't need one — they live in the existing `settings` k/v table under
+// `push_prefs:<user_id>`; src/notifications.js owns the read/write/default-
+// merge logic around getSetting/setSetting above.
+// ---------------------------------------------------------------------------
+
+/**
+ * Registers (or re-registers) a browser's push subscription. `endpoint` is
+ * UNIQUE, so re-subscribing the SAME device (a token refresh, or re-enabling
+ * after a previous deny) updates this row in place rather than piling up a
+ * duplicate — also resets failure_count/last_error, since a device that just
+ * successfully subscribed again deserves a clean slate, not a carried-over
+ * failure streak from before.
+ */
+export async function upsertPushSubscription(db, { id, user_id, endpoint, p256dh, auth, user_agent }) {
+  await run(
+    db,
+    `INSERT INTO push_subscriptions (id, user_id, endpoint, p256dh, auth, user_agent)
+     VALUES (:id, :user_id, :endpoint, :p256dh, :auth, :user_agent)
+     ON CONFLICT(endpoint) DO UPDATE SET
+       user_id = :user_id, p256dh = :p256dh, auth = :auth, user_agent = :user_agent,
+       failure_count = 0, last_error = NULL`,
+    { id, user_id, endpoint, p256dh, auth, user_agent: user_agent ?? null }
+  );
+  return first(db, `SELECT * FROM push_subscriptions WHERE endpoint = :endpoint`, { endpoint });
+}
+
+/** Scoped to the owning user — a device can only ever unsubscribe itself
+ * (or, from the Settings device list, one of this SAME user's other
+ * devices), never another person's. Returns `true` if a row was actually
+ * deleted. Keyed by `id` (not `endpoint`) because the Settings device list
+ * deliberately never gets the raw endpoint back from the server — see
+ * admin_api.js:handleListPushSubscriptions's doc comment. */
+export async function deletePushSubscriptionForUserById(db, userId, id) {
+  const result = await run(
+    db,
+    `DELETE FROM push_subscriptions WHERE id = :id AND user_id = :user_id`,
+    { id, user_id: userId }
+  );
+  return result.meta.changes > 0;
+}
+
+/** Unscoped delete-by-endpoint — used when a push SERVICE itself (not the
+ * user) reports the subscription is gone (404/410), see
+ * src/notifications.js:fanOutPush. */
+export async function deletePushSubscriptionByEndpoint(db, endpoint) {
+  const result = await run(db, `DELETE FROM push_subscriptions WHERE endpoint = :endpoint`, { endpoint });
+  return result.meta.changes > 0;
+}
+
+export async function listPushSubscriptionsForUser(db, userId) {
+  return all(db, `SELECT * FROM push_subscriptions WHERE user_id = :user_id ORDER BY created_at DESC`, { user_id: userId });
+}
+
+/** Every active subscription, any user — the fan-out target for a broadcast
+ * notification (kind-preference filtering happens in src/notifications.js,
+ * not here; this is a plain, unfiltered read). */
+export async function listAllPushSubscriptions(db) {
+  return all(db, `SELECT * FROM push_subscriptions`, {});
+}
+
+export async function markPushSubscriptionSuccess(db, endpoint) {
+  await run(
+    db,
+    `UPDATE push_subscriptions SET last_success_at = datetime('now'), failure_count = 0, last_error = NULL WHERE endpoint = :endpoint`,
+    { endpoint }
+  );
+}
+
+/** A non-gone failure (anything but 404/410, or a network error) — recorded
+ * for visibility in the Settings device list, but NEVER auto-deletes the
+ * subscription on its own (see migrations/0032's doc comment on why). */
+export async function markPushSubscriptionFailure(db, endpoint, error) {
+  await run(
+    db,
+    `UPDATE push_subscriptions SET failure_count = failure_count + 1, last_error = :error WHERE endpoint = :endpoint`,
+    { endpoint, error }
+  );
+}
+
+export async function createNotification(db, { id, kind, title, body, url, booking_id, user_id }) {
+  await run(
+    db,
+    `INSERT INTO notifications (id, kind, title, body, url, booking_id, user_id)
+     VALUES (:id, :kind, :title, :body, :url, :booking_id, :user_id)`,
+    {
+      id, kind, title, body,
+      url: url ?? null,
+      booking_id: booking_id ?? null,
+      user_id: user_id ?? null,
+    }
+  );
+  return first(db, `SELECT * FROM notifications WHERE id = :id`, { id });
+}
+
+export async function getNotificationById(db, id) {
+  return first(db, `SELECT * FROM notifications WHERE id = :id`, { id });
+}
+
+/**
+ * Notifications VISIBLE to `userId` — every broadcast row (`user_id IS
+ * NULL`) plus any row targeted specifically at this user (the Settings
+ * "test notification" button). `userId` may be `null` itself (the emergency
+ * ADMIN_TOKEN session has no admin_users row) — that still correctly shows
+ * every broadcast row, just no user-targeted ones (there's no user to
+ * target). `read_at` is a single shared column (migrations/0032's doc
+ * comment) — this is NOT a per-viewer unread count.
+ */
+export async function listNotifications(db, { userId = null, unreadOnly = false, limit = 50 } = {}) {
+  const unreadClause = unreadOnly ? 'read_at IS NULL AND' : '';
+  return all(
+    db,
+    `SELECT * FROM notifications
+      WHERE ${unreadClause} (user_id IS NULL OR user_id = :user_id)
+      ORDER BY created_at DESC, id DESC
+      LIMIT :limit`,
+    { user_id: userId, limit }
+  );
+}
+
+export async function countUnreadNotifications(db, userId = null) {
+  const row = await first(
+    db,
+    `SELECT COUNT(*) AS n FROM notifications WHERE read_at IS NULL AND (user_id IS NULL OR user_id = :user_id)`,
+    { user_id: userId }
+  );
+  return row ? row.n : 0;
+}
+
+/** Idempotent — marking an already-read (or nonexistent) notification read
+ * is a no-op, `false`. */
+export async function markNotificationRead(db, id) {
+  const result = await run(
+    db,
+    `UPDATE notifications SET read_at = datetime('now') WHERE id = :id AND read_at IS NULL`,
+    { id }
+  );
+  return result.meta.changes === 1;
+}
+
+/** Housekeeping — called from the daily cron (src/notifications.js's
+ * pruneOldNotifications wraps the two-tier retention rule). Returns rows
+ * deleted. */
+export async function pruneNotifications(db, { readBeforeStr, anyBeforeStr }) {
+  const read = await run(db, `DELETE FROM notifications WHERE read_at IS NOT NULL AND read_at < :before`, { before: readBeforeStr });
+  const any = await run(db, `DELETE FROM notifications WHERE created_at < :before`, { before: anyBeforeStr });
+  return (read.meta.changes || 0) + (any.meta.changes || 0);
 }
 
 export { nowSqlite };

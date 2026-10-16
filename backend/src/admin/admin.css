@@ -75,6 +75,21 @@
 
 * { box-sizing: border-box; }
 
+/* ==========================================================================
+   iOS SAFE AREA (PWA, migrations/0032 build) — only non-zero in standalone
+   mode (added to Home Screen) behind a notch/Dynamic Island or the home
+   indicator; `viewport-fit=cover` (set in build.mjs's <meta viewport>) is
+   what makes env() resolve to anything but 0 in the first place. Falls back
+   to 0px everywhere else (desktop, a normal Safari tab) — these are pure
+   additions on top of the existing paddings below, never a replacement.
+   ========================================================================== */
+.sidebar { padding-top: calc(22px + env(safe-area-inset-top)); padding-bottom: calc(18px + env(safe-area-inset-bottom)); padding-left: calc(16px + env(safe-area-inset-left)); }
+.topbar { padding-top: calc(16px + env(safe-area-inset-top)); }
+.content { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+.login-wrap { padding-top: calc(24px + env(safe-area-inset-top)); padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+.drawer-foot { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
+.toast-wrap { padding-bottom: env(safe-area-inset-bottom); }
+
 html, body {
   margin: 0;
   padding: 0;
@@ -303,6 +318,18 @@ input:focus, select:focus, textarea:focus {
   box-shadow: inset 3px 0 0 var(--salmon);
 }
 .nav-item .ico { width: 18px; height: 18px; flex: 0 0 18px; opacity: 0.9; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--salmon);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: var(--pill);
+  min-width: 18px;
+  text-align: center;
+}
 
 .nav-spacer { flex: 1; }
 
@@ -1040,6 +1067,22 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .bar-offset { display: flex; align-items: center; gap: 5px; }
 .bar-offset span { font-size: 11px; color: var(--muted); white-space: nowrap; }
 
+/* Add-ons sub-panel (migrations/0033) — one editable card per row, each
+   with its own Save/Delete (per-row REST CRUD, unlike bars' bulk replace). */
+.addon-list { display: grid; gap: 14px; }
+.addon-item {
+  padding: 14px 14px 4px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+.chk-inline {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 700; color: var(--brown);
+  cursor: pointer;
+}
+.chk-inline input { width: 16px; height: 16px; }
+
 /* Date overrides */
 .ov-list { display: grid; gap: 8px; margin-top: 4px; }
 .ov-item {
@@ -1117,6 +1160,9 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .kv dt { color: var(--muted); font-size: 12.5px; font-weight: 600; }
 .kv dd { margin: 0; font-weight: 600; color: var(--espresso); font-size: 13.5px; word-break: break-word; }
 .kv dd.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+/* Add-ons (migrations/0033) — the booking drawer's "Extras ordered" list. */
+.addon-order-list { margin: 6px 0 0; padding-left: 18px; font-size: 13px; font-weight: 600; color: var(--espresso); }
+.addon-order-list li { margin-bottom: 3px; }
 
 /* ==========================================================================
    TOAST
@@ -1572,6 +1618,34 @@ table.data tbody tr:last-child td { border-bottom: none; }
   .tool-link-row { grid-template-columns: 1fr; }
   .tool-link { justify-self: start; }
 }
+
+/* ==========================================================================
+   TODAY + NOTIFICATIONS (migrations/0032 PWA/push build)
+   ========================================================================== */
+.today-list { display: flex; flex-direction: column; }
+.today-row {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; text-align: left;
+  padding: var(--card-pad-y) var(--card-pad-x);
+  border: none; border-top: 1px solid var(--line);
+  background: transparent; cursor: pointer;
+  font: inherit; color: inherit;
+  transition: background var(--speed);
+}
+.today-row:first-child { border-top: none; }
+.today-row:hover { background: var(--surface-tint); }
+.today-row-main { min-width: 0; flex: 1; }
+.today-row-title { font-weight: 700; color: var(--ink); font-size: 14px; }
+.today-row-sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; }
+
+.today-quick {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  padding: var(--card-pad-y) var(--card-pad-x);
+}
+
+.pref-list { display: flex; flex-direction: column; gap: 12px; }
+.pref-row { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; color: var(--espresso); }
+.pref-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--salmon-deep); flex: 0 0 18px; }
 
 /* Two fields side by side in the blog editor — collapses to one column well
    before the inputs get too narrow to type in. */

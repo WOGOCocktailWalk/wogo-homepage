@@ -19,6 +19,7 @@ import {
   FAILED_EMAIL_RESOLVED_RETENTION_MINUTES, BREVO_SYNC_RESOLVED_RETENTION_MINUTES,
 } from './config.js';
 import { adminResponse } from './admin/assets.js';
+import { manifestResponse, serviceWorkerResponse, iconResponse } from './admin/pwa.js';
 import { withSecurityHeaders } from './security_headers.js';
 import { captureError } from './errors.js';
 import { runHealthCheck } from './healthcheck.js';
@@ -29,6 +30,7 @@ import { retryBrevoSyncQueue } from './brevo_sync.js';
 import { sendDailyReviewRequests } from './reviews.js';
 import { sendAbandonedSweep } from './abandoned.js';
 import { sendDailyWalkReminders } from './reminders.js';
+import { pruneOldNotifications } from './notifications.js';
 
 // Second, less-frequent cron for daily housekeeping (GDPR retention, R2
 // backup export, pruning the long-retention audit/error/email-log tables) —
@@ -55,6 +57,7 @@ router.get('/api/geo', guestApi.handleGeo);
 router.get('/api/routes', guestApi.handleListRoutes);
 router.get('/api/availability', guestApi.handleAvailability);
 router.get('/api/slots', guestApi.handleSlots);
+router.get('/api/addons', guestApi.handleListAddons);
 router.get('/api/booking', guestApi.handleBookingLookup);
 router.post('/api/book', guestApi.handleBook);
 router.post('/api/giftcard/checkout', guestApi.handleGiftCardCheckout);
@@ -77,6 +80,17 @@ router.post('/internal/cron/expire-holds', async (request, env) => {
   const result = await expireHolds(env.DB);
   return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
 });
+
+// -- Admin PWA shell assets (migrations/0032) — public, static, non-
+// sensitive (see PUBLIC_ADMIN_PATHS below): a Service-Worker script MUST
+// NEVER be redirected, and the manifest/icons need to resolve before a
+// session necessarily exists (the browser's own "Add to Home Screen"
+// machinery, not a logged-in page, is what fetches most of these). --------
+router.get('/admin/manifest.webmanifest', () => manifestResponse());
+router.get('/admin/sw.js', () => serviceWorkerResponse());
+router.get('/admin/icon-192.png', () => iconResponse('icon192'));
+router.get('/admin/icon-512.png', () => iconResponse('icon512'));
+router.get('/admin/apple-touch-icon.png', () => iconResponse('appleTouchIcon'));
 
 // -- Admin auth -----------------------------------------------------------------
 router.post('/admin/login', adminApi.handleLogin);
@@ -105,6 +119,7 @@ router.get('/admin/api/analytics/highlights', adminApi.handleAnalyticsHighlights
 router.get('/admin/api/analytics/realtime', adminApi.handleAnalyticsRealtime);
 router.get('/admin/api/analytics/behavior', adminApi.handleAnalyticsBehavior);
 router.get('/admin/api/analytics/marketing', adminApi.handleAnalyticsMarketing);
+router.get('/admin/api/analytics/addons', adminApi.handleAnalyticsAddons);
 router.get('/admin/api/bookings', adminApi.handleListBookings);
 router.get('/admin/api/bookings.csv', adminApi.handleExportCsv);
 router.get('/admin/api/bookings/:id', adminApi.handleGetBooking);
@@ -121,6 +136,10 @@ router.post('/admin/api/routes/:id/bars', adminApi.handleAddBar);
 router.put('/admin/api/routes/:id/bars', adminApi.handleReplaceBars);
 router.put('/admin/api/routes/:id/bars/:barId', adminApi.handleUpdateBar);
 router.delete('/admin/api/routes/:id/bars/:barId', adminApi.handleDeleteBar);
+router.get('/admin/api/routes/:id/addons', adminApi.handleListRouteAddons);
+router.post('/admin/api/routes/:id/addons', adminApi.handleCreateAddon);
+router.put('/admin/api/routes/:id/addons/:addonId', adminApi.handleUpdateAddon);
+router.delete('/admin/api/routes/:id/addons/:addonId', adminApi.handleDeleteAddon);
 router.get('/admin/api/date-overrides', adminApi.handleListOverrides);
 router.post('/admin/api/date-overrides', adminApi.handleCreateOverride);
 router.delete('/admin/api/date-overrides/:id', adminApi.handleDeleteOverride);
@@ -167,10 +186,28 @@ router.post('/admin/api/blog/:id/publish', adminApi.handlePublishBlogPost);
 router.post('/admin/api/blog/:id/unpublish', adminApi.handleUnpublishBlogPost);
 router.post('/admin/api/blog/:id/assets', adminApi.handleUploadBlogAsset);
 
+// -- Push notifications + in-dashboard feed (migrations/0032, PWA/push build) --
+router.post('/admin/api/push/subscribe', adminApi.handlePushSubscribe);
+router.post('/admin/api/push/unsubscribe', adminApi.handlePushUnsubscribe);
+router.get('/admin/api/push/subscriptions', adminApi.handleListPushSubscriptions);
+router.post('/admin/api/push/test', adminApi.handlePushTest);
+router.get('/admin/api/notifications', adminApi.handleListNotifications);
+router.post('/admin/api/notifications/:id/read', adminApi.handleMarkNotificationRead);
+router.get('/admin/api/notifications/pending', adminApi.handleNotificationsPending);
+router.get('/admin/api/notification-preferences', adminApi.handleGetNotificationPreferences);
+router.put('/admin/api/notification-preferences', adminApi.handleSetNotificationPreferences);
+
 const ADMIN_API_PREFIX = '/admin/api/';
 const PUBLIC_ADMIN_PATHS = new Set([
   '/admin/login', '/admin/logout', '/admin/public-config',
   '/admin/login/request', '/admin/login/magic',
+  // PWA shell assets (migrations/0032) — static and non-sensitive; a
+  // Service-Worker script response must never redirect (so /admin/sw.js
+  // can NEVER sit behind the session gate below), and the manifest/icons
+  // are read by the browser's own install machinery, which has no session
+  // cookie to present in the first place.
+  '/admin/manifest.webmanifest', '/admin/sw.js',
+  '/admin/icon-192.png', '/admin/icon-512.png', '/admin/apple-touch-icon.png',
 ]);
 
 export default {
@@ -326,6 +363,9 @@ async function runScheduled(event, env) {
       await pruneAdminAudit(env.DB, sqliteMinutesAgo(ADMIN_AUDIT_RETENTION_MINUTES));
       await pruneResolvedFailedEmails(env.DB, sqliteMinutesAgo(FAILED_EMAIL_RESOLVED_RETENTION_MINUTES));
       await pruneResolvedBrevoSyncItems(env.DB, sqliteMinutesAgo(BREVO_SYNC_RESOLVED_RETENTION_MINUTES));
+      // Notifications feed housekeeping (migrations/0032) — read rows prune
+      // sooner than unread ones; see config.js for both windows.
+      await pruneOldNotifications(env);
     }
 
     if (event.cron === REVIEW_CRON) {

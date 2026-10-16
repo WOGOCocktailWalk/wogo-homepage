@@ -1633,6 +1633,388 @@ not `mail-followup-rotterdam.jpg`): the map is where "which kind, which
 city" is expressed, and one file can serve several slots without
 duplicating bytes.
 
+## 24. PWA + push notifications (`migrations/0032_push_notifications.sql`, 2026-10)
+
+**Before:** the only way the owner heard about a new booking, a cancellation,
+or a group enquiry was the Wix app's native push. Moving off Wix at cutover
+means losing that, with nothing standing in for it. **Now:** `/admin` is a
+real installable PWA, and the Worker can wake an installed phone's
+notification tray on its own, using only Web Crypto — no npm push library,
+no `nodejs_compat`.
+
+### 24.1 Why a payload-less "tickle" instead of an encrypted payload push
+
+RFC 8030 web push supports two shapes: a payload-less request (push service
+just wakes the Service Worker), or an RFC 8291 encrypted payload (ECDH +
+HKDF + AES-128-GCM, delivering the message text inside the push itself).
+This build uses **only the first**. The Service Worker's `push` handler
+reacts to ANY push — with or without a body — by making its own authenticated
+`fetch('/admin/api/notifications/pending', {credentials:'include'})` and
+rendering what it gets back. That means:
+
+- no payload-encryption code to write, test, or get subtly wrong in a
+  Worker that has no `nodejs_compat` and therefore no `crypto.subtle` AES-GCM
+  convenience wrappers beyond what Web Crypto itself gives;
+- the notification text is never stale — it's read fresh from D1 at
+  delivery time, not frozen into a payload that was encrypted minutes
+  earlier and might race a `read_at` update;
+- the SW's own session cookie (`credentials:'include'`) is the only auth
+  needed for that fetch, reusing the exact session/role machinery the rest
+  of `/admin/api/*` already enforces — no separate push-specific auth.
+
+The cost: a push with no payload cannot show a notification on a push
+service that is itself offline-queued past its TTL without the device ever
+calling back in — acceptable for a same-day small-team ops tool where "open
+the app within the hour" is already the norm.
+
+### 24.2 VAPID (RFC 8292), entirely in Web Crypto
+
+`src/push.js`'s `signVapidJwt()` imports the private key as a JWK
+(`crypto.subtle.importKey('jwk', ..., {name:'ECDSA', namedCurve:'P-256'})`),
+signs an ES256 JWT (`{alg:'ES256', typ:'JWT'}` header; `{aud, exp, sub}`
+payload, `aud` = push service origin derived from the subscription's own
+endpoint, `sub` = `mailto:info@wogoamsterdam.com`), and `sendPushTickle()`
+sends it as `Authorization: vapid t=<jwt>, k=<VAPID_PUBLIC_KEY>` with
+`TTL: 3600` and `Content-Length: 0`. The private key lives only as the
+`VAPID_PRIVATE_KEY` secret (never in the repo, never in D1); the public key
+is a non-secret constant in `config.js` (`VAPID_PUBLIC_KEY`) because the
+browser needs it client-side for `pushManager.subscribe()` and leaking it
+changes nothing — it's the private half that signs. See SETUP.md §24 for
+the keygen/rotation recipe.
+
+### 24.3 Schema (`migrations/0032_push_notifications.sql`)
+
+**`push_subscriptions`** — one row per device per admin user.
+`endpoint` is `UNIQUE`: resubscribing the same device (e.g. after the
+browser silently rotates its push endpoint) does an `UPDATE`, never a
+second row, so a phone can't accumulate ghost subscriptions. `failure_count`
+and `last_error` track soft failures (5xx, network); `last_success_at`
+tracks the last tickle that got a 2xx. A `404`/`410` from the push service
+means the subscription itself is gone (uninstalled, OS-level reset) and
+**deletes the row immediately** — that status code is the push service
+telling you definitively, not a transient fault, so there's nothing to
+retry.
+
+**`notifications`** — one row per event, independent of delivery. `user_id`
+is nullable: `NULL` means "broadcast to every owner/staff member", a kind
+with a `user_id` set is personal (used nowhere yet, reserved). `read_at` is
+a **single shared column**, not per-viewer — this is a small-team tool
+where "someone saw it" is the fact that matters, not "did Maroussia
+specifically see it." `url` is the deep link (`/admin/#/bookings/{id}` etc,
+see 24.5); `booking_id` is kept alongside the URL for any future
+booking-scoped query, denormalized rather than parsed back out of `url`.
+
+Both tables are pruned inside the existing `DAILY_CRON` block
+(`pruneOldNotifications`, `NOTIFICATION_RETENTION_MINUTES` = 180 days for
+read notifications, `NOTIFICATION_READ_RETENTION_MINUTES` governs how long
+an unread one is kept regardless of age — see `config.js`).
+
+### 24.4 Trigger sites → kind → preference group
+
+| Trigger site | kind | preference group |
+|---|---|---|
+| `webhook.js` Stripe booking confirmed | `booking_new` | `new_booking` |
+| `admin_api.js` manual booking create | `booking_new` | `new_booking` |
+| `admin_api.js` cancel booking | `booking_cancelled` | `cancellation` |
+| `admin_api.js` reschedule (non-noop only) | `booking_moved` | `cancellation` |
+| `webhook.js` gift card purchase completed | `giftcard_sold` | `gift_card` |
+| `guest_api.js` contact/group enquiry | `enquiry` | `enquiry` |
+| `alerts.js` `alertOwnerThrottled` | `problem` | `problems` |
+| push test button | `test` | *(none — always delivered)* |
+
+`booking_moved` is folded into the `cancellation` preference group rather
+than given its own — from the owner's side both are "something about a
+booking I already counted on just changed," and five toggles was already
+the most this UI could show without becoming its own settings page.
+A no-op reschedule (new date/slot identical to the old one) creates no
+notification at all. A redelivered Stripe gift-card webhook event does not
+double-notify: `handleGiftCardPurchaseCompleted`'s existing idempotent
+insert exposes a `justMinted` boolean (true only on the fresh insert), and
+the notification is gated on that, not on "did this handler run."
+
+Every trigger site calls `notifyAdmins()`, which writes the `notifications`
+row and then calls `fanOutPush()` inside one outer try/catch that can never
+throw back into the caller — the exact same "report, don't throw" contract
+the email sends already use. A push failure (expired subscription, push
+service 5xx, no `VAPID_PRIVATE_KEY` secret configured yet) never fails a
+booking, a webhook, or an enquiry.
+
+### 24.5 Deep links
+
+A notification's `url` is always of the shape `/admin/#/<kind>/<id>` —
+`bookings`, `inquiries`, or `giftcards` (by code). `logic.js`'s
+`parseAdminDeepLink(hash)` is the canonical parser (pure regex, no `env`);
+`admin.js` keeps a **hand-copy** of the same regex client-side (the admin
+bundle has no import graph back into `logic.js`) — if the format ever
+changes, both copies need editing, and that duplication is intentional
+rather than an oversight. On load, `admin.js` checks `location.hash` for a
+deep link before running its normal boot sequence; if the app is already
+open in another tab, the Service Worker's `notificationclick` handler
+`postMessage`s the link to that tab via `clients.matchAll()` instead of
+opening a second window.
+
+### 24.6 Per-user preferences, no new table
+
+Five booleans per user don't earn a new table: `getNotificationPreferences`
+/ `setNotificationPreferences` (`notifications.js`) read and patch-merge a
+JSON blob at the existing `settings` k/v row keyed `push_prefs:<user_id>`,
+the same pattern `getSetting`/`setSetting` already serve elsewhere in this
+codebase. Missing keys default via `NOTIFICATION_DEFAULT_PREFERENCES`
+(all `true`), so a user who never opened Settings still gets every kind.
+
+### 24.7 Endpoints and role gating
+
+All nine new routes require at least `staff` in `ROUTE_ROLES` — same floor
+as the rest of `/admin/api/*`. Five PWA asset paths
+(`/admin/manifest.webmanifest`, `/admin/sw.js`, `/admin/icon-192.png`,
+`/admin/icon-512.png`, `/admin/apple-touch-icon.png`) are in
+`PUBLIC_ADMIN_PATHS` and served with **no session check at all** — a
+Service Worker fetch and an iOS "Add to Home Screen" probe both happen
+before any login exists, so gating these behind the session cookie would
+make the app uninstallable.
+
+`POST /admin/api/push/subscribe`, `POST /admin/api/push/unsubscribe`,
+`GET /admin/api/push/subscriptions`, `POST /admin/api/push/test`,
+`GET /admin/api/notification-preferences`, `PUT /admin/api/notification-preferences`
+additionally require a **personal (magic-link) session** — `session.uid`
+must be set. The emergency `ADMIN_TOKEN` session has no `uid`, so it fails
+these with `personal_login_required` (400): a push subscription is tied to
+one person's device, and the token session isn't a person. `GET
+/admin/api/notifications`, `POST /admin/api/notifications/:id/read`, and
+`GET /admin/api/notifications/pending` (the one the Service Worker itself
+calls) stay open to either session kind, since reading/acking a broadcast
+notification isn't personal in the same way.
+
+`GET /admin/api/push/subscriptions` deliberately never returns the raw
+`endpoint` or keys to the client — only `id`, `user_agent`, `created_at`,
+`last_success_at`. The unsubscribe button sends that opaque `id` back
+(`deletePushSubscriptionForUserById`), not the endpoint, so a push
+credential never round-trips through the browser twice.
+
+### 24.8 The `sw.js` CSP wrinkle
+
+A Service Worker's CSP comes from **its own script response**, not the
+page that registered it. The generic `API_CSP` used elsewhere
+(`default-src 'none'`) would block the SW's own same-origin fetch to
+`/admin/api/notifications/pending`. `serviceWorkerResponse()` in
+`src/admin/pwa.js` therefore sets an explicit
+`default-src 'self'; connect-src 'self'; script-src 'self'; object-src 'none'`
+on `/admin/sw.js`'s response, plus `Service-Worker-Allowed: /admin/` so the
+worker's scope covers the whole admin app rather than just its own path.
+
+### 24.9 Icons: embedded, not fetched
+
+The three PNG icons are base64-embedded into the deployed Worker
+(`scripts/build_admin_icons.mjs` → generated `src/admin/icons_data.js`,
+loaded by `iconResponse()`) rather than fetched from GitHub Pages at
+request time. A manifest icon or `apple-touch-icon` that 404s or times out
+breaks "Add to Home Screen" silently on iOS with no error surfaced to the
+owner — not worth a cross-origin fetch to save a few KB in the Worker
+bundle for three files that never change at runtime.
+
+### 24.10 Tests
+
+`test/notifications.test.js` covers the subscription lifecycle (subscribe,
+resubscribe-same-endpoint updates not duplicates, unsubscribe by id,
+auto-delete on a simulated 404/410 push response), VAPID JWT shape (header/
+payload fields and base64url structure — not signature bytes, which would
+just re-implement Web Crypto in the test), notification creation at each
+trigger site, `staff`-floor role gating and the `personal_login_required`
+gate on the five personal-only endpoints, `GET
+/admin/api/notifications/pending` shape, per-kind preference filtering
+(a user with `cancellation:false` gets no push for `booking_cancelled`/
+`booking_moved` but the `notifications` row is still written), deep-link
+parsing against `logic.js`'s `parseAdminDeepLink`, and — reusing the same
+assertion style as the email-send tests — that a push failure (expired
+subscription, missing `VAPID_PRIVATE_KEY`) never raises past `notifyAdmins`
+and never prevents the booking/webhook/enquiry it's attached to from
+completing. Total suite: 914 passing (867 before this feature), 0 failing.
+
+## 25. Bar-fulfilled add-ons (`migrations/0033_addons.sql`, 2026-10)
+
+### 25.1 What it does
+
+After a guest picks date/time/party size and before Stripe Checkout, the
+booking flow can offer optional extras actually sold by a specific bar on
+the route — "Bites at ULU" — or by no single bar ("the whole walk"). WOGO
+resells at a markup: the guest sees ONE price; the bar invoices WOGO its
+own, lower price. Both numbers are stored (`price_cents`/`cost_cents`) so
+margin is reportable, but `cost_cents` and margin NEVER reach a guest-facing
+response or a guest-facing email — only `src/db.js` and the admin-authenticated
+endpoints read it.
+
+Nothing is seeded. `migrations/0033` inserts zero rows, and `createAddon`
+hard-codes `active: false` on every create regardless of what the client
+sends — a route with no add-ons (the state of every route today) is
+byte-for-byte unchanged: `GET /api/routes` carries `has_addons: false`, the
+widget never calls `GET /api/addons`, and `POST /api/book`'s body/response
+shape is identical to before this feature existed.
+
+### 25.2 Schema
+
+```
+addons           id, route_id, bar_id (nullable FK routes_bars — NULL means
+                 "the whole walk"), name_en/name_nl, description_en/nl,
+                 image_url, price_cents (guest), cost_cents (bar's own
+                 invoice price), currency, vat_rate (INTEGER percent — NL
+                 food is 9% while the ticket itself is treated as 21%;
+                 stored per add-on, never assumed), is_food (drives the
+                 widget's allergy field), unit ('per_person'|'per_booking'),
+                 max_qty_per_booking, capacity_per_slot (NULL = unlimited),
+                 cutoff_hours (default 24), sort_order, active (default 0),
+                 created_at, updated_at.
+booking_addons   id, booking_id, addon_id, qty, unit_price_cents,
+                 unit_cost_cents, currency, vat_rate, name_snapshot_en,
+                 name_snapshot_nl, created_at. A full PURCHASE-TIME
+                 snapshot — a later price/name edit, or even deleting the
+                 add-on, never rewrites a guest's history, their email, a
+                 bar's email, or a past CSV export.
+bookings.addon_notes   the guest's optional allergy/dietary free text — a
+                 SEPARATE column from the pre-existing `bookings.notes`
+                 (conflating them would mean an allergy note typed before
+                 any food item was picked either vanishes or gets shown to
+                 a bar not serving food). Same `validateNotes()` rules.
+```
+
+Indexes: `idx_addons_route` (route_id, sort_order); `idx_booking_addons_booking`
+(the per-booking read every email/the booking detail/the CSV export does);
+`idx_booking_addons_addon` (the per-slot capacity join, the hot path on
+every `POST /api/book` that includes add-ons).
+
+**No separate "release capacity" bookkeeping.** A `booking_addons` row's
+capacity only counts while its PARENT booking's status counts — the exact
+same `(status = 'confirmed' OR (status = 'hold' AND hold_expires > now))`
+join every seat-capacity query already uses. The instant a hold expires or
+a booking is cancelled, every capacity query for that slot excludes it —
+there is no `addon_holds` table and no explicit release step, mirroring how
+seat capacity has always worked in this schema.
+
+### 25.3 Guest flow
+
+- `GET /api/addons?route=&date=&slot=` — ACTIVE add-ons for that route,
+  cutoff not yet passed (`cutoff_hours * 60` fed into the same
+  `logic.js:isSlotPastCutoff` every other cutoff check in this codebase
+  uses — DST-safe, judged in the route's own timezone), and with capacity
+  remaining (`remaining_qty`, or `null` for unlimited). Guest-facing fields
+  only.
+- New widget step, **after party size, before "continue to payment"**: a
+  skippable "Make it a night out?" panel (`backend/widget/wogo-calendar.js`)
+  — card per add-on, a quantity stepper capped at party size (`per_person`),
+  1 (`per_booking`), `max_qty_per_booking`, and `remaining_qty`, in that
+  order of precedence. A "Skip — nothing here is required to book" caption,
+  never a second button — the existing "Continue to secure payment" button
+  is the only submit path either way. GET /api/addons is only ever called
+  when `GET /api/routes`' `has_addons` flag is true for that route.
+- The allergy/dietary field (`addon_notes`) appears the MOMENT any add-on
+  with `is_food` has qty > 0, and disappears (discarding its value) the
+  moment the last food item is removed. Reuses the existing notes field's
+  exact validation.
+- `POST /api/book` accepts `addons: [{addon_id, qty}]` and an optional
+  `addon_notes`. Server-side, for every line item: ownership (belongs to
+  this route), active, currency match, cutoff, and the same qty caps the
+  widget enforces — **the price is always recomputed from the DB row**,
+  never trusted from the request (there isn't one to tamper with — only
+  `addon_id`+`qty` travel). Capacity is checked ONLY atomically, after the
+  seat hold exists (`db.js:createBookingAddon`, the exact
+  `INSERT ... SELECT ... WHERE capacity allows it` guard `CREATE_HOLD_SQL`
+  uses for seats) — a non-atomic check-then-reserve race would let two
+  concurrent requests both "pass" a check for the very last unit. A
+  capacity-reservation failure releases the seat hold immediately
+  (`cancelIfHold`, not left to expire naturally) and returns
+  `addon_sold_out`; a cutoff failure returns `addon_cutoff_passed`; an
+  ownership/active/currency failure returns `addon_not_found`.
+- A gift card's coverage is computed against ticket **+ add-ons combined**
+  — a guest shouldn't pay cash for an extra just because the card happens
+  to exactly match the ticket price. (Deliberately NOT reflected back into
+  `analyticsRevenueCents`, which stays ticket-only — allocating a gift
+  card's discount between the ticket and an add-on is an unresolved,
+  owner-level question, not something to guess at silently; add-on Sales
+  analytics report GROSS guest revenue/cost, unadjusted for any gift card.)
+- Stripe Checkout: each add-on gets its OWN line item (locale-aware name,
+  qty, unit price, the route's currency) — the guest's receipt itemises
+  every extra and its own VAT rate is visible as a distinct charge from the
+  ticket's.
+
+### 25.4 Downstream
+
+- **Bar email**: `src/webhook.js:notifyBars` fetches every add-on line item
+  on the booking ONCE, then filters it per bar by `bar_id` before calling
+  `renderBarNotification` — a bar that owns nothing on this booking gets an
+  empty `addons` array and renders byte-for-byte as before this feature.
+  `computeBarArrivals` (`src/logic.js`) now carries each arrival's
+  `bar_id` (the live `routes_bars.id`, or `null` for a one-off
+  `alternate_bars` date-override bar) specifically so this filter can work.
+  The allergy note (`addon_notes`) rides ALONGSIDE a bar's own items —
+  never shown to a bar that owns nothing on the booking, even if the guest
+  left one.
+- **A route-wide (`bar_id = NULL`) add-on reaches NO bar email** — no bar
+  specifically owns it, so per the owner's own framing ("bars that don't
+  own it must not see it"), it's WOGO-fulfilled and only ever appears in
+  the guest confirmation/reminder, the owner notification, and the admin
+  booking detail. This is a deliberate product decision, not a gap.
+- **Guest confirmation, reschedule email, and the 2-day reminder** all list
+  what was ordered (`addonsBlock()` in `src/emails.js`) plus the allergy
+  note.
+- **Owner notification + the push notification**: the owner sees every
+  add-on on the booking regardless of which bar owns it; the push body gets
+  a short "+ 2× Bites" suffix (`logic.js:summarizeAddonsForNotification`).
+- **Reschedule** (`admin_api.js:handleRescheduleBooking`): before the
+  booking moves, `db.js:checkAddonsFitSlot` re-checks BOTH cutoff and
+  capacity for every line item against the NEW date/slot (self-excluding
+  the booking's own current reservation, mirroring `RESCHEDULE_BOOKING_SQL`'s
+  own seat guard). Any problem **fails the whole reschedule outright**
+  (`addon_conflict`, itemised) — the booking stays exactly where it was.
+  "Fail loudly" per the owner's requirement: a paid add-on is never
+  silently stranded by a move that can't honour it.
+- **Cancellation**: automatic, via the same status-exclusion every capacity
+  query already applies — no extra code, see §25.2's "no separate release"
+  note.
+
+### 25.5 Admin (`src/admin_api.js`, `src/admin/admin.js`)
+
+CRUD lives inside the Routes editor's new "Add-ons" tab, mirroring the bars
+editor's tab but per-row REST (`GET/POST /admin/api/routes/:id/addons`,
+`PUT/DELETE .../addons/:addonId`) rather than bulk-replace. Guest price
+below bar cost is **blocked** outright (400); a margin under €1
+(`ADDON_LOW_MARGIN_WARNING_CENTS`) only **warns** (`margin_warning: true` in
+the response) — the owner decides, nothing is ever auto-rejected for being
+thin. `bar_id` must belong to the same route, or be omitted/`null` for
+"whole walk". Viewing is `viewer`+; creating/editing/deleting is `staff`+ —
+deliberately looser than the bars editor (`owner`-only) per the owner's
+explicit instruction that add-ons are day-to-day staff work.
+
+The bookings drawer shows the itemized "Extras ordered" list plus
+`addon_notes`; Analytics → Sales gets a new `GET /admin/api/analytics/addons`
+table — units sold, guest revenue, bar cost, WOGO margin, and **take-rate**
+(the share of CONFIRMED bookings on that add-on's own route, same window,
+that included it) — the number the owner will use to decide whether a
+packaged ticket is worth building later. The bookings CSV export gains
+`addon_notes`/`addons_summary`/`addons_revenue_cents` columns, computed from
+one bulk grouped read (`db.js:listAddonsGroupedByBooking`), not one query
+per exported row.
+
+### 25.6 Tests (`test/addons.test.js`, 41 tests)
+
+Covers: a route with zero active add-ons produces an identical
+`GET /api/routes`/`POST /api/book` shape to before this feature; guest-facing
+field filtering (`cost_cents` never leaves `GET /api/addons`); capacity
+drop-out + `remaining_qty`; cutoff reuse through the real DST fixture date
+(`Europe/Amsterdam`, 2026-10-25 fall-back — mocking `new Date()` correctly
+requires replacing the global `Date` class, not just `Date.now`, since V8
+doesn't route a no-arg `new Date()` through it); a tampered client price
+never reaching Stripe; per_person/per_booking/max_qty caps; the atomic
+capacity guard under two sequential reservations; cancellation releasing
+capacity for the next booking; Stripe line-item shape; a gift card covering
+ticket+add-ons combined; bar isolation (one bar's rendered HTML never
+contains another bar's add-on name OR the allergy note); a route-wide
+add-on reaching no bar email; allergy-note propagation in guest/owner mail;
+admin CRUD (never-active-on-create, price<cost blocked, sub-€1 margin
+warns, foreign `bar_id` rejected, delete preserving history); role gating
+(viewer vs. staff, through the real router + session cookie); and
+reschedule re-validation (capacity conflict, cutoff conflict, and the
+self-exclusion case where a booking moving within its own sole reservation
+must NOT falsely conflict with itself).
+
 ## PORTABILITY.md (to be created verbatim as its own file)
 
 ```markdown

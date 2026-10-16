@@ -303,6 +303,23 @@ export const GIFT_CARD_TIERS_CENTS = [3000, 6000, 10000]; // €30 / €60 / €
 export const GIFT_CARD_CUSTOM_MIN_CENTS = 1000;  // €10
 export const GIFT_CARD_CUSTOM_MAX_CENTS = 50000; // €500
 
+// --- Bar-fulfilled add-ons (migrations/0033) --------------------------------
+// Dashboard-configurable per add-on (see migrations/0033's header comment for
+// the full business-model writeup); these are just sanity caps shared by the
+// server-side validator (src/guest_api.js) and the admin editor so the two
+// can never silently drift — same "one list/number, two readers" pattern as
+// the gift-card tiers above.
+export const ADDON_DEFAULT_CUTOFF_HOURS = 24;        // admin editor's default for a new row
+export const ADDON_DEFAULT_VAT_RATE = 9;             // food is the first real use case (NL 9%)
+export const ADDON_DEFAULT_MAX_QTY_PER_BOOKING = 10;
+export const ADDON_NAME_MAX_LENGTH = 200;
+export const ADDON_DESCRIPTION_MAX_LENGTH = 2000;
+export const ADDON_IMAGE_URL_MAX_LENGTH = 1000;
+export const ADDON_MAX_QTY_SANITY_CAP = 999;         // hard ceiling, however the owner misconfigures max_qty_per_booking
+export const ADDON_MAX_CUTOFF_HOURS = 24 * 30;       // sanity ceiling (30 days' notice)
+export const ADDON_LOW_MARGIN_WARNING_CENTS = 100;   // €1 — admin UI WARNS (never blocks) under this
+export const ADDON_UNITS = ['per_person', 'per_booking'];
+
 // --- Contact + group-booking inquiries (migrations/0021, POST /api/contact) --
 // Field length caps, kept here (not hardcoded in guest_api.js) so the
 // contact/group forms and the server's validation can never silently drift —
@@ -516,3 +533,72 @@ export const WORKER_BASE_URL_FALLBACK = 'https://wogo-booking-backend.purple-gli
 export function workerBaseUrl(env) {
   return (env && env.HEALTH_CHECK_BASE_URL) ? env.HEALTH_CHECK_BASE_URL.replace(/\/$/, '') : WORKER_BASE_URL_FALLBACK;
 }
+
+// --- Web Push (migrations/0032_push_notifications.sql) ---------------------
+// PWA-installable dashboard + real push, replacing the Wix app notification
+// the owner is losing at cutover. Web Crypto only, no new runtime deps.
+//
+// VAPID_PUBLIC_KEY is NOT sensitive — the browser hands it straight back to
+// Apple/Google/Mozilla's push service on every subscribe call (same
+// "public by design" class as TURNSTILE_SITE_KEY), so it's a plain
+// committed constant, not a secret. Generated once (SETUP.md has the exact
+// command) as a real P-256 keypair; the matching PRIVATE half lives ONLY in
+// the `VAPID_PRIVATE_KEY` Worker secret (a JWK string) — never in this file,
+// never logged, never in a report. Rotating the keypair means regenerating
+// BOTH halves together (a mismatched pair fails every push silently) and
+// every existing browser subscription goes stale (SETUP.md's rotation
+// section) — that's also exactly what happens if the dashboard's domain
+// ever changes at cutover, since a PushSubscription is scoped to the origin
+// that created it (see MIGRATION-PLAYBOOK.md's cutover list).
+export const VAPID_PUBLIC_KEY = 'BHOHSWISk9LD-VTpFAaWhezzPrh4VkaqRuuDPWLDjy2LqeI6QgTK1u71hUbkNjrDzxGSlpg09q2FDwjFfOdSuFo';
+// RFC 8292 requires a contact — a push service may use this to reach the
+// sender if it needs to (e.g. "you're sending too much"), never shown to a
+// guest or device owner.
+export const VAPID_SUBJECT = 'mailto:info@wogoamsterdam.com';
+// VAPID JWTs are capped at 24h by RFC 8292; a fresh one is signed on every
+// send (Web Crypto signing is cheap), so this just needs to comfortably
+// outlive one HTTP round trip to the push service.
+export const VAPID_JWT_TTL_SECONDS = 12 * 60 * 60; // 12h
+// Web Push Protocol (RFC 8030) TTL header — how long the push SERVICE should
+// hold the tickle if the device is offline. A notification this build sends
+// is time-sensitive ("a sale just happened") — not worth re-delivering after
+// an hour, so this is short on purpose rather than the protocol max (4 weeks).
+export const PUSH_TTL_SECONDS = 60 * 60; // 1h
+
+// Preference groups shown as toggles in the dashboard's Notifications
+// settings card — kept here (not hardcoded in admin_api.js / admin.js) so
+// the server-side filter and the client-side UI can never silently drift,
+// same "one list, two readers" pattern as GIFT_CARD_TIERS_CENTS etc. above.
+// `booking_cancelled` AND `booking_moved` share the `cancellation` group —
+// the owner asked for 5 toggles, not 6, so "a booking changed" is one
+// switch covering both ways a confirmed booking can change after the fact.
+// `test` deliberately has NO group — the Settings "send me a test
+// notification" button always delivers, regardless of what's toggled off,
+// so a person can always verify a device still works.
+export const NOTIFICATION_PREFERENCE_GROUPS = [
+  { key: 'new_booking', label: 'New booking' },
+  { key: 'cancellation', label: 'Cancelled or moved booking' },
+  { key: 'gift_card', label: 'Gift card sold' },
+  { key: 'enquiry', label: 'Contact / group enquiry' },
+  { key: 'problems', label: 'Something went wrong' },
+];
+export const NOTIFICATION_KIND_PREFERENCE_GROUP = {
+  booking_new: 'new_booking',
+  booking_cancelled: 'cancellation',
+  booking_moved: 'cancellation',
+  giftcard_sold: 'gift_card',
+  enquiry: 'enquiry',
+  problem: 'problems',
+  test: null,
+};
+export const NOTIFICATION_DEFAULT_PREFERENCES = {
+  new_booking: true, cancellation: true, gift_card: true, enquiry: true, problems: true,
+};
+
+// Retention for the notifications feed (pruned in the existing 0 3 * * *
+// daily cron, src/notifications.js:pruneOldNotifications) — a READ
+// notification is low-value after a couple of weeks (the owner has already
+// seen it); an UNREAD one is kept much longer on the theory that "nobody's
+// looked at this yet" shouldn't silently vanish.
+export const NOTIFICATION_READ_RETENTION_MINUTES = 14 * 24 * 60;   // 14 days
+export const NOTIFICATION_RETENTION_MINUTES = 180 * 24 * 60;       // 180 days, read or not
