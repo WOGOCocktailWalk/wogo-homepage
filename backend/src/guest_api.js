@@ -43,6 +43,7 @@ import {
   isConfirmTokenExpired,
 } from './logic.js';
 import * as db from './db.js';
+import { notifyAdmins } from './notifications.js';
 import { createCheckoutSession, createGiftCardCheckoutSession } from './stripe.js';
 import { sendTransactional } from './brevo.js';
 import { sendWithRetry } from './email_retry.js';
@@ -144,6 +145,13 @@ export function handleGeo(request) {
 
 export async function handleListRoutes(request, env) {
   const routes = await db.listActiveRoutes(env.DB);
+  // migrations/0033: cheap per-route flag so the widget only ever calls
+  // GET /api/addons for a route that could possibly have something to show —
+  // a route with zero active add-ons costs the booking flow NOTHING extra at
+  // the network layer, not just in the rendered DOM (SPEC.md add-ons §).
+  const hasAddonsByRoute = new Map(
+    await Promise.all(routes.map(async (r) => [r.id, await db.routeHasActiveAddons(env.DB, r.id)]))
+  );
   return json(
     {
       routes: routes.map((r) => ({
@@ -163,6 +171,7 @@ export async function handleListRoutes(request, env) {
         // SAME_DAY_CUTOFF_MINUTES). Exposed so the widget can optionally show
         // a "Book at least Xh before" hint — not consumed by it yet.
         booking_cutoff_minutes: r.booking_cutoff_minutes,
+        has_addons: !!hasAddonsByRoute.get(r.id),
       })),
     },
     200,
@@ -260,6 +269,53 @@ export async function handleSlots(request, env) {
 }
 
 // ---------------------------------------------------------------------------
+// GET /api/addons?route=&date=&slot=
+// ---------------------------------------------------------------------------
+// migrations/0033: optional bar-fulfilled upsells for one exact (route,
+// date, slot) — ACTIVE, within cutoff (judged in the ROUTE's own timezone,
+// the same DST-safe isSlotPastCutoff every other cutoff check in this
+// codebase uses), and with capacity still remaining. Guest-facing fields
+// ONLY — cost_cents/margin (the bar's price, the WOGO markup) never leave
+// src/db.js and are never present in this response.
+
+export async function handleListAddons(request, env) {
+  const url = new URL(request.url);
+  const routeId = url.searchParams.get('route');
+  const date = url.searchParams.get('date');
+  const slot = url.searchParams.get('slot');
+
+  if (!routeId || !date || !DATE_RE.test(date) || !slot || !SLOT_RE.test(slot)) {
+    return errorJson('bad_request', 'route, date (YYYY-MM-DD) and slot (HH:MM) are required', 400, request);
+  }
+
+  const route = await db.getRoute(env.DB, routeId);
+  if (!route || !route.active) return errorJson('route_not_found', null, 404, request);
+
+  const rows = await db.listAddonsForSlot(env.DB, routeId, date, slot);
+  const addons = rows
+    .filter((a) => (a.currency || 'EUR') === (route.currency || 'EUR'))
+    .filter((a) => !isSlotPastCutoff(date, slot, route.timezone, (a.cutoff_hours || 0) * 60))
+    .filter((a) => a.capacity_per_slot == null || a.reserved_qty < a.capacity_per_slot)
+    .map((a) => ({
+      id: a.id,
+      name_en: a.name_en,
+      name_nl: a.name_nl,
+      description_en: a.description_en,
+      description_nl: a.description_nl,
+      image_url: a.image_url,
+      price_cents: a.price_cents,
+      currency: a.currency,
+      vat_rate: a.vat_rate,
+      is_food: !!a.is_food,
+      unit: a.unit,
+      max_qty_per_booking: a.max_qty_per_booking,
+      remaining_qty: a.capacity_per_slot == null ? null : Math.max(0, a.capacity_per_slot - a.reserved_qty),
+    }));
+
+  return json({ route_id: route.id, date, slot, addons }, 200, request);
+}
+
+// ---------------------------------------------------------------------------
 // GET /api/booking?session_id=cs_...
 // ---------------------------------------------------------------------------
 // Powers the post-payment "you're booked" page (booking-confirmed/). The guest
@@ -332,7 +388,7 @@ export async function handleBook(request, env) {
     return errorJson('bad_request', 'invalid JSON body', 400, request);
   }
 
-  const { route_id, date, slot, party, name, email, phone, notes, locale, marketing_opt_in, gift_code } = body || {};
+  const { route_id, date, slot, party, name, email, phone, notes, locale, marketing_opt_in, gift_code, addons, addon_notes } = body || {};
 
   // UTM / source capture (migrations/0027, BUILD §19 Marketing pass) — every
   // field optional, validated independently of the rest of the booking so a
@@ -370,6 +426,44 @@ export async function handleBook(request, env) {
   const notesCheck = validateNotes(notes);
   if (!notesCheck.ok) {
     return errorJson('bad_request', notesCheck.message, 400, request);
+  }
+
+  // Add-ons (migrations/0033) — allergy/dietary free text reuses
+  // validateNotes()'s exact length/character rules (it's a SEPARATE column
+  // from the general `notes` above; see migrations/0033's header comment
+  // for why). `addons` shape only — ownership, active/cutoff/qty-limit, and
+  // the price RECOMPUTE all happen below, once the route is loaded; the
+  // client-supplied `addon_id`/`qty` are never trusted beyond "which item,
+  // how many" (SPEC.md add-ons §: "recompute the price from the DB, never
+  // from the request").
+  const addonNotesCheck = validateNotes(addon_notes);
+  if (!addonNotesCheck.ok) {
+    return errorJson('bad_request', addonNotesCheck.message, 400, request);
+  }
+  let addonRequests = [];
+  if (addons !== undefined && addons !== null) {
+    if (!Array.isArray(addons)) {
+      return errorJson('bad_request', 'addons must be an array', 400, request);
+    }
+    if (addons.length > 20) {
+      return errorJson('bad_request', 'too many add-on line items', 400, request);
+    }
+    const seenAddonIds = new Set();
+    for (const item of addons) {
+      const addonId = item && item.addon_id;
+      const qty = item && item.qty;
+      if (!addonId || typeof addonId !== 'string' || addonId.length > 100) {
+        return errorJson('bad_request', 'addons[].addon_id is required', 400, request);
+      }
+      if (seenAddonIds.has(addonId)) {
+        return errorJson('bad_request', 'duplicate addons[].addon_id', 400, request);
+      }
+      seenAddonIds.add(addonId);
+      if (!Number.isInteger(qty) || qty < 1 || qty > 999) {
+        return errorJson('bad_request', 'addons[].qty must be a positive integer', 400, request);
+      }
+      addonRequests.push({ addon_id: addonId, qty });
+    }
   }
 
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
@@ -415,6 +509,48 @@ export async function handleBook(request, env) {
     return errorJson('slot_passed', 'booking closed for this start time', 409, request);
   }
 
+  // Add-ons (migrations/0033) — ownership, active state, per-add-on cutoff,
+  // and quantity-cap validation; the price/cost/VAT/name are RECOMPUTED from
+  // the DB row here — the client-supplied price (there isn't one — only
+  // addon_id + qty travel in the request) can never influence what's
+  // actually charged (SPEC.md add-ons §). Capacity is deliberately NOT
+  // checked here — only ATOMICALLY, after the seat hold exists (below) —
+  // a non-atomic check-then-reserve race would let two concurrent requests
+  // both "pass" a check for the very last unit.
+  const resolvedAddons = [];
+  let addonsTotalCents = 0;
+  for (const reqItem of addonRequests) {
+    const addon = await db.getAddon(env.DB, reqItem.addon_id);
+    if (!addon || addon.route_id !== route_id || !addon.active) {
+      return errorJson('addon_not_found', 'one of the selected extras is no longer available', 400, request);
+    }
+    if ((addon.currency || 'EUR') !== (route.currency || 'EUR')) {
+      return errorJson('addon_not_found', 'one of the selected extras is no longer available', 400, request);
+    }
+    const addonCutoffMinutes = (addon.cutoff_hours || 0) * 60;
+    if (isSlotPastCutoff(date, slot, route.timezone, addonCutoffMinutes)) {
+      return errorJson('addon_cutoff_passed', 'it’s too late to add that extra to this booking — the kitchen needs more notice', 409, request);
+    }
+    // per_person caps at the party size just booked; per_booking caps at 1 —
+    // either way also capped by the add-on's own max_qty_per_booking.
+    const unitCap = addon.unit === 'per_booking' ? 1 : party;
+    const cap = Math.min(unitCap, addon.max_qty_per_booking);
+    if (reqItem.qty > cap) {
+      return errorJson('bad_request', `quantity for that extra must be at most ${cap}`, 400, request);
+    }
+    addonsTotalCents += addon.price_cents * reqItem.qty;
+    resolvedAddons.push({
+      addon_id: addon.id,
+      qty: reqItem.qty,
+      unit_price_cents: addon.price_cents,
+      unit_cost_cents: addon.cost_cents,
+      vat_rate: addon.vat_rate,
+      name_snapshot_en: addon.name_en,
+      name_snapshot_nl: addon.name_nl,
+      currency: addon.currency,
+    });
+  }
+
   // Layer 1 — per-IP attempt rate limit (SPEC.md §15.1, sliding window,
   // D1-backed). Recorded AFTER every validation check above (basic field
   // shape, route existence, horizon, party size, weekday/slot legitimacy,
@@ -458,7 +594,10 @@ export async function handleBook(request, env) {
     if ((giftCard.currency || 'EUR') !== (route.currency || 'EUR')) {
       return errorJson('gift_card_currency_mismatch', 'this gift card is not valid for this route’s currency', 400, request);
     }
-    const bookingTotalCents = (route.price_cents || 0) * party;
+    // migrations/0033: the add-ons total counts toward what a gift card can
+    // cover — a guest shouldn't have to pay cash for the Bites order just
+    // because the card's balance happens to exactly match the ticket price.
+    const bookingTotalCents = (route.price_cents || 0) * party + addonsTotalCents;
     giftApplied = Math.min(giftCard.balance_cents, bookingTotalCents);
   }
 
@@ -505,9 +644,46 @@ export async function handleBook(request, env) {
     holdResult.booking.gift_applied_cents = giftApplied;
   }
 
+  // Add-on capacity reservation (migrations/0033) — atomic per line item,
+  // same "INSERT ... SELECT ... WHERE capacity allows it" guard createHold
+  // itself used just above. Must happen AFTER the seat hold exists (each
+  // reservation is recorded against this exact booking id) and BEFORE
+  // Stripe Checkout is created — a guest must never be charged for an
+  // extra the kitchen can no longer actually fulfil.
+  for (const resolved of resolvedAddons) {
+    const reserveResult = await db.createBookingAddon(env.DB, {
+      booking_id: bookingId,
+      addon_id: resolved.addon_id,
+      qty: resolved.qty,
+      unit_price_cents: resolved.unit_price_cents,
+      unit_cost_cents: resolved.unit_cost_cents,
+      currency: resolved.currency,
+      vat_rate: resolved.vat_rate,
+      name_snapshot_en: resolved.name_snapshot_en,
+      name_snapshot_nl: resolved.name_snapshot_nl,
+      route_id,
+      date,
+      slot,
+    });
+    if (!reserveResult.created) {
+      // Someone else took the last unit between the GET /api/addons the
+      // widget showed and this request. Release the seat hold IMMEDIATELY
+      // (cancelIfHold is the same idempotent, guarded call checkout.session.
+      // expired uses) rather than letting it silently expire in HOLD_MINUTES
+      // — a guest's immediate retry must not be blocked by its own
+      // now-pointless hold tripping MAX_ACTIVE_HOLDS_PER_EMAIL/IP.
+      await db.cancelIfHold(env.DB, bookingId);
+      return errorJson('addon_sold_out', 'one of the selected extras just sold out for this time — please adjust your order', 409, request);
+    }
+  }
+  if (addonNotesCheck.notes) {
+    await db.setBookingAddonNotes(env.DB, bookingId, addonNotesCheck.notes);
+    holdResult.booking.addon_notes = addonNotesCheck.notes;
+  }
+
   let session;
   try {
-    session = await createCheckoutSession(env, holdResult.booking, route);
+    session = await createCheckoutSession(env, holdResult.booking, route, resolvedAddons);
   } catch (err) {
     console.error('stripe_checkout_failed', err);
     // Hold stays as-is; it will silently expire in HOLD_MINUTES and free the seat.
@@ -707,6 +883,17 @@ export async function handleContact(request, env) {
     message: message.trim(),
     locale: locale === 'nl' ? 'nl' : 'en',
     ip_hash: ip === 'unknown' ? null : await sha256Hex(ip),
+  });
+
+  // Dashboard push notification (BUILD: PWA/push build, migrations/0032) —
+  // fired as soon as the row is saved, independent of whether the owner/
+  // guest emails below succeed; notifyAdmins never throws, so this is
+  // called directly, same contract as every other trigger site.
+  await notifyAdmins(env, {
+    kind: 'enquiry',
+    title: `✉️ Nieuwe aanvraag — ${kind === 'group' ? 'Groep' : 'Contact'}`,
+    body: `${inquiry.name}${inquiry.city ? ' · ' + inquiry.city : ''} · ${inquiry.message.slice(0, 120)}`,
+    url: `/admin/#/inquiries/${inquiry.id}`,
   });
 
   // Owner notification (reply-to the guest, so replying in the inbox goes

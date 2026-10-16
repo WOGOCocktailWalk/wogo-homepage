@@ -1071,6 +1071,224 @@ if a guest ever asks "why am I still getting reminder emails after I
 unsubscribed," check the address actually clicked the link in that specific
 email (each email's link is correct for its own `To:` address only).
 
+## 24. Push notifications on your phone (2026-10)
+
+The dashboard can now notify you the instant something happens — a sale, a
+cancellation, a gift card, a contact form, or something going wrong — the
+same job the Wix app's notification used to do, without Wix. It costs
+nothing, needs no app-store account, and runs entirely on the Worker you
+already deployed.
+
+### 24.1 One-time setup (you, from your Mac) — load the migration and set the key
+
+Load the new migration (same pattern as every earlier one):
+```bash
+npx wrangler d1 execute wogo-bookings --remote --file=./migrations/0032_push_notifications.sql
+```
+
+Generate the signing keypair this feature uses to prove to Apple/Google's
+push servers that a notification really comes from your Worker (this is
+called "VAPID" — you never need to know more than that). Run this once:
+```bash
+node -e "
+const { subtle } = globalThis.crypto;
+(async () => {
+  const kp = await subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign','verify']);
+  const raw = new Uint8Array(await subtle.exportKey('raw', kp.publicKey));
+  let bin = ''; for (const b of raw) bin += String.fromCharCode(b);
+  const pub = Buffer.from(bin, 'binary').toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+\$/,'');
+  console.log('PUBLIC KEY (paste into src/config.js VAPID_PUBLIC_KEY):');
+  console.log(pub);
+  console.log();
+  console.log('PRIVATE KEY (paste into: npx wrangler secret put VAPID_PRIVATE_KEY) — do NOT share, log, or commit this:');
+  console.log(JSON.stringify(await subtle.exportKey('jwk', kp.privateKey)));
+})();
+"
+```
+It prints two things:
+1. A **public key** — copy it into `src/config.js`, replacing the value of
+   `VAPID_PUBLIC_KEY`. This one is not secret (the browser hands it to
+   Apple/Google on every device that enables notifications) — it's safe to
+   commit.
+2. A **private key** — this one IS secret. Run `npx wrangler secret put
+   VAPID_PRIVATE_KEY` and paste it in when prompted. Never put it in a file,
+   never paste it anywhere else, never ask anyone (including an AI
+   assistant) to print it back to you.
+
+Rebuild and redeploy so the new `VAPID_PUBLIC_KEY` ships:
+```bash
+node src/admin/build.mjs
+npx wrangler deploy
+```
+
+**Rotating the key later (if you ever need to):** generate a brand-new pair
+the same way, update BOTH places (config.js + the secret) together, and
+redeploy. Every device that already enabled notifications will need to tap
+"Enable" again — a mismatched old/new pair fails silently, which is exactly
+why both halves always change together, never just one.
+
+### 24.2 Turning it on, on your iPhone — the 4 taps
+
+Push notifications on iPhone only work once the dashboard is added to your
+Home Screen (this is an Apple rule for every website, not something this
+build can work around). Four taps, once, on each phone:
+
+1. Open `https://<your-worker-url>/admin` in **Safari** (it must be Safari,
+   not Chrome) and log in.
+2. Tap the **Share** button (the square with an arrow pointing up, in
+   Safari's toolbar).
+3. Scroll down and tap **"Add to Home Screen,"** then tap **Add**.
+4. Close Safari, then open **WOGO** from the new icon on your Home Screen.
+   In the dashboard, go to **Notifications** in the sidebar and tap
+   **"Enable notifications on this device."** Say yes to the permission
+   prompt — that's it.
+
+Tap **"Send me a test notification"** on that same screen to check it
+worked. Do this on Selin's phone too, under her own login — notifications
+are per-person: she only needs to do this once, on her own phone, with her
+own personal login link (not the shared admin token).
+
+### 24.3 What you'll get notified about, and how to tune it
+
+Every notification is also visible inside the dashboard itself — open
+**Notifications** in the sidebar any time to see your devices and five
+on/off switches: new booking, cancelled/moved booking, gift card sold,
+contact/group enquiry, and "something went wrong" (a failed email, a
+payment-webhook error, or the backend looking unhealthy — these are the
+things that used to only reach your inbox and were easy to miss). Turning
+one off on your phone doesn't affect Selin's phone or vice versa.
+
+### 24.4 If the dashboard's address ever changes
+
+A phone's "Enable notifications" is tied to the exact web address it was
+turned on at. If you ever move the dashboard to a different domain (the
+`MIGRATION-PLAYBOOK.md` cutover is the one time this is likely to happen),
+every device needs the 4 taps above repeated on the NEW address — nothing
+breaks, bookings and every email keep working exactly as before, push just
+goes quiet until you re-enable it per device. `MIGRATION-PLAYBOOK.md`'s
+launch checklist already has this as a step.
+
+## 25. Add-ons — selling extras through a bar (2026-10)
+
+### 25.1 What this is
+
+Think of it like the "would you like fries with that?" moment — after a
+guest picks their date, time and how many people, they can now be offered
+one or two optional extras before they pay. For example: "Bites at ULU,
+€11,95." The bar makes the bites and tells you what to pay them for it
+(say, €9,99 per plate) — you keep the €2 difference. The guest only ever
+sees the €11,95; they never see what you pay the bar.
+
+**Nothing is switched on by default.** Until you create an add-on and
+tick "Active", every booking works exactly as it does today — guests
+won't see anything new.
+
+### 25.2 How to add your first extra
+
+1. Open the admin dashboard → **Routes** → click the route you want (say,
+   Amsterdam) to open it.
+2. Click the **Add-ons** tab (next to "Bars & timing").
+3. Click **+ Add add-on**.
+4. Fill in the fields — here's what each one means:
+
+   - **Name (EN) / Name (NL)** — what the guest reads, in both languages.
+     E.g. "Bites" / "Bites" (or whatever the bar calls it).
+   - **Description** — optional, one line, e.g. "A shared plate of bites
+     at the first stop." Leave blank if you don't need it.
+   - **Image URL** — optional. A link to a photo. Leave blank if you don't
+     have one yet — it'll just show without a picture.
+   - **Bar** — pick which bar on this route is actually making/serving
+     this extra. If it's not tied to one specific bar (say, a small gift
+     every guest gets at some point during the night), pick **"Whole
+     walk"** instead — in that case, no single bar is told about it; it
+     only shows up in the guest's email and in your own booking details.
+   - **Guest price (€)** — what the guest pays, per unit. This is the
+     number from your example: €11,95.
+   - **Bar's own cost (€)** — what the bar actually invoices you for one
+     unit. This is where your margin comes from (guest price minus this
+     number). The system will refuse to save if this is HIGHER than the
+     guest price — you can never accidentally sell at a loss.
+   - **VAT %** — this is the one to get right. **Food in the Netherlands
+     is 9% VAT**, even though the cocktail-walk ticket itself is charged
+     at 21%. They are NOT the same, and the system never guesses this for
+     you — you have to type it in. For food, type `9`. For something
+     that isn't food (say branded merchandise), it's more likely `21` —
+     check with your accountant if you're not sure.
+   - **Unit** — "Per person" means the stepper the guest sees caps out at
+     their party size (e.g. a max of 6 bites if 6 people are booked).
+     "Per booking" means it caps at 1 no matter how many people are in
+     the group (e.g. one shared platter for the whole table).
+   - **Max qty / booking** — a hard ceiling on top of the above. E.g. even
+     on "Per person" with a party of 6, you might cap it at "max 4" if
+     the bar can't make more than that per group.
+   - **Capacity per slot** — leave this BLANK for "no limit". Fill in a
+     number if the bar can only make a certain amount per time slot
+     across ALL bookings that evening (e.g. the kitchen can only do 20
+     plates of bites at the 18:00 departure, combined). Once that number
+     is reached, the extra simply stops being offered for that time slot
+     — guests booking a different time can still get it.
+   - **Cutoff (hours before)** — how much notice the bar/kitchen needs.
+     The default is 24 hours. If a guest tries to add it later than that
+     before their walk starts, they simply won't be offered it any more
+     (same idea as your existing booking cutoff, just a separate number
+     for this one extra).
+   - **Sort order** — if you have more than one extra on a route, the
+     lowest number shows first. Leave at `0` if you only have one.
+   - **Food** (checkbox) — tick this if it's actual food or drink. This
+     is what makes the system show guests a "any allergies or dietary
+     needs?" box the moment they add it to their order — tick it for
+     safety even if you're not sure, never leave it unticked for real food.
+   - **Active** (checkbox) — leave this OFF while you're still getting the
+     details right. Tick it ONLY when you're ready for real guests to see
+     and buy it. You can always untick it later to pause an extra without
+     deleting it.
+
+5. Click **Create**. If your margin (guest price minus bar cost) comes out
+   under €1, you'll get a friendly warning — it still saves, it's just a
+   nudge to double-check that's what you meant.
+6. When you're happy, open the add-on again, tick **Active**, click
+   **Save**. From that moment, it shows up to guests booking that route
+   (for the time slots and dates where the cutoff still allows it).
+
+### 25.3 What the bar sees
+
+The bar gets exactly what they already get today — their arrival-time
+email — with one addition: if a guest ordered their extra, the email now
+also says something like "2× Bites" plus any allergy note the guest left.
+A bar that doesn't own any extra on a booking sees nothing new at all —
+they're never shown another bar's order.
+
+### 25.4 What the guest sees
+
+Right after choosing how many people are coming (and before the payment
+step), a guest sees a small "Make it a night out?" card for each active
+extra, with a plus/minus counter and a running total. It's entirely
+optional — there's a quiet note saying so, and the normal "Continue to
+secure payment" button works the same whether they added something or not.
+If they pick a food item, a one-line "allergies or dietary needs?" box
+appears right there. Everything they picked shows up again on their
+confirmation email, their reminder email 2 days before the walk, and (if
+you ever move their booking) their "you've been moved" email too.
+
+### 25.5 Checking how it's doing
+
+Dashboard → **Analytics** → **Sales** → scroll down to the **Add-ons**
+table. For each extra you've got live, you'll see: how many were sold,
+how much guests paid in total, how much you'll owe the bar(s) in total,
+your margin, and a "take-rate" — the percentage of bookings on that route
+that added it. That last number is the one worth watching: if a lot of
+people are adding the same extra, it might be worth turning it into part
+of a bundled, more expensive ticket down the line instead of a bolt-on.
+
+### 25.6 If you ever need to remove one
+
+Open the add-on and either untick **Active** (keeps it, just hides it from
+new bookings — the quickest, safest option) or click **Delete** (removes
+it from the list entirely). Deleting never touches anything a guest has
+already booked and paid for — their confirmation, the bar's email, and
+your own booking records all keep exactly what was ordered at the time,
+even if you later change the price or delete the add-on altogether.
+
 ## Moving to another host later
 
 Nothing here locks you into Cloudflare forever — see

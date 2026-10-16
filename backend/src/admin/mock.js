@@ -88,6 +88,24 @@
     ]
   };
 
+  // Add-ons (migrations/0033) — ONE demo row, purely for the preview to be
+  // explorable (production seeds ZERO live — migrations/0033's own header
+  // comment). Guest resells at 1195, the bar invoices 999 — a realistic,
+  // comfortably-over-€1 margin so the Sales tab demo isn't a warning case.
+  const addons = {
+    amsterdam: [
+      {
+        id: "addon_demo_bites", route_id: "amsterdam", bar_id: 1,
+        name_en: "Bites at Van de Werf", name_nl: "Bites bij Van de Werf",
+        description_en: "A shared plate of bites at the first stop.",
+        description_nl: "Een deelplateau met bites bij de eerste stop.",
+        image_url: null, price_cents: 1195, cost_cents: 999, currency: "EUR", vat_rate: 9,
+        is_food: 1, unit: "per_person", max_qty_per_booking: 10, capacity_per_slot: null,
+        cutoff_hours: 24, sort_order: 0, active: 1,
+      },
+    ],
+  };
+
   /* ---- bookings: a busy week spread across routes/slots ---- */
   const FIRST = ["Anna", "Sofie", "Lars", "Emma", "Daan", "Julia", "Tim", "Noa", "Lucas", "Fleur", "Sem", "Lieke", "Bram", "Sara", "Finn", "Nina", "Ruben", "Isa", "Thijs", "Mila", "Jesse", "Roos", "Kai", "Evi"];
   const LAST = ["de Vries", "Jansen", "Bakker", "Visser", "Smit", "Meijer", "Mulder", "Bos", "Vos", "Peters", "Hendriks", "Dekker", "Brouwer", "Kok", "Willems"];
@@ -117,7 +135,14 @@
       discount_cents: extra.discount_cents || 0,
       stripe_session: (manual || status === "hold") ? null : "cs_test_" + (seq).toString(36) + "x9",
       created_at: created + "T14:0" + (seq % 6) + ":00Z",
-      hold_expires: status === "hold" ? new Date(Date.now() + 8 * 60000).toISOString() : null
+      hold_expires: status === "hold" ? new Date(Date.now() + 8 * 60000).toISOString() : null,
+      // Add-ons (migrations/0033) — addon_notes is a real column (present on
+      // every booking, empty for the overwhelming majority); addons/
+      // addons_count are mock-only conveniences standing in for
+      // db.getAddonsForBooking / the list query's cheap count subquery.
+      addon_notes: extra.addon_notes || null,
+      addons: extra.addons || [],
+      addons_count: (extra.addons || []).length,
     });
   }
 
@@ -146,6 +171,14 @@
   });
   // one confirmed_conflict to show the plum badge
   addBooking("rotterdam-hidden-gems", day(0), "18:00", 2, "confirmed_conflict");
+  // Add-ons demo (migrations/0033) — a confirmed Amsterdam booking that
+  // ordered 2× the demo Bites add-on and left an allergy note, so the
+  // booking drawer's "Extras ordered" section + the allergy row are both
+  // explorable in the preview without needing a real guest flow.
+  addBooking("amsterdam", day(0), "18:00", 2, "confirmed", {
+    addon_notes: "One of us has a peanut allergy — please keep that in mind.",
+    addons: [{ qty: 2, name_snapshot_en: "Bites at Van de Werf", name_snapshot_nl: "Bites bij Van de Werf", unit_price_cents: 1195, unit_cost_cents: 999, currency: "EUR" }],
+  });
   // Guests on the SAME Saturday (day+3) whose 20:00 departure is capped to 4
   // seats by the slot_capacity_override above — so Participants-per-hour shows
   // "2 / 4 seats · Override" for 20:00 while 19:00 keeps the normal 10. Pick
@@ -396,6 +429,21 @@
       });
     }
 
+    // Add-ons analytics (migrations/0033) — same from/to contract as every
+    // other /admin/api/analytics/* mock above.
+    if (path === "/admin/api/analytics/addons" && method === "GET") {
+      const from = q.get("from") || day(-29), to = q.get("to") || day(0);
+      const all = Object.keys(addons).reduce((arr, rid) => arr.concat(addons[rid]), []);
+      return json({
+        from, to,
+        addons: all.filter((a) => a.active).map((a) => ({
+          addon_id: a.id, name_en: a.name_en, route_id: a.route_id,
+          units: 14, revenue_cents: 14 * a.price_cents, cost_cents: 14 * a.cost_cents,
+          margin_cents: 14 * (a.price_cents - a.cost_cents), take_rate: 0.22,
+        })),
+      });
+    }
+
     // routes
     if (path === "/admin/api/routes" && method === "GET") return json({ routes: routes.slice() });
     if (path === "/admin/api/routes" && method === "POST") { routes.push(Object.assign({ created_at: dstr(TODAY) }, bodyObj)); return json({ ok: true, route: bodyObj }); }
@@ -415,8 +463,47 @@
         return json({ ok: true, bars: bars[rid].slice() });
       }
     }
+    // Add-ons (migrations/0033) — per-row REST CRUD, mirroring the real
+    // Worker's shape exactly (ROUTE_ROLES/handleCreateAddon etc. in
+    // src/admin_api.js): create NEVER trusts a client active:true, and the
+    // margin_warning flag rides back on create/update the same way.
+    if ((m = match(path, /^\/admin\/api\/routes\/([^\/]+)\/addons$/))) {
+      const rid = m[1];
+      if (method === "GET") return json({ addons: (addons[rid] || []).slice() });
+      if (method === "POST") {
+        const row = Object.assign({ currency: "EUR" }, bodyObj, {
+          id: "addon_mock_" + Math.floor(Math.random() * 1e6), route_id: rid, active: false,
+        });
+        (addons[rid] = addons[rid] || []).push(row);
+        return json({ addon: row, margin_warning: (row.price_cents - row.cost_cents) < 100 }, 201);
+      }
+    }
+    if ((m = match(path, /^\/admin\/api\/routes\/([^\/]+)\/addons\/([^\/]+)$/))) {
+      const rid = m[1], aid = m[2];
+      const list = addons[rid] || [];
+      const row = list.find((a) => String(a.id) === aid);
+      if (method === "PUT") {
+        if (!row) return json({ error: "not_found", message: "add-on not found" }, 404);
+        Object.assign(row, bodyObj);
+        return json({ addon: row, margin_warning: (row.price_cents - row.cost_cents) < 100 });
+      }
+      if (method === "DELETE") {
+        if (row) addons[rid] = list.filter((a) => a !== row);
+        return json({ ok: true });
+      }
+    }
     if ((m = match(path, /^\/admin\/api\/routes\/([^\/]+)$/)) && method === "PUT") {
       const r = routes.find((x) => x.id === m[1]); if (r) Object.assign(r, bodyObj); return json({ ok: true });
+    }
+    // Single-booking detail (migrations/0033: this is where the FULL
+    // `addons` array, as opposed to the list's cheap `addons_count`, would
+    // come from — the mock already carries both on every row, so this
+    // mostly exists so the drawer's background-enrichment fetch has a real
+    // route to hit instead of falling through to the 404 catch-all).
+    if ((m = match(path, /^\/admin\/api\/bookings\/([^\/]+)$/)) && method === "GET") {
+      const b = bookings.find((x) => x.id === m[1]);
+      if (!b) return json({ error: "not_found" }, 404);
+      return json({ booking: b });
     }
     if ((m = match(path, /^\/admin\/api\/bookings\/([^\/]+)\/resend$/))) return json({ ok: true });
     if ((m = match(path, /^\/admin\/api\/bookings\/([^\/]+)\/send-review$/)) && method === "POST") {
@@ -629,6 +716,48 @@
         attributes: ["LANGUAGE", "CITY_INTEREST", "SOURCE", "FIRST_NAME", "LAST_BOOKING_DATE", "LAST_ROUTE", "BOOKINGS_COUNT", "CONSENT_AT", "CONSENT_SOURCE"]
           .map((name) => ({ name, type: "text", created: false }))
       });
+    }
+
+    // Public config (incl. the VAPID public key the real Worker serves) and
+    // the push/notifications surface (migrations/0032 PWA/push build) — a
+    // believable but inert fixture; file:// has no Service Worker support
+    // anyway, so "Enable notifications" fails fast with a clear message
+    // rather than the preview pretending push actually works here.
+    if (path === "/admin/public-config" && method === "GET") {
+      return json({ turnstile_site_key: null, vapid_public_key: "preview-not-a-real-key" });
+    }
+    if (path === "/admin/api/inquiries" && method === "GET") {
+      return json({ inquiries: [
+        { id: "inq_preview1", kind: "group", name: "Fenna de Groot", email: "fenna@example.com", phone: null, city: "Rotterdam", date: "mid November", party_size: 14, message: "Hi! We're looking for a bachelorette walk for 14 people, flexible on the exact date — what are our options?", locale: "nl", created_at: day(-1) + " 14:02:00" }
+      ] });
+    }
+    if (path === "/admin/api/notifications" && method === "GET") {
+      const notifs = [
+        { id: "notif_preview1", kind: "booking_new", title: "💸 Nieuwe boeking — WOGO Cocktail Walk Rotterdam", body: "Thu 2 " + day(1).slice(5, 7) + " · 19:00 · 4 gasten · €119,80 · Sanne de Vries", url: "/admin/#/bookings/" + (bookings[0] ? bookings[0].id : "b_preview"), booking_id: bookings[0] ? bookings[0].id : null, created_at: day(0) + " 09:14:00", read_at: null },
+        { id: "notif_preview2", kind: "enquiry", title: "✉️ Nieuwe aanvraag — Groep", body: "Fenna de Groot · Rotterdam · bachelorette walk for 14 people…", url: "/admin/#/inquiries/inq_preview1", booking_id: null, created_at: day(-1) + " 14:02:00", read_at: null }
+      ];
+      return json({ notifications: q.get("unread") ? notifs : notifs, unread_count: notifs.length });
+    }
+    if ((m = match(path, /^\/admin\/api\/notifications\/[^/]+\/read$/)) && method === "POST") {
+      return json({ ok: true });
+    }
+    if (path === "/admin/api/push/subscriptions" && method === "GET") {
+      return json({ subscriptions: [] });
+    }
+    if (path === "/admin/api/push/subscribe" && method === "POST") {
+      return json({ ok: true });
+    }
+    if (path === "/admin/api/push/unsubscribe" && method === "POST") {
+      return json({ ok: true });
+    }
+    if (path === "/admin/api/push/test" && method === "POST") {
+      return json({ ok: true });
+    }
+    if (path === "/admin/api/notification-preferences" && method === "GET") {
+      return json({ preferences: { new_booking: true, cancellation: true, gift_card: true, enquiry: true, problems: true } });
+    }
+    if (path === "/admin/api/notification-preferences" && method === "PUT") {
+      return json({ preferences: Object.assign({ new_booking: true, cancellation: true, gift_card: true, enquiry: true, problems: true }, bodyObj) });
     }
 
     return json({ error: "not_found", message: "mock: no handler for " + method + " " + path }, 404);

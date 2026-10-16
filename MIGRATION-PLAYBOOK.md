@@ -45,6 +45,7 @@ Legend: **Likelihood / Severity** as HIGH · MEDIUM · LOW. "Test" = how to prov
 | Relative-path bugs on deeper folders (`/rotterdam/x/book/` uses `../../../`) | MEDIUM | MEDIUM | Crawl every page for 404 assets | Crawler + browser console | Patch |
 | GitHub Pages outage (rare) | LOW | HIGH | Cloudflare "Always Online" (free) serves cached copy | — | Wait; booking engine is separate (Worker) so /book/ pages cached still work |
 | Worker (`wogo-booking-backend`) on `workers.dev` URL, not custom domain → third-party-cookie/CSP oddities, harder Access setup | MEDIUM | MEDIUM | Add `api.wogococktailwalk.com` custom domain at cutover; update `WOGO_API`, Stripe webhook URL, UptimeRobot | Booking test after switch | Keep workers.dev as fallback URL in widget config |
+| Admin dashboard's domain changes at cutover (`workers.dev` → `api.wogococktailwalk.com`) → every device's push subscription silently stops working (a browser `PushSubscription` is scoped to the exact origin that created it — a new origin is a different app as far as the Push API is concerned) | CERTAIN (if the domain changes at all) | LOW (the owner still gets the email either way, same as before this build) | None — this can't be prevented, only re-done. After the domain changes: on each device, open `/admin` on the NEW domain and tap "Enable notifications on this device" again (Settings → Notifications) | Send a test notification (same card, "Send me a test notification") from each device after cutover | Nothing breaks — bookings/emails are completely unaffected; only push goes quiet until re-enabled per device |
 | Bot Fight Mode blocks Stripe webhook (server-to-server call) | MEDIUM | HIGH | WAF skip rule for `/webhooks/*` and `/api/*` (OWNER-SECURITY-TODO §2) | Real booking immediately after toggling | Disable Bot Fight Mode |
 | Wix media (`static.wixstatic.com`) still referenced anywhere → images vanish when Wix is cancelled | MEDIUM | MEDIUM | `grep -r wixstatic` = 0 hits | Same | Re-host, or keep Wix paid |
 
@@ -760,7 +761,7 @@ Priority: **P0** = blocks launch · **P1** = must be done launch week · **P2** 
 
 ### PHASE 9 — Launch
 
-§11 runbook, Tuesday morning. P0. Both. DoD: real booking on the real domain within 30 min of flip; ads updated; bio links updated.
+§11 runbook, Tuesday morning. P0. Both. DoD: real booking on the real domain within 30 min of flip; ads updated; bio links updated; if the admin dashboard's own domain changed, re-enable push notifications on every device (owner's + Selin's phone) — see §1.A's push-subscription row, this is expected and takes 2 taps per device.
 
 ### PHASE 10 — Monitor
 

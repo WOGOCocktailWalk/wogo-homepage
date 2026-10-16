@@ -27,6 +27,7 @@ import {
   utcToZonedHHMM,
   isSlotPastCutoff,
   computeRateLimitRetryAfterSeconds,
+  formatNotificationDate,
 } from '../src/logic.js';
 
 describe('addMinutesToSlot', () => {
@@ -527,6 +528,18 @@ describe('aggregateCustomers', () => {
   test('rows with no email are skipped', () => {
     const rows = [baseRow({ email: '' }), baseRow({ email: null })];
     assert.deepEqual(aggregateCustomers(rows), []);
+  });
+});
+
+describe('formatNotificationDate', () => {
+  test('renders "<weekday short> <day> <month short>" (migrations/0032 notification copy)', () => {
+    // 2026-10-22 is a Thursday.
+    assert.equal(formatNotificationDate('2026-10-22'), 'Thu 22 Oct');
+    // 2026-01-01 is a Thursday too, and a single-digit day/January both
+    // render without any leading zero or padding.
+    assert.equal(formatNotificationDate('2026-01-01'), 'Thu 1 Jan');
+    // 2026-12-31 — year-end boundary.
+    assert.equal(formatNotificationDate('2026-12-31'), 'Thu 31 Dec');
   });
 });
 

@@ -49,6 +49,7 @@ const schemaSql = [
   '0014_weekday_capacity.sql', '0015_weekday_bars.sql',
   '0022_bar_locale.sql', '0025_admin_users.sql', '0027_booking_utm.sql', '0028_bookings_email_lower_index.sql',
   '0029_route_booking_cutoff.sql',
+  '0033_addons.sql',
 ].map(migrationFile).join('\n');
 
 function exec(db, sql, params = {}) {

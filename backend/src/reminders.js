@@ -46,7 +46,10 @@ export async function sendWalkReminderForBooking(env, booking, deps = {}) {
     const firstBarName = arrivals.length > 0 ? arrivals[0].bar_name : null;
 
     const unsubscribeUrl = await buildReminderUnsubscribeUrl(env, workerBaseUrl(env), booking.email);
-    const mail = renderWalkReminder(booking, route, { firstBarName, unsubscribeUrl });
+    // migrations/0033: the 2-day reminder lists what the guest ordered too —
+    // [] (no add-ons) for the overwhelming majority of bookings.
+    const addons = await database.getAddonsForBooking(env.DB, booking.id);
+    const mail = renderWalkReminder(booking, route, { firstBarName, unsubscribeUrl, addons });
     await sendWithRetry(
       env,
       { to: booking.email, subject: mail.subject, htmlContent: mail.html },

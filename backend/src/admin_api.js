@@ -8,6 +8,7 @@ import {
   validateNotes, isValidCurrencyCode, isValidIanaTimeZone, buildBookingAnalytics, addDaysToDateStr,
   buildHighlightsSales, computePctDelta, pageViewsByCity,
   validateBlogSlug, validateBlogCategory, sanitizeBlogHtml, stripHtmlTags,
+  analyticsRevenueCents, formatNotificationDate, formatEuros, summarizeAddonsForNotification,
 } from './logic.js';
 import {
   LOGIN_FAIL_THRESHOLD,
@@ -63,6 +64,16 @@ import {
 import { putFile, deleteFile, getFile } from './github.js';
 import { renderPostPage, renderIndexPage, buildSitemapUrlEntry, assetUrl as blogAssetUrl } from './blog_render.js';
 import { BLOG_POST_TEMPLATE, BLOG_INDEX_TEMPLATE } from './blog_templates_data.js';
+import {
+  notifyAdmins, getNotificationPreferences, setNotificationPreferences,
+} from './notifications.js';
+import { NOTIFICATION_DEFAULT_PREFERENCES, VAPID_PUBLIC_KEY } from './config.js';
+import {
+  ADDON_DEFAULT_CUTOFF_HOURS, ADDON_DEFAULT_VAT_RATE, ADDON_DEFAULT_MAX_QTY_PER_BOOKING,
+  ADDON_NAME_MAX_LENGTH, ADDON_DESCRIPTION_MAX_LENGTH, ADDON_IMAGE_URL_MAX_LENGTH,
+  ADDON_MAX_QTY_SANITY_CAP, ADDON_MAX_CUTOFF_HOURS, ADDON_LOW_MARGIN_WARNING_CENTS, ADDON_UNITS,
+} from './config.js';
+import { isSlotPastCutoff } from './logic.js';
 
 // ---------------------------------------------------------------------------
 // Admin mutation audit trail (owner audit item #8, migrations/0007). Called
@@ -183,7 +194,17 @@ export async function handleLogin(request, env) {
  * TURNSTILE_SECRET_KEY is sensitive and never leaves the Worker.
  */
 export async function handlePublicConfig(request, env) {
-  return json({ turnstile_site_key: env.TURNSTILE_SITE_KEY || null });
+  return json({
+    turnstile_site_key: env.TURNSTILE_SITE_KEY || null,
+    // VAPID public key (migrations/0032 PWA/push build) — NOT sensitive,
+    // the browser hands it straight back to the push service on every
+    // subscribe() call (see config.js's own doc comment). Needed pre-
+    // session in principle, though today it's only ever read after login
+    // (the Notifications settings card) — kept on this existing public
+    // endpoint rather than a new one, same "one list of public config
+    // values" shape as the Turnstile site key above.
+    vapid_public_key: VAPID_PUBLIC_KEY,
+  });
 }
 
 /**
@@ -247,9 +268,18 @@ export const ROUTE_ROLES = {
   'GET /admin/api/analytics/realtime': 'viewer',
   'GET /admin/api/analytics/behavior': 'viewer',
   'GET /admin/api/analytics/marketing': 'viewer',
+  'GET /admin/api/analytics/addons': 'viewer',
+  'GET /admin/api/routes/:id/addons': 'viewer',
 
   'GET /admin/api/participants-per-hour': 'staff',
   'GET /admin/api/routes/:id/bars': 'staff',
+  // Add-ons (migrations/0033): editing is STAFF+, deliberately looser than
+  // the bars editor just below (owner-only) — the owner's explicit
+  // instruction for this feature. Viewing stays with the general
+  // 'GET .../addons': 'viewer' entry above.
+  'POST /admin/api/routes/:id/addons': 'staff',
+  'PUT /admin/api/routes/:id/addons/:addonId': 'staff',
+  'DELETE /admin/api/routes/:id/addons/:addonId': 'staff',
   'POST /admin/api/bookings/:id/resend': 'staff',
   'POST /admin/api/bookings/:id/reschedule': 'staff',
   'POST /admin/api/bookings/:id/cancel': 'staff',
@@ -306,6 +336,20 @@ export const ROUTE_ROLES = {
   'POST /admin/api/blog/:id/unpublish': 'staff',
   'POST /admin/api/blog/:id/assets': 'staff',
   'DELETE /admin/api/blog/:id': 'owner',
+
+  // Push notifications + in-dashboard feed (migrations/0032, PWA/push
+  // build) — staff+ across the board per BUILD's own spec (Selin should be
+  // able to enable push on her own phone and manage her own preferences,
+  // not just the owner).
+  'POST /admin/api/push/subscribe': 'staff',
+  'POST /admin/api/push/unsubscribe': 'staff',
+  'GET /admin/api/push/subscriptions': 'staff',
+  'POST /admin/api/push/test': 'staff',
+  'GET /admin/api/notifications': 'staff',
+  'POST /admin/api/notifications/:id/read': 'staff',
+  'GET /admin/api/notifications/pending': 'staff',
+  'GET /admin/api/notification-preferences': 'staff',
+  'PUT /admin/api/notification-preferences': 'staff',
 };
 
 /**
@@ -580,7 +624,11 @@ export async function handleListBookings(request, env) {
 export async function handleGetBooking(request, env, params) {
   const booking = await db.getBooking(env.DB, params.id);
   if (!booking) return errorJson('not_found', null, 404);
-  return json({ booking });
+  // migrations/0033: the booking detail drawer shows what was ordered
+  // (and, via booking.addon_notes, the allergy/dietary note) — [] for the
+  // overwhelming majority of bookings.
+  const addons = await db.getAddonsForBooking(env.DB, params.id);
+  return json({ booking: { ...booking, addons } });
 }
 
 /** Re-sends the guest confirmation email (which includes the route-map section
@@ -599,19 +647,39 @@ export async function handleResendConfirmation(request, env, params) {
   const route = await db.getRoute(env.DB, booking.route_id);
   if (!route) return errorJson('route_not_found', null, 404);
 
-  await sendGuestConfirmationEmails(env, booking, route);
+  // migrations/0033: a resend must show the same extras list the original
+  // confirmation did — [] for the overwhelming majority of bookings.
+  const addons = await db.getAddonsForBooking(env.DB, booking.id);
+  await sendGuestConfirmationEmails(env, booking, route, { addons });
   await audit(env, request, 'booking.resend_confirmation', 'booking', booking.id, { email: booking.email });
   return json({ ok: true });
 }
 
-const CSV_COLUMNS = ['id', 'route_name', 'city', 'date', 'slot', 'party', 'name', 'email', 'phone', 'notes', 'status', 'source', 'payment_status', 'discount_code', 'discount_cents', 'stripe_session', 'created_at'];
+// migrations/0033: addons_summary/addons_revenue_cents/addon_notes are
+// computed just below (never stored columns) — see the doc comment on the
+// decoration loop in handleExportCsv for why a bulk grouped read, not one
+// extra query per row, keeps a 10,000-row export cheap.
+const CSV_COLUMNS = ['id', 'route_name', 'city', 'date', 'slot', 'party', 'name', 'email', 'phone', 'notes', 'addon_notes', 'addons_summary', 'addons_revenue_cents', 'status', 'source', 'payment_status', 'discount_code', 'discount_cents', 'stripe_session', 'created_at'];
 
 export async function handleExportCsv(request, env) {
   const url = new URL(request.url);
   const filters = parseBookingFilters(url);
   filters.limit = 10000;
   const bookings = await db.listBookings(env.DB, filters);
-  const csv = toCsv(bookings, CSV_COLUMNS);
+  // One bulk grouped read for EVERY booking's add-on lines (not one query
+  // per exported row — db.listAddonsGroupedByBooking's own doc comment
+  // explains why that's cheap even at a 10,000-row export: most bookings
+  // carry zero add-ons, so booking_addons stays small relative to bookings).
+  const addonsByBooking = await db.listAddonsGroupedByBooking(env.DB);
+  const decorated = bookings.map((b) => {
+    const lines = addonsByBooking[b.id] || [];
+    return {
+      ...b,
+      addons_summary: lines.map((l) => `${l.qty}x ${l.name_snapshot_en}`).join('; '),
+      addons_revenue_cents: lines.reduce((sum, l) => sum + l.qty * l.unit_price_cents, 0),
+    };
+  });
+  const csv = toCsv(decorated, CSV_COLUMNS);
   const today = new Date().toISOString().slice(0, 10);
   // A CSV export is a full-PII data pull (owner audit item #8 explicitly
   // lists it) — worth an audit row even though it's a GET, unlike every
@@ -1050,6 +1118,187 @@ export async function handleReplaceBars(request, env, params) {
 }
 
 // ---------------------------------------------------------------------------
+// Add-ons CRUD (migrations/0033) — the Routes editor's "add-ons" panel.
+// Viewing = viewer+ (ROUTE_ROLES below); editing = staff+, deliberately
+// LOOSER than the bars editor (owner-only) per the owner's explicit
+// instruction for this feature — add-ons are meant to be day-to-day staff
+// work (new seasonal item, price tweak, switching one on/off), not a
+// structural route change.
+// ---------------------------------------------------------------------------
+
+/** Validates the addon-shaped fields present in `body` against `cols` (the
+ * exact set being written — full on create, partial on update). Shared by
+ * handleCreateAddon/handleUpdateAddon so the two can never drift. Returns
+ * `{ ok: true }` or `{ ok: false, message }`. Does NOT apply defaults —
+ * that's each caller's own job, since "missing" means something different
+ * on create (fill with a sane default) vs. update (leave untouched). */
+function validateAddonFields(body, cols) {
+  if (cols.includes('name_en') && (!body.name_en || typeof body.name_en !== 'string' || body.name_en.length > ADDON_NAME_MAX_LENGTH)) {
+    return { ok: false, message: `name_en is required (max ${ADDON_NAME_MAX_LENGTH} chars)` };
+  }
+  if (cols.includes('name_nl') && (!body.name_nl || typeof body.name_nl !== 'string' || body.name_nl.length > ADDON_NAME_MAX_LENGTH)) {
+    return { ok: false, message: `name_nl is required (max ${ADDON_NAME_MAX_LENGTH} chars)` };
+  }
+  for (const field of ['description_en', 'description_nl']) {
+    if (cols.includes(field) && body[field] != null && (typeof body[field] !== 'string' || body[field].length > ADDON_DESCRIPTION_MAX_LENGTH)) {
+      return { ok: false, message: `${field} must be at most ${ADDON_DESCRIPTION_MAX_LENGTH} chars` };
+    }
+  }
+  if (cols.includes('image_url') && body.image_url != null && (typeof body.image_url !== 'string' || body.image_url.length > ADDON_IMAGE_URL_MAX_LENGTH)) {
+    return { ok: false, message: `image_url must be at most ${ADDON_IMAGE_URL_MAX_LENGTH} chars` };
+  }
+  if (cols.includes('price_cents') && (!Number.isInteger(body.price_cents) || body.price_cents < 0)) {
+    return { ok: false, message: 'price_cents must be a non-negative integer' };
+  }
+  if (cols.includes('cost_cents') && (!Number.isInteger(body.cost_cents) || body.cost_cents < 0)) {
+    return { ok: false, message: 'cost_cents must be a non-negative integer' };
+  }
+  // Guest price must never be below what the bar invoices WOGO — a genuine
+  // data error, not a judgment call, so this one BLOCKS (unlike the
+  // margin-under-€1 check below, which only warns). Only checked when both
+  // numbers are present in this write (an update that touches just one of
+  // the pair is checked against the OTHER's final value by the caller,
+  // after merging the patch — see handleUpdateAddon).
+  if (cols.includes('price_cents') && cols.includes('cost_cents') && body.price_cents < body.cost_cents) {
+    return { ok: false, message: 'the guest price must be at least the bar’s own cost — never sell below the bar’s invoice price' };
+  }
+  if (cols.includes('currency') && body.currency !== undefined && !isValidCurrencyCode(body.currency)) {
+    return { ok: false, message: 'currency must be a 3-letter ISO code (e.g. EUR, GBP, USD)' };
+  }
+  if (cols.includes('vat_rate') && (!Number.isInteger(body.vat_rate) || body.vat_rate < 0 || body.vat_rate > 100)) {
+    return { ok: false, message: 'vat_rate must be an integer percent 0-100 (NL food is 9, the ticket itself is 21 — never assume one from the other)' };
+  }
+  if (cols.includes('unit') && body.unit !== undefined && !ADDON_UNITS.includes(body.unit)) {
+    return { ok: false, message: `unit must be one of: ${ADDON_UNITS.join(', ')}` };
+  }
+  if (cols.includes('max_qty_per_booking') && (!Number.isInteger(body.max_qty_per_booking) || body.max_qty_per_booking < 1 || body.max_qty_per_booking > ADDON_MAX_QTY_SANITY_CAP)) {
+    return { ok: false, message: `max_qty_per_booking must be an integer between 1 and ${ADDON_MAX_QTY_SANITY_CAP}` };
+  }
+  if (cols.includes('capacity_per_slot') && body.capacity_per_slot !== null && body.capacity_per_slot !== undefined) {
+    if (!Number.isInteger(body.capacity_per_slot) || body.capacity_per_slot < 1) {
+      return { ok: false, message: 'capacity_per_slot must be a positive integer, or null for unlimited' };
+    }
+  }
+  if (cols.includes('cutoff_hours') && (!Number.isInteger(body.cutoff_hours) || body.cutoff_hours < 0 || body.cutoff_hours > ADDON_MAX_CUTOFF_HOURS)) {
+    return { ok: false, message: `cutoff_hours must be an integer between 0 and ${ADDON_MAX_CUTOFF_HOURS}` };
+  }
+  if (cols.includes('sort_order') && body.sort_order !== undefined && !Number.isInteger(body.sort_order)) {
+    return { ok: false, message: 'sort_order must be an integer' };
+  }
+  return { ok: true };
+}
+
+/** `true` when the margin (price_cents - cost_cents) is under the owner's
+ * €1 warning threshold — NEVER blocks (ADDON_LOW_MARGIN_WARNING_CENTS's own
+ * doc comment), just something the admin UI surfaces so the owner notices a
+ * thin margin before switching the add-on on. */
+function addonMarginWarning(priceCents, costCents) {
+  return priceCents - costCents < ADDON_LOW_MARGIN_WARNING_CENTS;
+}
+
+export async function handleListRouteAddons(request, env, params) {
+  const addons = await db.listAddonsForRoute(env.DB, params.id);
+  return json({ addons });
+}
+
+export async function handleCreateAddon(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return errorJson('bad_request', 'invalid JSON', 400);
+  }
+  const route = await db.getRoute(env.DB, params.id);
+  if (!route) return errorJson('route_not_found', null, 404);
+
+  const payload = {
+    bar_id: body.bar_id ?? null,
+    name_en: body.name_en,
+    name_nl: body.name_nl,
+    description_en: body.description_en ?? null,
+    description_nl: body.description_nl ?? null,
+    image_url: body.image_url ?? null,
+    price_cents: body.price_cents,
+    cost_cents: body.cost_cents,
+    currency: body.currency ?? route.currency ?? 'EUR',
+    vat_rate: Number.isInteger(body.vat_rate) ? body.vat_rate : ADDON_DEFAULT_VAT_RATE,
+    is_food: !!body.is_food,
+    unit: body.unit ?? 'per_person',
+    max_qty_per_booking: Number.isInteger(body.max_qty_per_booking) ? body.max_qty_per_booking : ADDON_DEFAULT_MAX_QTY_PER_BOOKING,
+    capacity_per_slot: body.capacity_per_slot ?? null,
+    cutoff_hours: Number.isInteger(body.cutoff_hours) ? body.cutoff_hours : ADDON_DEFAULT_CUTOFF_HOURS,
+    sort_order: Number.isInteger(body.sort_order) ? body.sort_order : 0,
+    // Deliberately defaults to false even if the client sends `active: true`
+    // on create — "ship with zero active add-ons" (owner requirement) means
+    // a brand-new add-on is NEVER live by surprise; the owner has to come
+    // back and flip it on once the details are right.
+    active: false,
+  };
+  const allCols = ['name_en', 'name_nl', 'description_en', 'description_nl', 'image_url', 'price_cents', 'cost_cents', 'currency', 'vat_rate', 'unit', 'max_qty_per_booking', 'capacity_per_slot', 'cutoff_hours', 'sort_order'];
+  const check = validateAddonFields(payload, allCols);
+  if (!check.ok) return errorJson('bad_request', check.message, 400);
+
+  if (payload.bar_id) {
+    const bars = await db.listBars(env.DB, params.id);
+    if (!bars.some((b) => String(b.id) === String(payload.bar_id))) {
+      return errorJson('bad_request', 'bar_id must belong to this route (or be omitted for "the whole walk")', 400);
+    }
+  }
+
+  const addon = await db.createAddon(env.DB, params.id, payload);
+  await audit(env, request, 'addon.create', 'addon', addon.id, { route_id: params.id, name_en: addon.name_en });
+  return json({ addon, margin_warning: addonMarginWarning(addon.price_cents, addon.cost_cents) }, 201);
+}
+
+export async function handleUpdateAddon(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return errorJson('bad_request', 'invalid JSON', 400);
+  }
+  const existing = await db.getAddon(env.DB, params.addonId);
+  if (!existing || existing.route_id !== params.id) return errorJson('not_found', null, 404);
+
+  const writableCols = ['bar_id', 'name_en', 'name_nl', 'description_en', 'description_nl', 'image_url', 'price_cents', 'cost_cents', 'currency', 'vat_rate', 'is_food', 'unit', 'max_qty_per_booking', 'capacity_per_slot', 'cutoff_hours', 'sort_order', 'active'];
+  const touchedCols = writableCols.filter((c) => c in body);
+  const check = validateAddonFields(body, touchedCols);
+  if (!check.ok) return errorJson('bad_request', check.message, 400);
+
+  // The price >= cost guard needs BOTH final values, even when only one of
+  // the pair is in this particular PUT — merge against the existing row
+  // first, same "check the result, not just the diff" rule a partial PATCH
+  // always needs for a cross-field invariant.
+  const finalPrice = 'price_cents' in body ? body.price_cents : existing.price_cents;
+  const finalCost = 'cost_cents' in body ? body.cost_cents : existing.cost_cents;
+  if (finalPrice < finalCost) {
+    return errorJson('bad_request', 'the guest price must be at least the bar’s own cost — never sell below the bar’s invoice price', 400);
+  }
+
+  if ('bar_id' in body && body.bar_id) {
+    const bars = await db.listBars(env.DB, params.id);
+    if (!bars.some((b) => String(b.id) === String(body.bar_id))) {
+      return errorJson('bad_request', 'bar_id must belong to this route (or be null for "the whole walk")', 400);
+    }
+  }
+
+  const addon = await db.updateAddon(env.DB, params.addonId, body);
+  await audit(env, request, 'addon.update', 'addon', params.addonId, body);
+  return json({ addon, margin_warning: addonMarginWarning(finalPrice, finalCost) });
+}
+
+export async function handleDeleteAddon(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const existing = await db.getAddon(env.DB, params.addonId);
+  if (!existing || existing.route_id !== params.id) return errorJson('not_found', null, 404);
+  const ok = await db.deleteAddon(env.DB, params.addonId);
+  await audit(env, request, 'addon.delete', 'addon', params.addonId, { route_id: params.id, name_en: existing.name_en });
+  return json({ ok });
+}
+
+// ---------------------------------------------------------------------------
 // Date overrides
 // ---------------------------------------------------------------------------
 
@@ -1253,6 +1502,18 @@ export async function handleCreateManualBooking(request, env) {
   // src/subscribers.js's own try/catch contract.
   const baseUrl = new URL(request.url).origin;
   await handleConfirmedBookingOptIn(env, result.booking, route, { baseUrl });
+  const totalCents = analyticsRevenueCents({
+    price_cents: route.price_cents, party: result.booking.party,
+    discount_cents: result.booking.discount_cents, gift_applied_cents: result.booking.gift_applied_cents,
+    source: result.booking.source, payment_status: result.booking.payment_status,
+  });
+  await notifyAdmins(env, {
+    kind: 'booking_new',
+    title: `💸 Nieuwe boeking — ${route.name}`,
+    body: `${formatNotificationDate(result.booking.date)} · ${result.booking.slot} · ${result.booking.party} gasten · ${formatEuros(totalCents)} · ${result.booking.name}`,
+    url: `/admin/#/bookings/${bookingId}`,
+    booking_id: bookingId,
+  });
   await audit(env, request, 'booking.create_manual', 'booking', bookingId, { route_id, date, slot, party, email });
 
   return json({ booking: result.booking }, 201);
@@ -1294,6 +1555,26 @@ export async function handleRescheduleBooking(request, env, params) {
   const route = await db.getRoute(env.DB, existing.route_id);
   if (!route) return errorJson('route_not_found', null, 404);
 
+  // Add-ons (migrations/0033) — re-check cutoff AND capacity for every line
+  // item on this booking BEFORE the booking itself ever moves. "Fail
+  // loudly" per the owner's explicit requirement: a reschedule that can't
+  // honour a paid add-on is REJECTED outright (the booking stays exactly
+  // where it was) rather than moving it and silently stranding the order —
+  // the admin gets a clear, itemised reason to act on by hand (cancel the
+  // item, refund it, call the bar). Skipped entirely for the overwhelming
+  // majority of bookings (no add-ons at all), so this is a no-op query for
+  // most reschedules.
+  const addonProblems = await db.checkAddonsFitSlot(env.DB, params.id, existing.route_id, date, slot, route.timezone);
+  if (addonProblems.length > 0) {
+    return errorJson(
+      'addon_conflict',
+      `this booking's add-ons can't move to that slot: ${addonProblems
+        .map((p) => (p.reason === 'cutoff' ? `${p.name_en} (past its cutoff for that time)` : `${p.name_en} (only ${p.available_qty} left, needs ${p.requested_qty})`))
+        .join('; ')}`,
+      409
+    );
+  }
+
   const result = await db.rescheduleBooking(env.DB, { id: params.id, date, slot });
   if (result.not_found) return errorJson('not_found', null, 404);
   if (result.not_movable) return errorJson('not_movable', 'only confirmed bookings can be moved', 409);
@@ -1302,8 +1583,20 @@ export async function handleRescheduleBooking(request, env, params) {
   }
 
   if (!result.noop) {
-    await sendGuestRescheduleEmail(env, result.booking, route, { previous: result.previous });
-    await notifyBarsReschedule(env, result.booking, route, { previous: result.previous });
+    // Add-ons move WITH the booking (same rows, same booking_id) — re-read
+    // once here (already know every line item fits, from the check above)
+    // and thread into both the guest + every bar's reschedule email.
+    const addonLines = await db.getAddonsForBooking(env.DB, params.id);
+    await sendGuestRescheduleEmail(env, result.booking, route, { previous: result.previous, addons: addonLines });
+    await notifyBarsReschedule(env, result.booking, route, { previous: result.previous, addons: addonLines });
+    const addonSummary = summarizeAddonsForNotification(addonLines);
+    await notifyAdmins(env, {
+      kind: 'booking_moved',
+      title: `🔁 Boeking verplaatst — ${route.name}`,
+      body: `${formatNotificationDate(result.previous.date)} ${result.previous.slot} → ${formatNotificationDate(date)} ${slot} · ${result.booking.name}${addonSummary}`,
+      url: `/admin/#/bookings/${params.id}`,
+      booking_id: params.id,
+    });
   }
   await audit(env, request, 'booking.reschedule', 'booking', params.id, {
     from: result.previous, to: { date, slot }, noop: !!result.noop,
@@ -1349,6 +1642,13 @@ export async function handleCancelBooking(request, env, params) {
   const trimmedMessage = message && String(message).trim() ? message : undefined;
   await sendGuestCancellationEmail(env, result.booking, route, { message: trimmedMessage });
   await notifyBarsCancellation(env, result.booking, route);
+  await notifyAdmins(env, {
+    kind: 'booking_cancelled',
+    title: `❌ Boeking geannuleerd — ${route.name}`,
+    body: `${formatNotificationDate(result.booking.date)} · ${result.booking.slot} · ${result.booking.party} gasten · ${result.booking.name}`,
+    url: `/admin/#/bookings/${params.id}`,
+    booking_id: params.id,
+  });
   await audit(env, request, 'booking.cancel', 'booking', params.id, { message: !!trimmedMessage });
   return json({ booking: result.booking });
 }
@@ -1754,6 +2054,28 @@ export async function handleAnalytics(request, env) {
     subscribers: { new_confirmed: newSubs, total_confirmed: confirmedTotalRow ? confirmedTotalRow.n : 0 },
     top_upcoming_days: upcoming,
   });
+}
+
+/**
+ * GET /admin/api/analytics/addons?from=&to= (viewer+, migrations/0033) —
+ * the Analytics → Sales add-on breakdown: per add-on, units sold, guest
+ * revenue, bar cost, WOGO margin, and take-rate (the share of CONFIRMED
+ * bookings on that add-on's route, in the same window, that included it at
+ * least once) — the number the owner will use to decide whether a
+ * packaged ticket is worth building later. Same `from`/`to` range
+ * contract (YYYY-MM-DD, from <= to, max ANALYTICS_MAX_RANGE_DAYS days) as
+ * every other /admin/api/analytics/* endpoint, judged by WALK date like
+ * the main handleAnalytics above (not sale date) — take-rate only makes
+ * sense against bookings for walks in this window, not sales made in it.
+ */
+export async function handleAnalyticsAddons(request, env) {
+  const url = new URL(request.url);
+  const range = parseAnalyticsRange(url);
+  if (!range) {
+    return errorJson('bad_request', `from and to (YYYY-MM-DD, from <= to, max ${ANALYTICS_MAX_RANGE_DAYS} days) are required`, 400);
+  }
+  const addons = await db.listAddonSalesAnalytics(env.DB, range.from, range.to);
+  return json({ from: range.from, to: range.to, addons });
 }
 
 /**
@@ -2618,4 +2940,190 @@ export async function handleUploadBlogAsset(request, env, params) {
   const url = blogAssetUrl(path);
   await audit(env, request, 'blog.upload_asset', 'blog_post', existing.id, { path, bytes: file.size, branch });
   return json({ url, path, bytes: file.size }, 201);
+}
+
+// ---------------------------------------------------------------------------
+// Push notifications + the in-dashboard notification feed (migrations/0032,
+// the PWA/push build). Subscribing, listing a user's own devices, the
+// per-kind preference toggles, and the test send are all tied to a
+// PERSONAL login (`request.adminSession.uid`) — there's no admin_users row
+// behind the shared emergency ADMIN_TOKEN session to own a device or a
+// preference row against, so those four reject with `personal_login_required`
+// rather than silently doing nothing. Reading/marking-read notifications has
+// no such requirement — a token session just sees every broadcast row and
+// none of the (today nonexistent, since every real trigger broadcasts)
+// user-targeted ones.
+// ---------------------------------------------------------------------------
+
+function requirePersonalSession(request) {
+  const session = request.adminSession;
+  return session && session.uid ? session.uid : null;
+}
+
+/** POST /admin/api/push/subscribe — body { endpoint, keys:{p256dh,auth},
+ * user_agent? }. Re-subscribing the SAME device (endpoint UNIQUE) updates
+ * the existing row in place — see db.js:upsertPushSubscription. */
+export async function handlePushSubscribe(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const uid = requirePersonalSession(request);
+  if (!uid) return errorJson('personal_login_required', 'sign in with your personal email link to register a device', 400);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return errorJson('bad_request', 'invalid JSON', 400);
+  }
+  const endpoint = body && body.endpoint;
+  const keys = (body && body.keys) || {};
+  if (typeof endpoint !== 'string' || !endpoint.startsWith('https://') || endpoint.length > 2000) {
+    return errorJson('bad_request', 'a valid https endpoint is required', 400);
+  }
+  if (typeof keys.p256dh !== 'string' || !keys.p256dh || typeof keys.auth !== 'string' || !keys.auth) {
+    return errorJson('bad_request', 'subscription keys are required', 400);
+  }
+  const userAgent = typeof body.user_agent === 'string' ? body.user_agent.slice(0, 300) : null;
+
+  await db.upsertPushSubscription(env.DB, {
+    id: `push_${crypto.randomUUID()}`, user_id: uid, endpoint, p256dh: keys.p256dh, auth: keys.auth, user_agent: userAgent,
+  });
+  return json({ ok: true }, 201);
+}
+
+/** POST /admin/api/push/unsubscribe — body { id }. Scoped to the caller's
+ * OWN subscriptions — a device can only ever remove itself (or, from the
+ * Settings device list, one of this SAME user's other devices), never
+ * someone else's. */
+export async function handlePushUnsubscribe(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const uid = requirePersonalSession(request);
+  if (!uid) return errorJson('personal_login_required', 'sign in with your personal email link to manage devices', 400);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return errorJson('bad_request', 'invalid JSON', 400);
+  }
+  const id = body && body.id;
+  if (typeof id !== 'string' || !id) return errorJson('bad_request', 'id is required', 400);
+
+  const deleted = await db.deletePushSubscriptionForUserById(env.DB, uid, id);
+  if (!deleted) return errorJson('not_found', null, 404);
+  return json({ ok: true });
+}
+
+/** GET /admin/api/push/subscriptions — this user's own registered devices.
+ * Deliberately omits `endpoint`/`p256dh`/`auth` from the response — the
+ * client never needs its push credentials back, only enough to show and
+ * remove a device by id. A token session (no personal login) just sees an
+ * empty list — there's no user to own any devices against. */
+export async function handleListPushSubscriptions(request, env) {
+  const uid = requirePersonalSession(request);
+  if (!uid) return json({ subscriptions: [] });
+  const rows = await db.listPushSubscriptionsForUser(env.DB, uid);
+  return json({
+    subscriptions: rows.map((r) => ({
+      id: r.id, user_agent: r.user_agent, created_at: r.created_at,
+      last_success_at: r.last_success_at, last_error: r.last_error, failure_count: r.failure_count,
+    })),
+  });
+}
+
+/** POST /admin/api/push/test — "send me a test notification" button.
+ * User-scoped (never broadcast) and bypasses every preference toggle — see
+ * config.js:NOTIFICATION_KIND_PREFERENCE_GROUP (`test` has no group), so a
+ * person can always verify a device still works regardless of what they've
+ * turned off. */
+export async function handlePushTest(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const uid = requirePersonalSession(request);
+  if (!uid) return errorJson('personal_login_required', 'sign in with your personal email link to use push', 400);
+
+  await notifyAdmins(env, {
+    kind: 'test',
+    title: '🔔 Test notification',
+    body: 'If you can see this, push is working on this device.',
+    user_id: uid,
+  });
+  return json({ ok: true });
+}
+
+/** GET /admin/api/notifications?unread=1 — the in-dashboard feed (Today
+ * view). `read_at` is a single shared column (migrations/0032's doc
+ * comment) — this is every BROADCAST notification plus any targeted
+ * specifically at the caller, newest first. */
+export async function handleListNotifications(request, env) {
+  const url = new URL(request.url);
+  const session = request.adminSession;
+  const notifications = await db.listNotifications(env.DB, {
+    userId: session ? session.uid : null,
+    unreadOnly: url.searchParams.get('unread') === '1',
+    limit: 50,
+  });
+  return json({ notifications });
+}
+
+/** POST /admin/api/notifications/:id/read — idempotent; 404 only if the id
+ * never existed at all (marking an already-read row is a quiet 200, not an
+ * error — a race between two tabs/devices marking the same row shouldn't
+ * surface as a failure to either). */
+export async function handleMarkNotificationRead(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const existing = await db.getNotificationById(env.DB, params.id);
+  if (!existing) return errorJson('not_found', null, 404);
+  await db.markNotificationRead(env.DB, params.id);
+  return json({ ok: true });
+}
+
+/** GET /admin/api/notifications/pending — used by the service worker
+ * (src/admin/sw.js) after a payload-less push tickle wakes it: a SAME-
+ * ORIGIN authenticated fetch (the browser sends the session cookie
+ * automatically) for the real content to show. Same visibility rule as
+ * handleListNotifications, just always unread and capped tighter (a push
+ * tickle should surface a HANDFUL of fresh things, not the full backlog —
+ * that's what the Today view is for). If the session has expired, index.js
+ * itself already returns 401 before this ever runs — sw.js's push handler
+ * is what turns THAT into the generic "New activity in WOGO" fallback. */
+export async function handleNotificationsPending(request, env) {
+  const session = request.adminSession;
+  const notifications = await db.listNotifications(env.DB, {
+    userId: session ? session.uid : null,
+    unreadOnly: true,
+    limit: 5,
+  });
+  return json({ notifications });
+}
+
+/** GET /admin/api/notification-preferences — this user's own per-kind
+ * toggles (defaults to every kind ON — see config.js). A token session has
+ * no user to key preferences on, so it just sees the defaults. */
+export async function handleGetNotificationPreferences(request, env) {
+  const session = request.adminSession;
+  const preferences = await getNotificationPreferences(env, session ? session.uid : null);
+  return json({ preferences });
+}
+
+/** PUT /admin/api/notification-preferences — body is a partial patch, e.g.
+ * { cancellation: false } — only recognized keys are applied; anything else
+ * (typo, future client/old client mismatch) is rejected outright rather
+ * than silently ignored, so a client bug surfaces immediately. */
+export async function handleSetNotificationPreferences(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const uid = requirePersonalSession(request);
+  if (!uid) return errorJson('personal_login_required', 'sign in with your personal email link to change notification settings', 400);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return errorJson('bad_request', 'invalid JSON', 400);
+  }
+  const validKeys = new Set(Object.keys(NOTIFICATION_DEFAULT_PREFERENCES));
+  for (const key of Object.keys(body || {})) {
+    if (!validKeys.has(key)) return errorJson('bad_request', `unknown preference: ${key}`, 400);
+    if (typeof body[key] !== 'boolean') return errorJson('bad_request', `${key} must be true or false`, 400);
+  }
+  const preferences = await setNotificationPreferences(env, uid, body || {});
+  return json({ preferences });
 }

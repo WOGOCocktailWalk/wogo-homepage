@@ -169,6 +169,7 @@
     $("#sidebar").classList.remove("open");
     $("#topbar-actions").innerHTML = "";
     const titles = {
+      today: ["Today", "What's happening today, and what's new since you last looked"],
       bookings: ["Bookings", "Every walk booked, across all cities and routes"],
       customers: ["Customers", "Who books with you, how often, and what they spend"],
       hours: ["Participants per hour", "Who is arriving, and when — pick a date"],
@@ -179,13 +180,15 @@
       export: ["Export", "Download bookings as a spreadsheet (CSV)"],
       analytics: ["Analytics", "Business numbers — sales, and (once connected) site traffic"],
       tools: ["Tools", "Every outside tool WOGO uses, and what each one is for"],
-      team: ["Team", "Who can sign in, and what they can do"]
+      team: ["Team", "Who can sign in, and what they can do"],
+      notifications: ["Notifications", "Push alerts on this device, and who gets what"]
     };
     $("#page-title").textContent = titles[view][0];
     $("#page-sub").textContent = titles[view][1];
     const target = $("#view");
     clear(target);
-    if (view === "bookings") renderBookings(target);
+    if (view === "today") renderToday(target);
+    else if (view === "bookings") renderBookings(target);
     else if (view === "customers") renderCustomers(target);
     else if (view === "hours") renderHours(target);
     else if (view === "routes") renderRoutes(target);
@@ -196,6 +199,7 @@
     else if (view === "analytics") renderAnalytics(target);
     else if (view === "tools") renderTools(target);
     else if (view === "team") renderTeam(target);
+    else if (view === "notifications") renderNotificationsSettings(target);
   }
 
   /* ---------- shared: route color + dot ---------------------------------- */
@@ -437,6 +441,24 @@
     S.week.loadedStart = null; // week grid refetches on next visit
     if (S.view === "bookings") renderBookings($("#view")); // repaint now if it's on screen
   }
+  /* Renders the "Extras ordered" list into `container` (clearing it first) —
+     [] or undefined renders nothing at all, same as every other optional
+     section in this drawer. `addons` is whatever db.getAddonsForBooking
+     returned: qty + the PURCHASE-TIME name/price snapshot (never the live
+     `addons` row — a later price/name edit, even a deletion, must never
+     rewrite what this booking actually shows it ordered). */
+  function renderAddonsSection(container, addons) {
+    clear(container);
+    if (!Array.isArray(addons) || addons.length === 0) return;
+    container.appendChild(el("div", { class: "subhead", text: "Extras ordered" }));
+    const list = el("ul", { class: "addon-order-list" });
+    addons.forEach((a) => {
+      const name = a.name_snapshot_en || a.name_snapshot_nl || "Extra";
+      list.appendChild(el("li", { text: a.qty + "× " + name + " — " + euros((a.unit_price_cents || 0) * (a.qty || 0)) }));
+    });
+    container.appendChild(list);
+  }
+
   function openDrawer(b) {
     const r = routeById(b.route_id);
     $("#drawer-title").textContent = b.name;
@@ -459,6 +481,11 @@
       ["Email", b.email],
       ["Phone", b.phone || "—"],
       b.notes ? ["⚠️ Allergies / notes", b.notes] : null,
+      // migrations/0033: addon_notes is its OWN column (not the general
+      // notes above) and is present on every booking row either way
+      // (list AND detail both SELECT b.*) — no extra fetch needed for this
+      // one field.
+      b.addon_notes ? ["🍽️ Allergies / dietary (extras)", b.addon_notes] : null,
       ["Language", (b.locale || "en").toUpperCase()],
       ["Marketing", b.marketing_opt_in ? "Opted in" : "No"],
       ["Booking ID", b.id, null, "mono"],
@@ -471,6 +498,22 @@
       else kv.appendChild(el("dd", { class: row[3] || "", text: row[1] }));
     });
     body.appendChild(kv);
+
+    // Add-ons (migrations/0033) — the itemized "what they ordered" list.
+    // The bookings LIST only carries a cheap `addons_count` (not the full
+    // snapshot); the dedicated detail fetch (handleGetBooking) carries the
+    // real `addons` array. Render immediately when it's already there
+    // (drawer opened via a detail fetch); otherwise fetch it once in the
+    // background and fill it in — never blocks the drawer opening.
+    const addonsHolder = el("div");
+    body.appendChild(addonsHolder);
+    if (Array.isArray(b.addons)) {
+      renderAddonsSection(addonsHolder, b.addons);
+    } else if (b.addons_count > 0) {
+      api("/admin/api/bookings/" + b.id).then((d) => {
+        if (d && d.booking) renderAddonsSection(addonsHolder, d.booking.addons);
+      }).catch(() => { /* noop — the allergy-note row above already came through either way */ });
+    }
 
     // "Move" and "Cancel" are only meaningful for a booking that's actually
     // holding a seat — a hold/expired/already-cancelled row has nothing to
@@ -1280,11 +1323,12 @@
 
     if (open) {
       const body = el("div", { class: "rc-body" });
-      const tabs = el("div", { class: "rc-tabs" }, ["details", "bars", "overrides"].map((t) =>
-        el("button", { class: "rc-tab" + (S.routesUI.tab === t ? " active" : ""), text: t === "details" ? "Details" : t === "bars" ? "Bars & timing" : "Date overrides", onclick: () => { S.routesUI.tab = t; renderRoutes($("#view")); } })));
+      const tabs = el("div", { class: "rc-tabs" }, ["details", "bars", "addons", "overrides"].map((t) =>
+        el("button", { class: "rc-tab" + (S.routesUI.tab === t ? " active" : ""), text: t === "details" ? "Details" : t === "bars" ? "Bars & timing" : t === "addons" ? "Add-ons" : "Date overrides", onclick: () => { S.routesUI.tab = t; renderRoutes($("#view")); } })));
       body.appendChild(tabs);
       if (S.routesUI.tab === "details") body.appendChild(routeDetailsForm(r, openDays, slotsInfo));
       else if (S.routesUI.tab === "bars") body.appendChild(barsPanel(r));
+      else if (S.routesUI.tab === "addons") body.appendChild(addonsPanel(r));
       else body.appendChild(overridesPanel(r));
       card.appendChild(body);
     }
@@ -1701,6 +1745,168 @@
       if (S.routesUI.openId === r.id && S.routesUI.tab === "bars") renderRoutes($("#view"));
     }
     catch (e) { /* noop */ }
+  }
+
+  /* ---------- Add-ons (migrations/0033) ----------------------------------
+     Bar-fulfilled booking upsells — "Bites at ULU", resold at a markup.
+     Per-row REST CRUD (unlike bars' bulk-replace): each card is its own
+     Save/Delete. Nothing here is seeded or auto-activated — a brand-new row
+     is created INACTIVE by the server regardless of what this form sends
+     (SPEC.md add-ons §), so switching one on is always a deliberate second
+     step once the owner is happy with the details. */
+  function addonsPanel(r) {
+    const wrap = el("div");
+    wrap.appendChild(el("p", { class: "capacity-hint", text: "Optional extras sold by a bar on this route — WOGO resells them to the guest at a markup. Nothing here reaches a guest until \"Active\" is switched on below." }));
+
+    S.routesUI.addons = S.routesUI.addons || {};
+    S.routesUI.addonsBars = S.routesUI.addonsBars || {};
+    S.routesUI.addonsLoaded = S.routesUI.addonsLoaded || {};
+
+    const listEl = el("div", { class: "addon-list", id: "addons-" + r.id });
+    wrap.appendChild(listEl);
+
+    function paint() {
+      const draft = S.routesUI.addons[r.id] || [];
+      const bars = S.routesUI.addonsBars[r.id] || [];
+      clear(listEl);
+      if (draft.length === 0) { listEl.appendChild(el("p", { class: "capacity-hint", text: "No add-ons yet. Add the first one below." })); return; }
+      draft.forEach((addon) => listEl.appendChild(addonCard(r, addon, bars, paint)));
+    }
+
+    if (S.routesUI.addonsLoaded[r.id]) paint();
+    else { listEl.appendChild(skeletonRows(2)); loadAddonsAndBars(r, paint); }
+
+    wrap.appendChild(el("div", { class: "rc-actions" }, [
+      el("button", {
+        class: "btn btn-quiet", text: "+ Add add-on", onclick: () => {
+          (S.routesUI.addons[r.id] = S.routesUI.addons[r.id] || []).push({
+            bar_id: null, name_en: "", name_nl: "", description_en: "", description_nl: "", image_url: "",
+            price_cents: 0, cost_cents: 0, vat_rate: 9, is_food: false, unit: "per_person",
+            max_qty_per_booking: 10, capacity_per_slot: null, cutoff_hours: 24, sort_order: 0, active: false,
+          });
+          paint();
+        }
+      })
+    ]));
+    return wrap;
+  }
+
+  async function loadAddonsAndBars(r, paint) {
+    try {
+      const [addonsRes, barsRes] = await Promise.all([
+        api("/admin/api/routes/" + r.id + "/addons"),
+        api("/admin/api/routes/" + r.id + "/bars"),
+      ]);
+      S.routesUI.addons[r.id] = (addonsRes.addons || []).map((a) => Object.assign({}, a));
+      S.routesUI.addonsBars[r.id] = barsRes.bars || [];
+      S.routesUI.addonsLoaded[r.id] = true;
+      if (S.routesUI.openId === r.id && S.routesUI.tab === "addons") renderRoutes($("#view"));
+      else paint();
+    } catch (e) { /* noop */ }
+  }
+
+  /* One editable card per add-on row. Values are read from the live inputs
+     at Save time (routeDetailsForm's own convention) rather than mutated
+     live into a draft object — there's no cross-field live preview here
+     that needs it (the margin-under-€1 check comes back in the server's
+     own response, not computed client-side). */
+  function addonCard(r, addon, bars, repaint) {
+    const nameEnI = el("input", { type: "text", value: addon.name_en || "", placeholder: "Bites" });
+    const nameNlI = el("input", { type: "text", value: addon.name_nl || "", placeholder: "Bites" });
+    const descEnI = el("input", { type: "text", value: addon.description_en || "", placeholder: "Optional, shown to the guest" });
+    const descNlI = el("input", { type: "text", value: addon.description_nl || "", placeholder: "Optional, shown to the guest" });
+    const imgI = el("input", { type: "text", value: addon.image_url || "", placeholder: "https:// (optional)" });
+    const barSel = el("select", {}, [el("option", { value: "", text: "Whole walk (no single bar)" })].concat(
+      bars.map((b) => el("option", { value: String(b.id), text: b.bar_name }))
+    ));
+    barSel.value = addon.bar_id != null ? String(addon.bar_id) : "";
+    const priceIn = el("input", { type: "number", min: "0", step: "0.01", value: ((addon.price_cents || 0) / 100).toFixed(2) });
+    const costIn = el("input", { type: "number", min: "0", step: "0.01", value: ((addon.cost_cents || 0) / 100).toFixed(2) });
+    const vatIn = el("input", { type: "number", min: "0", max: "100", step: "1", value: addon.vat_rate ?? 9 });
+    const unitSel = el("select", {}, [
+      el("option", { value: "per_person", text: "Per person" }),
+      el("option", { value: "per_booking", text: "Per booking" }),
+    ]);
+    unitSel.value = addon.unit === "per_booking" ? "per_booking" : "per_person";
+    const maxQtyIn = el("input", { type: "number", min: "1", step: "1", value: addon.max_qty_per_booking ?? 10 });
+    const capIn = el("input", { type: "number", min: "0", step: "1", value: addon.capacity_per_slot == null ? "" : addon.capacity_per_slot, placeholder: "Unlimited" });
+    const cutoffIn = el("input", { type: "number", min: "0", step: "1", value: addon.cutoff_hours ?? 24 });
+    const sortIn = el("input", { type: "number", step: "1", value: addon.sort_order ?? 0 });
+    const foodIn = el("input", { type: "checkbox" }); foodIn.checked = !!addon.is_food;
+    const activeIn = el("input", { type: "checkbox" }); activeIn.checked = !!addon.active;
+
+    const card = el("div", { class: "addon-item" }, [
+      el("div", { class: "form-grid" }, [
+        field("Name (EN)", nameEnI),
+        field("Name (NL)", nameNlI),
+        field("Description (EN)", descEnI, "wide"),
+        field("Description (NL)", descNlI, "wide"),
+        field("Image URL", imgI, "wide"),
+        field("Bar", barSel),
+        // NL food is 9% VAT while the ticket itself is treated as 21% — this
+        // field is NEVER assumed from the ticket's own rate (SPEC.md).
+        field("Guest price (€)", priceIn),
+        field("Bar's own cost (€)", costIn),
+        field("VAT %", vatIn),
+        field("Unit", unitSel),
+        field("Max qty / booking", maxQtyIn),
+        field("Capacity per slot", capIn),
+        field("Cutoff (hours before)", cutoffIn),
+        field("Sort order", sortIn),
+      ]),
+      el("div", { class: "rc-actions" }, [
+        el("label", { class: "chk-inline" }, [foodIn, el("span", { text: " Food — shows the guest an allergy/dietary field" })]),
+      ]),
+      el("div", { class: "rc-actions" }, [
+        el("label", { class: "chk-inline" }, [activeIn, el("span", { text: " Active — visible to guests right now" })]),
+      ]),
+      el("div", { class: "rc-actions" }, [
+        el("button", {
+          class: "btn btn-primary", text: addon.id ? "Save" : "Create", onclick: async (ev) => {
+            const btn = ev.currentTarget; btn.disabled = true;
+            try {
+              const body = {
+                bar_id: barSel.value ? parseInt(barSel.value, 10) : null,
+                name_en: nameEnI.value.trim(), name_nl: nameNlI.value.trim(),
+                description_en: descEnI.value.trim() || null, description_nl: descNlI.value.trim() || null,
+                image_url: imgI.value.trim() || null,
+                price_cents: Math.round(parseFloat(priceIn.value) * 100) || 0,
+                cost_cents: Math.round(parseFloat(costIn.value) * 100) || 0,
+                vat_rate: parseInt(vatIn.value, 10) || 0,
+                is_food: foodIn.checked,
+                unit: unitSel.value,
+                max_qty_per_booking: parseInt(maxQtyIn.value, 10) || 1,
+                capacity_per_slot: capIn.value === "" ? null : (parseInt(capIn.value, 10) || 0),
+                cutoff_hours: parseInt(cutoffIn.value, 10) || 0,
+                sort_order: parseInt(sortIn.value, 10) || 0,
+                active: activeIn.checked,
+              };
+              const result = addon.id
+                ? await api("/admin/api/routes/" + r.id + "/addons/" + addon.id, { method: "PUT", body })
+                : await api("/admin/api/routes/" + r.id + "/addons", { method: "POST", body });
+              Object.assign(addon, result.addon);
+              toast(result.margin_warning ? "Saved — margin is under €1, double-check that's intentional" : "Add-on saved", "ok");
+              repaint();
+            } catch (e) { toast(e.message, "err"); }
+            btn.disabled = false;
+          }
+        }),
+        el("button", {
+          class: "btn btn-quiet", text: "Delete", onclick: async () => {
+            if (!confirm("Delete this add-on? This can't be undone. Past bookings keep their own copy of what was ordered.")) return;
+            try {
+              if (addon.id) await api("/admin/api/routes/" + r.id + "/addons/" + addon.id, { method: "DELETE" });
+              const arr = S.routesUI.addons[r.id];
+              const idx = arr.indexOf(addon);
+              if (idx >= 0) arr.splice(idx, 1);
+              repaint();
+              toast("Add-on deleted", "ok");
+            } catch (e) { toast(e.message, "err"); }
+          }
+        }),
+      ]),
+    ]);
+    return card;
   }
 
   function overridesPanel(r) {
@@ -2478,12 +2684,16 @@
     try {
       const r = S.analytics.range;
       const qs = "from=" + r.from + "&to=" + r.to + "&group=" + S.analytics.group;
-      const [data, kpi] = await Promise.all([
+      const [data, kpi, addons] = await Promise.all([
         api("/admin/api/analytics?" + qs),
-        api("/admin/api/analytics/kpi")
+        api("/admin/api/analytics/kpi"),
+        // migrations/0033 — same from/to range as the main Sales query
+        // (judged by WALK date, like every other breakdown on this page).
+        api("/admin/api/analytics/addons?from=" + r.from + "&to=" + r.to)
       ]);
       S.analytics.data = data;
       S.analytics.kpi = kpi;
+      S.analytics.addons = addons;
       paintAnalyticsSales(body);
     } catch (e) {
       if (e.message !== "unauthenticated") { clear(body); body.appendChild(errorCard(e.message, () => loadAnalyticsSales(body))); }
@@ -2492,7 +2702,7 @@
 
   function paintAnalyticsSales(body) {
     clear(body);
-    const d = S.analytics.data, kpi = S.analytics.kpi;
+    const d = S.analytics.data, kpi = S.analytics.kpi, addonsData = S.analytics.addons;
     if (!d) return;
 
     // KPI row (last 7 vs previous 7 days, sale date)
@@ -2553,6 +2763,21 @@
 
     if (d.top_upcoming_days.length > 0) {
       body.appendChild(breakdownTable("Top upcoming days by guests", ["Date", "Guests", "Bookings"], d.top_upcoming_days.map((r) => [prettyDate(r.date), r.guests, r.bookings])));
+    }
+
+    // Add-ons (migrations/0033) — units sold, guest revenue, bar cost, WOGO
+    // margin, and take-rate (the share of bookings on that add-on's own
+    // route, same window, that included it). Take-rate is the number the
+    // owner will use to decide whether a packaged ticket is worth building
+    // later — surfaced here rather than buried, even though it's a small
+    // table today (nothing is seeded active, so this starts genuinely empty
+    // until the first add-on goes live).
+    if (addonsData && addonsData.addons) {
+      body.appendChild(breakdownTable("Add-ons", ["Add-on", "Units", "Guest revenue", "Bar cost", "WOGO margin", "Take-rate"],
+        addonsData.addons.map((a) => [
+          a.name_en, a.units, euros(a.revenue_cents), euros(a.cost_cents), euros(a.margin_cents),
+          (a.take_rate * 100).toFixed(1) + "%",
+        ])));
     }
   }
 
@@ -4010,6 +4235,455 @@
   }
 
   /* ======================================================================
+     DEEP LINKS (migrations/0032 PWA/push build) — a notification's `url`
+     field (e.g. "/admin/#/bookings/b_123") opens the dashboard right on
+     that record instead of the home view. This parser is a hand copy of
+     src/logic.js:parseAdminDeepLink — THAT function (and its tests) is the
+     authoritative format spec; this file can't literally import it, since
+     it's inlined as a plain (non-module) <script>, not bundled via ES
+     imports — see build.mjs. Keep the two in lockstep if the format ever
+     changes.
+     ====================================================================== */
+  function parseDeepLink(hash) {
+    const m = /^#\/(bookings|inquiries|giftcards|notifications)(?:\/([^/?#]+))?$/.exec(hash || "");
+    if (!m) return null;
+    return { view: m[1], id: m[2] ? decodeURIComponent(m[2]) : null };
+  }
+
+  async function applyDeepLink(link) {
+    if (link.view === "bookings" && link.id) {
+      go("bookings");
+      try {
+        const data = await api("/admin/api/bookings/" + encodeURIComponent(link.id));
+        if (data && data.booking) openDrawer(data.booking);
+      } catch (e) { /* booking gone / 404 — the Bookings list is still useful on its own */ }
+      return;
+    }
+    if (link.view === "inquiries" && link.id) {
+      go("today"); // no dedicated nav view for enquiries yet — Today is the closest home
+      try {
+        const data = await api("/admin/api/inquiries");
+        const found = (data.inquiries || []).find((q) => q.id === link.id);
+        if (found) openEnquiryDrawer(found);
+      } catch (e) { /* noop */ }
+      return;
+    }
+    if (link.view === "giftcards" && link.id) {
+      go("giftcards");
+      try {
+        if (!S.giftCards.loaded) await loadGiftCards();
+        const card = S.giftCards.list.find((c) => c.code === link.id);
+        if (card) openGiftCardDrawer(card);
+      } catch (e) { /* noop */ }
+      return;
+    }
+    go(link.view);
+  }
+
+  function showDrawer() {
+    $("#drawer").classList.add("show");
+    $("#drawer").setAttribute("aria-hidden", "false");
+    $("#drawer-scrim").classList.add("show");
+  }
+
+  function openGiftCardDrawer(c) {
+    $("#drawer-title").textContent = "Gift card " + c.code;
+    const body = $("#drawer-body");
+    clear(body);
+    const kv = el("dl", { class: "kv" });
+    [
+      ["Code", c.code, null, "mono"],
+      ["Status", null, giftStatusTag(c.status)],
+      ["Initial", euros(c.initial_cents)],
+      ["Balance", euros(c.balance_cents)],
+      ["Buyer", (c.buyer_name || "—") + (c.buyer_email ? " · " + c.buyer_email : "")],
+      ["Recipient", (c.recipient_name || "—") + (c.recipient_email ? " · " + c.recipient_email : "")],
+      ["Created", c.created_at || "—"]
+    ].forEach((row) => {
+      kv.appendChild(el("dt", { text: row[0] }));
+      if (row[2]) kv.appendChild(el("dd", {}, row[2]));
+      else kv.appendChild(el("dd", { class: row[3] || "", text: row[1] }));
+    });
+    body.appendChild(kv);
+    const foot = $("#drawer-foot");
+    clear(foot);
+    foot.appendChild(el("button", { class: "btn btn-ghost", text: "Close", onclick: closeDrawer }));
+    showDrawer();
+  }
+
+  function openEnquiryDrawer(q) {
+    $("#drawer-title").textContent = q.name;
+    const body = $("#drawer-body");
+    clear(body);
+    const kv = el("dl", { class: "kv" });
+    [
+      ["Type", q.kind === "group" ? "Group booking" : "Contact"],
+      ["Name", q.name],
+      ["Email", q.email],
+      ["Phone", q.phone || "—"],
+      ["City", q.city || "—"],
+      ["Date", q.date || "—"],
+      ["Party size", q.party_size != null ? String(q.party_size) : "—"],
+      ["Message", q.message],
+      ["Received", q.created_at || "—"]
+    ].forEach((row) => {
+      kv.appendChild(el("dt", { text: row[0] }));
+      kv.appendChild(el("dd", { text: row[1] }));
+    });
+    body.appendChild(kv);
+    const foot = $("#drawer-foot");
+    clear(foot);
+    foot.appendChild(el("a", { class: "btn btn-primary", href: "mailto:" + q.email, text: "Reply by email" }));
+    foot.appendChild(el("button", { class: "btn btn-ghost", text: "Close", onclick: closeDrawer }));
+    showDrawer();
+  }
+
+  /* ======================================================================
+     Notification badge + "mark read then jump" helper, shared by the Today
+     list and (if ever surfaced elsewhere) anything else that lists
+     notifications.
+     ====================================================================== */
+  function updateNotifBadge(count) {
+    const badge = $("#notif-badge");
+    if (!badge) return;
+    if (count > 0) { badge.textContent = count > 99 ? "99+" : String(count); badge.hidden = false; }
+    else badge.hidden = true;
+  }
+
+  async function openNotification(n) {
+    try { await api("/admin/api/notifications/" + n.id + "/read", { method: "POST" }); } catch (e) { /* noop */ }
+    const link = parseDeepLink((n.url || "").replace(/^\/admin/, ""));
+    if (link) await applyDeepLink(link);
+    if (S.view === "today") loadToday();
+  }
+
+  /* ======================================================================
+     VIEW — TODAY (mobile landing; migrations/0032 PWA/push build). On a
+     phone, or once installed to the Home Screen, the dashboard opens here
+     instead of the Bookings filters (boot() decides which — desktop still
+     lands on Bookings, unchanged). Today's walks, who's expected, what's
+     come in since the owner last opened the dashboard, and quick links.
+     ====================================================================== */
+  function renderToday(root) {
+    clear(root);
+    root.appendChild(el("div", { id: "today-walks" }, [skeletonCard()]));
+    root.appendChild(el("div", { id: "today-notifs" }));
+    loadToday();
+  }
+
+  async function loadToday() {
+    const walksBox = $("#today-walks");
+    const notifsBox = $("#today-notifs");
+    if (!walksBox) return;
+    const date = todayStr();
+    try {
+      const [bk, notifs] = await Promise.all([
+        api("/admin/api/bookings?date_from=" + date + "&date_to=" + date + "&limit=500"),
+        api("/admin/api/notifications?unread=1")
+      ]);
+      paintTodayWalks(walksBox, bk.bookings || [], date);
+      if (notifsBox) paintTodayNotifications(notifsBox, notifs.notifications || []);
+      updateNotifBadge((notifs.notifications || []).length);
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(walksBox); walksBox.appendChild(errorCard(e.message, loadToday)); }
+    }
+  }
+
+  function paintTodayWalks(box, bookings, date) {
+    clear(box);
+    const confirmed = bookings.filter((b) => b.status === "confirmed" || b.status === "confirmed_conflict");
+    const guests = confirmed.reduce((a, b) => a + b.party, 0);
+
+    const stats = el("div", { class: "stat-row" });
+    stats.appendChild(stat("Walks today", confirmed.length, prettyDate(date)));
+    stats.appendChild(stat("Guests expected", guests, confirmed.length + " booking" + (confirmed.length === 1 ? "" : "s")));
+    box.appendChild(stats);
+
+    const card = el("div", { class: "card" });
+    card.appendChild(el("div", { class: "card-head" }, [el("h2", { text: "Today's walks" })]));
+    if (confirmed.length === 0) {
+      card.appendChild(el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "🍸" }),
+        el("div", { text: "Nothing booked for today yet." })
+      ]));
+    } else {
+      const list = confirmed.slice().sort((a, b) => a.slot.localeCompare(b.slot));
+      const rows = el("div", { class: "today-list" });
+      list.forEach((b) => {
+        const r = routeById(b.route_id);
+        rows.appendChild(el("button", { class: "today-row", type: "button", onclick: () => openDrawer(b) }, [
+          dot(b.route_id),
+          el("div", { class: "today-row-main" }, [
+            el("div", { class: "today-row-title", text: b.slot + " · " + (r ? shortRoute(r.name) : b.route_id) }),
+            el("div", { class: "today-row-sub", text: b.party + " guest" + (b.party === 1 ? "" : "s") + " · " + b.name })
+          ])
+        ]));
+      });
+      card.appendChild(rows);
+    }
+    box.appendChild(card);
+
+    const quick = el("div", { class: "card" });
+    quick.appendChild(el("div", { class: "card-head" }, [el("h2", { text: "Quick links" })]));
+    const links = el("div", { class: "today-quick" });
+    [
+      ["All bookings", () => go("bookings")],
+      ["Per hour", () => go("hours")],
+      ["Export CSV", () => go("export")],
+      ["Notifications", () => go("notifications")]
+    ].forEach((pair) => links.appendChild(el("button", { class: "btn btn-quiet", text: pair[0], onclick: pair[1] })));
+    quick.appendChild(links);
+    box.appendChild(quick);
+  }
+
+  function paintTodayNotifications(box, notifs) {
+    clear(box);
+    const card = el("div", { class: "card" });
+    card.appendChild(el("div", { class: "card-head" }, [
+      el("h2", { text: "Since you last looked" }),
+      el("span", { class: "count-badge", text: notifs.length + (notifs.length === 1 ? " new" : " new") })
+    ]));
+    if (notifs.length === 0) {
+      card.appendChild(el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "✅" }),
+        el("div", { text: "You're all caught up." })
+      ]));
+    } else {
+      const list = el("div", { class: "today-list" });
+      notifs.forEach((n) => {
+        list.appendChild(el("button", { class: "today-row", type: "button", onclick: () => openNotification(n) }, [
+          el("div", { class: "today-row-main" }, [
+            el("div", { class: "today-row-title", text: n.title }),
+            el("div", { class: "today-row-sub", text: n.body })
+          ])
+        ]));
+      });
+      card.appendChild(list);
+    }
+    box.appendChild(card);
+  }
+
+  /* ======================================================================
+     VIEW — NOTIFICATIONS (Settings card: migrations/0032 PWA/push build).
+     Per-user: Selin enabling push on her own phone only ever touches HER
+     OWN devices/preferences, never the owner's. A session signed in via
+     the shared emergency admin token (no personal admin_users row behind
+     it — see auth.js's doc comment) can SEE this page but can't register
+     a device, since there's no user row to own the subscription — it gets
+     an explanatory state instead of a silently-broken Enable button.
+     ====================================================================== */
+  const PREF_GROUPS = [
+    ["new_booking", "New booking"],
+    ["cancellation", "Cancelled or moved booking"],
+    ["gift_card", "Gift card sold"],
+    ["enquiry", "Contact / group enquiry"],
+    ["problems", "Something went wrong"]
+  ];
+
+  function renderNotificationsSettings(root) {
+    clear(root);
+    if (!S.me || !S.me.uid) {
+      const card = el("div", { class: "card" });
+      card.appendChild(el("div", { class: "card-head" }, [el("h2", { text: "Notifications" })]));
+      card.appendChild(el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "🔒" }),
+        el("div", { text: "Push notifications are tied to a personal login. Sign out and sign back in with your own emailed login link (not the shared admin token) to register this device." })
+      ]));
+      root.appendChild(card);
+      return;
+    }
+    root.appendChild(el("div", { id: "notif-enable-card" }, [skeletonCard()]));
+    root.appendChild(el("div", { id: "notif-devices-card" }));
+    root.appendChild(el("div", { id: "notif-prefs-card" }));
+    paintNotificationsSettings();
+  }
+
+  async function paintNotificationsSettings() {
+    const enableBox = $("#notif-enable-card");
+    if (!enableBox) return;
+    const devicesBox = $("#notif-devices-card");
+    const prefsBox = $("#notif-prefs-card");
+
+    let devices = [], prefs = null;
+    try {
+      const [devData, prefData] = await Promise.all([
+        api("/admin/api/push/subscriptions"),
+        api("/admin/api/notification-preferences")
+      ]);
+      devices = devData.subscriptions || [];
+      prefs = prefData.preferences || {};
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(enableBox); enableBox.appendChild(errorCard(e.message, paintNotificationsSettings)); return; }
+    }
+
+    paintNotifEnableCard(enableBox);
+    if (devicesBox) paintNotifDevicesCard(devicesBox, devices);
+    if (prefsBox && prefs) paintNotifPrefsCard(prefsBox, prefs);
+  }
+
+  function paintNotifEnableCard(box) {
+    clear(box);
+    const card = el("div", { class: "card" });
+    card.appendChild(el("div", { class: "card-head" }, [el("h2", { text: "This device" })]));
+    const body = el("div", { style: "padding:18px" });
+
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      body.appendChild(el("p", { class: "capacity-hint", text: "This browser can't receive push notifications. On iPhone: open this page in Safari, tap Share, then “Add to Home Screen,” and open WOGO from that Home Screen icon instead." }));
+      card.appendChild(body); box.appendChild(card);
+      return;
+    }
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = window.navigator.standalone === true ||
+      (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+    if (isIOS && !isStandalone) {
+      body.appendChild(el("p", { class: "capacity-hint", text: "On iPhone, push only works once WOGO is added to your Home Screen. Tap Share (the square with the arrow up), then “Add to Home Screen,” then open WOGO from that icon and come back to this page." }));
+      card.appendChild(body); box.appendChild(card);
+      return;
+    }
+
+    const perm = (typeof Notification !== "undefined") ? Notification.permission : "default";
+    body.appendChild(el("p", {
+      class: "capacity-hint",
+      text: perm === "denied"
+        ? "Notifications are blocked for this site in your browser settings — turn them back on there, then reload this page."
+        : "Turn on push for this device for a tap-to-open alert the moment something happens — the same job the old Wix app notification used to do."
+    }));
+    body.appendChild(el("button", {
+      class: "btn btn-primary",
+      text: perm === "denied" ? "Blocked — check browser settings" : "Enable notifications on this device",
+      disabled: perm === "denied" || undefined,
+      onclick: async (ev) => {
+        const b = ev.currentTarget;
+        b.disabled = true; b.textContent = "Enabling…";
+        try {
+          await enablePushOnThisDevice();
+          toast("Notifications enabled on this device", "ok");
+          paintNotificationsSettings();
+        } catch (e) {
+          toast(e.message || "Couldn't enable notifications", "err");
+          b.disabled = false; b.textContent = "Enable notifications on this device";
+        }
+      }
+    }));
+    body.appendChild(el("button", {
+      class: "btn btn-ghost", text: "Send me a test notification", style: "margin-left:8px",
+      onclick: async (ev) => {
+        const b = ev.currentTarget;
+        b.disabled = true;
+        try { await api("/admin/api/push/test", { method: "POST" }); toast("Test sent — check this device", "ok"); }
+        catch (e) { toast(e.message, "err"); }
+        b.disabled = false;
+      }
+    }));
+    card.appendChild(body);
+    box.appendChild(card);
+  }
+
+  async function enablePushOnThisDevice() {
+    if (typeof Notification === "undefined") throw new Error("Notifications aren't supported in this browser");
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") throw new Error("Permission was not granted");
+    const cfg = await api("/admin/public-config");
+    if (!cfg.vapid_public_key) throw new Error("Push isn't set up on the server yet");
+    const reg = await navigator.serviceWorker.register("/admin/sw.js", { scope: "/admin/" });
+    await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(cfg.vapid_public_key)
+      });
+    }
+    const subJson = sub.toJSON();
+    await api("/admin/api/push/subscribe", {
+      method: "POST",
+      body: { endpoint: subJson.endpoint, keys: subJson.keys, user_agent: navigator.userAgent }
+    });
+  }
+
+  function urlBase64ToUint8Array(base64url) {
+    const pad = "=".repeat((4 - (base64url.length % 4)) % 4);
+    const base64 = (base64url + pad).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = atob(base64);
+    const out = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+
+  function deviceLabel(ua) {
+    if (!ua) return "This device";
+    if (/ipad/i.test(ua)) return "iPad";
+    if (/iphone/i.test(ua)) return "iPhone";
+    if (/android/i.test(ua)) return "Android";
+    if (/macintosh/i.test(ua)) return "Mac";
+    if (/windows/i.test(ua)) return "Windows";
+    return "This device";
+  }
+
+  function paintNotifDevicesCard(box, devices) {
+    clear(box);
+    const card = el("div", { class: "card" });
+    card.appendChild(el("div", { class: "card-head" }, [
+      el("h2", { text: "Your devices" }),
+      el("span", { class: "count-badge", text: devices.length + (devices.length === 1 ? " device" : " devices") })
+    ]));
+    if (devices.length === 0) {
+      card.appendChild(el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "📱" }),
+        el("div", { text: "No devices registered yet — use the button above on each phone or computer you want alerts on." })
+      ]));
+    } else {
+      const scroll = el("div", { class: "table-scroll" });
+      const t = el("table", { class: "data" });
+      t.appendChild(el("thead", {}, el("tr", {}, [th("Device"), th("Registered"), th("Last used"), th("")])));
+      const tb = el("tbody");
+      devices.forEach((d) => {
+        tb.appendChild(el("tr", {}, [
+          el("td", { text: deviceLabel(d.user_agent) }),
+          el("td", { text: d.created_at || "—" }),
+          el("td", { text: d.last_success_at || "Not yet" }),
+          el("td", {}, el("button", {
+            class: "btn btn-quiet btn-sm", text: "Remove",
+            onclick: async (ev) => {
+              if (!confirm("Remove this device from your notifications?")) return;
+              const b = ev.currentTarget; b.disabled = true;
+              try {
+                await api("/admin/api/push/unsubscribe", { method: "POST", body: { id: d.id } });
+                toast("Device removed", "ok");
+                paintNotificationsSettings();
+              } catch (e) { toast(e.message, "err"); b.disabled = false; }
+            }
+          }))
+        ]));
+      });
+      t.appendChild(tb);
+      scroll.appendChild(t);
+      card.appendChild(scroll);
+    }
+    box.appendChild(card);
+  }
+
+  function paintNotifPrefsCard(box, prefs) {
+    clear(box);
+    const card = el("div", { class: "card" });
+    card.appendChild(el("div", { class: "card-head" }, [el("h2", { text: "What to notify me about" })]));
+    const body = el("div", { class: "pref-list", style: "padding:18px" });
+    PREF_GROUPS.forEach((pair) => {
+      const key = pair[0], label = pair[1];
+      const cb = el("input", { type: "checkbox" });
+      cb.checked = prefs[key] !== false;
+      cb.addEventListener("change", async () => {
+        const patch = {}; patch[key] = cb.checked;
+        try { await api("/admin/api/notification-preferences", { method: "PUT", body: patch }); }
+        catch (e) { toast(e.message, "err"); cb.checked = !cb.checked; }
+      });
+      body.appendChild(el("label", { class: "pref-row" }, [cb, el("span", { text: label })]));
+    });
+    card.appendChild(body);
+    box.appendChild(card);
+  }
+
+  /* ======================================================================
      boot
      ====================================================================== */
   async function boot() {
@@ -4027,11 +4701,56 @@
       const teamNav = $("#nav-team");
       if (teamNav) teamNav.style.display = me.role === "owner" ? "" : "none";
       showApp();
-      go("bookings");
+
+      // Register the service worker proactively (migrations/0032 PWA/push
+      // build) — this plus the manifest link (build.mjs) are the two things
+      // a browser needs to consider /admin installable; actually SUBSCRIBING
+      // to push is a separate, explicit step (the Notifications settings
+      // card's "Enable" button) since that needs a permission prompt. Never
+      // fatal to boot — unsupported/insecure contexts (http://, or no SW
+      // support at all) just mean the install/push features sit unused.
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/admin/sw.js", { scope: "/admin/" }).catch(() => { /* surfaced for real in the Notifications card if it matters */ });
+      }
+
+      // Non-fatal: a failure here must never block boot (same reasoning as
+      // every other "report, don't throw" contract in this codebase) — the
+      // bell badge just stays at 0 if this fails.
+      let unread = 0;
+      try {
+        const n = await api("/admin/api/notifications?unread=1");
+        unread = (n.notifications || []).length;
+      } catch (e) { /* non-fatal */ }
+      updateNotifBadge(unread);
+
+      // A push notification's deep link (e.g. "#/bookings/b_123") always
+      // wins over the default landing view.
+      const link = parseDeepLink(location.hash);
+      if (link) { await applyDeepLink(link); return; }
+
+      // Mobile (incl. standalone/Home-Screen installs, where matchMedia's
+      // width check alone can't be trusted on an iPad) lands on Today;
+      // desktop is unchanged.
+      const isMobile = (window.matchMedia && window.matchMedia("(max-width: 900px)").matches) ||
+        window.navigator.standalone === true ||
+        (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+      go(isMobile ? "today" : "bookings");
     } catch (e) {
       if (e.message === "unauthenticated") showLogin();
       else { showLogin(); toast(e.message, "err"); }
     }
+  }
+
+  // A notificationclick on an ALREADY-OPEN tab (sw.js focuses it rather than
+  // opening a second one) can't change this page's own location.hash from
+  // inside the service worker — it posts the target back here instead.
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.addEventListener("message", (event) => {
+      if (event.data && event.data.type === "wogo-notification-click") {
+        const link = parseDeepLink((event.data.url || "").replace(/^\/admin/, ""));
+        if (link) applyDeepLink(link);
+      }
+    });
   }
 
   boot();

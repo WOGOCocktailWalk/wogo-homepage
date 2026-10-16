@@ -273,6 +273,37 @@ export function addDaysToDateStr(dateStr, days) {
   return d.toISOString().slice(0, 10);
 }
 
+const NOTIFY_DOW_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const NOTIFY_MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** 'YYYY-MM-DD' -> 'Thu 23 Oct' — the short date label used in push/dashboard
+ * notification bodies (src/notifications.js). Same English weekday/month
+ * abbreviations the dashboard already shows everywhere else (admin.js's own
+ * DOW/MONTHS arrays) — only the surrounding copy switches to Dutch for
+ * these owner-facing alerts, matching the exact "{weekday d mmm} · {slot} ·
+ * {party} gasten · ..." shape BUILD specified. */
+export function formatNotificationDate(dateStr) {
+  const day = Number(dateStr.slice(8, 10));
+  const month = Number(dateStr.slice(5, 7)) - 1;
+  return `${NOTIFY_DOW_SHORT[isoWeekday(dateStr) - 1]} ${day} ${NOTIFY_MONTH_SHORT[month]}`;
+}
+
+/**
+ * The authoritative format for a notification deep link's hash fragment —
+ * "#/bookings/:id", "#/inquiries/:id", "#/giftcards/:code", or bare
+ * "#/notifications" (no id). Every notification's `url` column
+ * (migrations/0032) is `/admin/` + one of these; `src/admin/admin.js` has a
+ * hand-copied duplicate of this exact regex (it's an inlined, non-module
+ * <script> — see that file's own doc comment for why it can't literally
+ * import this) — keep the two in lockstep if the format ever changes. This
+ * is the one under test; that's the contract admin.js's copy must match.
+ */
+export function parseAdminDeepLink(hash) {
+  const m = /^#\/(bookings|inquiries|giftcards|notifications)(?:\/([^/?#]+))?$/.exec(hash || '');
+  if (!m) return null;
+  return { view: m[1], id: m[2] ? decodeURIComponent(m[2]) : null };
+}
+
 /** Days-in-month for a 'YYYY-MM' string. */
 function daysInMonth(monthStr) {
   const [y, m] = monthStr.split('-').map(Number);
@@ -462,7 +493,17 @@ export function computeBarArrivals(route, routesBars, dateOverridesForDate, book
     // payload (admin-authored JSON, no DB column) won't have it, so it falls
     // back to 'nl' here too — every override written so far is a Dutch bar.
     const locale = b.locale === 'en' ? 'en' : 'nl';
-    return { bar_name: b.bar_name, bar_email: b.bar_email, arrival_time, locale };
+    // migrations/0033: a routes_bars row's own id, carried through so a
+    // caller can match this arrival back to an add-on's `bar_id`
+    // (src/webhook.js:notifyBars filters each booking's add-on lines down
+    // to only the ones this exact bar owns). A one-off 'alternate_bars'
+    // date-override payload (admin-authored JSON, no DB row) has no id —
+    // `b.id` is undefined there, so this normalizes to null, same as it
+    // already does for locale above; an add-on can never be "owned" by an
+    // alternate-bars override bar, so that case always correctly matches
+    // nothing.
+    const bar_id = b.id ?? null;
+    return { bar_id, bar_name: b.bar_name, bar_email: b.bar_email, arrival_time, locale };
   });
 }
 
@@ -705,6 +746,24 @@ export function formatMoney(cents, currency) {
  * prefer formatMoney(cents, route.currency) for anything route-specific. */
 export function formatEuros(cents) {
   return formatMoney(cents, 'EUR');
+}
+
+/**
+ * The short "+ 2× Bites" (or "+ 2× Bites +1" for several distinct items)
+ * suffix a push/dashboard notification body appends when a booking carries
+ * add-ons (migrations/0033) — src/webhook.js's booking_new/booking_moved
+ * notifications. Returns '' for an empty/missing array, so the overwhelming
+ * majority of bookings (no add-ons) get byte-for-byte the same notification
+ * body as before this feature existed. Only the FIRST line item is spelled
+ * out by name (keeping the body short); any further distinct line items are
+ * counted, not named.
+ */
+export function summarizeAddonsForNotification(lines) {
+  if (!Array.isArray(lines) || lines.length === 0) return '';
+  const first = lines[0];
+  const name = first.name_snapshot_en || first.name_snapshot_nl || 'extra';
+  const extra = lines.length > 1 ? ` +${lines.length - 1}` : '';
+  return ` · + ${first.qty}× ${name}${extra}`;
 }
 
 // ---------------------------------------------------------------------------

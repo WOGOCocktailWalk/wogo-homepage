@@ -32,6 +32,7 @@ const schemaSql = [
   '0014_weekday_capacity.sql', '0015_weekday_bars.sql',
   '0018_gift_cards.sql', '0019_gift_card_redemptions.sql',
   '0022_bar_locale.sql', '0025_admin_users.sql', '0027_booking_utm.sql', '0028_bookings_email_lower_index.sql', '0029_route_booking_cutoff.sql',
+  '0032_push_notifications.sql', '0033_addons.sql',
 ].map((n) => readFileSync(path.join(__dirname, `../migrations/${n}`), 'utf8')).join('\n');
 
 function exec(db, sql, params = {}) {
@@ -491,6 +492,47 @@ describe('handleGiftCardPurchaseCompleted', () => {
     await handleGiftCardPurchaseCompleted({ DB: db }, session, { database: realDb, sendTransactional: async () => {} });
     const row = db.prepare('SELECT COUNT(*) AS n FROM bookings').bind().first();
     assert.equal(row.n, 0);
+  });
+
+  // -------------------------------------------------------------------------
+  // Dashboard push notification (migrations/0032) — fired exactly once per
+  // real sale, gated on actually MINTING the card, not on the recipient/
+  // buyer email outcome below (so a redelivered webhook — the idempotent
+  // "already minted, reuse it" path above — never double-notifies).
+  // -------------------------------------------------------------------------
+  test('mints a gift card and creates exactly one giftcard_sold notification', async () => {
+    const session = {
+      id: 'cs_gift_notif_1', currency: 'eur',
+      metadata: {
+        type: 'giftcard', amount_cents: '6000',
+        buyer_name: 'Buyer Bea', buyer_email: 'buyer@example.com',
+        recipient_name: 'Rita Recipient', recipient_email: 'rita@example.com', locale: 'en',
+      },
+    };
+    await handleGiftCardPurchaseCompleted({ DB: db }, session, { database: realDb, sendTransactional: async () => {} });
+    const card = await realDb.getGiftCardByStripeSession(db, 'cs_gift_notif_1');
+    const notifs = await realDb.listNotifications(db, { limit: 10 });
+    const n = notifs.find((row) => row.kind === 'giftcard_sold');
+    assert.ok(n, 'expected a giftcard_sold notification');
+    assert.match(n.title, /€60,00/);
+    assert.match(n.body, /Buyer Bea/);
+    assert.match(n.body, /Rita Recipient/);
+    assert.equal(n.url, `/admin/#/giftcards/${card.code}`);
+  });
+
+  test('a redelivered event for the SAME purchase session does not create a second notification', async () => {
+    const session = {
+      id: 'cs_gift_notif_2', currency: 'eur',
+      metadata: {
+        type: 'giftcard', amount_cents: '3000',
+        buyer_name: 'B', buyer_email: 'b@example.com',
+        recipient_name: 'R', recipient_email: 'r@example.com', locale: 'en',
+      },
+    };
+    await handleGiftCardPurchaseCompleted({ DB: db }, session, { database: realDb, sendTransactional: async () => {} });
+    await handleGiftCardPurchaseCompleted({ DB: db }, session, { database: realDb, sendTransactional: async () => {} });
+    const notifs = await realDb.listNotifications(db, { limit: 10 });
+    assert.equal(notifs.filter((row) => row.kind === 'giftcard_sold').length, 1);
   });
 });
 

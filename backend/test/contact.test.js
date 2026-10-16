@@ -25,7 +25,7 @@ const schemaSql = [
   '0011_currency_timezone.sql', '0012_map_url_nl.sql',
   '0014_weekday_capacity.sql', '0015_weekday_bars.sql',
   '0018_gift_cards.sql', '0019_gift_card_redemptions.sql', '0021_inquiries.sql',
-  '0022_bar_locale.sql', '0025_admin_users.sql',
+  '0022_bar_locale.sql', '0025_admin_users.sql', '0032_push_notifications.sql',
 ].map((n) => readFileSync(path.join(__dirname, `../migrations/${n}`), 'utf8')).join('\n');
 
 function validContactBody(overrides = {}) {
@@ -269,5 +269,41 @@ describe('GET /admin/api/inquiries', () => {
     const body = await res.json();
     assert.equal(body.inquiries.length, 2);
     assert.equal(body.inquiries[0].email, 'second@example.com', 'newest first');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Dashboard push notification (migrations/0032) — fired as soon as the
+// inquiry row is saved, independent of the owner/guest email outcome below.
+// ---------------------------------------------------------------------------
+describe('POST /api/contact — dashboard notification', () => {
+  test('a contact message creates an "enquiry" notification with a deep link to it', async () => {
+    const env = { DB: db, BREVO_API_KEY: 'key_x' };
+    const res = await handleContact(contactRequest(validContactBody({ name: 'Anna Guest' })), env);
+    assert.equal(res.status, 200);
+    const { id } = await res.json();
+    const notifs = await realDb.listNotifications(db, { limit: 10 });
+    const n = notifs.find((row) => row.kind === 'enquiry');
+    assert.ok(n, 'expected an enquiry notification');
+    assert.match(n.title, /Contact/);
+    assert.match(n.body, /Anna Guest/);
+    assert.equal(n.url, `/admin/#/inquiries/${id}`);
+  });
+
+  test('a group-booking message is labelled "Groep" in the notification title', async () => {
+    const env = { DB: db, BREVO_API_KEY: 'key_x' };
+    await handleContact(contactRequest(validGroupBody()), env);
+    const notifs = await realDb.listNotifications(db, { limit: 10 });
+    const n = notifs.find((row) => row.kind === 'enquiry');
+    assert.match(n.title, /Groep/);
+  });
+
+  test('the notification still gets created even if both emails fail to send', async () => {
+    global.fetch = async () => { throw new Error('brevo down'); };
+    const env = { DB: db, BREVO_API_KEY: 'key_x' };
+    const res = await handleContact(contactRequest(validContactBody()), env);
+    assert.equal(res.status, 200);
+    const notifs = await realDb.listNotifications(db, { limit: 10 });
+    assert.equal(notifs.filter((row) => row.kind === 'enquiry').length, 1);
   });
 });

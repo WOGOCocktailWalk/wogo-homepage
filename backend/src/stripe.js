@@ -6,7 +6,7 @@
 
 import { SITE_URL, STRIPE_EXPIRES_MINUTES, routePathFor } from './config.js';
 
-export async function createCheckoutSession(env, booking, route) {
+export async function createCheckoutSession(env, booking, route, addons = []) {
   const body = new URLSearchParams();
   body.set('mode', 'payment');
   body.set('client_reference_id', booking.id);
@@ -31,6 +31,23 @@ export async function createCheckoutSession(env, booking, route) {
   body.set('line_items[0][price_data][currency]', String(route.currency || 'EUR').toLowerCase());
   body.set('line_items[0][price_data][unit_amount]', String(route.price_cents));
   body.set('line_items[0][price_data][product_data][name]', `${route.name} — ${booking.date} ${booking.slot}`);
+
+  // Add-ons (migrations/0033) — each gets its OWN Stripe line item (name,
+  // qty, unit price, in the ROUTE's own currency) so the guest's receipt
+  // itemises every extra and its OWN VAT rate is visible as a distinct
+  // charge, separate from the ticket's. `addons` entries are already
+  // server-recomputed-from-the-DB (src/guest_api.js:handleBook) — never the
+  // client's own numbers. Product name is locale-aware, matching the same
+  // `booking.locale` the Checkout UI language (`locale` field, above) and
+  // the guest's eventual confirmation email both use.
+  addons.forEach((addon, i) => {
+    const idx = i + 1; // line_items[0] is always the ticket
+    const name = booking.locale === 'nl' ? addon.name_snapshot_nl : addon.name_snapshot_en;
+    body.set(`line_items[${idx}][quantity]`, String(addon.qty));
+    body.set(`line_items[${idx}][price_data][currency]`, String(addon.currency || route.currency || 'EUR').toLowerCase());
+    body.set(`line_items[${idx}][price_data][unit_amount]`, String(addon.unit_price_cents));
+    body.set(`line_items[${idx}][price_data][product_data][name]`, name || 'Extra');
+  });
 
   // Gift-card redemption (migrations/0018/0019) — SEPARATE mechanism from the
   // marketing `allow_promotion_codes` above: a one-time Stripe coupon for the

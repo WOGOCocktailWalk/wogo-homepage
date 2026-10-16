@@ -106,6 +106,20 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       status_form: "%s at %t selected. Enter your details to book.",
       step_date: "Date", step_time: "Time", step_details: "Details",
       placeholder_note: "Live booking opens when this city launches.",
+      /* Add-ons (migrations/0033) — the skippable "make it a night out?"
+         upsell panel. Only ever rendered when the route actually has an
+         active add-on to offer (GET /api/routes' has_addons flag) — a route
+         with none skips every one of these strings entirely. */
+      addons_title: "Make it a night out?",
+      addons_subtitle: "Optional extras from the bars on your route — skip this if you like.",
+      addons_skip: "Skip — nothing here is required to book.",
+      addons_each: "each",
+      addons_total: "Extras total",
+      addon_notes: "Allergies or dietary needs?",
+      addon_notes_ph: "Let the kitchen know about any allergies or dietary needs…",
+      err_addon_sold_out: "Sorry, one of your extras just sold out for this time. Please adjust your order.",
+      err_addon_cutoff: "It's too late to add that extra to this booking — the kitchen needs more notice.",
+      err_addon_unavailable: "One of the selected extras is no longer available. Please remove it and try again.",
     },
     nl: {
       price_from: "Vanaf", per_person: "per persoon",
@@ -152,6 +166,16 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       status_form: "%s om %t geselecteerd. Vul je gegevens in om te boeken.",
       step_date: "Datum", step_time: "Tijd", step_details: "Gegevens",
       placeholder_note: "Online boeken opent zodra deze stad live gaat.",
+      addons_title: "Maak er een avond van?",
+      addons_subtitle: "Optionele extra's van de bars op jouw route — sla dit gerust over.",
+      addons_skip: "Overslaan — niets hier is verplicht om te boeken.",
+      addons_each: "per stuk",
+      addons_total: "Totaal extra's",
+      addon_notes: "Allergieën of dieetwensen?",
+      addon_notes_ph: "Laat de keuken weten over allergieën of dieetwensen…",
+      err_addon_sold_out: "Helaas, een van je extra's is net uitverkocht voor dit tijdstip. Pas je bestelling aan.",
+      err_addon_cutoff: "Het is te laat om deze extra toe te voegen — de keuken heeft meer tijd nodig.",
+      err_addon_unavailable: "Een van de gekozen extra's is niet meer beschikbaar. Verwijder deze en probeer opnieuw.",
     },
   };
 
@@ -678,6 +702,17 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       const maxParty = Math.min(this.route.max_party, this.selectedSlot.seats_left);
       const panel = el("div", "wc-panel");
 
+      // Add-ons (migrations/0033) — fresh state per slot selection. this.addons
+      // stays [] (and this.addonsHost stays an empty, un-appended-to div —
+      // see loadAddons' early return) for the overwhelming majority of
+      // routes, which never fetch GET /api/addons at all (gated below on
+      // route.has_addons) — the flow is byte-for-byte unchanged for them.
+      this._addons = [];
+      this._addonQty = {};
+      this._addonCardSyncs = [];
+      this._addonNotesInput = null;
+      this._addonsSubtotalEl = null;
+
       // Reassurance at the moment of commitment: what the ticket includes,
       // right between the chosen time and the party-size step.
       panel.appendChild(this.renderIncludes());
@@ -711,14 +746,26 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
         minus.disabled = this.party <= 1;
         plus.disabled = this.party >= maxParty;
         hint.textContent = this.party >= maxParty ? fmt(t.max_reached, { "%n": maxParty }) : "";
-        if (this.totalEl) this.totalEl.innerHTML =
-          `${t.total} <b>${money(this.route.price_cents * this.party, this.route.currency)}</b>`;
+        // Add-ons: a smaller party can shrink a per_person cap below an
+        // already-chosen quantity — reclamp every card, then recompute the
+        // combined total (ticket + extras).
+        this.reclampAddonQty();
+        this.syncAddonNotesVisibility();
+        this.updateGrandTotal();
       };
       minus.addEventListener("click", () => { if (this.party > 1) { this.party--; syncParty(); } });
       plus.addEventListener("click", () => { if (this.party < maxParty) { this.party++; syncParty(); } });
       stepper.appendChild(minus); stepper.appendChild(val); stepper.appendChild(plus);
       pf.appendChild(stepper); pf.appendChild(hint);
       panel.appendChild(pf);
+
+      // Add-ons host — a fixed, EMPTY placeholder positioned here (after
+      // party size, before the contact fields) regardless of when the async
+      // GET /api/addons fetch below resolves. Nothing is appended to the
+      // DOM at all for a route with no active add-ons (loadAddons returns
+      // before touching this node) — "byte-for-byte as today".
+      this.addonsHost = el("div", "wc-addons-host");
+      panel.appendChild(this.addonsHost);
 
       // name
       this.nameInput = this.textField(panel, "wc-name", t.name, "text", t.name_ph, "name");
@@ -755,6 +802,166 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       this.setStep(2); // details step
       syncParty();
       this.nameInput.el.focus();
+
+      // Add-ons (migrations/0033): fire-and-forget, AFTER the panel is
+      // already live in the DOM — the addons host is already correctly
+      // positioned (right after party size), so filling it in asynchronously
+      // doesn't shift anything the guest has already started reading/typing.
+      // Gated on route.has_addons (GET /api/routes) so a route with none
+      // never calls GET /api/addons at all — not just "renders nothing".
+      if (this.route && this.route.has_addons) {
+        this.loadAddons();
+      }
+    }
+
+    /* ---- add-ons (migrations/0033) ----------------------------------------- */
+
+    async loadAddons() {
+      let addons = [];
+      try {
+        const url = `${this.api}/api/addons?route=${encodeURIComponent(this.routeId)}&date=${encodeURIComponent(this.selectedDate)}&slot=${encodeURIComponent(this.selectedSlot.slot)}`;
+        const res = await this._fetch(url);
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && Array.isArray(data.addons)) addons = data.addons;
+      } catch (e) { /* a failed add-ons fetch must never block booking */ }
+      // The guest may have already moved past this slot (back button, a
+      // slower network) by the time this resolves — bail if the host this
+      // fetch was for is no longer the live one.
+      if (!this.addonsHost || !this.addonsHost.isConnected) return;
+      this._addons = addons;
+      if (addons.length === 0) return; // nothing to offer — host stays empty
+      this.renderAddonsPanel(addons);
+    }
+
+    renderAddonsPanel(addons) {
+      const t = this.t;
+      const host = this.addonsHost;
+      const wrap = el("div", "wc-addons");
+      wrap.appendChild(el("div", "wc-addons-title", t.addons_title));
+      wrap.appendChild(el("div", "wc-addons-subtitle", t.addons_subtitle));
+      const list = el("div", "wc-addons-list");
+      addons.forEach((addon) => {
+        this._addonQty[addon.id] = 0;
+        list.appendChild(this.renderAddonCard(addon));
+      });
+      wrap.appendChild(list);
+      wrap.appendChild(el("div", "wc-addons-skip", t.addons_skip));
+      this._addonsSubtotalEl = el("div", "wc-addons-subtotal");
+      wrap.appendChild(this._addonsSubtotalEl);
+      host.appendChild(wrap);
+      this.updateAddonsSubtotal();
+    }
+
+    renderAddonCard(addon) {
+      const t = this.t;
+      const lang = currentLang(this.mount, this.lang);
+      const name = (lang === "nl" ? (addon.name_nl || addon.name_en) : (addon.name_en || addon.name_nl)) || "";
+      const desc = lang === "nl" ? addon.description_nl : addon.description_en;
+
+      const card = el("div", "wc-addon-card");
+      if (addon.image_url) {
+        const img = document.createElement("img");
+        img.src = addon.image_url; img.alt = ""; img.loading = "lazy";
+        img.className = "wc-addon-img";
+        card.appendChild(img);
+      }
+      const info = el("div", "wc-addon-info");
+      info.appendChild(el("div", "wc-addon-name", name));
+      if (desc) info.appendChild(el("div", "wc-addon-desc", desc));
+      info.appendChild(el("div", "wc-addon-price", `${money(addon.price_cents, addon.currency)} ${t.addons_each}`));
+      card.appendChild(info);
+
+      const stepper = el("div", "wc-stepper wc-addon-stepper");
+      stepper.setAttribute("role", "group");
+      stepper.setAttribute("aria-label", name);
+      const minus = el("button", "wc-step-btn", "−"); minus.type = "button"; minus.setAttribute("aria-label", "−");
+      const val = el("div", "wc-step-val"); val.setAttribute("aria-live", "polite"); val.textContent = "0";
+      const plus = el("button", "wc-step-btn", "+"); plus.type = "button"; plus.setAttribute("aria-label", "+");
+      const sync = () => {
+        const qty = this._addonQty[addon.id] || 0;
+        val.textContent = String(qty);
+        minus.disabled = qty <= 0;
+        plus.disabled = qty >= this.addonCapFor(addon);
+      };
+      minus.addEventListener("click", () => {
+        if ((this._addonQty[addon.id] || 0) > 0) {
+          this._addonQty[addon.id]--; sync(); this.onAddonQtyChanged();
+        }
+      });
+      plus.addEventListener("click", () => {
+        if ((this._addonQty[addon.id] || 0) < this.addonCapFor(addon)) {
+          this._addonQty[addon.id] = (this._addonQty[addon.id] || 0) + 1; sync(); this.onAddonQtyChanged();
+        }
+      });
+      stepper.appendChild(minus); stepper.appendChild(val); stepper.appendChild(plus);
+      card.appendChild(stepper);
+
+      this._addonCardSyncs.push(sync);
+      sync();
+      return card;
+    }
+
+    /* Per-addon quantity ceiling: per_person caps at the current party size,
+       per_booking caps at 1 — either way ALSO capped by the add-on's own
+       max_qty_per_booking, and by remaining_qty (capacity left for this
+       exact slot) when the server reported a finite one. Mirrors the exact
+       same cap logic src/guest_api.js:handleBook enforces server-side —
+       this is only the UX ceiling; the server never trusts it. */
+    addonCapFor(addon) {
+      const unitCap = addon.unit === "per_booking" ? 1 : this.party;
+      let cap = Math.min(unitCap, addon.max_qty_per_booking);
+      if (addon.remaining_qty != null) cap = Math.min(cap, addon.remaining_qty);
+      return Math.max(0, cap);
+    }
+
+    reclampAddonQty() {
+      (this._addons || []).forEach((a) => {
+        const cap = this.addonCapFor(a);
+        if ((this._addonQty[a.id] || 0) > cap) this._addonQty[a.id] = cap;
+      });
+      (this._addonCardSyncs || []).forEach((fn) => fn());
+    }
+
+    onAddonQtyChanged() {
+      this.updateAddonsSubtotal();
+      this.syncAddonNotesVisibility();
+      this.updateGrandTotal();
+    }
+
+    addonsTotalCents() {
+      return (this._addons || []).reduce((sum, a) => sum + (this._addonQty[a.id] || 0) * a.price_cents, 0);
+    }
+
+    updateAddonsSubtotal() {
+      if (!this._addonsSubtotalEl) return;
+      const total = this.addonsTotalCents();
+      this._addonsSubtotalEl.innerHTML = total > 0
+        ? `${this.t.addons_total} <b>${money(total, this.route.currency)}</b>`
+        : "";
+    }
+
+    /* The ONE total the guest actually pays — ticket + every extra combined.
+       Replaces the old party-stepper-only total calc (same wc-total node). */
+    updateGrandTotal() {
+      if (!this.totalEl) return;
+      const grand = this.route.price_cents * this.party + this.addonsTotalCents();
+      this.totalEl.innerHTML = `${this.t.total} <b>${money(grand, this.route.currency)}</b>`;
+    }
+
+    /* The dietary/allergy field appears the MOMENT any FOOD add-on has
+       qty > 0 — never before, and it disappears again the moment the last
+       food item is removed (its typed value is discarded with it; nothing
+       lingers to accidentally submit once hidden). Reuses textareaField's
+       exact label/error contract and 500-char maxlength. */
+    syncAddonNotesVisibility() {
+      const anyFood = (this._addons || []).some((a) => a.is_food && (this._addonQty[a.id] || 0) > 0);
+      if (anyFood && !this._addonNotesInput) {
+        this._addonNotesInput = this.textareaField(this.addonsHost, "wc-addon-notes", this.t.addon_notes, this.t.addon_notes_ph);
+      } else if (!anyFood && this._addonNotesInput) {
+        const wrap = this._addonNotesInput.el.parentNode;
+        if (wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap);
+        this._addonNotesInput = null;
+      }
     }
 
     textField(parent, id, label, type, placeholder, autocomplete) {
@@ -849,6 +1056,22 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
         locale: currentLang(this.mount, this.lang), marketing_opt_in: !!this.optIn.checked,
       };
       if (giftCode) payload.gift_code = giftCode;
+      // Add-ons (migrations/0033) — ONLY present on the request at all when
+      // at least one was actually picked (qty > 0). A route with no active
+      // add-ons (addonsHost never fetched/populated) or a guest who picked
+      // nothing ends up with NO `addons` key and NO `addon_notes` key on
+      // the body whatsoever — byte-for-byte the same POST /api/book this
+      // widget sent before this feature existed. The server recomputes
+      // every price/cost/VAT from its own DB row (src/guest_api.js) — only
+      // addon_id + qty travel here.
+      const chosenAddons = (this._addons || [])
+        .map((a) => ({ addon_id: a.id, qty: this._addonQty[a.id] || 0 }))
+        .filter((a) => a.qty > 0);
+      if (chosenAddons.length > 0) {
+        payload.addons = chosenAddons;
+        const addonNotes = this._addonNotesInput ? this._addonNotesInput.el.value.trim() : "";
+        if (addonNotes) payload.addon_notes = addonNotes;
+      }
       // UTM / source capture (BUILD §19 Marketing pass) — every field is
       // optional server-side; a booking with none of them is simply
       // "Direct / unknown" in the dashboard's Sales-by-source breakdown.
@@ -870,6 +1093,21 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
           // refresh the day's slots so the numbers are honest again
           try { const s = await this.loadSlots(this.selectedDate); this.slots = s.closed ? [] : (s.slots || []); this.selectedSlot = null; this.renderSlots(); } catch (e) { /* noop */ }
           this.flashError(t.err_soldout);
+          return;
+        }
+        // Add-ons (migrations/0033): a race lost between the widget's own
+        // GET /api/addons read and this submit (someone else took the last
+        // unit, or the cutoff passed mid-form) — the seat hold itself was
+        // already released server-side, so simply re-enable the button and
+        // let the guest adjust their extras (or remove them) and retry.
+        if ((res.status === 409 || res.status === 400) &&
+            ["addon_sold_out", "addon_cutoff_passed", "addon_not_found"].includes(data.error)) {
+          book.disabled = false; book.textContent = original;
+          const msg = data.error === "addon_cutoff_passed" ? t.err_addon_cutoff
+            : data.error === "addon_not_found" ? t.err_addon_unavailable
+            : t.err_addon_sold_out;
+          this.flashError(msg);
+          this.announce(msg);
           return;
         }
         // Rate limiter: "too many attempts" is a wait-and-retry situation, not a

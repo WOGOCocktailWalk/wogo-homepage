@@ -3,7 +3,8 @@
 import { verifyStripeSignature } from './stripe.js';
 import { sendTransactional } from './brevo.js';
 import { sendPurchaseEvent } from './meta.js';
-import { computeBarArrivals, extractDiscount } from './logic.js';
+import { computeBarArrivals, extractDiscount, analyticsRevenueCents, formatNotificationDate, formatEuros, summarizeAddonsForNotification } from './logic.js';
+import { notifyAdmins } from './notifications.js';
 import {
   renderGuestConfirmation,
   renderOwnerNotification,
@@ -116,18 +117,25 @@ export async function handleWebhook(request, env, deps = {}) {
         const route = await database.getRoute(env.DB, booking.route_id);
 
         if (route) {
+          // Add-ons (migrations/0033) — fetched ONCE here and threaded into
+          // every one of this booking's confirmation-moment emails below
+          // (guest, every bar, owner) — [] for the overwhelming majority of
+          // bookings, so every one of those renders byte-for-byte as before
+          // this feature existed.
+          const addonLines = await database.getAddonsForBooking(env.DB, booking.id);
+
           // Each send now goes through sendWithRetry (owner audit item #12):
           // it never throws (same contract `safe()` gave every call site here),
           // and on failure queues to failed_email instead of just logging+
           // dropping it, so a Brevo blip gets a few automatic retries before
           // anyone needs to notice.
-          await sendGuestConfirmationEmails(env, booking, route, { database, sendTransactional: brevoSend });
+          await sendGuestConfirmationEmails(env, booking, route, { database, sendTransactional: brevoSend, addons: addonLines });
 
-          const arrivals = await notifyBars(env, booking, route, { database, computeBarArrivals: computeBars, sendTransactional: brevoSend });
+          const arrivals = await notifyBars(env, booking, route, { database, computeBarArrivals: computeBars, sendTransactional: brevoSend, addons: addonLines });
 
           if (result.status === 'confirmed') {
             // Owner/internal "new booking" copy (Dashboard v2 §8.4).
-            const mail = renderOwnerNotification(booking, route, { arrivals });
+            const mail = renderOwnerNotification(booking, route, { arrivals, addons: addonLines });
             await sendWithRetry(env, { to: OWNER_NOTIFY_EMAIL, subject: mail.subject, htmlContent: mail.html }, { database, sendTransactional: brevoSend, kind: 'owner_notification' });
           }
 
@@ -158,6 +166,29 @@ export async function handleWebhook(request, env, deps = {}) {
           );
 
           await safe(() => metaSend(env, booking, route));
+
+          // Dashboard push notification (BUILD: PWA/push build, migrations/
+          // 0032) — a new confirmed sale, replacing the Wix app notification
+          // the owner is losing at cutover. notifyAdmins never throws (see
+          // its own doc comment) so this is called directly, same contract
+          // as sendWithRetry above — no extra safe() wrapper needed.
+          const totalCents = analyticsRevenueCents({
+            price_cents: route.price_cents, party: booking.party,
+            discount_cents: booking.discount_cents, gift_applied_cents: booking.gift_applied_cents,
+            source: booking.source, payment_status: booking.payment_status,
+          });
+          // migrations/0033: a short "+ 2× Bites" suffix when the booking
+          // carries add-ons, so the push tickle itself (not just the inbox
+          // mails above) tells the owner there's something extra to prep —
+          // omitted entirely for the overwhelming majority of bookings.
+          const addonSummary = summarizeAddonsForNotification(addonLines);
+          await notifyAdmins(env, {
+            kind: 'booking_new',
+            title: `💸 Nieuwe boeking — ${route.name}`,
+            body: `${formatNotificationDate(booking.date)} · ${booking.slot} · ${booking.party} gasten · ${formatEuros(totalCents)} · ${booking.name}${addonSummary}`,
+            url: `/admin/#/bookings/${booking.id}`,
+            booking_id: booking.id,
+          }, { database });
         }
       }
     }
@@ -197,13 +228,25 @@ export async function notifyBars(env, booking, route, deps = {}) {
   const database = deps.database || deps.db || db;
   const computeBars = deps.computeBarArrivals || computeBarArrivals;
   const brevoSend = deps.sendTransactional || sendTransactional;
+  // migrations/0033: every add-on line item on this booking, if the caller
+  // already fetched them (webhook.js's confirm flow does, once, and passes
+  // the same array to every email it sends for this booking) — [] otherwise,
+  // so a caller that never heard of add-ons (any existing deps-injection
+  // test) gets byte-for-byte the old behaviour.
+  const allAddons = Array.isArray(deps.addons) ? deps.addons : [];
 
   const bars = await database.listBarsForDate(env.DB, booking.route_id, booking.date);
   const overridesForDate = await database.listOverridesForDate(env.DB, booking.route_id, booking.date);
   const arrivals = computeBars(route, bars, overridesForDate, booking);
 
   for (const bar of arrivals) {
-    const mail = renderBarNotification(bar, booking, route);
+    // ONLY this bar's own add-ons — a bar that doesn't own any of this
+    // booking's items must never see them (owner requirement, SPEC.md
+    // add-ons §). bar.bar_id is null for a one-off 'alternate_bars'
+    // date-override bar (no DB row to own anything), so it correctly
+    // matches nothing there too.
+    const barAddons = bar.bar_id ? allAddons.filter((a) => a.bar_id === bar.bar_id) : [];
+    const mail = renderBarNotification(bar, booking, route, { addons: barAddons });
     await sendWithRetry(env, { to: bar.bar_email, subject: mail.subject, htmlContent: mail.html }, { database, sendTransactional: brevoSend, kind: 'bar_notification' });
   }
   return arrivals;
@@ -230,7 +273,11 @@ export async function sendGuestConfirmationEmails(env, booking, route, deps = {}
     console.warn(`route ${route.id} has no map_url/map_url_nl set — confirmation goes out without a route-map section`);
   }
 
-  const mail = renderGuestConfirmation(booking, route, { locale });
+  // migrations/0033: the guest sees every add-on on their own booking
+  // (unlike a bar, which only sees its own) — [] when the caller never
+  // fetched any, same as every other deps default in this file.
+  const addons = Array.isArray(deps.addons) ? deps.addons : [];
+  const mail = renderGuestConfirmation(booking, route, { locale, addons });
   await sendWithRetry(env, { to: booking.email, subject: mail.subject, htmlContent: mail.html }, { database, sendTransactional: brevoSend, kind: 'guest_confirmation' });
 }
 
@@ -253,6 +300,11 @@ export async function notifyBarsReschedule(env, booking, route, deps = {}) {
   const computeBars = deps.computeBarArrivals || computeBarArrivals;
   const brevoSend = deps.sendTransactional || sendTransactional;
   const previous = deps.previous || {};
+  // migrations/0033: add-ons move WITH the booking — same rows, same
+  // booking_id, just re-read against the booking's NEW date/slot (the admin
+  // endpoint already re-validated cutoff/capacity for the new slot before
+  // this ever runs — see src/admin_api.js:handleRescheduleBooking).
+  const allAddons = Array.isArray(deps.addons) ? deps.addons : [];
 
   const newBars = await database.listBarsForDate(env.DB, booking.route_id, booking.date);
   const overridesForNewDate = await database.listOverridesForDate(env.DB, booking.route_id, booking.date);
@@ -275,8 +327,10 @@ export async function notifyBarsReschedule(env, booking, route, deps = {}) {
 
   for (const bar of newArrivals) {
     const oldBar = oldArrivalByEmail.get(bar.bar_email);
+    const barAddons = bar.bar_id ? allAddons.filter((a) => a.bar_id === bar.bar_id) : [];
     const mail = renderBarReschedule(bar, booking, route, {
       previous: { date: previous.date, arrival_time: oldBar ? oldBar.arrival_time : undefined },
+      addons: barAddons,
     });
     await sendWithRetry(env, { to: bar.bar_email, subject: mail.subject, htmlContent: mail.html }, { database, sendTransactional: brevoSend, kind: 'bar_reschedule' });
   }
@@ -308,7 +362,7 @@ export async function sendGuestRescheduleEmail(env, booking, route, opts = {}, d
   const database = deps.database || deps.db || db;
   const brevoSend = deps.sendTransactional || sendTransactional;
   const locale = booking.locale === 'nl' ? 'nl' : 'en';
-  const mail = renderGuestReschedule(booking, route, { locale, previous: opts.previous });
+  const mail = renderGuestReschedule(booking, route, { locale, previous: opts.previous, addons: opts.addons });
   await sendWithRetry(env, { to: booking.email, subject: mail.subject, htmlContent: mail.html }, { database, sendTransactional: brevoSend, kind: 'guest_reschedule' });
 }
 
@@ -342,6 +396,7 @@ export async function handleGiftCardPurchaseCompleted(env, session, deps = {}) {
   const md = session.metadata || {};
 
   let giftCard = await database.getGiftCardByStripeSession(env.DB, session.id);
+  let justMinted = false;
   if (!giftCard) {
     const amountCents = Number(md.amount_cents) || Number(session.amount_total) || 0;
     giftCard = await database.createGiftCard(env.DB, {
@@ -355,6 +410,20 @@ export async function handleGiftCardPurchaseCompleted(env, session, deps = {}) {
       stripe_session: session.id,
       locale: md.locale === 'nl' ? 'nl' : 'en',
     });
+    justMinted = true;
+  }
+
+  // Dashboard push notification (BUILD: PWA/push build, migrations/0032) —
+  // gated on justMinted, NOT on `giftCard.recipient_email`/etc below, so a
+  // redelivered webhook for the SAME purchase session (idempotent re-find
+  // above) never fires a second "sold" notification for one real sale.
+  if (justMinted) {
+    await notifyAdmins(env, {
+      kind: 'giftcard_sold',
+      title: `🎁 Cadeaubon verkocht — ${formatEuros(giftCard.initial_cents)}`,
+      body: `${giftCard.buyer_name || giftCard.buyer_email} → ${giftCard.recipient_name || giftCard.recipient_email || giftCard.buyer_name}`,
+      url: `/admin/#/giftcards/${giftCard.code}`,
+    }, { database });
   }
 
   if (giftCard.recipient_email) {

@@ -28,7 +28,7 @@ const schemaSql = [
   '0008_failed_email.sql', '0009_webhook_processing_status.sql', '0010_booking_notes.sql',
   '0011_currency_timezone.sql', '0012_map_url_nl.sql',
   '0014_weekday_capacity.sql', '0015_weekday_bars.sql',
-  '0022_bar_locale.sql', '0025_admin_users.sql',
+  '0022_bar_locale.sql', '0025_admin_users.sql', '0032_push_notifications.sql', '0033_addons.sql',
 ].map((n) => readFileSync(path.join(__dirname, `../migrations/${n}`), 'utf8')).join('\n');
 
 function exec(db_, sql, params = {}) {
@@ -512,5 +512,47 @@ describe('handleCancelBooking', () => {
     assert.equal(first.status, 200);
     const second = await handleCancelBooking(adminRequest(`/admin/api/bookings/${booking.id}/cancel`, {}), env, { id: booking.id });
     assert.equal(second.status, 409);
+  });
+
+  // -------------------------------------------------------------------------
+  // Dashboard push notifications (migrations/0032) — cancel/move both create
+  // a broadcast notification row carrying a deep link back to the booking.
+  // -------------------------------------------------------------------------
+
+  test('cancelling a booking creates a booking_cancelled notification with a deep link', async () => {
+    const booking = await makeConfirmed({ id: 'b_notif_cancel', date: TODAY, slot: '18:00', party: 2, name: 'Noor' });
+    const env = { DB: sqliteDb };
+    const res = await handleCancelBooking(adminRequest(`/admin/api/bookings/${booking.id}/cancel`, {}), env, { id: booking.id });
+    assert.equal(res.status, 200);
+    const notifs = await db.listNotifications(sqliteDb, { limit: 10 });
+    const n = notifs.find((row) => row.kind === 'booking_cancelled' && row.booking_id === booking.id);
+    assert.ok(n, 'expected a booking_cancelled notification');
+    assert.match(n.body, /Noor/);
+    assert.equal(n.url, `/admin/#/bookings/${booking.id}`);
+    assert.equal(n.read_at, null);
+  });
+
+  test('moving a booking creates a booking_moved notification; a no-op move creates none', async () => {
+    const booking = await makeConfirmed({ id: 'b_notif_move', date: TODAY, slot: '18:00', party: 2, name: 'Bram' });
+    const env = { DB: sqliteDb };
+    const res = await handleRescheduleBooking(
+      adminRequest(`/admin/api/bookings/${booking.id}/reschedule`, { date: TOMORROW, slot: '19:00' }),
+      env, { id: booking.id }
+    );
+    assert.equal(res.status, 200);
+    const notifs = await db.listNotifications(sqliteDb, { limit: 10 });
+    const n = notifs.find((row) => row.kind === 'booking_moved' && row.booking_id === booking.id);
+    assert.ok(n, 'expected a booking_moved notification');
+    assert.match(n.body, /Bram/);
+
+    // a same-date/slot "move" is a no-op (admin_api.js's own doc comment) —
+    // must not spam a second notification for nothing actually changing.
+    const before = (await db.listNotifications(sqliteDb, { limit: 50 })).length;
+    await handleRescheduleBooking(
+      adminRequest(`/admin/api/bookings/${booking.id}/reschedule`, { date: TOMORROW, slot: '19:00' }),
+      env, { id: booking.id }
+    );
+    const after = (await db.listNotifications(sqliteDb, { limit: 50 })).length;
+    assert.equal(after, before, 'a no-op move must not create a second notification');
   });
 });

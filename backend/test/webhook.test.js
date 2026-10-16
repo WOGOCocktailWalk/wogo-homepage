@@ -78,6 +78,10 @@ describe('handleWebhook — full flow with mocked db/stripe/brevo/meta', () => {
       listBarsForDate: overrides.listBarsForDate || (async () => (overrides.listBars ? overrides.listBars() : [])),
       listOverridesForDate: overrides.listOverridesForDate || (async () => []),
       cancelIfHold: overrides.cancelIfHold || (async () => true),
+      // migrations/0033: webhook.js's confirm flow fetches this once per
+      // booking — [] (no add-ons) for every existing test here unless a
+      // test explicitly overrides it.
+      getAddonsForBooking: overrides.getAddonsForBooking || (async () => []),
       _brevoLog: brevoLog,
     };
   }

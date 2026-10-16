@@ -44,6 +44,7 @@ const schemaSql = [
   '0011_currency_timezone.sql', '0012_map_url_nl.sql',
   '0014_weekday_capacity.sql', '0015_weekday_bars.sql',
   '0022_bar_locale.sql', '0025_admin_users.sql', '0029_route_booking_cutoff.sql',
+  '0033_addons.sql',
 ].map(migration).join('\n');
 
 function exec(db, sql, params = {}) {
@@ -535,7 +536,13 @@ describe('handleLogin — Turnstile gate (config-gated, inert until TURNSTILE_SE
 
   test('GET /admin/public-config exposes the site key only when configured (never the secret key)', async () => {
     const res1 = await handlePublicConfig({}, {});
-    assert.deepEqual(await res1.json(), { turnstile_site_key: null });
+    const body1 = await res1.json();
+    assert.equal(body1.turnstile_site_key, null);
+    // vapid_public_key (migrations/0032) is a committed non-secret constant
+    // — always present, never the secret half (VAPID_PRIVATE_KEY is a
+    // Worker SECRET, never read by this handler at all).
+    assert.equal(typeof body1.vapid_public_key, 'string');
+    assert.ok(body1.vapid_public_key.length > 0);
     const res2 = await handlePublicConfig({}, { TURNSTILE_SITE_KEY: 'pk_live_abc', TURNSTILE_SECRET_KEY: 'sk_live_should_never_appear' });
     const body2 = await res2.json();
     assert.equal(body2.turnstile_site_key, 'pk_live_abc');
@@ -571,7 +578,9 @@ describe('index.js — full request wiring', () => {
   test('GET /admin/public-config bypasses the session guard (the login form needs it pre-login)', async () => {
     const res = await worker.fetch(new Request('https://api.example.com/admin/public-config'), {}, { waitUntil: () => {} });
     assert.equal(res.status, 200);
-    assert.deepEqual(await res.json(), { turnstile_site_key: null });
+    const body = await res.json();
+    assert.equal(body.turnstile_site_key, null);
+    assert.equal(typeof body.vapid_public_key, 'string');
   });
 
   test('every other /admin/api/* route still requires a session', async () => {
