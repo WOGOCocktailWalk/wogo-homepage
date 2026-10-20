@@ -19,6 +19,7 @@ import path from 'node:path';
 import { makeTestDb } from './sqlite-d1-adapter.js';
 import worker, { router } from '../src/index.js';
 import { ROUTE_ROLES, resolveSession } from '../src/admin_api.js';
+import { adminResponse } from '../src/admin/assets.js';
 import { createSessionCookieValue, COOKIE_NAME, roleAtLeast, sha256Hex } from '../src/auth.js';
 import * as db from '../src/db.js';
 import { toPositional } from '../src/db.js';
@@ -395,6 +396,50 @@ describe('magic-link lifecycle', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Sign-out (BUILD item 6: must clear the session cleanly from BOTH login
+// types — a personal magic-link session and the shared ADMIN_TOKEN session).
+// ---------------------------------------------------------------------------
+
+describe('POST /admin/logout — clears the session for both login types', () => {
+  test('a personal (magic-link) session cookie no longer authenticates after logout', async () => {
+    const env = BASE_ENV(testDb);
+    const user = await db.createAdminUser(testDb, { id: 'admuser_lo1', email: 'lo1@example.com', name: 'LO1', role: 'staff', status: 'active' });
+    const cookie = await cookieHeaderFor({ uid: user.id, role: user.role, email: user.email });
+
+    const before = await worker.fetch(req('GET', '/admin/api/me', { cookie }), env, CTX);
+    assert.equal(before.status, 200);
+
+    const logoutRes = await worker.fetch(req('POST', '/admin/logout', { cookie }), env, CTX);
+    assert.equal(logoutRes.status, 200);
+    const clearedCookie = logoutRes.headers.get('Set-Cookie');
+    assert.ok(clearedCookie, 'logout must set a clearing Set-Cookie header');
+
+    // The browser would now send the CLEARED cookie value back (an expired/
+    // emptied one) — simulate that round-trip rather than just re-sending
+    // the old live cookie, which would prove nothing about the clear itself.
+    const clearedCookieHeader = clearedCookie.split(';')[0];
+    const after = await worker.fetch(req('GET', '/admin/api/me', { cookie: clearedCookieHeader }), env, CTX);
+    assert.equal(after.status, 401);
+  });
+
+  test('the shared ADMIN_TOKEN session cookie no longer authenticates after logout', async () => {
+    const env = BASE_ENV(testDb);
+    const loginRes = await worker.fetch(req('POST', '/admin/login', { body: { token: 'emergency-token' } }), env, CTX);
+    const cookie = loginRes.headers.get('Set-Cookie').split(';')[0];
+
+    const before = await worker.fetch(req('GET', '/admin/api/me', { cookie }), env, CTX);
+    assert.equal(before.status, 200);
+
+    const logoutRes = await worker.fetch(req('POST', '/admin/logout', { cookie }), env, CTX);
+    assert.equal(logoutRes.status, 200);
+    const clearedCookieHeader = logoutRes.headers.get('Set-Cookie').split(';')[0];
+
+    const after = await worker.fetch(req('GET', '/admin/api/me', { cookie: clearedCookieHeader }), env, CTX);
+    assert.equal(after.status, 401);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Owner-only user management: invite, update, last-owner protection.
 // ---------------------------------------------------------------------------
 
@@ -533,5 +578,53 @@ describe('migrations/0025_admin_users.sql', () => {
       .filter((line) => line.startsWith('INSERT OR IGNORE') || line.startsWith("VALUES ('admuser_owner"))
       .join('\n');
     assert.doesNotThrow(() => testDb._raw.exec(seedOnly));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Login screen UI (src/admin/admin.html + admin.js, built into assets.js by
+// build.mjs). The admin dashboard has NO jsdom/puppeteer harness in this
+// suite — everything above is server-side. Rather than bolt on a heavy
+// browser test harness for one screen, these are light smoke assertions on
+// the SERVED page (the exact bytes a browser gets from GET /admin) that
+// would fail if a future edit to admin.html/admin.js forgets to re-run
+// `node src/admin/build.mjs`, or silently drops one of the two login paths.
+// ---------------------------------------------------------------------------
+
+describe('admin login screen — served HTML (assets.js, built by build.mjs)', () => {
+  test('email (magic-link) is the primary, visible form; the access code is present but collapsed by default', async () => {
+    const html = await adminResponse().text();
+    // Email form present and NOT hidden.
+    assert.match(html, /id="email-login-form"(?![^>]*\bhidden\b)[^>]*>/);
+    assert.match(html, /id="login-email"/);
+    assert.match(html, /Send me a login link/);
+    // Access code form still exists (the emergency route must keep working)
+    // but is marked hidden by default, and the token field itself is intact.
+    assert.match(html, /id="code-login-form"[^>]*\bhidden\b/);
+    assert.match(html, /id="admin-token"/);
+    assert.match(html, /Use an access code instead/);
+  });
+
+  test('the confirmation state never names a specific outcome and states the 15-minute expiry', async () => {
+    const html = await adminResponse().text();
+    assert.match(html, /id="login-confirm"[^>]*\bhidden\b/); // collapsed until a request succeeds
+    assert.doesNotMatch(html, /account (exists|found)|no account|unknown email/i);
+    assert.match(html, /15 minutes/); // footnote + the confirmation copy template both promise this
+  });
+
+  test('a dead magic link (?state=invalid, from handleLoginLinkMagic\'s redirect) has on-screen copy to explain it', async () => {
+    const html = await adminResponse().text();
+    assert.match(html, /expired or was already used/);
+  });
+
+  test('the bundled admin.js wires up both submit paths and the push card\'s "log in with your email" escape hatch', async () => {
+    const html = await adminResponse().text();
+    assert.match(html, /email-login-form.*addEventListener\("submit"/s);
+    assert.match(html, /code-login-form.*addEventListener\("submit"/s);
+    assert.match(html, /\/admin\/login\/request/);
+    assert.match(html, /Log in with your email instead/);
+    // Sidebar identity: a token session says so plainly (why push is
+    // unavailable); a personal session shows the real email.
+    assert.match(html, /Shared access code/);
   });
 });
