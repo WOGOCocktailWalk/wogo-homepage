@@ -4,20 +4,49 @@
 
   <!-- ================= LOGIN ================= -->
   <section class="login-wrap" id="login-view">
-    <form class="login-card" id="login-form" autocomplete="off">
+    <div class="login-card" id="login-card">
       <div class="login-mark">WO<span>G</span>O</div>
-      <p class="login-sub">Booking control room · owner access</p>
-      <div class="login-error" id="login-error" role="alert" aria-live="assertive"></div>
-      <div class="field">
-        <label for="admin-token">Admin token</label>
-        <input type="password" id="admin-token" name="token" autocomplete="current-password"
-               placeholder="Paste your admin token" required />
+      <p class="login-sub">Booking control room</p>
+
+      <!-- Email / magic link — PRIMARY path -->
+      <form id="email-login-form" autocomplete="off">
+        <div class="login-error" id="email-login-error" role="alert" aria-live="assertive"></div>
+        <div class="field">
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" name="email" autocomplete="email" inputmode="email"
+                 placeholder="you@wogoamsterdam.com" required />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="send-link-btn">Send me a login link</button>
+      </form>
+
+      <!-- Confirmation state, shown after a successful request -->
+      <div class="login-confirm" id="login-confirm" hidden>
+        <div class="login-confirm-icon">📩</div>
+        <p id="login-confirm-text"></p>
+        <p class="capacity-hint" style="text-align:center;margin:0 0 18px;">
+          On iPhone: open the link from Mail — it signs you in inside Safari. iPhone only copies that sign-in into the WOGO Home Screen app at the moment you add it, so tap Share → Add to Home Screen right after (or remove and re-add the WOGO icon if it's already there) to carry the sign-in across.
+        </p>
+        <button type="button" class="btn btn-ghost btn-block" id="login-confirm-back">Use a different email</button>
       </div>
-      <button type="submit" class="btn btn-primary btn-block" id="login-btn">Sign in</button>
-      <p class="login-sub" style="margin-top:16px;margin-bottom:0;font-size:12px;">
-        Your token is the long random secret stored in your Cloudflare account. It never leaves this device.
+
+      <button type="button" class="login-alt-toggle" id="code-toggle">Use an access code instead</button>
+
+      <!-- Shared access code — SECONDARY, collapsed, still works exactly as before -->
+      <form class="login-code-wrap" id="code-login-form" autocomplete="off" hidden>
+        <div class="login-error" id="login-error" role="alert" aria-live="assertive"></div>
+        <div class="field">
+          <label for="admin-token">Access code</label>
+          <input type="password" id="admin-token" name="token" autocomplete="current-password"
+                 placeholder="Paste the shared access code" required />
+        </div>
+        <button type="submit" class="btn btn-ghost btn-block" id="login-btn">Sign in with access code</button>
+        <button type="button" class="login-alt-toggle" id="code-back-toggle">← Use email instead</button>
+      </form>
+
+      <p class="login-sub" id="login-footnote" style="margin-top:16px;margin-bottom:0;font-size:12px;">
+        We'll email you a one-time login link, valid for 15 minutes. It never leaves this device.
       </p>
-    </form>
+    </div>
   </section>
 
   <!-- ================= APP ================= -->

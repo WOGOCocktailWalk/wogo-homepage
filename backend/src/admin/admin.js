@@ -120,33 +120,159 @@
     setTimeout(() => { t.style.opacity = "0"; t.style.transition = "opacity .3s"; setTimeout(() => t.remove(), 320); }, 2600);
   }
 
-  /* ---------- auth ------------------------------------------------------ */
-  function showLogin() {
+  /* ---------- auth -------------------------------------------------------
+     Email (magic-link) is the PRIMARY path (BUILD: owner + Selin both need
+     a personal login to register push on their own phones — the shared
+     access code has no admin_users row behind it, so push can never work
+     there, see the Notifications card below). The access code stays as a
+     secondary, collapsed "emergency" path and keeps working exactly as
+     before — same /admin/login endpoint, same lockout behaviour. */
+  function resetLoginView() {
+    $("#login-confirm").hidden = true;
+    $("#email-login-form").hidden = false;
+    $("#code-toggle").hidden = false;
+    $("#code-login-form").hidden = true;
+    $("#email-login-error").classList.remove("show");
+    $("#login-error").classList.remove("show");
+  }
+  // A dead magic link (expired / already used / a since-disabled user —
+  // src/admin_api.js:handleLoginLinkMagic) 302s here with ?state=invalid on
+  // a real page load, not a SPA transition, so this has to be read from the
+  // URL once at script start, BEFORE boot()'s first (failing) /admin/api/me
+  // call routes into showLogin() below. The query param is scrubbed from the
+  // address bar immediately (so a later refresh/share of the URL doesn't
+  // resurrect it), but the in-memory flag is deliberately NOT cleared on the
+  // first showLogin() call — boot()'s own 401 handling calls showLogin()
+  // more than once in a row on a failed boot (once inside api()'s 401
+  // branch per rejected call, once again in boot()'s catch), and clearing
+  // eagerly meant only the first of those calls kept the notice, so it
+  // visibly flashed on then off before the user could read it. A short
+  // timer survives that whole cascade; a showLogin() minutes later (e.g. an
+  // unrelated session timeout) no longer resurrects a stale notice.
+  let pendingInvalidLinkNotice = false;
+  (function consumeInvalidLinkState() {
+    const params = new URLSearchParams(location.search);
+    if (params.get("state") !== "invalid") return;
+    pendingInvalidLinkNotice = true;
+    params.delete("state");
+    const qs = params.toString();
+    history.replaceState(null, "", location.pathname + (qs ? "?" + qs : "") + location.hash);
+    setTimeout(() => { pendingInvalidLinkNotice = false; }, 5000);
+  })();
+  function showLogin(prefillEmail) {
     $("#app-view").classList.remove("show");
     $("#login-view").style.display = "grid";
-    setTimeout(() => { const i = $("#admin-token"); if (i) i.focus(); }, 60);
+    resetLoginView();
+    if (pendingInvalidLinkNotice) {
+      const errBox = $("#email-login-error");
+      errBox.textContent = "That link has expired or was already used — enter your email below for a fresh one.";
+      errBox.classList.add("show");
+    }
+    if (prefillEmail) $("#login-email").value = prefillEmail;
+    setTimeout(() => { const i = $("#login-email"); if (i) i.focus(); }, 60);
   }
   function showApp() {
     $("#login-view").style.display = "none";
     $("#app-view").classList.add("show");
   }
 
-  $("#login-form").addEventListener("submit", async (e) => {
+  /** Bare fetch (not the shared api() helper — that treats every 401 as
+   * "please log in", which is meaningless while we're already ON the
+   * login screen, and would swallow the server's real error message). */
+  async function postJsonRaw(path, body) {
+    const res = await fetch(API + path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Requested-With": "wogo-admin" },
+      body: JSON.stringify(body),
+      credentials: "same-origin"
+    });
+    let data = null;
+    try { data = await res.json(); } catch (e) { /* noop */ }
+    return { status: res.status, data: data || {} };
+  }
+
+  $("#email-login-form").addEventListener("submit", async (e) => {
     e.preventDefault();
+    const btn = $("#send-link-btn"), errBox = $("#email-login-error");
+    const email = $("#login-email").value.trim();
+    errBox.classList.remove("show");
+    if (!email) return;
+    btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const { status, data } = await postJsonRaw("/admin/login/request", { email });
+      if (status === 429) {
+        errBox.textContent = "Too many attempts, please wait a few minutes.";
+        errBox.classList.add("show");
+      } else if (status >= 400) {
+        errBox.textContent = data.message || "Please check the email address and try again.";
+        errBox.classList.add("show");
+      } else {
+        // Server ALWAYS replies {ok:true} here whether or not the address
+        // exists (enumeration-safe by design, src/admin_api.js) — so the
+        // confirmation copy below never reveals which it was.
+        $("#login-confirm-text").textContent =
+          "Check your inbox — we've sent a login link to " + email + ". It's valid for 15 minutes.";
+        $("#email-login-form").hidden = true;
+        $("#code-toggle").hidden = true;
+        $("#code-login-form").hidden = true;
+        $("#login-confirm").hidden = false;
+      }
+    } catch (err) {
+      errBox.textContent = "Couldn't reach the server — check your connection and try again.";
+      errBox.classList.add("show");
+    } finally {
+      btn.disabled = false; btn.textContent = "Send me a login link";
+    }
+  });
+
+  $("#login-confirm-back").addEventListener("click", () => {
+    resetLoginView();
+    $("#login-email").focus();
+  });
+
+  $("#code-toggle").addEventListener("click", () => {
+    $("#email-login-form").hidden = true;
+    $("#code-toggle").hidden = true;
+    $("#code-login-form").hidden = false;
+    $("#admin-token").focus();
+  });
+  $("#code-back-toggle").addEventListener("click", (e) => {
+    e.preventDefault();
+    resetLoginView();
+    $("#login-email").focus();
+  });
+
+  $("#code-login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    // Deliberately a raw fetch (postJsonRaw), NOT the shared api() helper —
+    // api() treats any 401 as "please log in" and calls showLogin(), which
+    // would reset this very screen back to the email-primary view and bury
+    // the "wrong code" message we're about to show.
     const btn = $("#login-btn"), errBox = $("#login-error");
     const token = $("#admin-token").value.trim();
     errBox.classList.remove("show");
     if (!token) return;
     btn.disabled = true; btn.textContent = "Signing in…";
     try {
-      await api("/admin/login", { method: "POST", body: { token } });
-      $("#admin-token").value = "";
-      await boot();
+      const { status, data } = await postJsonRaw("/admin/login", { token });
+      if (status === 200) {
+        $("#admin-token").value = "";
+        await boot();
+      } else if (status === 401) {
+        errBox.textContent = "That code isn’t right. Check and try again.";
+        errBox.classList.add("show");
+      } else if (status === 429) {
+        errBox.textContent = "Too many attempts, please wait a few minutes.";
+        errBox.classList.add("show");
+      } else {
+        errBox.textContent = data.message || "Something went wrong. Try again.";
+        errBox.classList.add("show");
+      }
     } catch (err) {
-      errBox.textContent = err.message === "unauthenticated" ? "That token isn’t right. Check and try again." : err.message;
+      errBox.textContent = "Couldn't reach the server — check your connection and try again.";
       errBox.classList.add("show");
     } finally {
-      btn.disabled = false; btn.textContent = "Sign in";
+      btn.disabled = false; btn.textContent = "Sign in with access code";
     }
   });
 
@@ -4487,7 +4613,17 @@
       card.appendChild(el("div", { class: "card-head" }, [el("h2", { text: "Notifications" })]));
       card.appendChild(el("div", { class: "empty" }, [
         el("div", { class: "big", text: "🔒" }),
-        el("div", { text: "Push notifications are tied to a personal login. Sign out and sign back in with your own emailed login link (not the shared admin token) to register this device." })
+        el("div", { text: "Push notifications are tied to a personal login. You're currently signed in with the shared access code, which has no personal device list behind it — sign out and sign back in with your own emailed login link to register this device." }),
+        el("button", {
+          class: "btn btn-primary", style: "margin-top:14px",
+          text: "Log in with your email instead →",
+          onclick: async () => {
+            let lastEmail = null;
+            try { lastEmail = localStorage.getItem("wogo_admin_last_email"); } catch (e) { /* noop */ }
+            try { await api("/admin/logout", { method: "POST" }); } catch (e) { /* noop */ }
+            showLogin(lastEmail || undefined);
+          }
+        })
       ]));
       root.appendChild(card);
       return;
@@ -4693,7 +4829,22 @@
       S.me = me;
       assignColors();
       const who = $("#who");
-      if (who) who.textContent = me.name ? (me.name + " · " + me.role) : ("Signed in · " + me.role);
+      if (who) {
+        // Personal login (a real admin_users row behind it, me.uid set) —
+        // show WHO, not just the role, so it's obvious this device can
+        // register push (see the Notifications card). A token session
+        // (me.uid null, see auth.js's doc comment) has no personal identity
+        // at all — say so plainly, that's exactly why push is unavailable.
+        who.textContent = me.uid
+          ? (me.name ? (me.name + " (" + me.email + ")") : me.email) + " · " + me.role
+          : "Shared access code · " + me.role;
+      }
+      // Remember the last personal email used on this device (not the
+      // shared access code) — lets the push card's "log in with your email
+      // instead" action below pre-fill the email field after signing out.
+      if (me.uid && me.email) {
+        try { localStorage.setItem("wogo_admin_last_email", me.email); } catch (e) { /* noop — private mode etc. */ }
+      }
       // Hide owner-only UI affordances client-side (the REAL control is the
       // server's ROUTE_ROLES table — a staff/viewer user hitting the Team
       // nav button directly would still just get a 403 from every request
