@@ -605,7 +605,7 @@
       <div class="w-hero-overline" data-i18n="hero_eyebrow">The perfect gift</div>
       <h1 data-i18n="hero_h1">Give a Cocktail Walk Gift Card</h1>
       <!-- Dash-free punch under the SEO h1 (§1a: the "—" ban) -->
-      <p class="w-hero-sub" data-i18n="hero_sub">A night out they'll remember. In their inbox in minutes.</p>
+      <p class="w-hero-sub" data-i18n="hero_sub">A night out they'll remember.<br>In their inbox in minutes.</p>
       <a href="#tiers" class="w-hero-cta w-scroll" data-i18n="hero_cta">Buy a gift card →</a>
     </div>
     <div class="w-gift-cardwrap">
@@ -638,6 +638,46 @@
      (code + balance) is minted by the webhook once payment completes — see
      backend/src/webhook.js's metadata.type==='giftcard' branch — and emailed
      straight to the recipient; nothing here talks to D1 directly. -->
+<!-- ============================================================
+     SECTION: HOW GIFTING WORKS (#how) — PAGE-EDIT
+     Redemption copy matches today's REAL Wix mechanism: the code
+     is entered at checkout when booking any walk.
+     ============================================================ -->
+<section class="w-section brown w-pad" id="how">
+  <div class="w-head">
+    <div class="w-eyebrow" data-i18n="how_eyebrow">How it works</div>
+    <h2 data-i18n="how_h2">From your inbox to their night out</h2>
+    <p data-i18n="how_p">Three steps. The planning is our job, not theirs.</p>
+  </div>
+  <div class="w-steps-wrap wg-stagger">
+
+    <div class="w-stepcard">
+      <div class="w-stepcard-num" aria-hidden="true">1</div>
+      <div class="w-stepcard-body">
+        <h3><span class="w-stepcard-ico" aria-hidden="true">💳</span><span data-i18n="g1_h">Choose an amount</span></h3>
+        <p data-i18n="g1_p">Pick €30, €60, €100 or your own amount.</p>
+      </div>
+    </div>
+
+    <div class="w-stepcard">
+      <div class="w-stepcard-num" aria-hidden="true">2</div>
+      <div class="w-stepcard-body">
+        <h3><span class="w-stepcard-ico" aria-hidden="true">✍️</span><span data-i18n="g2_h">Add a message, check out</span></h3>
+        <p data-i18n="g2_p">Write a personal note and pay securely in seconds.</p>
+      </div>
+    </div>
+
+    <div class="w-stepcard">
+      <div class="w-stepcard-num" aria-hidden="true">3</div>
+      <div class="w-stepcard-body">
+        <h3><span class="w-stepcard-ico" aria-hidden="true">📧</span><span data-i18n="g3_h">They get a code by email</span></h3>
+        <p data-i18n="g3_p">Delivered in minutes — redeemable on any route, any city.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
 <section class="w-section w-pad" id="tiers">
   <div class="w-head">
     <div class="w-eyebrow" data-i18n="tiers_eyebrow">Choose an amount</div>
@@ -648,20 +688,20 @@
     <div class="w-tier" data-tier="3000">
       <div class="w-tier-amt">€30</div>
       <div class="w-tier-sub" data-i18n="tier1_sub">Gift card</div>
-      <div class="w-tier-benefit"><span aria-hidden="true">✨</span><span data-i18n="tier1_b">Toward a walk</span></div>
+      <div class="w-tier-benefit"><span aria-hidden="true">✨</span><span data-i18n="tier1_b">A cocktail walk for one</span></div>
       <button type="button" class="w-tier-btn" data-i18n="tier_btn">Buy this card →</button>
     </div>
     <div class="w-tier" data-tier="6000">
       <span class="w-tier-popular" data-i18n="tier2_popular">Most popular</span>
       <div class="w-tier-amt">€60</div>
       <div class="w-tier-sub" data-i18n="tier2_sub">Gift card</div>
-      <div class="w-tier-benefit"><span aria-hidden="true">🍸</span><span data-i18n="tier2_b">A cocktail walk for one</span></div>
+      <div class="w-tier-benefit"><span aria-hidden="true">🍸</span><span data-i18n="tier2_b">A night out for two</span></div>
       <button type="button" class="w-tier-btn" data-i18n="tier_btn">Buy this card →</button>
     </div>
     <div class="w-tier" data-tier="10000">
       <div class="w-tier-amt">€100</div>
       <div class="w-tier-sub" data-i18n="tier3_sub">Gift card</div>
-      <div class="w-tier-benefit"><span aria-hidden="true">👥</span><span data-i18n="tier3_b">A night out for two</span></div>
+      <div class="w-tier-benefit"><span aria-hidden="true">👥</span><span data-i18n="tier3_b">A cocktail walk for three</span></div>
       <button type="button" class="w-tier-btn" data-i18n="tier_btn">Buy this card →</button>
     </div>
     <!-- CUSTOM AMOUNT tile — 4th in the grid. Any value €10–€500 (matches the
@@ -702,45 +742,6 @@
   </div>
 </section>
 
-<!-- ============================================================
-     SECTION: HOW GIFTING WORKS (#how) — PAGE-EDIT
-     Redemption copy matches today's REAL Wix mechanism: the code
-     is entered at checkout when booking any walk.
-     ============================================================ -->
-<section class="w-section brown w-pad" id="how">
-  <div class="w-head">
-    <div class="w-eyebrow" data-i18n="how_eyebrow">How it works</div>
-    <h2 data-i18n="how_h2">From your inbox to their night out</h2>
-    <p data-i18n="how_p">Three steps. The planning is our job, not theirs.</p>
-  </div>
-  <div class="w-steps-wrap wg-stagger">
-
-    <div class="w-stepcard">
-      <div class="w-stepcard-num" aria-hidden="true">1</div>
-      <div class="w-stepcard-body">
-        <h3><span class="w-stepcard-ico" aria-hidden="true">💳</span><span data-i18n="g1_h">Choose an amount</span></h3>
-        <p data-i18n="g1_p">Pick €30, €60, €100 or your own amount.</p>
-      </div>
-    </div>
-
-    <div class="w-stepcard">
-      <div class="w-stepcard-num" aria-hidden="true">2</div>
-      <div class="w-stepcard-body">
-        <h3><span class="w-stepcard-ico" aria-hidden="true">✍️</span><span data-i18n="g2_h">Add a message, check out</span></h3>
-        <p data-i18n="g2_p">Write a personal note and pay securely in seconds.</p>
-      </div>
-    </div>
-
-    <div class="w-stepcard">
-      <div class="w-stepcard-num" aria-hidden="true">3</div>
-      <div class="w-stepcard-body">
-        <h3><span class="w-stepcard-ico" aria-hidden="true">📧</span><span data-i18n="g3_h">They get a code by email</span></h3>
-        <p data-i18n="g3_p">Delivered in minutes — redeemable on any route, any city.</p>
-      </div>
-    </div>
-
-  </div>
-</section>
 
 <!-- ============================================================
      SECTION: PERFECT FOR — occasion chip row (leaner than the old
@@ -1118,7 +1119,7 @@
     /* --- hero --- */
     hero_eyebrow: "Het perfecte cadeau",
     hero_h1: "Geef een Cocktail Walk cadeaubon",
-    hero_sub: "Een avond uit die bijblijft. Binnen minuten in de inbox.",
+    hero_sub: "Een avond uit die bijblijft.<br>Binnen minuten in de inbox.",
     hero_cta: "Koop een cadeaubon →",
     /* gift-card mock face */
     gc_label: "Cadeaubon",
@@ -1130,10 +1131,10 @@
     tier1_sub: "Cadeaubon",
     tier2_sub: "Cadeaubon",
     tier3_sub: "Cadeaubon",
-    tier1_b: "Bijna een hele walk",
-    tier2_b: "Een Cocktail Walk voor één",
+    tier1_b: "Een Cocktail Walk voor één",
+    tier2_b: "Een avond uit voor twee",
     tier2_popular: "Meest gekozen",
-    tier3_b: "Een avond uit voor twee",
+    tier3_b: "Een Cocktail Walk voor drie",
     tier_btn: "Koop deze bon →",
     tierc_sub: "Eigen bedrag",
     tierc_b: "Elk bedrag dat je wilt",

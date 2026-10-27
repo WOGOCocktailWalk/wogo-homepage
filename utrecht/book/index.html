@@ -19,7 +19,7 @@
 <title>Book your Utrecht walk | WOGO</title>
 <meta name="robots" content="noindex"> <!-- REMOVE at cutover -->
 <link rel="canonical" href="https://www.wogococktailwalk.com/utrecht/book/">
-<meta name="description" content="The Utrecht cocktail walk is paused until spring 2027. Join the waitlist and be first to hear when our three hidden-gem bars reopen.">
+<meta name="description" content="Book your Utrecht cocktail walk: choose your date and start time. Three hidden-gem bars, three signature cocktails, tables reserved. €29,95 per person.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="WOGO Cocktail Walk">
 <meta property="og:title" content="Book your Utrecht walk | WOGO">
@@ -650,17 +650,9 @@
      ============================================================ -->
 <section class="w-calsec" id="wogo-book">
   <div class="w-pad">
-    <!-- PAUSED: the Utrecht bars are on a winter break, so the booking calendar
-         is replaced by an honest notice + waitlist CTA rather than showing a
-         calendar with no bookable dates. Restore the widget mount + script
-         below when the route reopens (spring 2027). -->
-    <div class="w-paused" role="status">
-      <div class="w-paused-ico" aria-hidden="true">🌙</div>
-      <h2 class="w-paused-h" data-i18n="paused_h">The Utrecht walk is paused until spring 2027</h2>
-      <p class="w-paused-p" data-i18n="paused_p">Our Utrecht bars are taking a winter break, so there are no dates to book right now. Leave your email and we'll tell you first when it reopens.</p>
-      <a href="../../contact/?topic=utrecht-waitlist" class="w-paused-cta" data-i18n="paused_cta">Join the waitlist</a>
-      <p class="w-paused-alt" data-i18n="paused_alt">Can't wait? <a href="../../#cities">Rotterdam, Amsterdam, Delft and Groningen</a> are all running as usual.</p>
-    </div>
+    <link rel="stylesheet" href="../../backend/widget/wogo-calendar.css">
+    <div class="wogo-calendar" data-route="utrecht" data-hide-title="1" data-currency="EUR" data-price-cents="2995" data-max-party="6" data-name="Utrecht City Centre" data-city="Utrecht"></div>
+    <script src="../../backend/widget/wogo-calendar.js" defer></script>
     <div class="w-book-trust">
       <p class="w-book-trustline" data-i18n="bt_trust">★ Trusted by thousands of guests across the Netherlands · Secure payment · 18+</p>
       <details class="w-book-faq">
@@ -1008,10 +1000,6 @@
     "bh_eyebrow": "Utrecht",
     "bh_h1": "De <span class=\"w-book-city\">Utrecht</span>-walk is gepauzeerd",
     "bh_reassure": "Deze walk heeft even winterpauze. Zet jezelf hieronder op de wachtlijst en je hoort als eerste wanneer er weer data zijn.",
-    "paused_h": "De Utrecht-walk is gepauzeerd tot het voorjaar van 2027",
-    "paused_p": "Onze Utrechtse bars hebben winterpauze, dus er zijn nu geen data om te boeken. Laat je e-mail achter en je hoort het als eerste zodra we weer opengaan.",
-    "paused_cta": "Zet me op de wachtlijst",
-    "paused_alt": "Kun je niet wachten? <a href=\"../../#cities\">Rotterdam, Amsterdam, Delft en Groningen</a> lopen gewoon door."
   };
 
   /* ===== SHARED NAV/FOOTER v4 wiring =====
