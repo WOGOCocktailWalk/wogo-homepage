@@ -455,7 +455,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       }
       if (this.route.price_cents) {
         const p = el("div", "wc-price");
-        p.innerHTML = `${this.t.price_from} <b>${money(this.route.price_cents, this.route.currency)}</b> ${this.t.per_person}`;
+        p.innerHTML = `<b>${money(this.route.price_cents, this.route.currency)}</b> ${this.t.per_person}`;
         head.appendChild(p);
       }
       this.card.appendChild(head);
@@ -490,7 +490,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       }
       if (this.route.price_cents) {
         const p = el("div", "wc-price");
-        p.innerHTML = `${this.t.price_from} <b>${money(this.route.price_cents, this.route.currency)}</b> ${this.t.per_person}`;
+        p.innerHTML = `<b>${money(this.route.price_cents, this.route.currency)}</b> ${this.t.per_person}`;
         head.appendChild(p);
       }
       this.card.appendChild(head);
