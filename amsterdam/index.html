@@ -6,7 +6,7 @@
      2026-07 structural pass: /amsterdam/ deleted, see REDIRECT-MAP.md;
      canonical /amsterdam/, breadcrumbs Home › Amsterdam, H1 = the city walk name,
      ticket card + sticky CTA go STRAIGHT to the Wix booking calendar.)
-     Official name: "Amsterdam Route 1" (homepage card c6) · Theme: Iconic
+     Official name: "Amsterdam" (homepage card c6) · Theme: Iconic
      Amsterdam · Slug "ndsm-noord" (SEO-chosen — URL stays as it is).
      Built from the master lean template at /rotterdam/route-2/ — only the
      spots marked "ROUTE-EDIT" differ. The page is 5 sections only — no reviews,
@@ -18,7 +18,7 @@
          delete the flag when the card loses it. No fake scarcity.
        • Route pages carry NO review section and NO review node in the JSON-LD.
        • "Partner of Gemeente Rotterdam" (t_partner) is ROTTERDAM-ONLY — removed.
-       • Booking URL = the EXISTING Wix calendar for Amsterdam Route 1
+       • Booking URL = the EXISTING Wix calendar for Amsterdam
          (booking-calendar/wogo-cocktail-walk-route-1). Never invent URLs.
        • Van de Werf (NDSM wharf) is publicly featured on the live Wix route
          page, so it may be named; the OTHER two bars stay a surprise.
@@ -36,7 +36,7 @@
 <meta name="theme-color" content="#ffaa81">
 <!-- ROUTE-EDIT: title + description + canonical.
      Pattern: {Official Name} — {Theme} Cocktail Walk | WOGO. The official name
-     is the HOMEPAGE ROUTE-CARD name (c1..c7), e.g. "Amsterdam Route 1" — the
+     is the HOMEPAGE ROUTE-CARD name (c1..c7), e.g. "Amsterdam" — the
      theme ("NDSM &amp; Noord") is the subtitle, never dash-glued into the name. -->
 <title>Cocktail Walk Amsterdam | 3 Bars, 1 Night | WOGO</title>
 <meta name="robots" content="noindex"> <!-- REMOVE at cutover -->
@@ -58,10 +58,10 @@
 <meta name="twitter:image" content="https://www.wogococktailwalk.com/amsterdam/amsterdam-hero.jpg">
 <!-- ROUTE-EDIT: structured data — route pages use TouristTrip + Offer (price!)
      + BreadcrumbList (Home > City > Route). "name" is the OFFICIAL route-card
-     name ("Amsterdam Route 1"); "alternateName" carries the theme. Offer.url =
+     name ("Amsterdam"); "alternateName" carries the theme. Offer.url =
      the EXISTING Wix booking calendar. Route pages carry NO review node. -->
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"TouristTrip","name":"Amsterdam Route 1","alternateName":"NDSM & Noord Cocktail Walk","description":"Self-guided Amsterdam cocktail walk: three unique cocktail bars, from an industrial-chic waterfront hotspot on the NDSM wharf in Noord to the city centre. Three signature cocktails or mocktails, tables reserved at every stop, visit the bars in any order at your own pace. Thu\u2013Sat, start between 5.30 and 8pm, 3\u20134 hours.","url":"https://www.wogococktailwalk.com/amsterdam/","image":"https://www.wogococktailwalk.com/amsterdam/amsterdam-hero.jpg","touristType":["Couples","Friends","Colleagues"],"itinerary":{"@type":"ItemList","numberOfItems":3,"itemListElement":[{"@type":"ListItem","position":1,"name":"Van de Werf \u2014 industrial-chic waterfront bar on the NDSM wharf"},{"@type":"ListItem","position":2,"name":"A city-centre cocktail bar (a surprise until you book)"},{"@type":"ListItem","position":3,"name":"A third hand-picked hidden gem (a surprise until you book)"}]},"provider":{"@type":"Organization","name":"WOGO Cocktail Walk","telephone":"+31202101168","email":"info@wogoamsterdam.com","url":"https://www.wogococktailwalk.com/"},"offers":{"@type":"Offer","price":"29.95","priceCurrency":"EUR","availability":"https://schema.org/InStock","url":"https://www.wogococktailwalk.com/amsterdam/book/"}}
+{"@context":"https://schema.org","@type":"TouristTrip","name":"Amsterdam Noord & City Centre","alternateName":"NDSM & Noord Cocktail Walk","description":"Self-guided Amsterdam cocktail walk: three unique cocktail bars, from an industrial-chic waterfront hotspot on the NDSM wharf in Noord to the city centre. Three signature cocktails or mocktails, tables reserved at every stop, visit the bars in any order at your own pace. Thu\u2013Sat, start between 5.30 and 8pm, 3\u20134 hours.","url":"https://www.wogococktailwalk.com/amsterdam/","image":"https://www.wogococktailwalk.com/amsterdam/amsterdam-hero.jpg","touristType":["Couples","Friends","Colleagues"],"itinerary":{"@type":"ItemList","numberOfItems":3,"itemListElement":[{"@type":"ListItem","position":1,"name":"Van de Werf \u2014 industrial-chic waterfront bar on the NDSM wharf"},{"@type":"ListItem","position":2,"name":"A city-centre cocktail bar (a surprise until you book)"},{"@type":"ListItem","position":3,"name":"A third hand-picked hidden gem (a surprise until you book)"}]},"provider":{"@type":"Organization","name":"WOGO Cocktail Walk","telephone":"+31202101168","email":"info@wogoamsterdam.com","url":"https://www.wogococktailwalk.com/"},"offers":{"@type":"Offer","price":"29.95","priceCurrency":"EUR","availability":"https://schema.org/InStock","url":"https://www.wogococktailwalk.com/amsterdam/book/"}}
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.wogococktailwalk.com/"},{"@type":"ListItem","position":2,"name":"Amsterdam","item":"https://www.wogococktailwalk.com/amsterdam/"}]}
@@ -135,7 +135,7 @@
   .w-nav-overlay .w-lang-menu { right: auto; left: 0; }
   .w-hero-content { position: relative; z-index: 2; min-height: 440px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 104px 24px 56px; max-width: 920px; margin: 0 auto; }
   .w-hero-brand { font-size: clamp(18px, 2.6vw, 26px); font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #ffe5d9; line-height: 1; margin-bottom: 8px; }
-  .w-hero h1 { font-size: clamp(28px, 4.6vw, 52px); font-weight: 900; line-height: 1.05; letter-spacing: -0.015em; margin-bottom: 14px; max-width: 18ch; text-shadow: 0 2px 16px rgba(0,0,0,0.45); }
+  .w-hero h1 { font-size: clamp(28px, 4.6vw, 52px); font-weight: 900; line-height: 1.05; letter-spacing: -0.015em; margin-bottom: 14px; max-width: 30ch; text-shadow: 0 2px 16px rgba(0,0,0,0.45); }
   .w-hero p { font-size: clamp(14px, 1.3vw, 18px); font-weight: 500; line-height: 1.5; max-width: 540px; margin-bottom: 22px; opacity: 0.95; }
   .w-hero-cta { display: inline-block; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 15px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform 0.2s, background 0.2s; }
   .w-hero-cta:active, .w-citycard-btn:active, .w-gift-btn:active, .w-group-btn:active, .w-final-btn:active, .w-sticky-cta-btn:active, .w-book-btn:active { transform: scale(0.96); }
@@ -327,8 +327,12 @@
   .w-footer-brand { flex: 1 1 260px; max-width: 340px; }
   .w-footer-word { font-size: 26px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #ffe5d9; margin-bottom: 14px; }
   .w-footer-tag { font-size: 15px; line-height: 1.55; font-weight: 500; color: rgba(245,201,168,0.82); }
-  .w-footer-cols { flex: 2 1 480px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
+  .w-footer-cols { flex: 2 1 460px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .w-footer-contact { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
   .w-footer-col { display: flex; flex-direction: column; gap: 10px; }
+  .w-footer-contact h3 { font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--wogo-cream); margin-bottom: 4px; }
+  .w-footer-contact a, .w-footer-contact span { font-size: 13.5px; font-weight: 500; line-height: 1.4; color: rgba(255,229,217,0.85); text-decoration: none; transition: color 0.2s; }
+  .w-footer-contact a:hover { color: var(--wogo-cream); }
   .w-footer-col h3 { font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #fff; margin-bottom: 4px; }
   .w-footer-col a, .w-footer-col span { font-size: 13.5px; font-weight: 500; line-height: 1.4; color: rgba(245,201,168,0.85); text-decoration: none; transition: color 0.2s; }
   .w-footer-col a:hover { color: #fff; }
@@ -338,7 +342,8 @@
   .w-footer-socials a:hover { background: #ffe5d9; color: #3f2b21; border-color: #ffe5d9; }
   .w-footer-socials a span { font-size: 12px; font-weight: 500; opacity: 0.72; }
   .w-footer-socials a:hover span { opacity: 1; }
-  .w-footer-legal { border-top: 1px solid rgba(245,201,168,0.18); padding: 18px 16px 26px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; font-size: 11.5px; color: rgba(245,201,168,0.66); }
+  /* Centred like the trust bar above it: copyright on one line, legal links under it. */
+  .w-footer-legal { border-top: 1px solid rgba(245,201,168,0.18); padding: 18px 16px 26px; display: flex; flex-direction: column; flex-wrap: wrap; justify-content: center; align-items: center; text-align: center; gap: 8px 16px; font-size: 11.5px; color: rgba(245,201,168,0.66); }
   .w-footer-legal-links { display: flex; flex-wrap: wrap; gap: 4px 14px; }
   .w-footer-legal-links a { color: rgba(245,201,168,0.66); text-decoration: none; }
   .w-footer-legal-links a:hover { color: #fff; text-decoration: underline; }
@@ -500,9 +505,9 @@
   .w-hero-route .w-hero-content { min-height: 640px; align-items: flex-start; text-align: left; max-width: 1120px; padding: 118px 24px 56px; }
   .w-hero-route .w-hero-brand, .w-hero-route .w-crumbs, .w-hero-route .w-eyebrow.w-hero-kicker, .w-hero-route h1 { text-align: left; }
   .w-hero-route .w-hero-trust { justify-content: flex-start; }
-  .w-hero-lead { max-width: 560px; }
+  .w-hero-lead { max-width: 760px; }
   /* V5 lean hero: one salmon subline replaces the old descriptive paragraph */
-  .w-hero-route .w-hero-sub { font-size: clamp(14.5px, 1.6vw, 20px); font-weight: 800; color: #ffaa81; line-height: 1.3; max-width: 22ch; margin: -2px 0 4px; opacity: 1; text-shadow: 0 2px 12px rgba(0,0,0,0.4); }
+  .w-hero-route .w-hero-sub { font-size: clamp(14.5px, 1.6vw, 20px); font-weight: 800; color: #ffaa81; line-height: 1.3; max-width: 52ch; margin: -2px 0 4px; opacity: 1; text-shadow: 0 2px 12px rgba(0,0,0,0.4); }
   /* Left-weighted espresso wash so the blush ticket card + white text stay legible.
      More specific than the V3 .w-hero-overlay rule, so it wins regardless of order. */
   .w-hero-route .w-hero-overlay {
@@ -511,11 +516,11 @@
       linear-gradient(180deg, rgba(32,22,17,0.34) 0%, rgba(32,22,17,0) 34%, rgba(32,22,17,0.42) 100%);
   }
 
-  /* The signature "Tickets include" card — rounded blush panel */
-  .w-ticket { margin-top: 24px; width: 100%; max-width: 460px; background: rgba(255,229,217,0.97); border: 1px solid rgba(63,43,33,0.12); border-radius: 20px; padding: 20px 22px 22px; box-shadow: 0 20px 46px rgba(32,22,17,0.38); color: #3f2b21; }
-  .w-ticket-head { font-size: 11px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #7e5541; margin-bottom: 15px; }
+  /* The signature "Tickets include" card — rounded espresso panel */
+  .w-ticket { margin-top: 24px; width: 100%; max-width: 460px; background: rgba(63,43,33,0.94); border: 1px solid rgba(255,229,217,0.18); border-radius: 20px; padding: 20px 22px 22px; box-shadow: 0 20px 46px rgba(32,22,17,0.42); color: #ffe5d9; }
+  .w-ticket-head { font-size: 11px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,229,217,0.72); margin-bottom: 15px; }
   .w-ticket-rows { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 11px 16px; margin-bottom: 20px; }
-  .w-ticket-row { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 700; color: #3f2b21; line-height: 1.2; }
+  .w-ticket-row { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 700; color: #ffe5d9; line-height: 1.2; }
   .w-ticket-ico { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; background: #fffaf6; display: flex; align-items: center; justify-content: center; font-size: 15px; box-shadow: 0 2px 6px rgba(32,22,17,0.12); }
   .w-ticket-foot { display: flex; align-items: center; gap: 14px; }
   .w-ticket-price { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 90px; height: 90px; border-radius: 50%; background: #ffaa81; box-shadow: 0 8px 18px rgba(242,144,92,0.5); }
@@ -589,7 +594,7 @@
 
     <!-- Right cluster: EN/NL toggle + primary CTA + mobile burger.
          The nav CTA is funnel-aware in target AND label: where it only reaches a
-         route grid it says "View dates" / "Bekijk data" (homepage/hubs scroll to
+         route grid it says "View routes" / "Bekijk routes" (homepage/hubs scroll to
          the route list, content pages link {BASE}#cities); route pages scroll to
          the real #book section and keep "Book now" / "Boek nu". -->
     <div class="w-nav-right">
@@ -635,14 +640,14 @@
      Breadcrumbs (Home › City › Route) live here, above the H1, and mirror
      the BreadcrumbList JSON-LD in <head>. Conversion rule: price BEFORE CTA.
      NAMING: eyebrow = "CITY · THEME" (uppercase); H1 = the OFFICIAL route-card
-     name only ("Amsterdam Route 1") — never dash-glue the city onto the H1.
+     name only ("Amsterdam") — never dash-glue the city onto the H1.
      ⚠️ hero_flag: genuine — this route carries the homepage c6 card's "New"
         flag; delete it here when the card loses it.
      ⚠️ t_partner ("Partner of Gemeente Rotterdam") is ROTTERDAM-ONLY — removed
         from this page's hero trust line.
      ============================================================ -->
 <section class="w-hero w-hero-route">
-  <img class="w-hero-video" src="amsterdam-hero.jpg" alt="Cocktails at a waterfront bar on Amsterdam Route 1, WOGO's NDSM &amp; Noord cocktail walk" fetchpriority="high" decoding="async" width="1600" height="900">
+  <img class="w-hero-video" src="amsterdam-hero.jpg" alt="Cocktails at a waterfront bar on the Amsterdam cocktail walk, WOGO's NDSM &amp; Noord cocktail walk" fetchpriority="high" decoding="async" width="1600" height="900">
   <div class="w-hero-overlay"></div>
   <div class="w-hero-content wg-hero-anim">
     <!-- LEFT column A: the identity (white text over the photo) -->
@@ -652,7 +657,7 @@
       <!-- Genuine "New" flag — mirrors the homepage c6 card flag. No fake scarcity. -->
       <div class="w-hero-flag" data-i18n="hero_flag">New route</div>
       <!-- Eyebrow carries CITY · THEME; H1 is the city walk name -->
-      <div class="w-eyebrow w-hero-kicker" data-i18n="hero_kicker">Amsterdam · NDSM &amp; Noord</div>
+      <div class="w-eyebrow w-hero-kicker" data-i18n="hero_kicker">Amsterdam · NDSM &amp; City Centre</div>
       <h1 data-i18n="hero_h1">Amsterdam Cocktail Walk</h1>
       <!-- V5 lean hero: ONE salmon subline, one action (the ticket card). No hero_brand,
            no descriptive paragraph, no hero trust strip. -->
@@ -694,7 +699,7 @@
      ============================================================ -->
 <section class="w-section w-pad" style="padding:28px 24px;">
   <div class="w-facts wg-stagger">
-    <div class="w-fact" data-i18n="fact_1">📍 NDSM wharf (Noord) + city centre</div>
+    <div class="w-fact" data-i18n="fact_1">📍 NDSM wharf + city centre</div>
     <div class="w-fact" data-i18n="fact_2">🕐 Start 5.30–8pm · 3–4 hours</div>
     <div class="w-fact" data-i18n="fact_3">🚶 Self-guided walk</div>
     <div class="w-fact" data-i18n="fact_4">🍸 Mocktails at every bar</div>
@@ -725,11 +730,11 @@
       <ul class="w-desc-incl wg-stagger">
         <li class="w-desc-inc"><span class="w-desc-inc-ico" aria-hidden="true">🍸</span><span data-i18n="inc_1">One signature cocktail at each bar, included with your ticket.</span></li>
         <li class="w-desc-inc"><span class="w-desc-inc-ico" aria-hidden="true">🗺️</span><span data-i18n="inc_2">Digital map with the exclusive route in your inbox upon booking.</span></li>
-        <li class="w-desc-inc"><span class="w-desc-inc-ico" aria-hidden="true">🚶</span><span data-i18n="inc_3">Visit all three locations in any order, at your own pace.</span></li>
+        <li class="w-desc-inc"><span class="w-desc-inc-ico" aria-hidden="true">🚶</span><span data-i18n="inc_3">Visit all three locations in the order on your map, at your own pace.</span></li>
       </ul>
     </div>
     <figure class="w-desc-figure wg-reveal">
-      <img src="cocktail-flight-table.jpg" alt="A flight of signature cocktails on a bar table on Amsterdam Route 1" loading="lazy" decoding="async" width="1600" height="2399">
+      <img src="cocktail-flight-table.jpg" alt="A flight of signature cocktails on a bar table on the Amsterdam cocktail walk" loading="lazy" decoding="async" width="1600" height="2399">
     </figure>
   </div>
 </section>
@@ -759,11 +764,11 @@
      ============================================================ -->
 <section class="w-section dark w-pad w-book" id="book">
   <div class="w-eyebrow wg-reveal" data-i18n="book_eyebrow">Book your walk</div>
-  <h2 class="wg-reveal" data-i18n="book_h2">Amsterdam Route 1</h2>
+  <h2 class="wg-reveal" data-i18n="book_h2">Amsterdam Noord &amp; City Centre</h2>
   <div class="w-book-price">€29,95 <small data-i18n="per_person">per person</small></div>
   <p class="w-book-deal" data-i18n="book_deal">3 cocktails · 3 tables reserved · you just show up</p>
-  <a href="book/" class="w-book-btn w-navlink" data-i18n="book_btn">Book your walk → €29,95</a>
-  <p class="w-book-fine" data-i18n="book_fine">You'll pick your date and start time in the booking calendar. Plans change? Get in touch at <a class="w-mail" href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a> — we'll see what's possible.</p>
+  <a href="book/" class="w-book-btn w-navlink" data-i18n="book_btn">Book your walk</a>
+  <p class="w-book-fine" data-i18n="book_fine">You'll pick your date and start time in the booking calendar. Plans change? Get in touch at <a class="w-mail" href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a>. We'll see what's possible.</p>
 </section>
 
 <!-- ============================================================
@@ -846,7 +851,13 @@
     <div class="w-footer-top">
       <div class="w-footer-brand">
         <div class="w-footer-word">WOGO</div>
-        <p class="w-footer-tag" data-i18n="foot_tag">Three bars you'd never have found. One night you'll always remember.</p>
+        <p class="w-footer-tag" data-i18n="foot_tag">Three bars you'd never have found.<br>One night you'll always remember.</p>
+        <div class="w-footer-contact">
+          <h3>Contact</h3>
+          <a href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a>
+          <a href="tel:+31202101168">+31 20 210 1168</a>
+          <span data-i18n="foot_hours">Monday – Friday<br>10:00 – 18:00</span>
+        </div>
       </div>
       <div class="w-footer-cols">
         <!-- Column 1: Routes -->
@@ -863,7 +874,6 @@
           <a href="../gift-cards/" class="w-navlink" data-i18n="foot_gift">Gift cards</a>
           <a href="../faq/" class="w-navlink" data-i18n="foot_faq">FAQ</a>
           <a href="../blog/" class="w-navlink" data-i18n="foot_blog">Blog</a>
-          <a href="../contact/" class="w-navlink" data-i18n="foot_contact">Contact</a>
         </nav>
         <!-- Column 3: WOGO -->
         <nav class="w-footer-col" aria-label="WOGO">
@@ -872,18 +882,11 @@
           <a href="../for-bars/" class="w-navlink" data-i18n="foot_bars">For bars</a>
           <a href="mailto:info@wogoamsterdam.com" data-i18n="foot_contact_link">Contact</a>
         </nav>
-        <!-- Contact block -->
-        <div class="w-footer-col">
-          <h3>Contact</h3>
-          <a href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a>
-          <a href="tel:+31202101168">+31 20 210 1168</a>
-          <span data-i18n="foot_hours">Monday – Friday, 10:00 – 18:00</span>
-        </div>
       </div>
     </div>
 
     <!-- Trust / badge line -->
-    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.5 / 5 · 80,000+ walks booked · Partner of Gemeente Rotterdam · 18+</div>
+    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.5 / 5 · 80,000+ walks booked · 18+</div>
 
     <!-- Socials -->
     <div class="w-footer-socials" role="group" aria-label="WOGO on social media">
@@ -1085,7 +1088,7 @@
     /* --- hero + breadcrumbs (V5 lean: hero_brand / hero_p / hero-trust removed) --- */
     crumb_home: "Home",
     hero_flag: "Nieuwe route",
-    hero_kicker: "Amsterdam · NDSM &amp; Noord",
+    hero_kicker: "Amsterdam · NDSM &amp; Centrum",
     hero_h1: "Amsterdam Cocktail Walk",
     hero_sub: "Drie unieke bars, van de werf tot het centrum.",
     hero_cta: "Boek je walk →",
@@ -1096,7 +1099,7 @@
     ticket_r3: "Digitale kaart",
     ticket_r4: "do–za",
     /* --- quick facts (complement the ticket card, never repeat it) --- */
-    fact_1: "📍 NDSM-werf (Noord) + centrum",
+    fact_1: "📍 NDSM-werf + centrum",
     fact_2: "🕐 Start 17.30–20.00 · 3–4 uur",
     fact_3: "🚶 Zelfgeleide wandeling",
     fact_4: "🍸 Mocktails bij elke bar",
@@ -1107,14 +1110,14 @@
     story_p2: "Op deze route wandel je iets meer tussen de bars — perfect om de stad in je op te nemen — al is elke stop ook prima met de tram te bereiken.",
     inc_1: "Bij elke bar één signature cocktail, inbegrepen in je ticket.",
     inc_2: "Digitale kaart met de exclusieve route direct na het boeken in je inbox.",
-    inc_3: "Bezoek alle drie de locaties in welke volgorde je wilt, in je eigen tempo.",
+    inc_3: "Bezoek alle drie de locaties in de volgorde op je kaart, in je eigen tempo.",
     /* --- book block --- */
     book_eyebrow: "Boek je walk",
-    book_h2: "Amsterdam Route 1",
+    book_h2: "Amsterdam Noord &amp; Centrum",
     per_person: "per persoon",
     book_deal: "3 cocktails · 3 tafels gereserveerd · jij hoeft alleen op te dagen",
-    book_btn: "Boek je walk → €29,95",
-    book_fine: "Je kiest je datum en starttijd in de boekingskalender. Plannen gewijzigd? Neem contact op via <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">info@wogoamsterdam.com</a> — dan kijken we wat mogelijk is.",
+    book_btn: "Boek je walk",
+    book_fine: "Je kiest je datum en starttijd in de boekingskalender. Plannen gewijzigd? Neem contact op via <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">info@wogoamsterdam.com</a>. Dan kijken we wat mogelijk is.",
     /* --- cross-sell routes (city-hub keys, verbatim) --- */
     sib_h2: "Loop ook in Rotterdam",
     sib_p: "Dezelfde formule, andere stad. Drie bars, drie cocktails, tafels gereserveerd.",
@@ -1133,8 +1136,8 @@
     foot_about: "Over WOGO",
     foot_bars: "Voor bars",
     foot_contact_link: "Contact",
-    foot_hours: "Maandag – vrijdag, 10:00 – 18:00",
-    foot_trust: "★ 4.4 op Google · Trustpilot 4,5 / 5 · 80.000+ walks geboekt · Partner van Gemeente Rotterdam · 18+",
+    foot_hours: "Maandag – vrijdag<br>10:00 – 18:00",
+    foot_trust: "★ 4.4 op Google · Trustpilot 4,5 / 5 · 80.000+ walks geboekt · 18+",
     /* legal-link keys pre-stubbed: uncomment the footer legal links (see the
        bottom legal bar comment) when the privacy/cookie/terms pages ship */
     foot_privacy: "Privacybeleid", foot_cookie: "Cookiebeleid", foot_terms: "Algemene voorwaarden",
@@ -1161,7 +1164,7 @@
         {name:'Rotterdam Route 2', url:'rotterdam/route-2/'},
         {name:'Rotterdam Premium', url:'rotterdam/route-3-premium/'} ] },
     { name:'Utrecht',   hub:'utrecht/',   routes:[ {name:'Utrecht',           url:'utrecht/'} ] },
-    { name:'Amsterdam', hub:'amsterdam/', routes:[ {name:'Amsterdam Route 1', url:'amsterdam/'} ] },
+    { name:'Amsterdam', hub:'amsterdam/', routes:[ {name:'Amsterdam', url:'amsterdam/'} ] },
     { name:'Groningen', hub:'groningen/', routes:[ {name:'Groningen',         url:'groningen/'} ] },
     { name:'Delft',     hub:'delft/',     routes:[ {name:'Delft',             url:'delft/'} ] }
   ] },
@@ -1199,7 +1202,7 @@
         ovHTML += hubLink;
         // FOOTER: flat list of the exact route-card names (no per-city sub-heading —
         // the names already carry the city, so it reads Rotterdam Route 1 · Rotterdam
-        // Route 2 · Rotterdam Premium · Utrecht · Amsterdam Route 1 · Groningen).
+        // Route 2 · Rotterdam Premium · Utrecht · Amsterdam · Groningen).
         // The country heading still appears above when there is more than one country.
         (city.routes || []).forEach(function (r) {
           footHTML += '<a href="' + esc(BASE + r.url) + '" class="w-navlink">' + esc(r.name) + '</a>';

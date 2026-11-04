@@ -120,6 +120,7 @@
   .w-section { padding: 50px 0; background: var(--wogo-blush); }          /* LIGHT  · warm */
   .w-section.cream, .w-section.alt { background: var(--wogo-cream); }     /* LIGHT  · lightest */
   .w-section.peach { background: var(--wogo-surface-tint); }             /* LIGHT  · salmon-tint */
+  .w-section.salmon { background: var(--wogo-salmon); }                  /* LIGHT  · full salmon band (gift cards) */
   .w-section.brown { background: var(--wogo-espresso); }                 /* DARK   · primary band */
   .w-section.dark { background: var(--wogo-ink); }                       /* DARKEST · hero echo / final */
   /* ONE inversion helper: add `brown` or `dark` and a section flips its own text to light automatically */
@@ -204,8 +205,10 @@
   .w-step p { font-size: 13px; line-height: 1.5; font-weight: 500; color: rgba(255,229,217,0.85); max-width: 230px; margin: 0 auto; }
   .w-how .w-head h2 { color: var(--wogo-cream); }
   .w-how .w-eyebrow { color: rgba(255,229,217,0.7); }
-  .w-howstrip { display: flex; align-items: stretch; justify-content: center; gap: 10px; max-width: 920px; margin: 0 auto; }
-  .w-hs-item { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 4px 10px; }
+  .w-howstrip { display: flex; align-items: stretch; justify-content: center; gap: 34px; max-width: 920px; margin: 0 auto; }
+  /* Each step is flush LEFT (icon on top of its own text), but the three blocks stay
+     centred as a group — hence flex:0 1 auto instead of equal thirds. */
+  .w-hs-item { flex: 0 1 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; text-align: left; padding: 4px 0; }
   .w-hs-ico { font-size: 26px; line-height: 1; }
   .w-hs-tx { font-size: 13.5px; font-weight: 700; line-height: 1.35; color: var(--wogo-blush); max-width: 15ch; }
   .w-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: 900px; margin: 0 auto 12px; text-align: center; }
@@ -231,7 +234,7 @@
   .w-gift-wrap { max-width: 920px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; }
   .w-gift-text { flex: 1 1 340px; }
   .w-gift-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--wogo-espresso); margin-bottom: 8px; }
-  .w-gift h2 { font-size: clamp(24px, 3vw, 34px); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; margin-bottom: 8px; color: var(--wogo-ink); }
+  .w-gift h2 { font-size: clamp(24px, 3vw, 34px); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; margin: 4px 0 8px; color: var(--wogo-ink); }
   .w-gift p { font-size: 14.5px; line-height: 1.55; color: var(--wogo-espresso); font-weight: 500; max-width: 480px; }
   .w-gift-btn { flex: 0 0 auto; background: var(--wogo-espresso); color: var(--wogo-blush); text-decoration: none; padding: 16px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; transition: transform 0.2s, background 0.2s; }
   .w-gift-btn:hover { background: var(--wogo-ink); transform: translateY(-2px); }
@@ -334,8 +337,12 @@
   .w-footer-brand { flex: 1 1 260px; max-width: 340px; }
   .w-footer-word { font-size: 26px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: var(--wogo-blush); margin-bottom: 14px; }
   .w-footer-tag { font-size: 15px; line-height: 1.55; font-weight: 500; color: rgba(255,229,217,0.82); }
-  .w-footer-cols { flex: 2 1 480px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
+  .w-footer-cols { flex: 2 1 460px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .w-footer-contact { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
   .w-footer-col { display: flex; flex-direction: column; gap: 10px; }
+  .w-footer-contact h3 { font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--wogo-cream); margin-bottom: 4px; }
+  .w-footer-contact a, .w-footer-contact span { font-size: 13.5px; font-weight: 500; line-height: 1.4; color: rgba(255,229,217,0.85); text-decoration: none; transition: color 0.2s; }
+  .w-footer-contact a:hover { color: var(--wogo-cream); }
   .w-footer-col h3 { font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--wogo-cream); margin-bottom: 4px; }
   .w-footer-col a, .w-footer-col span { font-size: 13.5px; font-weight: 500; line-height: 1.4; color: rgba(255,229,217,0.85); text-decoration: none; transition: color 0.2s; }
   .w-footer-col a:hover { color: var(--wogo-cream); }
@@ -345,7 +352,8 @@
   .w-footer-socials a:hover { background: var(--wogo-blush); color: var(--wogo-espresso); border-color: var(--wogo-blush); }
   .w-footer-socials a span { font-size: 12px; font-weight: 500; opacity: 0.72; }
   .w-footer-socials a:hover span { opacity: 1; }
-  .w-footer-legal { border-top: 1px solid rgba(255,229,217,0.18); padding: 18px 16px 26px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; font-size: 11.5px; color: rgba(255,229,217,0.66); }
+  /* Centred like the trust bar above it: copyright on one line, legal links under it. */
+  .w-footer-legal { border-top: 1px solid rgba(255,229,217,0.18); padding: 18px 16px 26px; display: flex; flex-direction: column; flex-wrap: wrap; justify-content: center; align-items: center; text-align: center; gap: 8px 16px; font-size: 11.5px; color: rgba(255,229,217,0.66); }
   .w-footer-legal-links { display: flex; flex-wrap: wrap; gap: 4px 14px; }
   .w-footer-legal-links a { color: rgba(255,229,217,0.66); text-decoration: none; }
   .w-footer-legal-links a:hover { color: var(--wogo-cream); text-decoration: underline; }
@@ -514,12 +522,12 @@
 
     <!-- Right cluster: EN/NL toggle + primary CTA + mobile burger.
          The nav CTA is funnel-aware in target AND label: where it only reaches a
-         route grid it says "View dates" / "Bekijk data" (homepage/hubs scroll to
+         route grid it says "View routes" / "Bekijk routes" (homepage/hubs scroll to
          the route list, content pages link {BASE}#cities); route pages scroll to
          the real #book section and keep "Book now" / "Boek nu". -->
     <div class="w-nav-right">
       <div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language: EN"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"></ul></div>
-      <a href="#cities" class="w-nav-cta w-scroll" data-i18n="nav_cta">View dates</a>
+      <a href="#cities" class="w-nav-cta w-scroll" data-i18n="nav_cta">View routes</a>
       <button class="w-nav-burger" id="wNavBurger" aria-label="Open menu" aria-controls="wNavOverlay" aria-expanded="false"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -539,7 +547,7 @@
       <li><a href="contact/" class="w-navlink w-nav-ov-link" data-i18n="foot_contact">Contact</a></li>
       <li class="w-nav-ov-lang"><div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language: EN"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"></ul></div></li>
     </ul>
-    <a href="#cities" class="w-nav-cta w-scroll" data-i18n="nav_cta">View dates</a>
+    <a href="#cities" class="w-nav-cta w-scroll" data-i18n="nav_cta">View routes</a>
   </div>
 </nav>
 <!-- ===== /WOGO SHARED NAV v4 ===== -->
@@ -556,7 +564,7 @@
     <div class="w-hero-brand" data-i18n="hero_brand">The Cocktail Walk</div>
     <div class="w-hero-cities">Amsterdam · Utrecht · Rotterdam · Groningen · Delft</div>
     <h1 data-i18n="hero_h1">Three bars.<br>Three cocktails.<br>Zero planning.</h1>
-    <p data-i18n="hero_p">3 hand-picked bars, 3 cocktails, tables reserved. Just show up. <strong>From €29,95 per person.</strong></p>
+    <p data-i18n="hero_p">Your perfect night out is already planned. Just show up. <strong>From €29,95 per person.</strong></p>
     <div class="w-hero-trust" style="margin-top:0;margin-bottom:18px;"><span data-i18n="t_google"><span class="w-star">★</span> 4.4 on Google</span><span>·</span><span data-i18n="t_trustpilot"><span class="w-star">★</span> 4.5 Trustpilot</span><span class="w-trust-hide-m">·</span><span class="w-trust-hide-m" data-i18n="t_guests">80,000+ walks booked</span><span>·</span><span data-i18n="t_partner">Partner of Gemeente Rotterdam</span></div>
     <a href="#cities" class="w-hero-cta w-scroll" data-i18n="hero_cta">Book your walk →</a>
   </div>
@@ -583,9 +591,9 @@
   <div class="w-eyebrow" data-i18n="how_eyebrow" style="text-align:center;">How it works</div>
   <h2 class="w-sr-only" data-i18n="how_h2">In three steps, then you just show up</h2>
   <div class="w-howstrip wg-stagger" style="margin-top:18px;">
-    <div class="w-hs-item"><div class="w-hs-ico">🗺️</div><div class="w-hs-tx" data-i18n="hs_1">Pick your route &amp; date</div></div>
-    <div class="w-hs-item"><div class="w-hs-ico">🍸</div><div class="w-hs-tx" data-i18n="hs_2">We pick your three bars</div></div>
-    <div class="w-hs-item"><div class="w-hs-ico">🚶</div><div class="w-hs-tx" data-i18n="hs_3">Walk the city, your pace</div></div>
+    <div class="w-hs-item"><div class="w-hs-ico">🗺️</div><div class="w-hs-tx" data-i18n="hs_1">Pick your<br>route &amp; date</div></div>
+    <div class="w-hs-item"><div class="w-hs-ico">🍸</div><div class="w-hs-tx" data-i18n="hs_2">We pick your<br>three bars</div></div>
+    <div class="w-hs-item"><div class="w-hs-ico">🚶</div><div class="w-hs-tx" data-i18n="hs_3">Self-guided,<br>your pace</div></div>
   </div>
   <div style="text-align:center;margin-top:20px;"><a href="how-it-works/" class="w-navlink" data-i18n="how_more" style="display:inline-block;font-size:13px;font-weight:800;color:var(--wogo-blush);text-decoration:underline;text-underline-offset:3px;">Read the full guide →</a></div>
 </section>
@@ -632,7 +640,7 @@
       <div class="w-citycard" data-city="rotterdam"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="rotterdam/route-1/witte-de-with-hero.jpg" alt="Rotterdam Route 1"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">🇳🇱 Rotterdam</div><div class="w-citycard-flag" data-i18n="flag_localfav">Local favourite</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="c2_route">Rotterdam Route 1 · City Centre</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="c2_theme">★ Theme: Local favourites</div><div class="w-citycard-row" data-i18n="c2_day">📅 Thu–Sat · start 5pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-price">€29,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="rotterdam/route-1/book/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book your walk</a><a href="rotterdam/route-1/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
       <div class="w-citycard" data-city="rotterdam"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="rotterdam/route-2/hidden-gems-hero.jpg" alt="Rotterdam Route 2"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">🇳🇱 Rotterdam</div><div class="w-citycard-flag" data-i18n="flag_best">Best seller</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="c3_route">Rotterdam Route 2 · City Centre</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="c3_theme">★ Theme: Hidden gems</div><div class="w-citycard-row" data-i18n="c3_day">📅 Thu–Sat · start 6–8.30pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-price">€29,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-urgency" data-i18n="c3_urgency">🔥 Our most-booked route</div><div class="w-citycard-actions"><a href="rotterdam/route-2/book/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book your walk</a><a href="rotterdam/route-2/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
       <div class="w-citycard" data-city="rotterdam"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="rotterdam/route-3-premium/premium-gin-walk-hero.jpg" alt="Rotterdam Premium"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">🇳🇱 Rotterdam · Premium</div><div class="w-citycard-flag" data-i18n="flag_premium">Premium</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="c4_route">Rotterdam Premium · Bobby's Gin Walk</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="c4_theme">★ Theme: High-end bars</div><div class="w-citycard-row" data-i18n="c4_day">📅 Tue–Sat · start 5–8.30pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-price">€34,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="rotterdam/route-3-premium/book/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book your walk</a><a href="rotterdam/route-3-premium/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
-<div class="w-citycard" data-city="amsterdam"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="amsterdam/ndsm-noord-card.jpg" alt="Amsterdam Noord - City Centre"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">🇳🇱 Amsterdam</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="c6_route">Amsterdam Route 1 · Noord &amp; City Centre</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="c6_theme">★ Theme: Iconic Amsterdam</div><div class="w-citycard-row" data-i18n="c6_day">📅 Thu–Sat · start 5.30–8pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-price">€29,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="amsterdam/book/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book your walk</a><a href="amsterdam/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
+<div class="w-citycard" data-city="amsterdam"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="amsterdam/ndsm-noord-card.jpg" alt="Amsterdam Noord - City Centre"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">🇳🇱 Amsterdam</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="c6_route">Amsterdam · Noord &amp; City Centre</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="c6_theme">★ Theme: Iconic Amsterdam</div><div class="w-citycard-row" data-i18n="c6_day">📅 Thu–Sat · start 5.30–8pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-price">€29,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="amsterdam/book/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book your walk</a><a href="amsterdam/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
       <div class="w-citycard" data-city="groningen"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="groningen/gin-walk-hero.jpg" alt="Groningen"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">🇳🇱 Groningen</div><div class="w-citycard-flag" data-i18n="flag_gin">Powered by Bobby's Gin</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="c7_route">Groningen · Bobby's Gin Walk</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="c7_theme">★ Theme: Best Bars</div><div class="w-citycard-row" data-i18n="c7_day">📅 Thu–Sat · start 5–8pm</div><div class="w-citycard-row" data-i18n="time3">🕐 3 hours</div></div><div class="w-citycard-price">€29,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="groningen/book/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book your walk</a><a href="groningen/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
       <div class="w-citycard" data-city="delft"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="delft/delft-card.jpg" alt="Delft"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">🇳🇱 Delft</div><div class="w-citycard-flag" data-i18n="flag_new">New</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="c8_route">Delft · City Centre</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="c8_theme">★ Theme: Hidden gems</div><div class="w-citycard-row" data-i18n="c8_day">📅 7 days a week</div><div class="w-citycard-row" data-i18n="time3">🕐 3 hours</div></div><div class="w-citycard-price">€29,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="delft/book/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book your walk</a><a href="delft/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
       <div class="w-citycard w-citycard-soon" data-city="london"><div class="w-citycard-img w-citycard-img-soon"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">🇬🇧 London</div><div class="w-citycard-flag" data-i18n="flag_soon">Coming soon</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="lon_route">London · Soho &amp; Covent Garden</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="lon_teaser">★ Our first city beyond the Netherlands</div></div><div class="w-citycard-actions"><a href="london/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="intl_soon_btn">Take a first look →</a></div></div></div>
@@ -682,7 +690,7 @@
   </div>
 </section>
 
-<section class="w-section peach w-pad">
+<section class="w-section salmon w-pad w-gift">
   <div class="w-gift-wrap wg-reveal">
     <div class="w-gift-text">
       <div class="w-gift-eyebrow" data-i18n="gift_eyebrow">The perfect gift</div>
@@ -773,7 +781,13 @@
     <div class="w-footer-top">
       <div class="w-footer-brand">
         <div class="w-footer-word">WOGO</div>
-        <p class="w-footer-tag" data-i18n="foot_tag">Three bars you'd never have found. One night you'll always remember.</p>
+        <p class="w-footer-tag" data-i18n="foot_tag">Three bars you'd never have found.<br>One night you'll always remember.</p>
+        <div class="w-footer-contact">
+          <h3>Contact</h3>
+          <a href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a>
+          <a href="tel:+31202101168">+31 20 210 1168</a>
+          <span data-i18n="foot_hours">Monday – Friday<br>10:00 – 18:00</span>
+        </div>
       </div>
       <div class="w-footer-cols">
         <!-- Column 1: Routes -->
@@ -790,7 +804,6 @@
           <a href="gift-cards/" class="w-navlink" data-i18n="foot_gift">Gift cards</a>
           <a href="faq/" class="w-navlink" data-i18n="foot_faq">FAQ</a>
           <a href="blog/" class="w-navlink" data-i18n="foot_blog">Blog</a>
-          <a href="contact/" class="w-navlink" data-i18n="foot_contact">Contact</a>
         </nav>
         <!-- Column 3: WOGO -->
         <nav class="w-footer-col" aria-label="WOGO">
@@ -799,18 +812,11 @@
           <a href="for-bars/" class="w-navlink" data-i18n="foot_bars">For bars</a>
           <a href="mailto:info@wogoamsterdam.com" data-i18n="foot_contact_link">Contact</a>
         </nav>
-        <!-- Contact block -->
-        <div class="w-footer-col">
-          <h3>Contact</h3>
-          <a href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a>
-          <a href="tel:+31202101168">+31 20 210 1168</a>
-          <span data-i18n="foot_hours">Monday – Friday, 10:00 – 18:00</span>
-        </div>
       </div>
     </div>
 
     <!-- Trust / badge line -->
-    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.5 / 5 · 80,000+ walks booked · Partner of Gemeente Rotterdam · 18+</div>
+    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.5 / 5 · 80,000+ walks booked · 18+</div>
 
     <!-- Socials -->
     <div class="w-footer-socials" role="group" aria-label="WOGO on social media">
@@ -982,7 +988,7 @@
 
 <!-- Sticky mobile bottom CTA — standalone mode only; the JS only ever shows it when
      the page is NOT embedded (inside the Wix iframe the host page scrolls, not us). -->
-<div class="w-sticky-cta" id="wStickyCta"><a href="#cities" class="w-sticky-cta-btn w-scroll" data-i18n="sticky_cta">View dates · from €29,95</a></div>
+<div class="w-sticky-cta" id="wStickyCta"><a href="#cities" class="w-sticky-cta-btn w-scroll" data-i18n="sticky_cta">View routes · from €29,95</a></div>
 
 <script>
 (function () {
@@ -1003,7 +1009,7 @@
   var NL = {
     hero_brand: "De Cocktail Walk",
     hero_h1: "Drie bars.<br>Drie cocktails.<br>Nul planning.",
-    hero_p: "3 zorgvuldig gekozen bars, 3 cocktails, tafels gereserveerd. Kom gewoon opdagen. <strong>Vanaf €29,95 per persoon.</strong>",
+    hero_p: "Je perfecte avond uit is al gepland. Kom gewoon opdagen. <strong>Vanaf €29,95 per persoon.</strong>",
     hero_cta: "Boek je walk →",
     t_google: "<span class=\"w-star\">★</span> 4.4 op Google",
     t_trustpilot: "<span class=\"w-star\">★</span> 4,5 Trustpilot",
@@ -1024,11 +1030,11 @@
     c2_route: "Rotterdam Route 1 · Centrum", c2_theme: "★ Thema: Lokale favorieten", c2_day: "📅 do–za · start 17.00",
     c3_route: "Rotterdam Route 2 · Centrum", c3_theme: "★ Thema: Verborgen parels", c3_day: "📅 do–za · start 18.00–20.30", c3_urgency: "🔥 Onze meest geboekte route",
     c4_route: "Rotterdam Premium · Bobby's Gin Walk", c4_theme: "★ Thema: Stijlvolle bars", c4_day: "📅 di–za · start 17.00–20.30",
-    c6_route: "Amsterdam Route 1 · Noord &amp; Centrum", c6_theme: "★ Thema: Iconisch Amsterdam", c6_day: "📅 do–za · start 17.30–20.00",
+    c6_route: "Amsterdam · Noord &amp; Centrum", c6_theme: "★ Thema: Iconisch Amsterdam", c6_day: "📅 do–za · start 17.30–20.00",
     c7_route: "Groningen · Bobby's Gin Walk", c7_theme: "★ Thema: Beste bars", c7_day: "📅 do–za · start 17.00–20.00",
     c8_route: "Delft · Centrum", c8_theme: "★ Thema: Verborgen parels", c8_day: "📅 7 dagen per week",
     how_eyebrow: "Hoe het werkt", how_h2: "In drie stappen, dan hoef je alleen op te dagen",
-    hs_1: "Kies je route &amp; datum", hs_2: "Wij kiezen jouw drie bars", hs_3: "Loop de stad, op jouw tempo",
+    hs_1: "Kies je<br>route &amp; datum", hs_2: "Wij kiezen<br>jouw drie bars", hs_3: "Zelfgeleid,<br>op jouw tempo",
     how_more: "Lees de volledige uitleg →",
     rev_h2: "Wat onze gasten zeggen",
     rev_tp: "Lees al onze reviews op Google →",
@@ -1052,8 +1058,8 @@
     q7: "Moet ik 18 zijn?", a7: "Ja — volgens de Nederlandse wet moeten alle gasten 18+ zijn om alcohol te drinken. Neem voor de zekerheid je ID mee. Onder de 18 ben je welkom op de mocktail-versie onder begeleiding van een volwassene — neem contact op om dit te regelen.",
     final_h2: "Klaar om te wandelen?", final_p: "De stad wacht.", final_btn: "Kies je route →",
     /* --- nav --- */
-    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_about: "Over WOGO", nav_cta: "Bekijk data",
-    sticky_cta: "Bekijk data · vanaf €29,95",
+    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_about: "Over WOGO", nav_cta: "Bekijk routes",
+    sticky_cta: "Bekijk routes · vanaf €29,95",
     /* --- footer --- */
     foot_tag: "Drie bars die je nooit zelf had gevonden. Eén avond die je altijd bijblijft.",
     foot_c1_h: "Routes", foot_c2_h: "Ontdek",
@@ -1061,8 +1067,8 @@
     foot_about: "Over WOGO",
     foot_bars: "Voor bars",
     foot_contact_link: "Contact",
-    foot_hours: "Maandag – vrijdag, 10:00 – 18:00",
-    foot_trust: "★ 4.4 op Google · Trustpilot 4,5 / 5 · 80.000+ walks geboekt · Partner van Gemeente Rotterdam · 18+",
+    foot_hours: "Maandag – vrijdag<br>10:00 – 18:00",
+    foot_trust: "★ 4.4 op Google · Trustpilot 4,5 / 5 · 80.000+ walks geboekt · 18+",
     /* legal-link keys pre-stubbed: uncomment the footer legal links (see the
        bottom legal bar comment) when the privacy/cookie/terms pages ship */
     foot_privacy: "Privacybeleid", foot_cookie: "Cookiebeleid", foot_terms: "Algemene voorwaarden",
@@ -1091,7 +1097,7 @@
         {name:'Rotterdam Route 2', url:'rotterdam/route-2/'},
         {name:'Rotterdam Premium', url:'rotterdam/route-3-premium/'} ] },
     { name:'Utrecht',   hub:'utrecht/',   routes:[ {name:'Utrecht',           url:'utrecht/'} ] },
-    { name:'Amsterdam', hub:'amsterdam/', routes:[ {name:'Amsterdam Route 1', url:'amsterdam/'} ] },
+    { name:'Amsterdam', hub:'amsterdam/', routes:[ {name:'Amsterdam', url:'amsterdam/'} ] },
     { name:'Groningen', hub:'groningen/', routes:[ {name:'Groningen',         url:'groningen/'} ] },
     { name:'Delft',     hub:'delft/',     routes:[ {name:'Delft',             url:'delft/'} ] }
   ] },
@@ -1129,7 +1135,7 @@
         ovHTML += hubLink;
         // FOOTER: flat list of the exact route-card names (no per-city sub-heading —
         // the names already carry the city, so it reads Rotterdam Route 1 · Rotterdam
-        // Route 2 · Rotterdam Premium · Utrecht · Amsterdam Route 1 · Groningen).
+        // Route 2 · Rotterdam Premium · Utrecht · Amsterdam · Groningen).
         // The country heading still appears above when there is more than one country.
         (city.routes || []).forEach(function (r) {
           footHTML += '<a href="' + esc(BASE + r.url) + '" class="w-navlink">' + esc(r.name) + '</a>';
