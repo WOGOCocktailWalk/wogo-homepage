@@ -294,7 +294,7 @@
   .w-nav.scrolled .w-nav-links a { color: #1a1410; text-shadow: none; }
   .w-nav.scrolled .w-nav-links a:hover { background: rgba(92,42,20,0.08); }
   .w-nav-drop { display: flex; align-items: center; }
-  .w-nav-caret { font-size: 10px; color: #fff; margin: 0 4px 0 -4px; transition: transform 0.2s, color 0.3s; pointer-events: none; text-shadow: 0 1px 8px rgba(0,0,0,0.5); }
+  .w-nav-caret { font-size: 14px; color: #fff; margin: 0 4px 0 -4px; transition: transform 0.2s, color 0.3s; pointer-events: none; text-shadow: 0 1px 8px rgba(0,0,0,0.5); }
   .w-nav.scrolled .w-nav-caret { text-shadow: none; }
   .w-nav.scrolled .w-nav-caret { color: #1a1410; }
   .w-nav-drop:hover .w-nav-caret, .w-nav-drop:focus-within .w-nav-caret { transform: rotate(180deg); }
@@ -513,7 +513,7 @@
   .w-hero-lead { max-width: 760px; }
   /* V5 lean hero: one salmon subline (replaces the old descriptive paragraph).
      Higher specificity than .w-hero p so the salmon + lean sizing win. */
-  .w-hero-route .w-hero-sub { font-size: clamp(14.5px, 1.6vw, 20px); font-weight: 800; line-height: 1.34; color: #ffaa81; max-width: 22ch; margin: -2px 0 18px; opacity: 1; text-shadow: 0 2px 12px rgba(0,0,0,0.42); }
+  .w-hero-route .w-hero-sub { font-size: clamp(14.5px, 1.6vw, 20px); font-weight: 800; line-height: 1.34; color: #ffaa81; max-width: 52ch; margin: -2px 0 18px; opacity: 1; text-shadow: 0 2px 12px rgba(0,0,0,0.42); }
   /* Left-weighted espresso wash so the blush ticket card + white text stay legible.
      More specific than the V3 .w-hero-overlay rule, so it wins regardless of order. */
   .w-hero-route .w-hero-overlay {
@@ -590,6 +590,7 @@
       <li><a href="../../how-it-works/" class="w-navlink" data-i18n="nav_how">How it works</a></li>
       <li><a href="../../groups/" class="w-navlink" data-i18n="nav_groups">Groups</a></li>
       <li><a href="../../gift-cards/" class="w-navlink" data-i18n="nav_gift">Gift cards</a></li>
+      <li><a href="../../faq/" class="w-navlink" data-i18n="nav_faq">FAQ</a></li>
     </ul>
 
     <!-- Right cluster: EN/NL toggle + primary CTA + mobile burger.
@@ -662,7 +663,6 @@
       <!-- hero_flag "Local favourite" — owner-approved badge for Route 1 (2026-07-14) -->
       <div class="w-hero-flag" data-i18n="hero_flag">Local favourite</div>
       <!-- Eyebrow carries CITY · THEME; H1 is the official name only -->
-      <div class="w-eyebrow w-hero-kicker" data-i18n="hero_kicker">Rotterdam · Local Favourites</div>
       <h1 data-i18n="hero_h1">Rotterdam Route 1</h1>
       <p class="w-hero-sub" data-i18n="hero_p">Start in Witte de With's newest hotspot.</p>
     </div>
@@ -701,10 +701,10 @@
      ============================================================ -->
 <section class="w-section brown w-pad" style="padding:28px 24px;">
   <div class="w-facts wg-stagger">
-    <div class="w-fact" data-i18n="fact_1">📍 Starts in the Witte de Withstraat</div>
+    <div class="w-fact" data-i18n="fact_1">📍 Rotterdam city centre</div>
     <div class="w-fact" data-i18n="fact_2">🕐 3–4 hours, your pace</div>
     <div class="w-fact" data-i18n="fact_3">🚶 Self-guided walk</div>
-    <div class="w-fact" data-i18n="fact_4">🍸 Mocktails at every bar</div>
+    <div class="w-fact" data-i18n="fact_4">🍸 Mocktail options available</div>
   </div>
 </section>
 
@@ -781,7 +781,7 @@
     <button class="w-arrow w-arrow-right" data-target="sibScroller" aria-label="Scroll right">&#8250;</button>
     <div class="w-scroller wg-stagger" id="sibScroller">
       <!-- Rotterdam Route 2 — Hidden Gems (genuine best seller) — Thu–Sat, start 6–8.30pm -->
-      <div class="w-citycard"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="../../rotterdam/route-2/hidden-gems-hero.jpg" alt="Rotterdam Route 2 — hidden-gem cocktail bars in the city centre"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">Route 2</div><div class="w-citycard-flag" data-i18n="flag_best">Best seller</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="rc2_route">Rotterdam Route 2</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="rc2_theme">★ Theme: Hidden gems</div><div class="w-citycard-row" data-i18n="rc2_day">📅 Thu–Sat · start 6–8.30pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-price">€29,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-urgency" data-i18n="rc2_urgency">🔥 Our most-booked route</div><div class="w-citycard-actions"><a href="../route-2/book/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book Now</a><a href="../route-2/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
+      <div class="w-citycard"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="../../rotterdam/route-2/hidden-gems-hero.jpg" alt="Rotterdam Route 2 — hidden-gem cocktail bars in the city centre"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">Route 2</div><div class="w-citycard-flag" data-i18n="flag_best">Best seller</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="rc2_route">Rotterdam Route 2</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="rc2_theme">★ Theme: Hidden gems</div><div class="w-citycard-row" data-i18n="rc2_day">📅 Thu–Sat · start 6–8.30pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-urgency" data-i18n="rc2_urgency">🔥 Our most-booked route</div><div class="w-citycard-price">€29,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="../route-2/book/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book Now</a><a href="../route-2/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
       <!-- Rotterdam Premium — Bobby's Gin Walk (€34,95) -->
       <div class="w-citycard"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="../../rotterdam/route-3-premium/premium-gin-walk-hero.jpg" alt="Rotterdam Premium Gin Walk — skybar view of the Erasmus Bridge"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">Premium</div><div class="w-citycard-flag" data-i18n="flag_new">New</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="rc3_route">Rotterdam Premium</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="rc3_theme">★ Theme: High-end bars</div><div class="w-citycard-row" data-i18n="rc3_day">📅 Tue–Sat · start 5–8.30pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-price">€34,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="../route-3-premium/book/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book Now</a><a href="../route-3-premium/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
     </div>
@@ -1081,7 +1081,7 @@
      exact NL text so the same words appear everywhere. ===== */
   var NL = {
     /* --- nav --- */
-    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_about: "Over WOGO", nav_cta: "Boek je walk", gallery_h2: "Een voorproefje van de avond",
+    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_faq: "FAQ", nav_about: "Over WOGO", nav_cta: "Boek je walk", gallery_h2: "Een voorproefje van de avond",
     /* --- hero + breadcrumbs --- */
     crumb_home: "Home",
     crumb_route: "Rotterdam Route 1",
@@ -1096,10 +1096,10 @@
     ticket_r3: "Digitale kaart",
     ticket_r4: "do–za",
     /* --- quick facts (complement the ticket card, never repeat it) --- */
-    fact_1: "📍 Start in de Witte de Withstraat",
+    fact_1: "📍 Centrum van Rotterdam",
     fact_2: "🕐 3–4 uur, jouw tempo",
     fact_3: "🚶 Zelfgeleide wandeling",
-    fact_4: "🍸 Mocktails bij elke bar",
+    fact_4: "🍸 Mocktails beschikbaar",
     /* --- the experience (original live-site description + ticket lines) --- */
     story_eyebrow: "De ervaring",
     story_h2: "Drie lokale favorieten, één onvergetelijke avond",
