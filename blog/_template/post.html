@@ -821,9 +821,10 @@
      country heading appears automatically now there is more than one country.
      Replace the London routes below with the real ones at launch. */
   { code:'gb', name:{en:'United Kingdom',nl:'Verenigd Koninkrijk'}, cities: [
-    /* London has no bookable route yet, so it carries NO footer route link —
-       only the city hub in the nav. Add its routes here at launch. */
-    { name:'London', hub:'london/', routes:[] }
+    /* London has no bookable route yet, so it carries NO footer route link.
+       Its one route is Soho, so the nav sends people straight there instead of
+       to a hub page holding a single card. Add more routes here at launch. */
+    { name:'London', hub:'london/soho/', routes:[] }
   ] } ] };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function renderRoutes(lang) {
