@@ -156,7 +156,11 @@
   .w-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #3f2b21; margin-bottom: 10px; text-align: center; }
 
   /* ===== BLOG INDEX GRID (DESIGN-V6-SPEC §4a) ===== */
-  .bl-grid { max-width:1000px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+  .bl-filter { max-width:1320px; margin:0 auto 22px; display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
+  .bl-filter button { font:inherit; font-size:13px; font-weight:800; color:var(--wogo-brown); padding:9px 18px; background:var(--wogo-cream); border:1.5px solid var(--wogo-line); border-radius:999px; cursor:pointer; transition:background .2s,color .2s,border-color .2s; }
+  .bl-filter button:hover { background:var(--wogo-salmon); border-color:var(--wogo-salmon); color:var(--wogo-espresso); }
+  .bl-filter button[aria-pressed="true"] { background:var(--wogo-espresso); border-color:var(--wogo-espresso); color:var(--wogo-blush); }
+  .bl-grid { max-width:1320px; margin:0 auto; display:grid; grid-template-columns:repeat(4,1fr); gap:20px; }
   .bl-card { display:flex; flex-direction:column; background:var(--wogo-cream); border-radius:16px;
     overflow:hidden; text-decoration:none; box-shadow:0 4px 14px var(--wogo-line-soft); border:1px solid var(--wogo-line-soft);
     transition:transform .3s, box-shadow .3s; }
@@ -166,10 +170,12 @@
   .bl-card-img img { width:100%; height:100%; object-fit:cover; transition:transform .5s; }
   .bl-card-body { padding:18px 20px 22px; display:flex; flex-direction:column; gap:8px; }
   .bl-cat { font-size:10.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--wogo-brown, #643e2b); }
-  .bl-card h3 { font-size:19px; font-weight:900; color:var(--wogo-ink); line-height:1.2; }
+  .bl-card h3 { font-size:17.5px; font-weight:900; color:var(--wogo-ink); line-height:1.2; }
   .bl-card p { font-size:14px; line-height:1.55; color:var(--wogo-espresso); font-weight:500; }
   .bl-meta { font-size:12px; font-weight:700; color:var(--wogo-brown-soft); margin-top:2px; }
-  @media (max-width:760px){ .bl-grid { grid-template-columns:1fr; } }
+  @media (max-width:1180px){ .bl-grid { grid-template-columns:repeat(3,1fr); } }
+  @media (max-width:900px){ .bl-grid { grid-template-columns:1fr 1fr; } }
+  @media (max-width:560px){ .bl-grid { grid-template-columns:1fr; } }
 
   .w-gift-wrap { max-width: 920px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; }
   .w-gift-text { flex: 1 1 340px; }
@@ -434,9 +440,12 @@
 <section class="w-section w-pad" id="blog">
   <div class="w-head wg-reveal"><div class="w-eyebrow" data-i18n="bl_eyebrow">The WOGO journal</div>
     <h2 data-i18n="bl_h2">Stories, city guides &amp; cocktail curiosities</h2></div>
-  <div class="bl-grid wg-stagger">
+  <!-- Theme filter — built from the categories actually present in the grid,
+       so a new post with a new category needs no edit here. -->
+  <div class="bl-filter w-pad" id="blFilter" role="group" aria-label="Filter posts by theme"></div>
+  <div class="bl-grid wg-stagger" id="blGrid">
 
-    <a class="bl-card" href="what-is-a-self-guided-cocktail-walk/">
+    <a class="bl-card" data-cat="bl_c_guide" href="what-is-a-self-guided-cocktail-walk/">
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../how-it-works/how-it-works-hero.jpg" alt="Friends on a self-guided cocktail walk"></div>
       <div class="bl-card-body">
@@ -447,7 +456,7 @@
       </div>
     </a>
 
-    <a class="bl-card" href="best-cocktail-bars-in-rotterdam/">
+    <a class="bl-card" data-cat="bl_c_city" href="best-cocktail-bars-in-rotterdam/">
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../rotterdam/route-2/hidden-gems-hero.jpg" alt="A cocktail bar in Rotterdam"></div>
       <div class="bl-card-body">
@@ -458,7 +467,7 @@
       </div>
     </a>
 
-    <a class="bl-card" href="new-bars-rotterdam-night-out/">
+    <a class="bl-card" data-cat="bl_c_city" href="new-bars-rotterdam-night-out/">
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../rotterdam/route-2/hidden-gems-hero.jpg" alt="New cocktail bars in Rotterdam"></div>
       <div class="bl-card-body">
@@ -469,7 +478,7 @@
       </div>
     </a>
 
-    <a class="bl-card" href="rotterdam-premium-gin-walk-launch/">
+    <a class="bl-card" data-cat="bl_c_news" href="rotterdam-premium-gin-walk-launch/">
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../rotterdam/route-3-premium/premium-gin-walk-hero.jpg" alt="Rotterdam premium gin cocktail walk"></div>
       <div class="bl-card-body">
@@ -480,7 +489,7 @@
       </div>
     </a>
 
-    <a class="bl-card" href="top-7-bars-utrecht/">
+    <a class="bl-card" data-cat="bl_c_city" href="top-7-bars-utrecht/">
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../utrecht/utrecht-hero.jpg" alt="Cocktail bars in Utrecht"></div>
       <div class="bl-card-body">
@@ -491,7 +500,7 @@
       </div>
     </a>
 
-    <a class="bl-card" href="utrecht-night-out-cocktails/">
+    <a class="bl-card" data-cat="bl_c_city" href="utrecht-night-out-cocktails/">
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../utrecht/friends-cocktails-lounge.jpg" alt="A night out in Utrecht"></div>
       <div class="bl-card-body">
@@ -502,7 +511,7 @@
       </div>
     </a>
 
-    <a class="bl-card" href="amsterdam-cocktail-week-bars/">
+    <a class="bl-card" data-cat="bl_c_city" href="amsterdam-cocktail-week-bars/">
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../amsterdam/amsterdam-hero.jpg" alt="Amsterdam Cocktail Week bars"></div>
       <div class="bl-card-body">
@@ -1846,5 +1855,54 @@
 @media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
 </style>
 <!-- ===== /WOGO WHATSAPP FLOAT ===== -->
+
+<script>
+/* Blog theme filter. The chips are generated from the cards themselves, using
+   each card's own category label, so they translate with the page and a new
+   post needs no edit here. */
+(function () {
+  "use strict";
+  var grid = document.getElementById("blGrid");
+  var bar = document.getElementById("blFilter");
+  if (!grid || !bar) return;
+  var cards = [].slice.call(grid.querySelectorAll(".bl-card"));
+  var current = "all";
+
+  function allLabel() {
+    try { var l = localStorage.getItem("wogoLang"); if (l === "nl") return "Alles"; } catch (e) {}
+    return document.documentElement.lang === "nl" ? "Alles" : "All";
+  }
+  function build() {
+    var cats = [];
+    cards.forEach(function (c) {
+      var key = c.getAttribute("data-cat");
+      var el = c.querySelector(".bl-cat");
+      if (!key || !el) return;
+      if (!cats.some(function (x) { return x.key === key; })) cats.push({ key: key, label: el.textContent.trim() });
+    });
+    bar.innerHTML = "";
+    [{ key: "all", label: allLabel() }].concat(cats).forEach(function (c) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = c.label;
+      b.setAttribute("data-cat", c.key);
+      b.setAttribute("aria-pressed", String(c.key === current));
+      b.addEventListener("click", function () { current = c.key; apply(); });
+      bar.appendChild(b);
+    });
+  }
+  function apply() {
+    cards.forEach(function (c) {
+      c.hidden = !(current === "all" || c.getAttribute("data-cat") === current);
+    });
+    [].forEach.call(bar.children, function (b) {
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-cat") === current));
+    });
+  }
+  build(); apply();
+  document.addEventListener("wogo:langchange", function () { build(); apply(); });
+  window.addEventListener("storage", function (e) { if (e.key === "wogoLang") { build(); apply(); } });
+})();
+</script>
 </body>
 </html>
