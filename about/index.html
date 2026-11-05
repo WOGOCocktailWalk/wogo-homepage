@@ -234,6 +234,8 @@
      Real logo SVG/PNG files can be swapped into each cell later (keeping the grid). */
   .w-brandwall { list-style: none; max-width: 1000px; margin: 0 auto;
     display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .w-brandmark a { color: inherit; text-decoration: none; display: block; }
+  .w-brandmark:hover { border-color: var(--wogo-salmon); }
   .w-brandmark { display: flex; align-items: center; justify-content: center; text-align: center;
     min-height: 74px; padding: 14px 16px; border-radius: 14px;
     background: var(--wogo-cream); border: 1px solid var(--wogo-line-soft);
@@ -545,8 +547,8 @@
   <div class="w-hero-overlay"></div>
   <div class="w-hero-content wg-hero-anim">
     <div class="w-hero-overline" data-i18n="hero_eyebrow">About WOGO</div>
-    <h1 data-i18n="hero_h1">Explore your city, one cocktail at a time</h1>
-    <p class="w-hero-sub" data-i18n="hero_sub">A new way to go out and rediscover your own city, one great bar at a time.</p>
+    <h1 data-i18n="hero_h1">Explore your city,<br>one cocktail at a time</h1>
+    <p class="w-hero-sub" data-i18n="hero_sub">A new way to go out and rediscover your own city,<br>one great bar at a time.</p>
     <a href="#story" class="w-hero-cta w-scroll" data-i18n="hero_cta">Read our story ↓</a>
   </div>
 </section>
@@ -565,7 +567,7 @@
     <div class="w-story-text wg-reveal">
       <div class="w-eyebrow" data-i18n="story_eyebrow">Our story</div>
       <h2 data-i18n="story_h2">It started with one question, asked by friends</h2>
-      <p data-i18n="story_p1">WOGO was built because friends kept asking me where to go for cocktails. We realised people end up going to the same bars over and over, or just rely on Google, while there are so many other great bars in their own city.</p>
+      <p data-i18n="story_p1">WOGO was built because friends kept asking us where to go for cocktails. We realised people end up going to the same bars over and over, or just rely on Google, while there are so many other great bars in their own city.</p>
       <p data-i18n="story_p2">We also realised something else: those bars wanted new customers. That's how the cocktail walk was born, a new way of going out that lets you explore your own city.</p>
       <p class="w-founder-sig" data-i18n="founder_sig">Founder of WOGO</p>
     </div>
@@ -579,11 +581,11 @@
   <div class="w-head"><h2 data-i18n="stats_h2">Where we are today</h2></div>
   <div class="w-stats wg-stagger">
     <div class="w-stat"><div class="w-stat-num">★ 4.4</div><div class="w-stat-label" data-i18n="stat1_l">rating on Google</div></div>
-    <div class="w-stat"><div class="w-stat-num">4.5 / 5</div><div class="w-stat-label" data-i18n="stat2_l">on Trustpilot</div></div>
-    <div class="w-stat"><div class="w-stat-num" data-i18n="stat3_n">80,000+</div><div class="w-stat-label" data-i18n="stat3_l">walks booked</div></div>
+    <div class="w-stat"><div class="w-stat-num">4.2 / 5</div><div class="w-stat-label" data-i18n="stat2_l">on Trustpilot</div></div>
+    <div class="w-stat"><div class="w-stat-num" data-i18n="stat3_n">100,000+</div><div class="w-stat-label" data-i18n="stat3_l">guests</div></div>
     <div class="w-stat"><div class="w-stat-num" data-i18n="stat4_n">Partner</div><div class="w-stat-label" data-i18n="stat4_l">of Gemeente Rotterdam</div></div>
   </div>
-  <!-- "80,000+ walks booked" is owner-confirmed correct (all channels/years). -->
+  <!-- "100,000+ guests" is owner-confirmed correct (all channels/years, 2026-11-05). -->
 </section>
 
 <!-- ============================================================
@@ -600,23 +602,24 @@
     <p data-i18n="brands_p">The spirits, mixers and makers behind our signature menus.</p>
   </div>
   <ul class="w-brandwall wg-stagger" aria-label="Brands WOGO has worked with">
-    <li class="w-brandmark">London Essence</li>
-    <li class="w-brandmark">Damrak</li>
-    <li class="w-brandmark">Gin 1689</li>
-    <li class="w-brandmark">Lillet</li>
-    <li class="w-brandmark">Three Cents</li>
-    <li class="w-brandmark">Passoã</li>
-    <li class="w-brandmark">Coca-Cola</li>
-    <li class="w-brandmark">Bols</li>
-    <li class="w-brandmark">Bacardí</li>
-    <li class="w-brandmark">Bandoeng 22</li>
-    <li class="w-brandmark">Beefeater</li>
-    <li class="w-brandmark">Lyre's</li>
-    <li class="w-brandmark">Hendrick's</li>
+    <li class="w-brandmark"><a href="https://londonessenceco.com/" target="_blank" rel="noopener nofollow">London Essence</a></li>
+    <li class="w-brandmark"><a href="https://www.damrakgin.com/" target="_blank" rel="noopener nofollow">Damrak</a></li>
+    <li class="w-brandmark"><a href="https://www.gin1689.com/" target="_blank" rel="noopener nofollow">Gin 1689</a></li>
+    <li class="w-brandmark"><a href="https://bobbys.nl/" target="_blank" rel="noopener nofollow">Bobby's Gin</a></li>
+    <li class="w-brandmark"><a href="https://www.lillet.com/" target="_blank" rel="noopener nofollow">Lillet</a></li>
+    <li class="w-brandmark"><a href="https://threecents.com/" target="_blank" rel="noopener nofollow">Three Cents</a></li>
+    <li class="w-brandmark"><a href="https://www.passoa.com/" target="_blank" rel="noopener nofollow">Passoã</a></li>
+    <li class="w-brandmark"><a href="https://www.coca-cola.com/" target="_blank" rel="noopener nofollow">Coca-Cola</a></li>
+    <li class="w-brandmark"><a href="https://bols.com/" target="_blank" rel="noopener nofollow">Bols</a></li>
+    <li class="w-brandmark"><a href="https://www.bacardi.com/" target="_blank" rel="noopener nofollow">Bacardí</a></li>
+    <li class="w-brandmark"><a href="https://bandoeng22.com/" target="_blank" rel="noopener nofollow">Bandoeng 22</a></li>
+    <li class="w-brandmark"><a href="https://www.beefeatergin.com/" target="_blank" rel="noopener nofollow">Beefeater</a></li>
+    <li class="w-brandmark"><a href="https://lyres.com/" target="_blank" rel="noopener nofollow">Lyre's</a></li>
+    <li class="w-brandmark"><a href="https://hendricksgin.com/" target="_blank" rel="noopener nofollow">Hendrick's</a></li>
     <li class="w-brandmark">Leonista</li>
-    <li class="w-brandmark">Tequila Patrón</li>
-    <li class="w-brandmark">Absolut</li>
-    <li class="w-brandmark">Crystal Head Vodka</li>
+    <li class="w-brandmark"><a href="https://www.patrontequila.com/" target="_blank" rel="noopener nofollow">Tequila Patrón</a></li>
+    <li class="w-brandmark"><a href="https://absolut.com/" target="_blank" rel="noopener nofollow">Absolut</a></li>
+    <li class="w-brandmark"><a href="https://www.crystalheadvodka.com/" target="_blank" rel="noopener nofollow">Crystal Head Vodka</a></li>
   </ul>
   <p class="w-brandwall-note" data-i18n="brands_note">Selected partners across our routes.</p>
 </section>
@@ -638,7 +641,7 @@
       <h3 data-i18n="wwu_brand_h">For brands</h3>
       <ul>
         <li data-i18n="wwu_brand1">A premium, social audience discovering cocktails in real bars</li>
-        <li data-i18n="wwu_brand2">Your brand in front of 80,000+ booked guests across five Dutch cities</li>
+        <li data-i18n="wwu_brand2">Your brand in front of 100,000+ guests across five Dutch cities</li>
         <li data-i18n="wwu_brand3">Your spirit featured as the signature pour on a route</li>
       </ul>
     </div>
@@ -646,7 +649,7 @@
       <h3 data-i18n="wwu_bar_h">For bars</h3>
       <ul>
         <li data-i18n="wwu_bar1">Guaranteed reservations on quiet nights, no upfront cost</li>
-        <li data-i18n="wwu_bar2">New guests who'd never have found you otherwise</li>
+        <li data-i18n="wwu_bar2">New guests who'd never have found you otherwise, and locals who come back on their own</li>
         <li data-i18n="wwu_bar3">The credibility of a program cities already trust (partner of Gemeente Rotterdam)</li>
       </ul>
     </div>
@@ -798,7 +801,7 @@
     </div>
 
     <!-- Trust / badge line -->
-    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.5 / 5 · 80,000+ walks booked · 18+</div>
+    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.2 / 5 · 100,000+ guests · 18+</div>
 
     <!-- Socials -->
     <div class="w-footer-socials" role="group" aria-label="WOGO on social media">
@@ -994,20 +997,20 @@
   var NL = {
     /* --- hero --- */
     hero_eyebrow: "Over WOGO",
-    hero_h1: "Ontdek je stad, één cocktail tegelijk",
-    hero_sub: "Een nieuwe manier om uit te gaan en je eigen stad opnieuw te ontdekken, één bijzondere bar tegelijk.",
+    hero_h1: "Ontdek je stad,<br>één cocktail tegelijk",
+    hero_sub: "Een nieuwe manier om uit te gaan en je eigen stad opnieuw te ontdekken,<br>één bijzondere bar tegelijk.",
     hero_cta: "Lees ons verhaal ↓",
     /* --- our story --- */
     story_eyebrow: "Ons verhaal",
     story_h2: "Het begon met één vraag van vrienden",
-    story_p1: "WOGO ontstond omdat vrienden me steeds vroegen waar we heen moesten voor cocktails. We merkten dat mensen steeds naar diezelfde bars teruggingen, of het gewoon aan Google overlieten, terwijl hun eigen stad vol staat met andere geweldige bars.",
+    story_p1: "WOGO ontstond omdat vrienden ons steeds vroegen waar we heen moesten voor cocktails. We merkten dat mensen steeds naar diezelfde bars teruggingen, of het gewoon aan Google overlieten, terwijl hun eigen stad vol staat met andere geweldige bars.",
     story_p2: "We merkten ook iets anders: die bars wilden juist nieuwe gasten. Zo ontstond de cocktail walk, een nieuwe manier van uitgaan waarmee je je eigen stad ontdekt.",
     founder_sig: "Oprichter van WOGO",
     /* --- trust numbers --- */
     stats_h2: "Waar we nu staan",
     stat1_l: "beoordeling op Google",
     stat2_l: "op Trustpilot",
-    stat3_n: "80.000+",
+    stat3_n: "100.000+",
     stat3_l: "walks geboekt",
     stat4_n: "Partner",
     stat4_l: "van Gemeente Rotterdam",
@@ -1022,11 +1025,11 @@
     wwu_p: "Laat jouw drank duizenden glazen vullen, of zet je bar op een zorgvuldig samengestelde route.",
     wwu_brand_h: "Voor merken",
     wwu_brand1: "Een premium, sociaal publiek dat cocktails ontdekt in échte bars",
-    wwu_brand2: "Jouw merk zichtbaar voor 80.000+ geboekte gasten in vijf Nederlandse steden",
+    wwu_brand2: "Jouw merk zichtbaar voor 100.000+ gasten in vijf Nederlandse steden",
     wwu_brand3: "Jouw drank als signature pour op een route",
     wwu_bar_h: "Voor bars",
     wwu_bar1: "Gegarandeerde reserveringen op rustige avonden, zonder kosten vooraf",
-    wwu_bar2: "Nieuwe gasten die jou anders nooit hadden gevonden",
+    wwu_bar2: "Nieuwe gasten die jou anders nooit hadden gevonden, en locals die daarna uit zichzelf terugkomen",
     wwu_bar3: "De geloofwaardigheid van een programma dat steden al vertrouwen (partner van Gemeente Rotterdam)",
     wwu_cta: "Praat over partnerships →",
     /* --- contact --- */
@@ -1054,7 +1057,7 @@
     foot_bars: "Voor bars",
     foot_contact_link: "Contact",
     foot_hours: "Maandag – vrijdag<br>10:00 – 18:00",
-    foot_trust: "★ 4.4 op Google · Trustpilot 4,5 / 5 · 80.000+ walks geboekt · 18+",
+    foot_trust: "★ 4.4 op Google · Trustpilot 4,2 / 5 · 100.000+ gasten · 18+",
     /* legal-link keys pre-stubbed: uncomment the footer legal links (see the
        bottom legal bar comment) when the privacy/cookie/terms pages ship */
     foot_privacy: "Privacybeleid", foot_cookie: "Cookiebeleid", foot_terms: "Algemene voorwaarden",
