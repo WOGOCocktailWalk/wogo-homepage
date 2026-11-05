@@ -50,26 +50,26 @@
 <meta property="og:url" content="https://www.wogococktailwalk.com/delft/">
 <!-- og:image must be an absolute URL — points at this page's self-hosted hero
      on the production domain (update only if the domain ever changes). -->
-<meta property="og:image" content="https://www.wogococktailwalk.com/delft/delft-hero.jpg">
+<meta property="og:image" content="https://www.wogococktailwalk.com/delft/delft-hero-cocktail.jpg">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Delft Cocktail Walk · 3 bars, 3 cocktails, 1 night">
 <meta name="twitter:description" content="3 hand-picked Delft bars, 3 cocktails, tables reserved. 7 days a week from €29,95 per person.">
-<meta name="twitter:image" content="https://www.wogococktailwalk.com/delft/delft-hero.jpg">
+<meta name="twitter:image" content="https://www.wogococktailwalk.com/delft/delft-hero-cocktail.jpg">
 <!-- ROUTE-EDIT: structured data — route pages use TouristTrip + Offer (price!)
      + BreadcrumbList (Home > City > Route). "name" is the OFFICIAL route-card
      name ("Utrecht City Centre"); "alternateName" carries the theme. Offer.url =
      the EXISTING Wix booking calendar. Route pages carry NO review node. -->
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"TouristTrip","name":"Delft City Centre","alternateName":"Hidden Gems Cocktail Walk","description":"Self-guided cocktail walk through Delft's historic centre: three hidden-gem cocktail bars, three signature cocktails or mocktails, tables reserved at every stop. Bookable 7 days a week, around 1 hour between stops.","url":"https://www.wogococktailwalk.com/delft/","image":"https://www.wogococktailwalk.com/delft/delft-hero.jpg","touristType":["Couples","Friends","Colleagues"],"itinerary":{"@type":"ItemList","numberOfItems":3,"itemListElement":[{"@type":"ListItem","position":1,"name":"A characterful bar in the heart of historic Delft"},{"@type":"ListItem","position":2,"name":"A botanical cocktail bar tucked off the canals"},{"@type":"ListItem","position":3,"name":"A stylish waterside spot for the final round"}]},"provider":{"@type":"Organization","name":"WOGO Cocktail Walk","telephone":"+31202101168","email":"info@wogoamsterdam.com","url":"https://www.wogococktailwalk.com/"},"offers":{"@type":"Offer","price":"29.95","priceCurrency":"EUR","availability":"https://schema.org/InStock","url":"https://www.wogococktailwalk.com/delft/book/"}}
+{"@context":"https://schema.org","@type":"TouristTrip","name":"Delft City Centre","alternateName":"Hidden Gems Cocktail Walk","description":"Self-guided cocktail walk through Delft's historic centre: three hidden-gem cocktail bars, three signature cocktails or mocktails, tables reserved at every stop. Bookable 7 days a week, around 1 hour between stops.","url":"https://www.wogococktailwalk.com/delft/","image":"https://www.wogococktailwalk.com/delft/delft-hero-cocktail.jpg","touristType":["Couples","Friends","Colleagues"],"itinerary":{"@type":"ItemList","numberOfItems":3,"itemListElement":[{"@type":"ListItem","position":1,"name":"A characterful bar in the heart of historic Delft"},{"@type":"ListItem","position":2,"name":"A botanical cocktail bar tucked off the canals"},{"@type":"ListItem","position":3,"name":"A stylish waterside spot for the final round"}]},"provider":{"@type":"Organization","name":"WOGO Cocktail Walk","telephone":"+31202101168","email":"info@wogoamsterdam.com","url":"https://www.wogococktailwalk.com/"},"offers":{"@type":"Offer","price":"29.95","priceCurrency":"EUR","availability":"https://schema.org/InStock","url":"https://www.wogococktailwalk.com/delft/book/"}}
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.wogococktailwalk.com/"},{"@type":"ListItem","position":2,"name":"Delft","item":"https://www.wogococktailwalk.com/delft/"}]}
 </script>
 <!-- Static hero (no video on route pages): preload the self-hosted REAL route
      photo so it paints fast. Never stock photography. -->
-<link rel="preload" as="image" fetchpriority="high" href="delft-hero.jpg">
+<link rel="preload" as="image" fetchpriority="high" href="delft-hero-cocktail.jpg">
 <!-- Anti-flicker for Dutch visitors: the page is authored in English and translated by
      the script at the foot of the body, so briefly hide the body ONLY when Dutch is about
      to be shown (setLang reveals it; a 2.5s timeout is the safety net). -->
@@ -667,7 +667,7 @@
        (downloaded from the live Wix media library — never stock). Groups-hero quality:
        warm, social, premium. The preload + og:image/twitter:image in <head> must
        point at THIS filename. Width/height match the real file to avoid layout shift. -->
-  <img class="w-hero-video" src="delft-hero.jpg" alt="Two friends toasting cocktails in the golden evening light on the Delft cocktail walk" fetchpriority="high" decoding="async" width="900" height="1200">
+  <img class="w-hero-video" src="delft-hero-cocktail.jpg" alt="A cocktail on a marble bar top on the Delft cocktail walk" fetchpriority="high" decoding="async" width="900" height="1200">
   <div class="w-hero-overlay"></div>
   <div class="w-hero-content wg-hero-anim">
     <!-- LEFT column A: the identity (white text over the photo) -->
@@ -720,7 +720,7 @@
 <section class="w-section brown w-pad" style="padding:28px 24px;">
   <div class="w-facts wg-stagger">
     <div class="w-fact" data-i18n="fact_1">📍 Delft city centre</div>
-    <div class="w-fact" data-i18n="fact_2">🕐 3 bars · about 1 hour apart</div>
+    <div class="w-fact" data-i18n="fact_2">🕐 3 bars</div>
     <div class="w-fact" data-i18n="fact_3">🚶 Self-guided walk</div>
     <div class="w-fact" data-i18n="fact_4">🍸 Mocktail options available</div>
   </div>
@@ -1115,7 +1115,7 @@
     ticket_r4: "Dagelijks",
     /* --- quick facts (complement the ticket card, never repeat it) --- */
     fact_1: "📍 Centrum van Delft",
-    fact_2: "🕐 3 bars · ±1 uur ertussen",
+    fact_2: "🕐 3 bars",
     fact_3: "🚶 Zelfgeleide wandeling",
     fact_4: "🍸 Mocktails beschikbaar",
     /* --- the experience (original live-site description + how-it-works lines) --- */
@@ -1187,9 +1187,10 @@
      country heading appears automatically now there is more than one country.
      Replace the London routes below with the real ones at launch. */
   { code:'gb', name:{en:'United Kingdom',nl:'Verenigd Koninkrijk'}, cities: [
-    /* London has no bookable route yet, so it carries NO footer route link —
-       only the city hub in the nav. Add its routes here at launch. */
-    { name:'London', hub:'london/', routes:[] }
+    /* London has no bookable route yet, so it carries NO footer route link.
+       Its one route is Soho, so the nav sends people straight there instead of
+       to a hub page holding a single card. Add more routes here at launch. */
+    { name:'London', hub:'london/soho/', routes:[] }
   ] } ] };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function renderRoutes(lang) {
