@@ -52,7 +52,7 @@
 {"@type":"Question","name":"In which cities can I do a WOGO cocktail walk?","acceptedAnswer":{"@type":"Answer","text":"In five Dutch cities: Amsterdam, Rotterdam (three routes), Utrecht, Groningen and Delft. Seven routes in total, from €29,95 per person."}},
 {"@type":"Question","name":"Do I need to book in advance or can I show up?","acceptedAnswer":{"@type":"Answer","text":"Yes — book ahead. We reserve all 3 tables for you, so there's no waiting and no walk-ins."}},
 {"@type":"Question","name":"When do I get my route map?","acceptedAnswer":{"@type":"Answer","text":"Your digital Cocktail Walk Map Guide lands in your inbox right after booking, with your route from bar 1 to bar 2 to bar 3. No app needed — it works on your phone. Can't find it? Check your spam folder first, then email us at info@wogoamsterdam.com."}},
-{"@type":"Question","name":"Which bars will I visit?","acceptedAnswer":{"@type":"Answer","text":"That's a surprise — the full line-up is revealed only after you book, in your map. We post sneak peeks on our social media. Expect hand-picked spots you'd probably never have found on your own."}},
+{"@type":"Question","name":"Which bars will I visit?","acceptedAnswer":{"@type":"Answer","text":"That's part of the fun. The full line-up is revealed after you book, in your map. We post sneak peeks on our social media. Every stop is a bar we have picked ourselves, and the three together make one well-planned night."}},
 {"@type":"Question","name":"How do I check in at each bar?","acceptedAnswer":{"@type":"Answer","text":"Walk in, tell the bartender you booked with WOGO and give your full name — your table is waiting."}},
 {"@type":"Question","name":"What if a bar is unexpectedly closed?","acceptedAnswer":{"@type":"Answer","text":"It's rare, but it happens. Contact the team at info@wogoamsterdam.com or +31 20 210 1168 and we'll arrange an alternative bar for you."}},
 {"@type":"Question","name":"What exactly is in my ticket?","acceptedAnswer":{"@type":"Answer","text":"Three things: a reserved table at 3 hand-picked bars, 3 drinks (at every bar you pick one of two signature WOGO cocktails, or the mocktail), and your digital Cocktail Walk Map Guide. One ticket covers one person."}},
@@ -197,7 +197,10 @@
 
   /* ===== CONTENT-PAGE EXTRAS (this page's own sections) ===== */
   /* Jump-to-section chip row (FAQ table of contents) */
-  .w-toc { max-width: 860px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  /* The six jump chips sit on ONE line on desktop; they wrap again on phones. */
+  .w-toc { max-width: 1160px; margin: 0 auto; display: flex; flex-wrap: nowrap; justify-content: center; gap: 10px; }
+  .w-toc a { white-space: nowrap; }
+  @media (max-width: 1040px) { .w-toc { flex-wrap: wrap; } }
   .w-toc a { color: var(--wogo-brown); text-decoration: none; font-size: 13px; font-weight: 800; padding: 10px 18px; background: var(--wogo-surface-tint); border: 1.5px solid var(--wogo-line); border-radius: 999px; transition: background 0.2s, color 0.2s, border-color 0.2s; white-space: nowrap; }
   .w-toc a:hover { background: var(--wogo-salmon); color: var(--wogo-espresso); border-color: var(--wogo-salmon); }
   /* City hub cards (soft CTA row) */
@@ -369,7 +372,7 @@
     .w-hero-trust { font-size: 11.5px; gap: 6px 10px; margin-top: 16px; }
     .w-section { padding: 40px 0; } .w-pad { padding-left: 16px; padding-right: 16px; }
     .w-head { margin-bottom: 20px; }
-    .w-toc { gap: 8px; }
+    .w-toc { gap: 8px; flex-wrap: wrap; }
     .w-toc a { font-size: 12px; padding: 9px 14px; }
     .w-cityhub { grid-template-columns: 1fr 1fr; gap: 12px; }
     .w-cityhub-name { font-size: 14px; }
@@ -577,7 +580,7 @@
         <details><summary data-i18n="q1">In which cities can I do a WOGO cocktail walk?</summary><div class="w-faq-body" data-i18n="a1">In five Dutch cities: <a href="../amsterdam/">Amsterdam</a>, <a href="../rotterdam/">Rotterdam</a> (three routes), <a href="../utrecht/">Utrecht</a>, <a href="../groningen/">Groningen</a> and <a href="../delft/">Delft</a>. Seven routes in total, from €29,95 per person.</div></details>
         <details><summary data-i18n="q2">Do I need to book in advance or can I show up?</summary><div class="w-faq-body" data-i18n="a2">Yes — book ahead. We reserve all 3 tables for you, so there's no waiting and no walk-ins.</div></details>
         <details><summary data-i18n="q3">When do I get my route map?</summary><div class="w-faq-body" data-i18n="a3">Your digital Cocktail Walk Map Guide lands in your inbox right after booking, with your route from bar 1 to bar 2 to bar 3. No app needed — it works on your phone. Can't find it? Check your spam folder first, then email us at <a href="mailto:info@wogoamsterdam.com" class="w-mail">info@wogoamsterdam.com</a>.</div></details>
-        <details><summary data-i18n="q4">Which bars will I visit?</summary><div class="w-faq-body" data-i18n="a4">That's a surprise — the full line-up is revealed only after you book, in your map. We post sneak peeks on <a href="https://www.instagram.com/wogococktailwalk/" target="_blank" rel="noopener">Instagram</a>. Expect hand-picked spots you'd probably never have found on your own.</div></details>
+        <details><summary data-i18n="q4">Which bars will I visit?</summary><div class="w-faq-body" data-i18n="a4">That's part of the fun. The full line-up is revealed after you book, in your map. We post sneak peeks on <a href="https://www.instagram.com/wogococktailwalk/" target="_blank" rel="noopener">Instagram</a>. Every stop is a bar we have picked ourselves, and the three together make one well-planned night.</div></details>
         <details><summary data-i18n="q5">How do I check in at each bar?</summary><div class="w-faq-body" data-i18n="a5">Walk in, tell the bartender you booked with WOGO and give your full name — your table is waiting.</div></details>
         <details><summary data-i18n="q6">What if a bar is unexpectedly closed?</summary><div class="w-faq-body" data-i18n="a6">It's rare, but it happens. Contact the team at <a href="mailto:info@wogoamsterdam.com" class="w-mail">info@wogoamsterdam.com</a> or +31 20 210 1168 and we'll arrange an alternative bar for you.</div></details>
       </div>
@@ -1010,7 +1013,7 @@
     q3: "Wanneer ontvang ik mijn routekaart?",
     a3: "Je digitale Cocktail Walk Map Guide landt direct na het boeken in je inbox, met je route van bar 1 naar bar 2 naar bar 3. Geen app nodig — hij werkt gewoon op je telefoon. Niets ontvangen? Check eerst je spamfolder en mail ons daarna via <a href=\"mailto:info@wogoamsterdam.com\" class=\"w-mail\">info@wogoamsterdam.com</a>.",
     q4: "Welke bars ga ik bezoeken?",
-    a4: "Dat is een verrassing — de volledige line-up zie je pas na het boeken, in je routekaart. Op <a href=\"https://www.instagram.com/wogococktailwalk/\" target=\"_blank\" rel=\"noopener\">Instagram</a> geven we sneak peeks. Reken op zorgvuldig gekozen plekken die je zelf waarschijnlijk nooit had gevonden.",
+    a4: "Dat hoort bij de verrassing. De volledige line-up zie je na het boeken, in je routekaart. Op <a href=\"https://www.instagram.com/wogococktailwalk/\" target=\"_blank\" rel=\"noopener\">Instagram</a> geven we sneak peeks. Elke stop is een bar die we zelf hebben uitgekozen, en samen vormen ze één goed uitgedachte avond.",
     q5: "Hoe meld ik me bij elke bar?",
     a5: "Loop naar binnen, zeg tegen de bartender dat je via WOGO geboekt hebt en geef je volledige naam — je tafel staat klaar.",
     q6: "Wat als een bar onverwacht dicht is?",
