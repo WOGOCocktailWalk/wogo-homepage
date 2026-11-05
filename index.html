@@ -244,6 +244,20 @@
   .w-group p { font-size: 14.5px; line-height: 1.55; color: var(--wogo-espresso); font-weight: 500; max-width: 480px; }
   .w-group-btn { flex: 0 0 auto; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 16px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform 0.2s, background 0.2s; }
   .w-group-btn:hover { background: var(--wogo-cta-bg-hover); transform: translateY(-2px); }
+  /* Groups + gift cards share ONE band, split down the middle: espresso on the
+     left, salmon on the right. They stack below 720px. These rules come after
+     .w-group/.w-gift so the inverted colours win on the dark half. */
+  .w-duo { display: grid; grid-template-columns: 1fr 1fr; }
+  .w-duo-half { padding: 46px 32px; display: flex; justify-content: center; align-items: center; }
+  .w-duo-inner { width: 100%; max-width: 430px; }
+  .w-duo-inner p { max-width: none; }
+  .w-duo-inner .w-group-btn, .w-duo-inner .w-gift-btn { display: inline-block; margin-top: 18px; }
+  .w-duo-group { background: var(--wogo-espresso); }
+  .w-duo-group .w-eyebrow { color: rgba(255,229,217,0.72); text-align: left; margin-bottom: 6px; }
+  .w-duo-group h2 { color: var(--wogo-cream); }
+  .w-duo-group p { color: rgba(255,229,217,0.88); }
+  .w-duo-gift { background: var(--wogo-salmon); }
+  .w-duo-solo { display: block; margin-top: 14px; color: var(--wogo-salmon); font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
   .w-faq-wrap { max-width: 740px; margin: 0 auto; }
   .w-faq details { border-bottom: 1px solid rgba(63,43,33,0.15); }
   .w-faq summary { padding: 16px 0; font-size: 15px; font-weight: 800; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; color: var(--wogo-ink); transition: color 0.2s; }
@@ -401,6 +415,8 @@
     .w-citycard-price { font-size: 17px; padding-top: 9px; }
     .w-citycard-btn { font-size: 11px; padding: 13px 8px; letter-spacing: 0.02em; }
     .w-arrow { display: none; }
+    .w-duo { grid-template-columns: 1fr; }
+    .w-duo-half { padding: 34px 20px; }
     .w-gift-text { flex: 1 1 100%; }
     .w-gift-btn { width: 100%; max-width: 320px; }
     .w-how-steps { grid-template-columns: 1fr; gap: 20px; } .w-step-num { font-size: 36px; }
@@ -651,16 +667,24 @@
   <div class="w-pad" style="text-align:center;margin-top:18px;"><span data-i18n="route_reassure" style="display:inline-block;font-size:12.5px;font-weight:700;color:var(--wogo-espresso);letter-spacing:0.01em;">✓ Reservations &amp; route map included &nbsp;·&nbsp; ✓ Mocktail option on every route &nbsp;·&nbsp; ✓ Questions? <a class="w-mail" href="mailto:info@wogoamsterdam.com">Write us</a></span></div>
 </section>
 
-<section class="w-section brown w-pad w-group">
-  <div class="w-group-wrap wg-reveal">
-    <div class="w-group-text">
-      <div class="w-eyebrow" data-i18n="group_eyebrow" style="text-align:left;margin-bottom:6px;">For groups</div>
+<section class="w-duo">
+  <div class="w-duo-half w-duo-group w-group">
+    <div class="w-duo-inner wg-reveal">
+      <div class="w-eyebrow" data-i18n="group_eyebrow">For groups</div>
       <h2 data-i18n="group_h2">Bachelorettes, birthdays &amp; team outings</h2>
       <p data-i18n="group_p">We coordinate the bars, the timing and the tables. You bring the crew. Groups of 6 to 30.</p>
+      <a href="groups/" class="w-group-btn w-navlink" data-i18n="group_btn">Plan your group walk →</a>
+      <a href="#cities" class="w-scroll w-duo-solo" data-i18n="group_solo">→ Up to 6 people? Book from €29,95 per person</a>
     </div>
-    <a href="groups/" class="w-group-btn w-navlink" data-i18n="group_btn">Plan your group walk →</a>
   </div>
-  <div style="text-align:center;margin-top:18px;"><a href="#cities" class="w-scroll" data-i18n="group_solo" style="color:var(--wogo-salmon);font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px;">→ Up to 6 people? Book from €29,95 per person</a></div>
+  <div class="w-duo-half w-duo-gift w-gift">
+    <div class="w-duo-inner wg-reveal">
+      <div class="w-gift-eyebrow" data-i18n="gift_eyebrow">The perfect gift</div>
+      <h2 data-i18n="gift_h2">WOGO Gift Cards</h2>
+      <p data-i18n="gift_p">Give a night they'll talk about. Any route, any city. Delivered instantly by email.</p>
+      <a href="gift-cards/" class="w-gift-btn" data-i18n="gift_btn">Buy a gift card →</a>
+    </div>
+  </div>
 </section>
 
 <section class="w-section peach w-reviews">
@@ -689,17 +713,6 @@
     <a href="https://www.rotterdamcentrum.nl/en/discover/food-and-drinks/cocktails-drinken-rotterdam/cocktail-walk-rotterdam" target="_blank" rel="noopener" class="w-chip">#RotterdamCentrum</a>
     <a href="https://www.uitagendarotterdam.nl/alle-artikelen/ontdek-rotterdam-met-de-wogo-cocktail-walk/" target="_blank" rel="noopener" class="w-chip">Uitagenda Rotterdam</a>
     <a href="https://www.rotterdampas.nl/inspiratie/reviews/een-goede-cocktail-zo-lekker" target="_blank" rel="noopener" class="w-chip">Rotterdampas</a>
-  </div>
-</section>
-
-<section class="w-section salmon w-pad w-gift">
-  <div class="w-gift-wrap wg-reveal">
-    <div class="w-gift-text">
-      <div class="w-gift-eyebrow" data-i18n="gift_eyebrow">The perfect gift</div>
-      <h2 data-i18n="gift_h2">WOGO Gift Cards</h2>
-      <p data-i18n="gift_p">Give a night they'll talk about. Any route, any city. Delivered instantly by email.</p>
-    </div>
-    <a href="gift-cards/" class="w-gift-btn" data-i18n="gift_btn">Buy a gift card →</a>
   </div>
 </section>
 
