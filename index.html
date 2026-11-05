@@ -206,11 +206,11 @@
   .w-how .w-head h2 { color: var(--wogo-cream); }
   .w-how .w-eyebrow { color: rgba(255,229,217,0.7); }
   .w-howstrip { display: flex; align-items: stretch; justify-content: center; gap: 10px; max-width: 920px; margin: 0 auto; }
-  /* Equal thirds across the strip, as before; only the text inside each one is
-     flush left, with its icon on top. */
-  .w-hs-item { flex: 1 1 0; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; text-align: left; padding: 4px 10px; }
+  /* Three equal columns centred on the page; icon centred above a single-line
+     label (the label wraps again below 720px, where a full line will not fit). */
+  .w-hs-item { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 4px 10px; }
   .w-hs-ico { font-size: 26px; line-height: 1; }
-  .w-hs-tx { font-size: 13.5px; font-weight: 700; line-height: 1.35; color: var(--wogo-blush); max-width: 15ch; }
+  .w-hs-tx { font-size: 13.5px; font-weight: 700; line-height: 1.35; color: var(--wogo-blush); white-space: nowrap; }
   .w-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: 900px; margin: 0 auto 12px; text-align: center; }
   .w-stat-num { font-size: clamp(26px, 3.4vw, 38px); font-weight: 900; color: var(--wogo-ink); line-height: 1; margin-bottom: 4px; }
   .w-stat-num .w-star { color: var(--wogo-espresso); }
@@ -388,6 +388,7 @@
     .w-hero h1 { font-size: 25px; line-height: 1.14; margin-bottom: 14px; } .w-hero p { font-size: 13.5px; line-height: 1.55; margin-bottom: 20px; }
     .w-hero-trust { font-size: 11.5px; gap: 6px 10px; margin-top: 16px; }
     .w-hero-trust .w-trust-hide-m { display: none; }  /* mobile fits 3 trust items: both star ratings + the gemeente partnership */
+    .w-hs-tx { white-space: normal; max-width: 15ch; }
     .w-section { padding: 40px 0; } .w-pad { padding-left: 16px; padding-right: 16px; }
     .w-head { margin-bottom: 20px; }
     .w-scroller { padding: 4px 14px 14px; gap: 12px; } .w-scroller::after { content: ""; flex: 0 0 20px; }
@@ -592,9 +593,9 @@
   <div class="w-eyebrow" data-i18n="how_eyebrow" style="text-align:center;">How it works</div>
   <h2 class="w-sr-only" data-i18n="how_h2">In three steps, then you just show up</h2>
   <div class="w-howstrip wg-stagger" style="margin-top:18px;">
-    <div class="w-hs-item"><div class="w-hs-ico">🗺️</div><div class="w-hs-tx" data-i18n="hs_1">Pick your<br>route &amp; date</div></div>
-    <div class="w-hs-item"><div class="w-hs-ico">🍸</div><div class="w-hs-tx" data-i18n="hs_2">We pick your<br>three bars</div></div>
-    <div class="w-hs-item"><div class="w-hs-ico">🚶</div><div class="w-hs-tx" data-i18n="hs_3">Self-guided,<br>your pace</div></div>
+    <div class="w-hs-item"><div class="w-hs-ico">🗺️</div><div class="w-hs-tx" data-i18n="hs_1">Pick your route &amp; date</div></div>
+    <div class="w-hs-item"><div class="w-hs-ico">🍸</div><div class="w-hs-tx" data-i18n="hs_2">We pick your three bars</div></div>
+    <div class="w-hs-item"><div class="w-hs-ico">🚶</div><div class="w-hs-tx" data-i18n="hs_3">Self-guided, your pace</div></div>
   </div>
   <div style="text-align:center;margin-top:20px;"><a href="how-it-works/" class="w-navlink" data-i18n="how_more" style="display:inline-block;font-size:13px;font-weight:800;color:var(--wogo-blush);text-decoration:underline;text-underline-offset:3px;">Read the full guide →</a></div>
 </section>
@@ -1035,7 +1036,7 @@
     c7_route: "Groningen · Bobby's Gin Walk", c7_theme: "★ Thema: Beste bars", c7_day: "📅 do–za · start 17.00–20.00",
     c8_route: "Delft · Centrum", c8_theme: "★ Thema: Verborgen parels", c8_day: "📅 7 dagen per week",
     how_eyebrow: "Hoe het werkt", how_h2: "In drie stappen, dan hoef je alleen op te dagen",
-    hs_1: "Kies je<br>route &amp; datum", hs_2: "Wij kiezen<br>jouw drie bars", hs_3: "Zelfgeleid,<br>op jouw tempo",
+    hs_1: "Kies je route &amp; datum", hs_2: "Wij kiezen jouw drie bars", hs_3: "Zelfgeleid, op jouw tempo",
     how_more: "Lees de volledige uitleg →",
     rev_h2: "Wat onze gasten zeggen",
     rev_tp: "Lees al onze reviews op Google →",
