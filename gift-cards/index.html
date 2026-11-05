@@ -211,7 +211,7 @@
   .w-quote blockquote::before { content: "“"; display: block; font-size: 48px; line-height: 0.6; color: #3f2b21; margin-bottom: 14px; font-weight: 900; }
   .w-quote-name { margin-top: 14px; font-size: 12.5px; font-weight: 700; color: #3f2b21; }
   /* City hub cards (soft internal-link row) */
-  .w-cityhub { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .w-cityhub { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
   .w-cityhub-card { display: flex; flex-direction: column; background: #fff; border-radius: 14px; overflow: hidden; text-decoration: none; box-shadow: 0 4px 14px rgba(0,0,0,0.05); transition: transform 0.3s, box-shadow 0.3s; }
   .w-cityhub-card:hover { transform: translateY(-4px); box-shadow: 0 14px 28px rgba(0,0,0,0.12); }
   .w-cityhub-card:hover .w-cityhub-img img { transform: scale(1.05); }
@@ -806,7 +806,7 @@
      SECTION: CITY HUB CARDS (#cities) — internal links to all four
      city hubs: this is where the card gets spent.
      ============================================================ -->
-<section class="w-section alt" id="cities">
+<section class="w-section brown" id="cities">
   <div class="w-head w-pad"><h2 data-i18n="cities_h2">Where they'll spend it</h2><p data-i18n="cities_p">7 routes · 5 cities · from €29,95 per person</p></div>
   <div class="w-cityhub w-pad wg-stagger">
     <a class="w-cityhub-card" href="../amsterdam/">
@@ -825,8 +825,12 @@
       <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="../groningen/gin-walk-hero.jpg" alt="Groningen cocktail walk"></div>
       <div class="w-cityhub-body"><div class="w-cityhub-name">Groningen</div><div class="w-cityhub-sub" data-i18n="chs_gro">Thu–Sat · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Explore this city →</div></div>
     </a>
+    <a class="w-cityhub-card" href="../delft/">
+      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="../delft/delft-hero.jpg" alt="Delft cocktail walk"></div>
+      <div class="w-cityhub-body"><div class="w-cityhub-name">Delft</div><div class="w-cityhub-sub" data-i18n="chs_del">Daily · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Pick this city →</div></div>
+    </a>
   </div>
-  <div class="w-pad" style="text-align:center;margin-top:18px;"><span data-i18n="route_reassure" style="display:inline-block;font-size:12.5px;font-weight:700;color:#3f2b21;letter-spacing:0.01em;">✓ Reservations &amp; route map included &nbsp;·&nbsp; ✓ Mocktail option on every route &nbsp;·&nbsp; ✓ Questions? <a class="w-mail" href="mailto:info@wogoamsterdam.com">Write us</a></span></div>
+  <div class="w-pad" style="text-align:center;margin-top:18px;"><span data-i18n="route_reassure" style="display:inline-block;font-size:12.5px;font-weight:700;color:rgba(255,229,217,0.92);letter-spacing:0.01em;">✓ Reservations &amp; route map included &nbsp;·&nbsp; ✓ Mocktail option on every route &nbsp;·&nbsp; ✓ Questions? <a class="w-mail" href="mailto:info@wogoamsterdam.com">Write us</a></span></div>
 </section>
 
 <!-- ============================================================
@@ -1199,6 +1203,7 @@
     chs_rot: "3 routes · vanaf €29,95",
     chs_utr: "do–zo · vanaf €29,95",
     chs_gro: "do–za · vanaf €29,95",
+    chs_del: "Dagelijks · vanaf €29,95",
     explore: "Ontdek deze stad →",
     route_reassure: "✓ Reserveringen &amp; routekaart inbegrepen &nbsp;·&nbsp; ✓ Mocktail-optie op elke route &nbsp;·&nbsp; ✓ Vragen? <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">Stuur ons een berichtje</a>",
     /* --- final CTA + sticky --- */
