@@ -80,7 +80,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       guest: "guest", guests: "guests", max_reached: "Max %n per booking",
       name: "Full name", name_ph: "Anna de Vries",
       email: "Email", email_ph: "you@email.com",
-      phone: "Mobile (optional)", phone_ph: "+31 6 12345678",
+      phone: "Mobile", phone_ph: "+31 6 12345678",
       notes: "Allergies or notes (optional)",
       notes_ph: "Nut allergy, wheelchair access, celebrating a birthday…",
       gift: "Gift card code (optional)", gift_ph: "WOGO-XXXX-XXXX",
@@ -90,8 +90,10 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       optin: "Keep me posted on new routes and offers (10% off your next walk)",
       total: "Total", book: "Continue to secure payment",
       redirecting: "Taking you to secure checkout…",
-      fine: "You'll pay securely via Stripe — iDEAL, card, Apple Pay or Klarna. Your table is only reserved once payment completes.",
+      fine: "You'll pay securely via Stripe: iDEAL, card, Apple Pay or Klarna. Your table is only reserved once payment completes.",
+      legal: 'By continuing you agree to our <a href="{terms}" target="_blank" rel="noopener">Terms &amp; Conditions</a> and <a href="{privacy}" target="_blank" rel="noopener">Privacy Policy</a>. We pass your booking name, date, time and group size to the bars on your route so they can hold your table.',
       err_name: "Please enter your name.",
+      err_phone: "Please enter a mobile number, so the bars can reach you on the night.",
       err_email: "Please enter a valid email.",
       err_load: "We couldn't load availability. Please try again.",
       err_book: "Something went wrong. Your card was not charged — please try again.",
@@ -143,15 +145,17 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       guest: "gast", guests: "gasten", max_reached: "Max %n per boeking",
       name: "Volledige naam", name_ph: "Anna de Vries",
       email: "E-mail", email_ph: "jij@email.com",
-      phone: "Mobiel (optioneel)", phone_ph: "+31 6 12345678",
+      phone: "Mobiel", phone_ph: "+31 6 12345678",
       notes: "Allergieën of opmerkingen (optioneel)",
       notes_ph: "Notenallergie, rolstoeltoegang, een verjaardag vieren…",
       gift: "Cadeaubon-code (optioneel)", gift_ph: "WOGO-XXXX-XXXX",
       optin: "Houd me op de hoogte van nieuwe routes en acties (10% korting op je volgende walk)",
       total: "Totaal", book: "Naar veilig betalen",
       redirecting: "Je gaat naar de beveiligde betaalpagina…",
-      fine: "Je betaalt veilig via Stripe — iDEAL, kaart, Apple Pay of Klarna. Je tafel is pas gereserveerd zodra de betaling rond is.",
+      fine: "Je betaalt veilig via Stripe: iDEAL, kaart, Apple Pay of Klarna. Je tafel is pas gereserveerd zodra de betaling rond is.",
+      legal: 'Door verder te gaan ga je akkoord met onze <a href="{terms}" target="_blank" rel="noopener">algemene voorwaarden</a> en ons <a href="{privacy}" target="_blank" rel="noopener">privacybeleid</a>. We geven de naam van je boeking, de datum, de tijd en het aantal gasten door aan de bars op je route, zodat ze je tafel kunnen vrijhouden.',
       err_name: "Vul je naam in.",
+      err_phone: "Vul een mobiel nummer in, zodat de bars je die avond kunnen bereiken.",
       err_email: "Vul een geldig e-mailadres in.",
       err_load: "We konden de beschikbaarheid niet laden. Probeer opnieuw.",
       err_book: "Er ging iets mis. Er is niets afgeschreven — probeer opnieuw.",
@@ -202,6 +206,17 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
   const isoWeekday = (d) => ((d.getDay() + 6) % 7) + 1; // Mon=1..Sun=7
   const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const fmt = (tpl, map) => tpl.replace(/%[a-z]/g, (k) => (k in map ? map[k] : k));
+  /* Site root, derived from this script's own URL (<root>/backend/widget/
+     wogo-calendar.js), so the Terms and Privacy links resolve on the live
+     domain and on a staging sub-path alike. */
+  const SITE_ROOT = (function () {
+    try {
+      const sc = document.currentScript
+        || [].slice.call(document.querySelectorAll('script[src*="wogo-calendar.js"]')).pop();
+      if (sc && sc.src) return sc.src.replace(/backend\/widget\/wogo-calendar\.js.*$/, "");
+    } catch (e) {}
+    return "/";
+  })();
   const el = (tag, cls, txt) => {
     const n = document.createElement(tag);
     if (cls) n.className = cls;
@@ -797,6 +812,13 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       book.addEventListener("click", () => this.submit(book));
       panel.appendChild(book);
       panel.appendChild(el("div", "wc-fine", t.fine));
+      if (t.legal) {
+        const legal = el("div", "wc-fine wc-legal");
+        legal.innerHTML = t.legal
+          .replace("{terms}", SITE_ROOT + "terms/")
+          .replace("{privacy}", SITE_ROOT + "privacy/");
+        panel.appendChild(legal);
+      }
 
       this.formHost.appendChild(panel);
       this.setStep(2); // details step
@@ -1011,6 +1033,11 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       const email = this.emailInput.el.value.trim();
       setErr(this.nameInput, name ? "" : t.err_name);
       setErr(this.emailInput, EMAIL_RE.test(email) ? "" : t.err_email);
+      /* The bar notification carries this number so a bar can reach the group
+         on the night, so it is required, not optional. Deliberately loose:
+         any 7+ digits, so international formats all pass. */
+      const phone = this.phoneInput.el.value.trim();
+      setErr(this.phoneInput, (phone.replace(/\D/g, "").length >= 7) ? "" : t.err_phone);
       if (!ok) return;
 
       /* Analytics: "continue to payment" IS the GA4 begin_checkout step (and
@@ -1048,7 +1075,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       const giftCode = this.giftInput ? this.giftInput.el.value.trim() : "";
       const payload = {
         route_id: this.routeId, date: this.selectedDate, slot: this.selectedSlot.slot,
-        party: this.party, name, email, phone: this.phoneInput.el.value.trim(),
+        party: this.party, name, email, phone,
         notes: this.notesInput ? this.notesInput.el.value.trim() : "",
         // Locale is read at SUBMIT time, not at mount time: the guest may have
         // switched language mid-booking, and this value decides which language
