@@ -131,7 +131,9 @@
   .w-hero-trust .w-star { color: #ffe5d9; }
   .w-section { padding: 50px 0; }
   .w-section.alt { background: #fff; }
-  .w-section.brown { background: #3f2b21; }
+  .w-section.brown { background: #3f2b21; color: #ffe5d9; }
+  .w-section.brown h2, .w-section.brown .w-head h2 { color: #fffaf6; }
+  .w-section.brown .w-head p, .w-section.brown .w-eyebrow { color: rgba(255,229,217,0.72); }
   .w-section.peach { background: #fbe9df; }
   .w-section.dark { background: #1a1410; }
   .w-pad { padding-left: 24px; padding-right: 24px; }
@@ -142,7 +144,7 @@
   .w-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #3f2b21; margin-bottom: 10px; text-align: center; }
 
   /* ===== THIS PAGE'S SECTIONS (city hub cards — same component as /how-it-works/) ===== */
-  .w-cityhub { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .w-cityhub { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
   .w-cityhub-card { display: flex; flex-direction: column; background: #fff; border-radius: 14px; overflow: hidden; text-decoration: none; box-shadow: 0 4px 14px rgba(0,0,0,0.05); transition: transform 0.3s, box-shadow 0.3s; }
   .w-cityhub-card:hover { transform: translateY(-4px); box-shadow: 0 14px 28px rgba(0,0,0,0.12); }
   .w-cityhub-card:hover .w-cityhub-img img { transform: scale(1.05); }
@@ -362,7 +364,7 @@
      to the four internal city hubs, plus plain links to home,
      how-it-works/ and faq/ underneath.
      ============================================================ -->
-<section class="w-section" id="cities">
+<section class="w-section brown" id="cities">
   <div class="w-head w-pad"><h2 data-i18n="cities_h2">Your next walk is one tap away</h2><p data-i18n="cities_p">7 routes · 5 cities · from €29,95 per person</p></div>
   <div class="w-cityhub w-pad">
     <a class="w-cityhub-card" href="amsterdam/">
@@ -380,6 +382,10 @@
     <a class="w-cityhub-card" href="groningen/">
       <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="groningen/gin-walk-hero.jpg" alt="Groningen cocktail walk"></div>
       <div class="w-cityhub-body"><div class="w-cityhub-name">Groningen</div><div class="w-cityhub-sub" data-i18n="chs_gro">Thu–Sat · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Pick this city →</div></div>
+    </a>
+    <a class="w-cityhub-card" href="delft/">
+      <div class="w-cityhub-img"><img loading="lazy" decoding="async" src="delft/delft-hero.jpg" alt="Delft cocktail walk"></div>
+      <div class="w-cityhub-body"><div class="w-cityhub-name">Delft</div><div class="w-cityhub-sub" data-i18n="chs_del">Daily · from €29,95</div><div class="w-cityhub-go" data-i18n="explore">Pick this city →</div></div>
     </a>
   </div>
   <div class="w-pad w-lostlinks"><span data-i18n="lost_links">Or jump straight to: <a href="./">Home</a> &nbsp;·&nbsp; <a href="how-it-works/">How it works</a> &nbsp;·&nbsp; <a href="faq/">FAQ</a></span></div>
@@ -685,6 +691,7 @@
     chs_rot: "3 routes · vanaf €29,95",
     chs_utr: "do–zo · vanaf €29,95",
     chs_gro: "do–za · vanaf €29,95",
+    chs_del: "Dagelijks · vanaf €29,95",
     explore: "Kies deze stad →",
     lost_links: "Of ga direct naar: <a href=\"./\">Home</a> &nbsp;·&nbsp; <a href=\"how-it-works/\">Hoe het werkt</a> &nbsp;·&nbsp; <a href=\"faq/\">FAQ</a>",
     lost_help: "Nog steeds de weg kwijt? <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">Stuur ons een berichtje</a> — wij zijn sneller dan een verdwenen pagina.",
