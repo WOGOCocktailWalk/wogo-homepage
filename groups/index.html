@@ -5,7 +5,7 @@
      WOGO CONTENT PAGE — /groups/ — built from the /how-it-works/ reference
      template (see that file's header for the copy-a-folder instructions).
      This is the group-bookings funnel page: it publishes the group price
-     (€29,95pp — the biggest documented gap in the old funnel) and hands the
+     (€32,95pp for 6+ — the biggest documented gap in the old funnel) and hands the
      visitor to the EXISTING live Wix enquiry form. It is an inquiry handoff,
      NOT a checkout — the on-site Apps Script form is a later phase.
      ========================================================================= -->
@@ -13,8 +13,8 @@
      PRE-PUBLISH FLAGS for Maroussia — resolve BEFORE cutover:
      1) MINIMUM GROUP SIZE — resolved 2026-07-06: every page sitewide now
         says 6 to 30, matching the minimum the live Wix enquiry form accepts.
-     2) RATE — resolved 2026-09-28: €29,95 per person, matching the rest of
-        the site. Groups pay the standard per-person price.
+     2) RATE — groups of 6 or more pay a flat €32,95 per person (owner,
+        2026-11-05). Parties of 6 or fewer book instantly at €29,95.
      ============================================================ -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,18 +27,18 @@
 <title>Group Cocktail Walks · Bachelorettes &amp; Team Outings | WOGO</title>
 <meta name="robots" content="noindex"> <!-- REMOVE at cutover -->
 <link rel="canonical" href="https://www.wogococktailwalk.com/groups/">
-<meta name="description" content="Group cocktail walks for bachelorette parties, birthdays & team outings — 6–30 people, Amsterdam & Rotterdam. €29,95pp, quote within one working day.">
+<meta name="description" content="Group cocktail walks for bachelorette parties, birthdays & team outings — 6–30 people, in every WOGO city. €32,95pp, quote within one working day.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="WOGO Cocktail Walk">
 <meta property="og:title" content="Cocktail Walks for Groups of 6–30 | WOGO">
-<meta property="og:description" content="Bachelorette, birthday or team outing: 3 reserved bars, 3 cocktails per person, personalized routes possible. €29,95pp in Amsterdam & Rotterdam — get your quote within one working day.">
+<meta property="og:description" content="Bachelorette, birthday or team outing: 3 reserved bars, 3 cocktails per person, personalized routes possible. €32,95pp in every WOGO city. Get your quote within one working day.">
 <meta property="og:url" content="https://www.wogococktailwalk.com/groups/">
 <meta property="og:image" content="https://www.wogococktailwalk.com/og/wogo-groups.jpg">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Cocktail Walks for Groups of 6–30 | WOGO">
-<meta name="twitter:description" content="3 reserved bars, 3 cocktails per person, personalized routes possible. €29,95pp in Amsterdam & Rotterdam — get your quote within one working day.">
+<meta name="twitter:description" content="3 reserved bars, 3 cocktails per person, personalized routes possible. €32,95pp in every WOGO city. Get your quote within one working day.">
 <meta name="twitter:image" content="https://www.wogococktailwalk.com/og/wogo-groups.jpg">
 <!-- PAGE-EDIT: structured data — content pages carry LIGHT Organization markup only.
      The FAQ page owns FAQPage markup; the mini FAQ below is a UI element, not
@@ -586,6 +586,7 @@
   <div class="w-hero-overlay"></div>
   <div class="w-hero-content wg-hero-anim">
     <div class="w-hero-overline" data-i18n="hero_eyebrow">For groups of 6 to 30</div>
+    <div class="w-hero-price" data-i18n="hero_price">€32,95 per person</div>
     <h1 data-i18n="hero_h1">Cocktail Walks<br>Built for Groups</h1>
     <p class="w-hero-sub" data-i18n="hero_sub">Bachelorettes, birthdays, team outings. We handle the bars.</p>
     <a href="#enquire" class="w-hero-cta w-scroll" data-i18n="hero_cta">Plan your group walk →</a>
@@ -619,25 +620,25 @@
      SECTION: PHOTO + WHAT A GROUP WALK CONTAINS — visual two-column.
      Real WOGO group photo (group-photo.jpg, self-hosted in this folder)
      on the left; the short "what's included" checklist on the right.
-     The note carries the honesty limits (Amsterdam & Rotterdam only,
+     The note carries the honesty limits (group size,
      6–30) and the cancellation ceiling — never "free cancellation".
      ============================================================ -->
 <section class="w-section brown w-pad">
   <div class="w-group-wrap">
     <div class="w-group-photo wg-reveal">
-      <img loading="lazy" decoding="async" src="group-photo.jpg" alt="A group celebrating together on a WOGO group cocktail walk in Amsterdam &amp; Rotterdam">
+      <img loading="lazy" decoding="async" src="group-photo.jpg" alt="A group celebrating together on a WOGO group cocktail walk">
     </div>
     <div class="w-group-col">
       <div class="w-eyebrow" data-i18n="cont_eyebrow">What a group walk contains</div>
-      <h2 data-i18n="cont_h2">Everything sorted, from €29,95 per person</h2>
+      <h2 data-i18n="cont_h2">Everything sorted, €32,95 per person</h2>
       <ul class="w-incl-list wg-stagger">
-        <li data-i18n="cont_1">3 signature cocktails each — one at every bar</li>
+        <li data-i18n="cont_1">3 signature cocktails each, one at every bar</li>
         <li data-i18n="cont_2">3 hand-picked bars, tables reserved for the whole group</li>
-        <li data-i18n="cont_3">Groups of 6 to 30 — one contact person, one simple plan</li>
+        <li data-i18n="cont_3">Groups of 6 to 30, one contact person, one simple plan</li>
         <li data-i18n="cont_4">Self-guided, 3–4 relaxed hours at your own pace</li>
         <li data-i18n="cont_5">Mocktail option on every route · snacks addable</li>
       </ul>
-      <p class="w-box-note" data-i18n="cont_note">Group walks run in Amsterdam &amp; Rotterdam. Fewer than 6 or more than 30? <a href="#enquire" class="w-scroll w-mail">Get in touch</a> — we'll see what's possible.</p>
+      <p class="w-box-note" data-i18n="cont_note">Group walks run in every WOGO city. Fewer than 6 or more than 30? <a href="#enquire" class="w-scroll w-mail">Get in touch</a> and we'll see what's possible.</p>
     </div>
   </div>
 </section>
@@ -1072,6 +1073,7 @@
 
     /* --- hero --- */
     hero_eyebrow: "Voor groepen van 6 tot 30",
+    hero_price: "€32,95 per persoon",
     hero_h1: "Cocktail Walks<br>voor groepen",
     hero_sub: "Vrijgezellenfeesten, verjaardagen, teamuitjes. Wij regelen de bars.",
     hero_cta: "Plan jullie groepswandeling →",
@@ -1087,13 +1089,13 @@
     occ_link: "Vertel ons jullie plan →",
     /* --- what a group walk contains --- */
     cont_eyebrow: "Wat een groepswandeling bevat",
-    cont_h2: "Alles geregeld, vanaf €29,95 per persoon",
-    cont_1: "3 signature cocktails per persoon — één bij elke bar",
+    cont_h2: "Alles geregeld, €32,95 per persoon",
+    cont_1: "3 signature cocktails per persoon, één bij elke bar",
     cont_2: "3 zorgvuldig gekozen bars, tafels gereserveerd voor de hele groep",
-    cont_3: "Groepen van 6 tot 30 — één contactpersoon, één simpel plan",
+    cont_3: "Groepen van 6 tot 30, één contactpersoon, één simpel plan",
     cont_4: "Zelfgeleid, 3–4 ontspannen uur in jullie eigen tempo",
     cont_5: "Mocktail-optie op elke route · snacks bij te boeken",
-    cont_note: "We lopen groepswandelingen in Amsterdam &amp; Rotterdam. Minder dan 6 of meer dan 30? <a href=\"#enquire\" class=\"w-scroll w-mail\">Neem contact op</a> — we kijken wat er mogelijk is.",
+    cont_note: "We lopen groepswandelingen in elke WOGO-stad. Minder dan 6 of meer dan 30? <a href=\"#enquire\" class=\"w-scroll w-mail\">Neem contact op</a>, dan kijken we wat mogelijk is.",
     /* --- extras (chips) --- */
     extra_eyebrow: "Maak het jullie eigen",
     extra_h2: "Optionele extra's voor jullie groep",
