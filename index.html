@@ -205,10 +205,10 @@
   .w-step p { font-size: 13px; line-height: 1.5; font-weight: 500; color: rgba(255,229,217,0.85); max-width: 230px; margin: 0 auto; }
   .w-how .w-head h2 { color: var(--wogo-cream); }
   .w-how .w-eyebrow { color: rgba(255,229,217,0.7); }
-  .w-howstrip { display: flex; align-items: stretch; justify-content: center; gap: 34px; max-width: 920px; margin: 0 auto; }
-  /* Each step is flush LEFT (icon on top of its own text), but the three blocks stay
-     centred as a group — hence flex:0 1 auto instead of equal thirds. */
-  .w-hs-item { flex: 0 1 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; text-align: left; padding: 4px 0; }
+  .w-howstrip { display: flex; align-items: stretch; justify-content: center; gap: 10px; max-width: 920px; margin: 0 auto; }
+  /* Equal thirds across the strip, as before; only the text inside each one is
+     flush left, with its icon on top. */
+  .w-hs-item { flex: 1 1 0; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; text-align: left; padding: 4px 10px; }
   .w-hs-ico { font-size: 26px; line-height: 1; }
   .w-hs-tx { font-size: 13.5px; font-weight: 700; line-height: 1.35; color: var(--wogo-blush); max-width: 15ch; }
   .w-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: 900px; margin: 0 auto 12px; text-align: center; }
