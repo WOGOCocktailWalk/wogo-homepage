@@ -144,6 +144,7 @@
   .w-section { padding: 50px 0; background: #ffe5d9; }          /* LIGHT  · blush */
   .w-section.cream, .w-section.alt { background: #fffaf6; }     /* LIGHT  · cream (lightest) */
   .w-section.peach { background: #fbe9df; }                     /* LIGHT  · salmon-tint */
+  .w-section.salmon { background: var(--wogo-salmon, #ffaa81); } /* LIGHT  · full salmon band */
   .w-section.brown { background: #3f2b21; }                     /* DARK   · espresso (recurring band) */
   .w-section.dark { background: #1a1410; }                      /* DARKEST · ink */
   /* One inversion helper: add `brown`/`dark` and the section's own text flips. */
@@ -403,6 +404,10 @@
 
   /* Two-column hero: copy left, gift-card mock right */
   .w-hero-gift { min-height: 480px; }
+  /* The hero gradient runs diagonally, so its bottom edge met the espresso
+     band below as a visible step. Fade the last stretch into that exact
+     colour so the two read as one surface. */
+  .w-hero-gift::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 160px; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(63,43,33,0) 0%, rgba(63,43,33,0.55) 55%, var(--wogo-espresso, #3f2b21) 100%); }
   .w-hero-gift .w-hero-content { min-height: 480px; }
   .w-gift-hero { flex-direction: row; flex-wrap: wrap; gap: 40px; align-items: center; justify-content: center; text-align: left; max-width: 1000px; }
   .w-gift-copy { flex: 1 1 340px; max-width: 520px; }
@@ -457,6 +462,8 @@
   .gc-field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #7e5541; }
   .gc-field input, .gc-field textarea { font: inherit; font-size: 15.5px; font-weight: 500; text-transform: none; letter-spacing: normal; color: #201611; background: #fffaf6; border: 1.5px solid #e7d3c6; border-radius: 12px; padding: 12px 14px; }
   .gc-field textarea { resize: vertical; min-height: 80px; }
+  .gc-check { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; font-weight: 700; color: #3f2b21; line-height: 1.45; cursor: pointer; }
+  .gc-check input { width: 19px; height: 19px; flex: 0 0 auto; margin-top: 1px; accent-color: #f2905c; cursor: pointer; }
   .gc-field input:focus, .gc-field textarea:focus { outline: none; border-color: #f2905c; box-shadow: 0 0 0 3px rgba(242,144,92,0.18); }
   .gc-form .w-hero-cta { grid-column: 1 / -1; justify-self: stretch; text-align: center; border: none; cursor: pointer; margin-top: 6px; font-family: inherit; }
   .gc-form .w-hero-cta:disabled { opacity: 0.6; cursor: default; }
@@ -722,8 +729,7 @@
       <button type="button" class="w-tier-btn" data-i18n="tierc_btn">Choose this amount →</button>
     </div>
   </div>
-  <p class="w-tiers-note" data-i18n="tiers_note">One gift card per order, with a personal message at checkout. It lands in their inbox within minutes — no shipping, no wrapping.</p>
-  <p class="w-tiers-note" data-i18n="tiers_anchor">A walk is €29,95 per person. €30 covers most of a walk, €60 is a full walk for one, and €100 makes it a night out for two. Prefer an exact number? Choose your own amount above.</p>
+  <p class="w-tiers-note" data-i18n="tiers_note">One gift card per order, with a personal message at checkout.<br>It lands in their inbox within minutes, and they can print it out if they'd rather hold it.</p>
 
   <!-- ORDER FORM — always present (progressive: works the moment a tile is
        picked, no modal/JS-only gate). POSTs JSON to the Worker; on success
@@ -736,9 +742,14 @@
         <input type="text" name="buyer_name" autocomplete="name" required></label>
       <label class="gc-field gc-full"><span data-i18n="gc_buyer_email">Your email</span>
         <input type="email" name="buyer_email" autocomplete="email" required></label>
-      <label class="gc-field"><span data-i18n="gc_recipient_name">Recipient's name</span>
+      <!-- Send-to-self: ticking this copies the buyer's own name and address into
+           the recipient fields, so the printable gift email lands in their inbox.
+           Frontend only — the Worker still receives a normal recipient. -->
+      <label class="gc-check gc-full"><input type="checkbox" id="wGcSelf">
+        <span data-i18n="gc_self">Send it to me, so I can print it and hand it over myself</span></label>
+      <label class="gc-field" id="wGcRecNameWrap"><span data-i18n="gc_recipient_name">Recipient's name</span>
         <input type="text" name="recipient_name" autocomplete="off" required></label>
-      <label class="gc-field"><span data-i18n="gc_recipient_email">Recipient's email</span>
+      <label class="gc-field" id="wGcRecMailWrap"><span data-i18n="gc_recipient_email">Recipient's email</span>
         <input type="email" name="recipient_email" autocomplete="off" required></label>
       <label class="gc-field gc-full"><span data-i18n="gc_message">Personal message (optional)</span>
         <textarea name="message" rows="3" maxlength="500"></textarea></label>
@@ -753,7 +764,7 @@
      SECTION: PERFECT FOR — occasion chip row (leaner than the old
      3-card grid; reuses the shared .w-chip pill).
      ============================================================ -->
-<section class="w-section peach w-pad">
+<section class="w-section salmon w-pad">
   <div class="w-head"><div class="w-eyebrow" data-i18n="occ_eyebrow">Any occasion</div><h2 data-i18n="occ_h2">The right gift, right on time</h2></div>
   <div class="w-chips wg-stagger" role="list" aria-label="Occasions a WOGO gift card suits">
     <span class="w-chip" role="listitem" data-i18n="occ_birthdays">🎂 Birthdays</span>
@@ -1143,12 +1154,12 @@
     tierc_sub: "Eigen bedrag",
     tierc_b: "Elk bedrag dat je wilt",
     tierc_btn: "Kies dit bedrag →",
-    tiers_note: "Eén cadeaubon per bestelling, met een persoonlijk bericht bij het afrekenen. Binnen een paar minuten in de inbox — geen verzending, geen inpakpapier.",
-    tiers_anchor: "Een walk is €29,95 per persoon. €30 dekt bijna een hele walk, €60 is een volledige walk voor één en €100 maakt er een avond uit voor twee van. Liever een exact bedrag? Kies hierboven je eigen bedrag.",
+    tiers_note: "Eén cadeaubon per bestelling, met een persoonlijk bericht bij het afrekenen.<br>Binnen een paar minuten in de inbox, en zelf uit te printen als je hem liever in handen geeft.",
     /* --- order form --- */
     gc_order_amt_empty: "Kies hierboven een bedrag om te beginnen.",
     gc_buyer_name: "Jouw naam",
     gc_buyer_email: "Jouw e-mailadres",
+    gc_self: "Stuur ’m naar mij, dan print ik hem zelf en geef ik hem persoonlijk",
     gc_recipient_name: "Naam van de ontvanger",
     gc_recipient_email: "E-mailadres van de ontvanger",
     gc_message: "Persoonlijk bericht (optioneel)",
@@ -2343,6 +2354,44 @@
         errBox.classList.add('show');
       });
   });
+})();
+</script>
+
+<script>
+/* Gift card "send it to me": mirrors the buyer's own name and email into the
+   recipient fields and hides them, so the printable gift email arrives in the
+   buyer's inbox. Purely front-end; the Worker still gets a normal recipient. */
+(function () {
+  "use strict";
+  var form = document.getElementById("wGcForm");
+  var self = document.getElementById("wGcSelf");
+  if (!form || !self) return;
+  var bName = form.querySelector('[name="buyer_name"]');
+  var bMail = form.querySelector('[name="buyer_email"]');
+  var rName = form.querySelector('[name="recipient_name"]');
+  var rMail = form.querySelector('[name="recipient_email"]');
+  var rNameWrap = document.getElementById("wGcRecNameWrap");
+  var rMailWrap = document.getElementById("wGcRecMailWrap");
+  if (!bName || !bMail || !rName || !rMail) return;
+
+  function mirror() {
+    if (!self.checked) return;
+    rName.value = bName.value;
+    rMail.value = bMail.value;
+  }
+  function apply() {
+    var on = self.checked;
+    if (rNameWrap) rNameWrap.hidden = on;
+    if (rMailWrap) rMailWrap.hidden = on;
+    rName.required = !on;
+    rMail.required = !on;
+    mirror();
+  }
+  self.addEventListener("change", apply);
+  bName.addEventListener("input", mirror);
+  bMail.addEventListener("input", mirror);
+  form.addEventListener("submit", mirror, true);
+  apply();
 })();
 </script>
 </body>
