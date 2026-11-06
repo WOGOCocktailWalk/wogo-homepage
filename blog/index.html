@@ -156,8 +156,9 @@
   .w-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #3f2b21; margin-bottom: 10px; text-align: center; }
 
   /* ===== BLOG INDEX GRID (DESIGN-V6-SPEC §4a) ===== */
-  .bl-filter { max-width:1320px; margin:0 auto 22px; display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
-  .bl-filter button { font:inherit; font-size:13px; font-weight:800; color:var(--wogo-brown); padding:9px 18px; background:var(--wogo-cream); border:1.5px solid var(--wogo-line); border-radius:999px; cursor:pointer; transition:background .2s,color .2s,border-color .2s; }
+  .bl-filter { max-width:1320px; margin:0 auto 22px; display:flex; flex-wrap:wrap; justify-content:center; gap:6px; }
+  .bl-card[hidden] { display: none; }
+  .bl-filter button { font:inherit; font-size:12.5px; font-weight:800; color:var(--wogo-brown); padding:8px 14px; background:var(--wogo-cream); border:1.5px solid var(--wogo-line); border-radius:999px; cursor:pointer; transition:background .2s,color .2s,border-color .2s; }
   .bl-filter button:hover { background:var(--wogo-salmon); border-color:var(--wogo-salmon); color:var(--wogo-espresso); }
   .bl-filter button[aria-pressed="true"] { background:var(--wogo-espresso); border-color:var(--wogo-espresso); color:var(--wogo-blush); }
   .bl-grid { max-width:1320px; margin:0 auto; display:grid; grid-template-columns:repeat(4,1fr); gap:20px; }
@@ -466,11 +467,11 @@
   <div class="bl-filter w-pad" id="blFilter" role="group" aria-label="Filter posts by theme"></div>
   <div class="bl-grid wg-stagger" id="blGrid">
 
-    <a class="bl-card" data-cat="bl_c_guide" href="what-is-a-self-guided-cocktail-walk/">
+    <a class="bl-card" data-cat="bl_c_walks" href="what-is-a-self-guided-cocktail-walk/">
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../how-it-works/how-it-works-hero.jpg" alt="Friends on a self-guided cocktail walk"></div>
       <div class="bl-card-body">
-        <span class="bl-cat" data-i18n="bl_c_guide">Explained</span>
+        <span class="bl-cat" data-i18n="bl_c_walks">Cocktail Walks</span>
         <h3 data-i18n="bl_p1_t">What is a self-guided cocktail walk?</h3>
         <p data-i18n="bl_p1_x">The bar crawl, upgraded: a curated route, tables reserved, zero planning. Here's how it works.</p>
         <span class="bl-meta" data-i18n="bl_p1_m">5 min read</span>
@@ -481,7 +482,7 @@
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../rotterdam/route-2/hidden-gems-hero.jpg" alt="A cocktail bar in Rotterdam"></div>
       <div class="bl-card-body">
-        <span class="bl-cat" data-i18n="bl_c_city">City guide</span>
+        <span class="bl-cat" data-i18n="bl_c_city">City Guides</span>
         <h3 data-i18n="bl_p2_t">The best cocktail bars in Rotterdam</h3>
         <p data-i18n="bl_p2_x">Where Rotterdam actually drinks: the neighbourhoods, the vibe, and how to taste the best of it in one night.</p>
         <span class="bl-meta" data-i18n="bl_p2_m">7 min read</span>
@@ -492,18 +493,18 @@
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../rotterdam/route-2/hidden-gems-hero.jpg" alt="New cocktail bars in Rotterdam"></div>
       <div class="bl-card-body">
-        <span class="bl-cat" data-i18n="bl_c_city">City guide</span>
+        <span class="bl-cat" data-i18n="bl_c_city">City Guides</span>
         <h3 data-i18n="bl_p3_t">New bars in Rotterdam to add to your night out</h3>
         <p data-i18n="bl_p3_x">The freshest openings worth building a night around.</p>
         <span class="bl-meta" data-i18n="bl_p3_m">4 min read</span>
       </div>
     </a>
 
-    <a class="bl-card" data-cat="bl_c_news" href="rotterdam-premium-gin-walk-launch/">
+    <a class="bl-card" data-cat="bl_c_brands" href="rotterdam-premium-gin-walk-launch/">
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../rotterdam/route-3-premium/premium-gin-walk-hero.jpg" alt="Rotterdam premium gin cocktail walk"></div>
       <div class="bl-card-body">
-        <span class="bl-cat" data-i18n="bl_c_news">News</span>
+        <span class="bl-cat" data-i18n="bl_c_brands">Brands</span>
         <h3 data-i18n="bl_p4_t">Rotterdam's new premium cocktail walk with Bobby's Gin</h3>
         <p data-i18n="bl_p4_x">A more elevated route through Rotterdam's high-end bars.</p>
         <span class="bl-meta" data-i18n="bl_p4_m">4 min read</span>
@@ -514,18 +515,18 @@
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../utrecht/utrecht-hero.jpg" alt="Cocktail bars in Utrecht"></div>
       <div class="bl-card-body">
-        <span class="bl-cat" data-i18n="bl_c_city">City guide</span>
+        <span class="bl-cat" data-i18n="bl_c_city">City Guides</span>
         <h3 data-i18n="bl_p5_t">Top 7 bars in Utrecht to visit for a great night out</h3>
         <p data-i18n="bl_p5_x">The Utrecht bars our guests come back for, in one list.</p>
         <span class="bl-meta" data-i18n="bl_p5_m">6 min read</span>
       </div>
     </a>
 
-    <a class="bl-card" data-cat="bl_c_city" href="utrecht-night-out-cocktails/">
+    <a class="bl-card" data-cat="bl_c_stories" href="utrecht-night-out-cocktails/">
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../utrecht/friends-cocktails-lounge.jpg" alt="A night out in Utrecht"></div>
       <div class="bl-card-body">
-        <span class="bl-cat" data-i18n="bl_c_city">City guide</span>
+        <span class="bl-cat" data-i18n="bl_c_stories">Cocktail Stories</span>
         <h3 data-i18n="bl_p6_t">An ultimate night out in Utrecht, one cocktail at a time</h3>
         <p data-i18n="bl_p6_x">How to turn an evening in Utrecht into a proper cocktail walk.</p>
         <span class="bl-meta" data-i18n="bl_p6_m">5 min read</span>
@@ -536,7 +537,7 @@
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900"
         src="../amsterdam/amsterdam-hero.jpg" alt="Amsterdam Cocktail Week bars"></div>
       <div class="bl-card-body">
-        <span class="bl-cat" data-i18n="bl_c_city">City guide</span>
+        <span class="bl-cat" data-i18n="bl_c_city">City Guides</span>
         <h3 data-i18n="bl_p7_t">The ultimate guide to Amsterdam Cocktail Week bars</h3>
         <p data-i18n="bl_p7_x">Where to go during Amsterdam Cocktail Week, and beyond.</p>
         <span class="bl-meta" data-i18n="bl_p7_m">6 min read</span>
@@ -875,15 +876,13 @@
     hero_cta: "Begin met lezen ↓",
     bl_eyebrow: "Het WOGO journal",
     bl_h2: "Verhalen, stadsgidsen &amp; cocktailweetjes",
-    bl_c_guide: "Uitgelegd",
     bl_p1_t: "Wat is een zelfgeleide cocktailwandeling?",
     bl_p1_x: "De kroegentocht, maar dan beter: een uitgestippelde route, gereserveerde tafels, geen planning nodig. Zo werkt het.",
     bl_p1_m: "5 min lezen",
-    bl_c_city: "Stadsgids",
+    bl_c_city: "Stadsgidsen", bl_c_walks: "Cocktail Walks", bl_c_brands: "Merken", bl_c_stories: "Cocktailverhalen", bl_c_recipes: "Recepten", bl_c_skills: "Technieken & materiaal",
     bl_p2_t: "De beste cocktailbars in Rotterdam",
     bl_p2_x: "Waar Rotterdam écht drinkt: de buurten, de sfeer, en hoe je er in één avond het beste van proeft.",
     bl_p2_m: "7 min lezen",
-    bl_c_news: "Nieuws",
     bl_p3_t: "Nieuwe bars in Rotterdam voor je avondje uit",
     bl_p3_x: "De verste openingen waar je een hele avond omheen wilt bouwen.",
     bl_p3_m: "4 min lezen",
