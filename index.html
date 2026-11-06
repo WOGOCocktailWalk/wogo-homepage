@@ -110,6 +110,9 @@
   .w-hero-cities { font-size: 10.5px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(255,229,217,0.78); margin-bottom: 18px; }
   .w-hero h1 { font-size: clamp(28px, 4.6vw, 52px); font-weight: 900; line-height: 1.05; letter-spacing: -0.015em; margin-bottom: 14px; max-width: 16ch; text-shadow: 0 2px 16px rgba(0,0,0,0.45); }
   .w-hero p { font-size: clamp(14px, 1.3vw, 18px); font-weight: 500; line-height: 1.5; max-width: 540px; margin-bottom: 22px; opacity: 0.95; }
+  /* A line break that only applies on phones, so "From €29,95 per person" starts
+     its own line there while desktop keeps the sentence flowing. */
+  .w-br-m { display: none; }
   .w-hero-cta { display: inline-block; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 15px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform 0.2s, background 0.2s; }
   .w-hero-cta:active, .w-citycard-btn:active, .w-gift-btn:active, .w-group-btn:active, .w-final-btn:active, .w-sticky-cta-btn:active { transform: scale(0.96); }
   .w-mail { color: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
@@ -397,12 +400,15 @@
   @media (max-width: 720px) {
     .w-hero { min-height: 460px; } .w-hero-content { min-height: 460px; padding: 96px 22px 48px; }
     .w-hero-overline { font-size: 10px; letter-spacing: 0.16em; margin-bottom: 16px; }
-    .w-hero-brand { font-size: 17px; letter-spacing: 0.20em; margin-bottom: 6px; }
-    .w-hero-cities { font-size: 9.5px; letter-spacing: 0.18em; margin-bottom: 14px; }
-    .w-hero h1 { font-size: 25px; line-height: 1.14; margin-bottom: 14px; } .w-hero p { font-size: 13.5px; line-height: 1.55; margin-bottom: 20px; }
+    .w-hero-brand { font-size: 14px; letter-spacing: 0.18em; margin-bottom: 5px; }
+    /* 0.12em (not 0.18em) so all five city names fit the screen instead of being
+       clipped at both edges. */
+    .w-hero-cities { font-size: 8.5px; letter-spacing: 0.12em; margin-bottom: 15px; }
+    .w-hero h1 { font-size: 32px; line-height: 1.12; margin-bottom: 14px; } .w-hero p { font-size: 13.5px; line-height: 1.55; margin-bottom: 20px; }
+    .w-br-m { display: inline; }
     .w-hero-trust { font-size: 11.5px; gap: 6px 10px; margin-top: 16px; }
     .w-hero-trust .w-trust-hide-m { display: none; }  /* mobile fits 3 trust items: both star ratings + the gemeente partnership */
-    .w-hs-tx { white-space: normal; max-width: 15ch; }
+    .w-hs-tx { white-space: normal; }
     .w-section { padding: 40px 0; } .w-pad { padding-left: 16px; padding-right: 16px; }
     .w-head { margin-bottom: 20px; }
     .w-scroller { padding: 4px 14px 14px; gap: 12px; } .w-scroller::after { content: ""; flex: 0 0 20px; }
@@ -438,6 +444,13 @@
     /* comfortable thumb tap targets */
     .w-filter-btn { min-height: 40px; }
     .w-faq summary { min-height: 52px; }
+  }
+
+  /* Small phones (iPhone SE / mini). The hero subtitle is one notch smaller so
+     "Just show up. From €29,95 per person." still holds one line in Dutch,
+     which is longer than the English. */
+  @media (max-width: 380px) {
+    .w-hero p { font-size: 12.5px; }
   }
 
   /* ============================================================
@@ -582,7 +595,7 @@
     <div class="w-hero-brand" data-i18n="hero_brand">The Cocktail Walk</div>
     <div class="w-hero-cities">Amsterdam · Utrecht · Rotterdam · Groningen · Delft</div>
     <h1 data-i18n="hero_h1">Three bars.<br>Three cocktails.<br>Zero planning.</h1>
-    <p data-i18n="hero_p">Your perfect night out is already planned. Just show up. <strong>From €29,95 per person.</strong></p>
+    <p data-i18n="hero_p">Your perfect night out is already planned.<br class="w-br-m">Just show up. <strong>From €29,95 per person.</strong></p>
     <div class="w-hero-trust" style="margin-top:0;margin-bottom:18px;"><span data-i18n="t_google"><span class="w-star">★</span> 4.4 on Google</span><span>·</span><span data-i18n="t_trustpilot"><span class="w-star">★</span> 4.2 Trustpilot</span><span class="w-trust-hide-m">·</span><span class="w-trust-hide-m" data-i18n="t_guests">100,000+ guests</span><span>·</span><span data-i18n="t_partner">Partner of Gemeente Rotterdam</span></div>
     <a href="#cities" class="w-hero-cta w-scroll" data-i18n="hero_cta">Book your walk →</a>
   </div>
@@ -609,9 +622,9 @@
   <div class="w-eyebrow" data-i18n="how_eyebrow" style="text-align:center;">How it works</div>
   <h2 class="w-sr-only" data-i18n="how_h2">In three steps, then you just show up</h2>
   <div class="w-howstrip wg-stagger" style="margin-top:18px;">
-    <div class="w-hs-item"><div class="w-hs-ico">🗺️</div><div class="w-hs-tx" data-i18n="hs_1">Pick your route &amp; date</div></div>
-    <div class="w-hs-item"><div class="w-hs-ico">🍸</div><div class="w-hs-tx" data-i18n="hs_2">We pick your three bars</div></div>
-    <div class="w-hs-item"><div class="w-hs-ico">🚶</div><div class="w-hs-tx" data-i18n="hs_3">Self-guided, your pace</div></div>
+    <div class="w-hs-item"><div class="w-hs-ico">🗺️</div><div class="w-hs-tx" data-i18n="hs_1">Pick your<br class="w-br-m">route &amp; date</div></div>
+    <div class="w-hs-item"><div class="w-hs-ico">🍸</div><div class="w-hs-tx" data-i18n="hs_2">We pick your<br class="w-br-m">three bars</div></div>
+    <div class="w-hs-item"><div class="w-hs-ico">🚶</div><div class="w-hs-tx" data-i18n="hs_3">Self-guided,<br class="w-br-m">your pace</div></div>
   </div>
   <div style="text-align:center;margin-top:20px;"><a href="how-it-works/" class="w-navlink" data-i18n="how_more" style="display:inline-block;font-size:13px;font-weight:800;color:var(--wogo-blush);text-decoration:underline;text-underline-offset:3px;">Read the full guide →</a></div>
 </section>
@@ -702,7 +715,7 @@
     </div>
   </div>
   <div class="w-pad" style="text-align:center;margin-top:18px;"><a href="https://www.google.com/maps/search/WOGO+Cocktail+Walk" target="_blank" rel="noopener" data-i18n="rev_tp" style="display:inline-block;font-size:12.5px;font-weight:800;color:var(--wogo-espresso);text-decoration:underline;text-underline-offset:3px;">Read all our reviews on Google →</a></div>
-  <div class="w-pad" style="text-align:center;padding:22px 16px 4px;"><a href="#cities" class="w-final-btn w-mid-cta-btn w-scroll" data-i18n="mid_cta">Book your walk → from €29,95</a></div>
+  <div class="w-pad" style="text-align:center;padding:22px 16px 4px;"><a href="#cities" class="w-final-btn w-mid-cta-btn w-scroll" data-i18n="mid_cta">Book your walk</a></div>
 </section>
 
 <section class="w-section brown w-pad" style="text-align:center;padding:38px 24px;">
@@ -1024,7 +1037,7 @@
   var NL = {
     hero_brand: "De Cocktail Walk",
     hero_h1: "Drie bars.<br>Drie cocktails.<br>Nul planning.",
-    hero_p: "Je perfecte avond uit is al gepland. Kom gewoon opdagen. <strong>Vanaf €29,95 per persoon.</strong>",
+    hero_p: "Je perfecte avond uit is al gepland.<br class=\"w-br-m\">Kom gewoon opdagen. <strong>Vanaf €29,95 per persoon.</strong>",
     hero_cta: "Boek je walk →",
     t_google: "<span class=\"w-star\">★</span> 4.4 op Google",
     t_trustpilot: "<span class=\"w-star\">★</span> 4,2 Trustpilot",
@@ -1049,11 +1062,11 @@
     c7_route: "Groningen · Bobby's Gin Walk", c7_theme: "★ Thema: Beste bars", c7_day: "📅 do–za · start 17.00–20.00",
     c8_route: "Delft · Centrum", c8_theme: "★ Thema: Verborgen parels", c8_day: "📅 7 dagen per week",
     how_eyebrow: "Hoe het werkt", how_h2: "In drie stappen, dan hoef je alleen op te dagen",
-    hs_1: "Kies je route &amp; datum", hs_2: "Wij kiezen jouw drie bars", hs_3: "Zelfgeleid, op jouw tempo",
+    hs_1: "Kies je<br class=\"w-br-m\">route &amp; datum", hs_2: "Wij kiezen jouw<br class=\"w-br-m\">drie bars", hs_3: "Zelfgeleid,<br class=\"w-br-m\">op jouw tempo",
     how_more: "Lees de volledige uitleg →",
     rev_h2: "Wat onze gasten zeggen",
     rev_tp: "Lees al onze reviews op Google →",
-    mid_cta: "Boek je walk → vanaf €29,95",
+    mid_cta: "Boek je walk",
     group_solo: "→ Met z'n zessen of minder? Boek vanaf €29,95 per persoon",
     /* Review cards (r1q…r4m) removed: the homepage review rail is now data-driven
        from WOGO_REVIEWS (real verbatim quotes shown as-is, EN + NL), so it carries
