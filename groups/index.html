@@ -281,8 +281,8 @@
   .w-nav.menu-open ~ .w-sticky-cta { display: none; }
   .w-sticky-cta-btn { display: block; text-align: center; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 14px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); }
   @media (max-width: 720px) {
-    .w-br-m { display: inline; }
-    .w-sep-m { display: none; } .w-sticky-cta { display: block; } }
+    br.w-br-m { display: inline; }
+    span.w-sep-m { display: none; } .w-sticky-cta { display: block; } }
 
   /* ===== SITE NAV styles (reusable — keep self-contained) ===== */
   html { scroll-padding-top: 76px; }           /* so anchor jumps clear the fixed nav */
@@ -386,12 +386,16 @@
   @media (max-width: 720px) {
     .w-footer { padding-top: 44px; }
     .w-footer-top { flex-direction: column; gap: 30px; }
-    /* Phone: the brand line sits beside Contact instead of above it, and the
-       social pills lose their handles, so the footer is a lot shorter. */
-    .w-footer-brand { display: grid; grid-template-columns: 0.95fr 1.05fr; column-gap: 16px; align-items: start; max-width: none; }
-    .w-footer-word { grid-column: 1; }
-    .w-footer-tag { grid-column: 1; }
-    .w-footer-contact { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; }
+    /* Phone: the WOGO link column moves up beside Contact so the footer is
+       shorter. The salmon wordmark and the tagline stay full width on top. */
+    .w-footer-top { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; row-gap: 26px; }
+    .w-footer-brand, .w-footer-cols { display: contents; }
+    .w-footer-word { grid-column: 1 / -1; }
+    .w-footer-tag { grid-column: 1 / -1; }
+    .w-footer-contact { grid-column: 1; grid-row: 3; margin-top: 0; }
+    .w-footer-col:nth-child(3) { grid-column: 2; grid-row: 3; }
+    .w-footer-col:nth-child(1) { grid-column: 1; grid-row: 4; }
+    .w-footer-col:nth-child(2) { grid-column: 2; grid-row: 4; }
     .w-footer-contact a, .w-footer-contact span { font-size: 12.5px; }
     .w-footer-socials { flex-wrap: nowrap; gap: 8px; padding-left: 10px; padding-right: 10px; }
     .w-footer-socials a { padding: 9px 13px; font-size: 12.5px; }
@@ -417,7 +421,12 @@
     .w-boxes { grid-template-columns: 1fr; gap: 14px; }
     .w-box { padding: 22px 20px; }
     .w-gtk { grid-template-columns: 1fr; gap: 12px; }
-    .w-cityhub { grid-template-columns: 1fr 1fr; gap: 12px; }
+    /* Phone: the city cards swipe sideways instead of stacking into a grid. */
+    .w-cityhub { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px;
+      padding-bottom: 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .w-cityhub::-webkit-scrollbar { display: none; }
+    .w-cityhub::after { content: ""; flex: 0 0 4px; }
+    .w-cityhub-card { flex: 0 0 min(72vw, 290px); scroll-snap-align: center; }
     .w-cityhub-name { font-size: 14px; }
     .w-cityhub-sub { font-size: 11px; }
     .w-cityhub-go { font-size: 11.5px; }
@@ -429,7 +438,10 @@
     .w-group-wrap { text-align: center; justify-content: center; } .w-group p { margin: 0 auto; }
     .w-call-btns { flex: 1 1 100%; flex-direction: column; align-items: center; }
     .w-faq summary { padding: 14px 0; font-size: 14.5px; min-height: 52px; }
-    .w-chip { font-size: 12.5px; padding: 10px 15px; }
+    /* Phone: two tidy columns instead of a ragged centred wrap. */
+    .w-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .w-chip { font-size: 12px; padding: 10px 10px; justify-content: center; text-align: left; line-height: 1.3; }
+    .w-chip .w-chip-ico { flex: 0 0 auto; }
     .w-group-photo { flex: 1 1 100%; width: 100%; }
     .w-group-col { flex: 1 1 100%; }
     .w-group-col > h2 { text-align: center; }
@@ -603,7 +615,7 @@
     <div class="w-hero-overline" data-i18n="hero_eyebrow">For groups of 6 to 30</div>
     <div class="w-hero-price" data-i18n="hero_price">€32,95 per person</div>
     <h1 data-i18n="hero_h1">Cocktail Walks<br>Built for Groups</h1>
-    <p class="w-hero-sub" data-i18n="hero_sub">Bachelorettes, birthdays, team outings. We handle the bars.</p>
+    <p class="w-hero-sub" data-i18n="hero_sub">Bachelorettes, birthdays, team outings. <br class="w-br-m">We handle the bars.</p>
     <a href="#enquire" class="w-hero-cta w-scroll" data-i18n="hero_cta">Plan your group walk →</a>
   </div>
 </section>
@@ -645,7 +657,7 @@
     </div>
     <div class="w-group-col">
       <div class="w-eyebrow" data-i18n="cont_eyebrow">What a group walk contains</div>
-      <h2 data-i18n="cont_h2">Everything sorted, €32,95 per person</h2>
+      <h2 data-i18n="cont_h2">Everything sorted, <br class="w-br-m">€32,95 per person</h2>
       <ul class="w-incl-list wg-stagger">
         <li data-i18n="cont_1">3 signature cocktails each, one at every bar</li>
         <li data-i18n="cont_2">3 hand-picked bars, tables reserved for the whole group</li>
@@ -666,7 +678,7 @@
   <div class="w-head">
     <div class="w-eyebrow" data-i18n="extra_eyebrow">Make it yours</div>
     <h2 data-i18n="extra_h2">Optional extras for your group</h2>
-    <p data-i18n="extra_p">Mention any of these in the form and we'll build them in.</p>
+    <p data-i18n="extra_p">Mention any of these in the form <br class="w-br-m">and we'll build them in.</p>
   </div>
   <div class="w-chips wg-stagger">
     <span class="w-chip"><span class="w-chip-ico" aria-hidden="true">⏰</span><span data-i18n="extra_c1">Custom start times</span></span>
@@ -821,7 +833,7 @@
     <div class="w-footer-top">
       <div class="w-footer-brand">
         <div class="w-footer-word">WOGO</div>
-        <p class="w-footer-tag" data-i18n="foot_tag">Three bars you'd never have found.<br>One night you'll always remember.</p>
+        <p class="w-footer-tag" data-i18n="foot_tag">Three hand-picked bars.<br>One night you'll always remember.</p>
         <div class="w-footer-contact">
           <h3>Contact</h3>
           <a href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a>
@@ -1090,7 +1102,7 @@
     hero_eyebrow: "Voor groepen van 6 tot 30",
     hero_price: "€32,95 per persoon",
     hero_h1: "Cocktail Walks<br>voor groepen",
-    hero_sub: "Vrijgezellenfeesten, verjaardagen, teamuitjes. Wij regelen de bars.",
+    hero_sub: "Vrijgezellenfeesten, verjaardagen, teamuitjes. <br class=\"w-br-m\">Wij regelen de bars.",
     hero_cta: "Plan jullie groepswandeling →",
     /* --- occasions (chips) --- */
     occ_eyebrow: "Elke reden is een goede",
@@ -1104,7 +1116,7 @@
     occ_link: "Vertel ons jullie plan →",
     /* --- what a group walk contains --- */
     cont_eyebrow: "Wat een groepswandeling bevat",
-    cont_h2: "Alles geregeld, €32,95 per persoon",
+    cont_h2: "Alles geregeld, <br class=\"w-br-m\">€32,95 per persoon",
     cont_1: "3 signature cocktails per persoon, één bij elke bar",
     cont_2: "3 zorgvuldig gekozen bars, tafels gereserveerd voor de hele groep",
     cont_3: "Groepen van 6 tot 30, één contactpersoon, één simpel plan",
@@ -1114,7 +1126,7 @@
     /* --- extras (chips) --- */
     extra_eyebrow: "Maak het jullie eigen",
     extra_h2: "Optionele extra's voor jullie groep",
-    extra_p: "Noem het in het formulier — wij regelen het voor jullie.",
+    extra_p: "Noem het in het formulier <br class=\"w-br-m\">en wij regelen het voor jullie.",
     extra_c1: "Aangepaste starttijden",
     extra_c2: "Dieetwensen &amp; mocktails",
     extra_c3: "Groepen boven 30",
@@ -1158,7 +1170,7 @@
     /* --- nav --- */
     nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_faq: "FAQ", nav_about: "Over WOGO", nav_cta: "Bekijk routes",
     /* --- footer --- */
-    foot_tag: "Drie bars die je nooit zelf had gevonden.<br>Eén avond die je altijd bijblijft.",
+    foot_tag: "Drie zorgvuldig gekozen bars.<br>Eén avond die je altijd bijblijft.",
     foot_c1_h: "Routes", foot_c2_h: "Ontdek",
     foot_how: "Hoe het werkt", foot_groups: "Groepsboekingen", foot_gift: "Cadeaukaarten", foot_contact: "Contact", foot_blog: "Blog", foot_faq: "FAQ",
     foot_about: "Over WOGO",

@@ -317,16 +317,20 @@
     .w-nav .w-lang-btn { padding: 7px 10px; min-height: 38px; }
   }
   @media (max-width: 720px) {
-    .w-br-m { display: inline; }
-    .w-sep-m { display: none; }
+    br.w-br-m { display: inline; }
+    span.w-sep-m { display: none; }
     .w-footer { padding-top: 44px; }
     .w-footer-top { flex-direction: column; gap: 30px; }
-    /* Phone: the brand line sits beside Contact instead of above it, and the
-       social pills lose their handles, so the footer is a lot shorter. */
-    .w-footer-brand { display: grid; grid-template-columns: 0.95fr 1.05fr; column-gap: 16px; align-items: start; max-width: none; }
-    .w-footer-word { grid-column: 1; }
-    .w-footer-tag { grid-column: 1; }
-    .w-footer-contact { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; }
+    /* Phone: the WOGO link column moves up beside Contact so the footer is
+       shorter. The salmon wordmark and the tagline stay full width on top. */
+    .w-footer-top { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; row-gap: 26px; }
+    .w-footer-brand, .w-footer-cols { display: contents; }
+    .w-footer-word { grid-column: 1 / -1; }
+    .w-footer-tag { grid-column: 1 / -1; }
+    .w-footer-contact { grid-column: 1; grid-row: 3; margin-top: 0; }
+    .w-footer-col:nth-child(3) { grid-column: 2; grid-row: 3; }
+    .w-footer-col:nth-child(1) { grid-column: 1; grid-row: 4; }
+    .w-footer-col:nth-child(2) { grid-column: 2; grid-row: 4; }
     .w-footer-contact a, .w-footer-contact span { font-size: 12.5px; }
     .w-footer-socials { flex-wrap: nowrap; gap: 8px; padding-left: 10px; padding-right: 10px; }
     .w-footer-socials a { padding: 9px 13px; font-size: 12.5px; }
@@ -622,7 +626,7 @@
     <div class="w-footer-top">
       <div class="w-footer-brand">
         <div class="w-footer-word">WOGO</div>
-        <p class="w-footer-tag" data-i18n="foot_tag">Three bars you'd never have found.<br>One night you'll always remember.</p>
+        <p class="w-footer-tag" data-i18n="foot_tag">Three hand-picked bars.<br>One night you'll always remember.</p>
         <div class="w-footer-contact">
           <h3>Contact</h3>
           <a href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a>
@@ -894,7 +898,7 @@
     gift_btn: "Koop een cadeaubon →",
     final_h2: "Kom gewoon opdagen", final_p: "Wij hebben het kleine lettertje al geregeld. Kies nu je stad.", final_btn: "Kies je route →",
     nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_faq: "FAQ", nav_about: "Over WOGO", nav_cta: "Bekijk routes",
-    foot_tag: "Drie bars die je nooit zelf had gevonden.<br>Eén avond die je altijd bijblijft.",
+    foot_tag: "Drie zorgvuldig gekozen bars.<br>Eén avond die je altijd bijblijft.",
     foot_c1_h: "Routes", foot_c2_h: "Ontdek",
     foot_how: "Hoe het werkt", foot_groups: "Groepsboekingen", foot_gift: "Cadeaukaarten", foot_contact: "Contact", foot_blog: "Blog", foot_faq: "FAQ",
     foot_about: "Over WOGO",
