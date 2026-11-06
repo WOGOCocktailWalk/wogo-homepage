@@ -221,6 +221,8 @@
   .w-hs-dark .w-hs-tx { color: #3f2b21; }
   /* Quick-facts strip */
   .w-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; max-width: 920px; margin: 0 auto; text-align: center; }
+  @keyframes wogoFactsTicker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .w-facts.is-ticker .w-facts-track { animation: none; } }
   /* A line break that only applies on phones. */
   .w-br-m { display: none; }
   .w-sep-m { display: inline; }
@@ -353,14 +355,14 @@
     .w-footer-top { flex-direction: column; gap: 30px; }
     /* Phone: the WOGO link column moves up beside Contact so the footer is
        shorter. The salmon wordmark and the tagline stay full width on top. */
-    .w-footer-top { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; row-gap: 26px; }
+    .w-footer-top { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; row-gap: 8px; }
     .w-footer-brand, .w-footer-cols { display: contents; }
-    .w-footer-word { grid-column: 1 / -1; }
+    .w-footer-word { grid-column: 1 / -1; margin-bottom: 0; }
     .w-footer-tag { grid-column: 1 / -1; }
-    .w-footer-contact { grid-column: 1; grid-row: 3; margin-top: 0; }
-    .w-footer-col:nth-child(3) { grid-column: 2; grid-row: 3; }
-    .w-footer-col:nth-child(1) { grid-column: 1; grid-row: 4; }
-    .w-footer-col:nth-child(2) { grid-column: 2; grid-row: 4; }
+    .w-footer-contact { grid-column: 1; grid-row: 3; margin-top: 18px; }
+    .w-footer-col:nth-child(3) { grid-column: 2; grid-row: 3; margin-top: 18px; }
+    .w-footer-col:nth-child(1) { grid-column: 1; grid-row: 4; margin-top: 18px; }
+    .w-footer-col:nth-child(2) { grid-column: 2; grid-row: 4; margin-top: 18px; }
     .w-footer-contact a, .w-footer-contact span { font-size: 12.5px; }
     .w-footer-socials { flex-wrap: nowrap; gap: 8px; padding-left: 10px; padding-right: 10px; }
     .w-footer-socials a { padding: 9px 13px; font-size: 12.5px; }
@@ -380,7 +382,16 @@
     .w-hero-trust .w-trust-hide-m { display: none; }  /* mobile fits 3 trust items */
     .w-section { padding: 40px 0; } .w-pad { padding-left: 16px; padding-right: 16px; }
     .w-head { margin-bottom: 20px; }
+    /* Phone: the facts run as one moving line, like a ticker. The JS below
+       wraps them in a track and clones them once so the loop is seamless. */
     .w-facts { grid-template-columns: 1fr; gap: 9px; justify-items: start; text-align: left; max-width: 290px; }
+    .w-facts.is-ticker { display: block; overflow: hidden; max-width: none; width: 100vw;
+      margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw);
+      -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 7%, #000 93%, transparent 100%);
+      mask-image: linear-gradient(90deg, transparent 0, #000 7%, #000 93%, transparent 100%); }
+    .w-facts.is-ticker .w-facts-track { display: flex; flex-wrap: nowrap; width: max-content;
+      animation: wogoFactsTicker 28s linear infinite; }
+    .w-facts.is-ticker .w-fact { white-space: nowrap; padding: 0 20px; }
     br.w-br-m { display: inline; }
     span.w-sep-m { display: none; }
     .w-fact { font-size: 12.5px; }
@@ -422,6 +433,9 @@
   /* Scroll-reveal: single element / section */
   html.wg-js .wg-reveal { opacity: 0; transform: translateY(16px); transition: opacity .55s ease, transform .55s cubic-bezier(.22,.61,.36,1); will-change: opacity, transform; }
   html.wg-js .wg-reveal.wg-in { opacity: 1; transform: none; }
+  /* A full-width coloured band must never be nudged down to reveal: the
+     shift exposes a strip of page background above it. Those fade only. */
+  html.wg-js section.wg-reveal { transform: none; }
 
   /* Scroll-reveal: staggered children */
   html.wg-js .wg-stagger > * { opacity: 0; transform: translateY(14px); transition: opacity .5s ease, transform .5s cubic-bezier(.22,.61,.36,1); will-change: opacity, transform; }
@@ -2257,5 +2271,29 @@
 </script>
 <!-- ===== /LONDON LAUNCH-LIST MODAL ===== -->
 
+<script>
+/* Facts strip as a phone ticker: wrap the items in a track, clone them once so
+   translateX(-50%) loops seamlessly. Desktop and no-JS keep the plain grid. */
+(function () {
+  try {
+    var f = document.querySelector('.w-facts');
+    if (!f || f.getAttribute('data-ticker')) return;
+    if (!window.matchMedia || !window.matchMedia('(max-width: 720px)').matches) return;
+    var items = [].slice.call(f.children);
+    if (!items.length) return;
+    var track = document.createElement('div');
+    track.className = 'w-facts-track';
+    items.forEach(function (i) { track.appendChild(i); });
+    items.forEach(function (i) {
+      var c = i.cloneNode(true);
+      c.setAttribute('aria-hidden', 'true');
+      track.appendChild(c);
+    });
+    f.appendChild(track);
+    f.classList.add('is-ticker');
+    f.setAttribute('data-ticker', '1');
+  } catch (e) {}
+})();
+</script>
 </body>
 </html>
