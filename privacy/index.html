@@ -197,7 +197,10 @@
   .w-nav::before { content: ""; position: absolute; inset: 0 0 -22px 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(26,20,16,0.62) 0%, rgba(26,20,16,0.34) 55%, rgba(26,20,16,0) 100%); opacity: 1; transition: opacity 0.3s ease; }
   .w-nav.scrolled::before, .w-nav.menu-open::before { opacity: 0; }
   .w-nav.w-nav-embedded { position: absolute; }
-  .w-nav-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 14px; padding: 14px 24px; }
+  .w-nav-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 14px; padding: 14px 24px; position: relative; z-index: 51; }  /* above the open mobile menu (49) so the close X stays visible */
+  /* Phone-only line break, and the separator it replaces. */
+  .w-br-m { display: none; }
+  .w-sep-m { display: inline; }
   .w-nav-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: #ffe5d9; text-decoration: none; transition: color 0.3s ease; text-shadow: 0 1px 10px rgba(0,0,0,0.45); }
   .w-nav-logo { height: 34px; width: auto; display: block; flex: 0 0 auto; }
   .w-nav.scrolled, .w-nav.menu-open { background: #FAF6F2; }
@@ -240,7 +243,7 @@
   .w-nav-overlay-links { list-style: none; display: flex; flex-direction: column; }
   .w-nav-ov-link { display: block; font-size: 22px; font-weight: 800; color: #1a1410; text-decoration: none; padding: 15px 6px; border-bottom: 1px solid rgba(92,42,20,0.12); }
   .w-nav-ov-link:hover { color: #f2905c; }
-  .w-nav-ov-cities { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 6px 16px; border-bottom: 1px solid rgba(92,42,20,0.12); }
+  .w-nav-ov-cities { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 6px 6px 12px; border-bottom: 1px solid rgba(92,42,20,0.12); }
   .w-nav-ov-cities a { font-size: 14px; font-weight: 700; color: #3f2b21; text-decoration: none; background: #ffe5d9; padding: 11px 18px; border-radius: 999px; }
   .w-nav-overlay .w-nav-cta { margin-top: 26px; text-align: center; font-size: 15px; padding: 16px 24px; }
 
@@ -285,8 +288,20 @@
     .w-nav .w-lang-btn { padding: 7px 10px; min-height: 38px; }
   }
   @media (max-width: 720px) {
+    .w-br-m { display: inline; }
+    .w-sep-m { display: none; }
     .w-footer { padding-top: 44px; }
     .w-footer-top { flex-direction: column; gap: 30px; }
+    /* Phone: the brand line sits beside Contact instead of above it, and the
+       social pills lose their handles, so the footer is a lot shorter. */
+    .w-footer-brand { display: grid; grid-template-columns: 0.95fr 1.05fr; column-gap: 16px; align-items: start; max-width: none; }
+    .w-footer-word { grid-column: 1; }
+    .w-footer-tag { grid-column: 1; }
+    .w-footer-contact { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; }
+    .w-footer-contact a, .w-footer-contact span { font-size: 12.5px; }
+    .w-footer-socials { flex-wrap: nowrap; gap: 8px; padding-left: 10px; padding-right: 10px; }
+    .w-footer-socials a { padding: 9px 13px; font-size: 12.5px; }
+    .w-footer-socials a span { display: none; }
     .w-footer-cols { flex-basis: 100%; grid-template-columns: 1fr 1fr; gap: 26px 20px; }
     .w-footer-legal { justify-content: center; text-align: center; }
     .w-footer-legal-links { justify-content: center; width: 100%; }
@@ -574,7 +589,7 @@
     <section class="w-nl" id="wNl" aria-labelledby="wNlH">
       <div class="w-nl-copy">
         <h2 class="w-nl-h" id="wNlH" data-nl="h">Be the first to hear about new routes &amp; cities</h2>
-        <p class="w-nl-sub"><span data-nl="sub">Get 10% off your first walk. Unsubscribe anytime.</span> <a href="../privacy/" data-nl="priv">Privacy policy</a></p>
+        <p class="w-nl-sub"><span data-nl="sub">Get 10% off your first walk. Unsubscribe anytime.</span><br class="w-br-m"> <a href="../privacy/" data-nl="priv">Privacy policy</a></p>
       </div>
       <form class="w-nl-form" id="wNlForm" novalidate>
         <div class="w-nl-field">
@@ -629,7 +644,7 @@
     </div>
 
     <!-- Trust / badge line -->
-    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.2 / 5 · 100,000+ guests · 18+</div>
+    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.2 / 5<span class="w-sep-m"> · </span><br class="w-br-m">100,000+ guests · 18+</div>
 
     <!-- Socials -->
     <div class="w-footer-socials" role="group" aria-label="WOGO on social media">
@@ -908,7 +923,7 @@
     foot_bars: "Voor bars",
     foot_contact_link: "Contact",
     foot_hours: "Maandag – vrijdag<br>10:00 – 18:00",
-    foot_trust: "★ 4.4 op Google · Trustpilot 4,2 / 5 · 100.000+ gasten · 18+",
+    foot_trust: "★ 4.4 op Google · Trustpilot 4,2 / 5<span class=\"w-sep-m\"> · </span><br class=\"w-br-m\">100.000+ gasten · 18+",
     foot_privacy: "Privacybeleid", foot_cookie: "Cookiebeleid", foot_terms: "Algemene voorwaarden",
     foot_disclaimer: "Disclaimer", foot_accessibility: "Toegankelijkheid", foot_complaints: "Klachten", foot_cookie_settings: "Cookie-instellingen",
     foot_copyright: "© 2026 WOGO Amsterdam B.V. · KvK 92237347 · BTW NL865949323B01 · Amsterdam"

@@ -113,6 +113,7 @@
   /* A line break that only applies on phones, so "From €29,95 per person" starts
      its own line there while desktop keeps the sentence flowing. */
   .w-br-m { display: none; }
+  .w-sep-m { display: inline; }
   .w-hero-cta { display: inline-block; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 15px 32px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform 0.2s, background 0.2s; }
   .w-hero-cta:active, .w-citycard-btn:active, .w-gift-btn:active, .w-group-btn:active, .w-final-btn:active, .w-sticky-cta-btn:active { transform: scale(0.96); }
   .w-mail { color: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
@@ -291,7 +292,7 @@
   .w-nav::before { content: ""; position: absolute; inset: 0 0 -22px 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(26,20,16,0.62) 0%, rgba(26,20,16,0.34) 55%, rgba(26,20,16,0) 100%); opacity: 1; transition: opacity 0.3s ease; }
   .w-nav.scrolled::before, .w-nav.menu-open::before { opacity: 0; }
   .w-nav.w-nav-embedded { position: absolute; }  /* inside the Wix iframe the host scrolls, so don't pin */
-  .w-nav-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 14px; padding: 14px 24px; }
+  .w-nav-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 14px; padding: 14px 24px; position: relative; z-index: 51; }  /* above the open mobile menu (49) so the close X stays visible */
   /* Logo + wordmark lockup */
   .w-nav-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: var(--wogo-blush); text-decoration: none; transition: color 0.3s ease; text-shadow: 0 1px 10px rgba(0,0,0,0.45); }
   .w-nav-logo { height: 34px; width: auto; display: block; flex: 0 0 auto; }
@@ -343,7 +344,7 @@
   .w-nav-overlay-links { list-style: none; display: flex; flex-direction: column; }
   .w-nav-ov-link { display: block; font-size: 22px; font-weight: 800; color: var(--wogo-ink); text-decoration: none; padding: 15px 6px; border-bottom: 1px solid rgba(63,43,33,0.12); }
   .w-nav-ov-link:hover { color: var(--wogo-salmon-deep); }
-  .w-nav-ov-cities { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 6px 16px; border-bottom: 1px solid rgba(63,43,33,0.12); }
+  .w-nav-ov-cities { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 6px 6px 12px; border-bottom: 1px solid rgba(63,43,33,0.12); }
   .w-nav-ov-cities a { font-size: 14px; font-weight: 700; color: var(--wogo-espresso); text-decoration: none; background: var(--wogo-blush); padding: 11px 18px; border-radius: 999px; }
   .w-nav-overlay .w-nav-cta { margin-top: 26px; text-align: center; font-size: 15px; padding: 16px 24px; }
 
@@ -392,6 +393,16 @@
   @media (max-width: 720px) {
     .w-footer { padding-top: 44px; }
     .w-footer-top { flex-direction: column; gap: 30px; }
+    /* Phone: the brand line sits beside Contact instead of above it, and the
+       social pills lose their handles, so the footer is a lot shorter. */
+    .w-footer-brand { display: grid; grid-template-columns: 0.95fr 1.05fr; column-gap: 16px; align-items: start; max-width: none; }
+    .w-footer-word { grid-column: 1; }
+    .w-footer-tag { grid-column: 1; }
+    .w-footer-contact { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; }
+    .w-footer-contact a, .w-footer-contact span { font-size: 12.5px; }
+    .w-footer-socials { flex-wrap: nowrap; gap: 8px; padding-left: 10px; padding-right: 10px; }
+    .w-footer-socials a { padding: 9px 13px; font-size: 12.5px; }
+    .w-footer-socials a span { display: none; }
     .w-footer-cols { flex-basis: 100%; grid-template-columns: 1fr 1fr; gap: 26px 20px; }
     .w-footer-legal { justify-content: center; text-align: center; }
     .w-footer-legal-links { justify-content: center; width: 100%; }
@@ -403,9 +414,12 @@
     .w-hero-brand { font-size: 14px; letter-spacing: 0.18em; margin-bottom: 5px; }
     /* 0.12em (not 0.18em) so all five city names fit the screen instead of being
        clipped at both edges. */
-    .w-hero-cities { font-size: 8.5px; letter-spacing: 0.12em; margin-bottom: 15px; }
+    /* Never wrap: min() shrinks the line just enough that all five cities fit
+       the screen, down to a 320px phone. */
+    .w-hero-cities { font-size: min(8.5px, 2.2vw); letter-spacing: 0.12em; margin-bottom: 15px; white-space: nowrap; }
     .w-hero h1 { font-size: 32px; line-height: 1.12; margin-bottom: 14px; } .w-hero p { font-size: 13.5px; line-height: 1.55; margin-bottom: 20px; }
     .w-br-m { display: inline; }
+    .w-sep-m { display: none; }
     .w-hero-trust { font-size: 11.5px; gap: 6px 10px; margin-top: 16px; }
     .w-hero-trust .w-trust-hide-m { display: none; }  /* mobile fits 3 trust items: both star ratings + the gemeente partnership */
     .w-hs-tx { white-space: normal; }
@@ -595,7 +609,7 @@
     <div class="w-hero-brand" data-i18n="hero_brand">The Cocktail Walk</div>
     <div class="w-hero-cities">Amsterdam · Utrecht · Rotterdam · Groningen · Delft</div>
     <h1 data-i18n="hero_h1">Three bars.<br>Three cocktails.<br>Zero planning.</h1>
-    <p data-i18n="hero_p">Your perfect night out is already planned.<br class="w-br-m">Just show up. <strong>From €29,95 per person.</strong></p>
+    <p data-i18n="hero_p">Your perfect night out is already planned. <br class="w-br-m">Just show up. <strong>From €29,95 per person.</strong></p>
     <div class="w-hero-trust" style="margin-top:0;margin-bottom:18px;"><span data-i18n="t_google"><span class="w-star">★</span> 4.4 on Google</span><span>·</span><span data-i18n="t_trustpilot"><span class="w-star">★</span> 4.2 Trustpilot</span><span class="w-trust-hide-m">·</span><span class="w-trust-hide-m" data-i18n="t_guests">100,000+ guests</span><span>·</span><span data-i18n="t_partner">Partner of Gemeente Rotterdam</span></div>
     <a href="#cities" class="w-hero-cta w-scroll" data-i18n="hero_cta">Book your walk →</a>
   </div>
@@ -622,9 +636,9 @@
   <div class="w-eyebrow" data-i18n="how_eyebrow" style="text-align:center;">How it works</div>
   <h2 class="w-sr-only" data-i18n="how_h2">In three steps, then you just show up</h2>
   <div class="w-howstrip wg-stagger" style="margin-top:18px;">
-    <div class="w-hs-item"><div class="w-hs-ico">🗺️</div><div class="w-hs-tx" data-i18n="hs_1">Pick your<br class="w-br-m">route &amp; date</div></div>
-    <div class="w-hs-item"><div class="w-hs-ico">🍸</div><div class="w-hs-tx" data-i18n="hs_2">We pick your<br class="w-br-m">three bars</div></div>
-    <div class="w-hs-item"><div class="w-hs-ico">🚶</div><div class="w-hs-tx" data-i18n="hs_3">Self-guided,<br class="w-br-m">your pace</div></div>
+    <div class="w-hs-item"><div class="w-hs-ico">🗺️</div><div class="w-hs-tx" data-i18n="hs_1">Pick your <br class="w-br-m">route &amp; date</div></div>
+    <div class="w-hs-item"><div class="w-hs-ico">🍸</div><div class="w-hs-tx" data-i18n="hs_2">We pick your <br class="w-br-m">three bars</div></div>
+    <div class="w-hs-item"><div class="w-hs-ico">🚶</div><div class="w-hs-tx" data-i18n="hs_3">Self-guided, <br class="w-br-m">your pace</div></div>
   </div>
   <div style="text-align:center;margin-top:20px;"><a href="how-it-works/" class="w-navlink" data-i18n="how_more" style="display:inline-block;font-size:13px;font-weight:800;color:var(--wogo-blush);text-decoration:underline;text-underline-offset:3px;">Read the full guide →</a></div>
 </section>
@@ -677,7 +691,7 @@
       <div class="w-citycard w-citycard-soon" data-city="london"><div class="w-citycard-img w-citycard-img-soon"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">🇬🇧 London</div><div class="w-citycard-flag" data-i18n="flag_soon">Coming soon</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="lon_route">London · Soho &amp; Covent Garden</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="lon_teaser">★ Our first city beyond the Netherlands</div></div><div class="w-citycard-actions"><a href="london/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="intl_soon_btn">Take a first look →</a></div></div></div>
     </div>
   </div>
-  <div class="w-pad" style="text-align:center;margin-top:18px;"><span data-i18n="route_reassure" style="display:inline-block;font-size:12.5px;font-weight:700;color:var(--wogo-espresso);letter-spacing:0.01em;">✓ Reservations &amp; route map included &nbsp;·&nbsp; ✓ Mocktail option on every route &nbsp;·&nbsp; ✓ Questions? <a class="w-mail" href="mailto:info@wogoamsterdam.com">Write us</a></span></div>
+  <div class="w-pad" style="text-align:center;margin-top:18px;"><span data-i18n="route_reassure" style="display:inline-block;font-size:12.5px;font-weight:700;color:var(--wogo-espresso);letter-spacing:0.01em;">✓ Reservations &amp; route map included<span class="w-sep-m">&nbsp;·&nbsp;</span><br class="w-br-m">✓ Mocktail option on every route<span class="w-sep-m">&nbsp;·&nbsp;</span><br class="w-br-m">✓ Questions? <a class="w-mail" href="mailto:info@wogoamsterdam.com">Write us</a></span></div>
 </section>
 
 <section class="w-duo">
@@ -789,7 +803,7 @@
     <section class="w-nl" id="wNl" aria-labelledby="wNlH">
       <div class="w-nl-copy">
         <h2 class="w-nl-h" id="wNlH" data-nl="h">Be the first to hear about new routes &amp; cities</h2>
-        <p class="w-nl-sub"><span data-nl="sub">Get 10% off your first walk. Unsubscribe anytime.</span> <a href="privacy/" data-nl="priv">Privacy policy</a></p>
+        <p class="w-nl-sub"><span data-nl="sub">Get 10% off your first walk. Unsubscribe anytime.</span><br class="w-br-m"> <a href="privacy/" data-nl="priv">Privacy policy</a></p>
       </div>
       <form class="w-nl-form" id="wNlForm" novalidate>
         <div class="w-nl-field">
@@ -844,7 +858,7 @@
     </div>
 
     <!-- Trust / badge line -->
-    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.2 / 5 · 100,000+ guests · 18+</div>
+    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.2 / 5<span class="w-sep-m"> · </span><br class="w-br-m">100,000+ guests · 18+</div>
 
     <!-- Socials -->
     <div class="w-footer-socials" role="group" aria-label="WOGO on social media">
@@ -1037,7 +1051,7 @@
   var NL = {
     hero_brand: "De Cocktail Walk",
     hero_h1: "Drie bars.<br>Drie cocktails.<br>Nul planning.",
-    hero_p: "Je perfecte avond uit is al gepland.<br class=\"w-br-m\">Kom gewoon opdagen. <strong>Vanaf €29,95 per persoon.</strong>",
+    hero_p: "Je perfecte avond uit is al gepland. <br class=\"w-br-m\">Kom gewoon opdagen. <strong>Vanaf €29,95 per persoon.</strong>",
     hero_cta: "Boek je walk →",
     t_google: "<span class=\"w-star\">★</span> 4.4 op Google",
     t_trustpilot: "<span class=\"w-star\">★</span> 4,2 Trustpilot",
@@ -1045,7 +1059,7 @@
     t_partner: "Partner van Gemeente Rotterdam",
     cities_h2: "Kies je route",
     cities_p: "7 routes · 5 steden · vanaf €29,95 per persoon",
-    route_reassure: "✓ Reserveringen &amp; routekaart inbegrepen &nbsp;·&nbsp; ✓ Mocktail-optie op elke route &nbsp;·&nbsp; ✓ Vragen? <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">Stuur ons een berichtje</a>",
+    route_reassure: "✓ Reserveringen &amp; routekaart inbegrepen<span class=\"w-sep-m\">&nbsp;·&nbsp;</span><br class=\"w-br-m\">✓ Mocktail-optie op elke route<span class=\"w-sep-m\">&nbsp;·&nbsp;</span><br class=\"w-br-m\">✓ Vragen? <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">Stuur ons een berichtje</a>",
     per_person: "per persoon", book: "Boek je walk", info: "Bekijk route",
     time34: "🕐 3–4 uur", time3: "🕐 3 uur",
     flag_new: "Nieuw", flag_premium: "Stijlvolle bars", flag_best: "Bestseller", flag_localfav: "Lokale favoriet", flag_gin: "Powered by Bobby's Gin", flag_soon: "Binnenkort", flag_paused: "Gepauzeerd", waitlist: "Laat het me weten bij nieuwe data", filter_all: "Alle steden",
@@ -1062,7 +1076,7 @@
     c7_route: "Groningen · Bobby's Gin Walk", c7_theme: "★ Thema: Beste bars", c7_day: "📅 do–za · start 17.00–20.00",
     c8_route: "Delft · Centrum", c8_theme: "★ Thema: Verborgen parels", c8_day: "📅 7 dagen per week",
     how_eyebrow: "Hoe het werkt", how_h2: "In drie stappen, dan hoef je alleen op te dagen",
-    hs_1: "Kies je<br class=\"w-br-m\">route &amp; datum", hs_2: "Wij kiezen jouw<br class=\"w-br-m\">drie bars", hs_3: "Zelfgeleid,<br class=\"w-br-m\">op jouw tempo",
+    hs_1: "Kies je <br class=\"w-br-m\">route &amp; datum", hs_2: "Wij kiezen jouw <br class=\"w-br-m\">drie bars", hs_3: "Zelfgeleid, <br class=\"w-br-m\">op jouw tempo",
     how_more: "Lees de volledige uitleg →",
     rev_h2: "Wat onze gasten zeggen",
     rev_tp: "Lees al onze reviews op Google →",
@@ -1096,7 +1110,7 @@
     foot_bars: "Voor bars",
     foot_contact_link: "Contact",
     foot_hours: "Maandag – vrijdag<br>10:00 – 18:00",
-    foot_trust: "★ 4.4 op Google · Trustpilot 4,2 / 5 · 100.000+ gasten · 18+",
+    foot_trust: "★ 4.4 op Google · Trustpilot 4,2 / 5<span class=\"w-sep-m\"> · </span><br class=\"w-br-m\">100.000+ gasten · 18+",
     /* legal-link keys pre-stubbed: uncomment the footer legal links (see the
        bottom legal bar comment) when the privacy/cookie/terms pages ship */
     foot_privacy: "Privacybeleid", foot_cookie: "Cookiebeleid", foot_terms: "Algemene voorwaarden",
