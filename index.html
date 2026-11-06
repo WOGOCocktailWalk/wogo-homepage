@@ -395,14 +395,14 @@
     .w-footer-top { flex-direction: column; gap: 30px; }
     /* Phone: the WOGO link column moves up beside Contact so the footer is
        shorter. The salmon wordmark and the tagline stay full width on top. */
-    .w-footer-top { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; row-gap: 26px; }
+    .w-footer-top { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; row-gap: 8px; }
     .w-footer-brand, .w-footer-cols { display: contents; }
-    .w-footer-word { grid-column: 1 / -1; }
+    .w-footer-word { grid-column: 1 / -1; margin-bottom: 0; }
     .w-footer-tag { grid-column: 1 / -1; }
-    .w-footer-contact { grid-column: 1; grid-row: 3; margin-top: 0; }
-    .w-footer-col:nth-child(3) { grid-column: 2; grid-row: 3; }
-    .w-footer-col:nth-child(1) { grid-column: 1; grid-row: 4; }
-    .w-footer-col:nth-child(2) { grid-column: 2; grid-row: 4; }
+    .w-footer-contact { grid-column: 1; grid-row: 3; margin-top: 18px; }
+    .w-footer-col:nth-child(3) { grid-column: 2; grid-row: 3; margin-top: 18px; }
+    .w-footer-col:nth-child(1) { grid-column: 1; grid-row: 4; margin-top: 18px; }
+    .w-footer-col:nth-child(2) { grid-column: 2; grid-row: 4; margin-top: 18px; }
     .w-footer-contact a, .w-footer-contact span { font-size: 12.5px; }
     .w-footer-socials { flex-wrap: nowrap; gap: 8px; padding-left: 10px; padding-right: 10px; }
     .w-footer-socials a { padding: 9px 13px; font-size: 12.5px; }
@@ -440,7 +440,15 @@
     .w-citycard-btn { font-size: 11px; padding: 13px 8px; letter-spacing: 0.02em; }
     .w-arrow { display: none; }
     .w-duo { grid-template-columns: 1fr; }
-    .w-duo-half { padding: 34px 20px; }
+    /* Phone: both halves centre, with an even rhythm between the eyebrow,
+       the heading and the paragraph, and a heading small enough that
+       "birthdays & team outings" holds its own line. */
+    .w-duo-half { padding: 34px 20px; text-align: center; }
+    .w-duo-inner { text-align: center; }
+    .w-duo-group .w-eyebrow, .w-duo-gift .w-eyebrow { text-align: center; margin-bottom: 10px; }
+    .w-duo-inner h2 { font-size: min(24px, 6vw); margin-bottom: 10px; }
+    .w-duo-inner p { margin-left: auto; margin-right: auto; }
+    .w-duo-solo { text-align: center; }
     .w-gift-text { flex: 1 1 100%; }
     .w-gift-btn { width: 100%; max-width: 320px; }
     .w-how-steps { grid-template-columns: 1fr; gap: 20px; } .w-step-num { font-size: 36px; }
@@ -482,6 +490,9 @@
   /* Scroll-reveal: single element / section */
   html.wg-js .wg-reveal { opacity: 0; transform: translateY(16px); transition: opacity .55s ease, transform .55s cubic-bezier(.22,.61,.36,1); will-change: opacity, transform; }
   html.wg-js .wg-reveal.wg-in { opacity: 1; transform: none; }
+  /* A full-width coloured band must never be nudged down to reveal: the
+     shift exposes a strip of page background above it. Those fade only. */
+  html.wg-js section.wg-reveal { transform: none; }
 
   /* Scroll-reveal: staggered children */
   html.wg-js .wg-stagger > * { opacity: 0; transform: translateY(14px); transition: opacity .5s ease, transform .5s cubic-bezier(.22,.61,.36,1); will-change: opacity, transform; }

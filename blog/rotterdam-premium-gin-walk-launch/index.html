@@ -158,11 +158,12 @@
   .bl-hook { max-width:720px; margin:2px auto 22px; font-size:18px; font-weight:700; color:var(--wogo-brown); line-height:1.4; }
   .bl-img { border-radius:16px; overflow:hidden; margin:8px 0 26px; box-shadow:0 10px 24px var(--wogo-line-soft); }
   .bl-img img { width:100%; height:auto; display:block; }
-  .bl-cta-band { margin:30px auto; max-width:720px; padding:26px; border-radius:16px; background:var(--wogo-surface-tint);
+  .bl-cta-band { margin:30px auto; max-width:720px; padding:26px; border-radius:16px; background:var(--wogo-espresso);
     text-align:center; }
-  .bl-cta-band p { margin-bottom:14px; font-weight:700; }
+  .bl-cta-band p { margin-bottom:16px; font-weight:500; color:var(--wogo-blush); }
   .bl-cta-btn { display:inline-block; background:var(--wogo-cta-bg); color:var(--wogo-cta-ink); text-decoration:none;
-    padding:14px 28px; border-radius:999px; font-size:14px; font-weight:800; letter-spacing:.03em; text-transform:uppercase;
+    padding:14px 26px; border-radius:999px; font-size:14px; font-weight:800; letter-spacing:.02em; text-transform:uppercase;
+    white-space:nowrap;
     box-shadow:var(--wogo-cta-shadow); transition:transform .2s, background .2s; }
   .bl-cta-btn:hover { background:var(--wogo-cta-bg-hover); transform:translateY(-2px); }
   .bl-back { display:block; max-width:720px; margin:26px auto 0; font-size:13px; font-weight:800; color:var(--wogo-brown); text-align:left; }
@@ -288,14 +289,14 @@
     .w-footer-top { flex-direction: column; gap: 30px; }
     /* Phone: the WOGO link column moves up beside Contact so the footer is
        shorter. The salmon wordmark and the tagline stay full width on top. */
-    .w-footer-top { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; row-gap: 26px; }
+    .w-footer-top { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; row-gap: 8px; }
     .w-footer-brand, .w-footer-cols { display: contents; }
-    .w-footer-word { grid-column: 1 / -1; }
+    .w-footer-word { grid-column: 1 / -1; margin-bottom: 0; }
     .w-footer-tag { grid-column: 1 / -1; }
-    .w-footer-contact { grid-column: 1; grid-row: 3; margin-top: 0; }
-    .w-footer-col:nth-child(3) { grid-column: 2; grid-row: 3; }
-    .w-footer-col:nth-child(1) { grid-column: 1; grid-row: 4; }
-    .w-footer-col:nth-child(2) { grid-column: 2; grid-row: 4; }
+    .w-footer-contact { grid-column: 1; grid-row: 3; margin-top: 18px; }
+    .w-footer-col:nth-child(3) { grid-column: 2; grid-row: 3; margin-top: 18px; }
+    .w-footer-col:nth-child(1) { grid-column: 1; grid-row: 4; margin-top: 18px; }
+    .w-footer-col:nth-child(2) { grid-column: 2; grid-row: 4; margin-top: 18px; }
     .w-footer-contact a, .w-footer-contact span { font-size: 12.5px; }
     .w-footer-socials { flex-wrap: nowrap; gap: 8px; padding-left: 10px; padding-right: 10px; }
     .w-footer-socials a { padding: 9px 13px; font-size: 12.5px; }
@@ -338,6 +339,9 @@
   @media (hover: none){ .bl-cta-btn::after, .w-final-btn::after { display:none; } }
   html.wg-js .wg-reveal { opacity: 0; transform: translateY(16px); transition: opacity .55s ease, transform .55s cubic-bezier(.22,.61,.36,1); will-change: opacity, transform; }
   html.wg-js .wg-reveal.wg-in { opacity: 1; transform: none; }
+  /* A full-width coloured band must never be nudged down to reveal: the
+     shift exposes a strip of page background above it. Those fade only. */
+  html.wg-js section.wg-reveal { transform: none; }
   html.wg-js .wg-hero-anim > * { transform: translateY(14px); transition: transform .6s cubic-bezier(.22,.61,.36,1); }
   html.wg-js .wg-hero-anim > *:nth-child(2) { transition-delay: 60ms; }
   html.wg-js .wg-hero-anim > *:nth-child(3) { transition-delay: 120ms; }
@@ -472,7 +476,7 @@
 
   <div class="bl-cta-band wg-reveal">
     <p data-i18n="post_cta_p">Ready to discover Rotterdam one cocktail at a time? Rotterdam Premium is €34,95 per person, tables reserved.</p>
-    <a href="../../rotterdam/route-3-premium/" class="bl-cta-btn" data-i18n="post_cta_btn">View the Rotterdam Premium route →</a>
+    <a href="../../rotterdam/route-3-premium/" class="bl-cta-btn" data-i18n="post_cta_btn">View the Rotterdam Premium route</a>
   </div>
 
   <article class="bl-post wg-reveal">
@@ -828,7 +832,7 @@
     post_h2_4: "Ontdek Bobby's Gin",
     post_p4_1: "Wil je meer weten over Bobby's? Volg ze op Instagram via <a href=\"https://www.instagram.com/bobbysdrygin/\" target=\"_blank\" rel=\"noopener\">@bobbysdrygin</a> en ontdek de Bobby's spirit(s)!",
     post_cta_p: "Klaar om Rotterdam te ontdekken, één cocktail per keer? Rotterdam Premium is €34,95 per persoon, tafels gereserveerd.",
-    post_cta_btn: "Bekijk de Rotterdam Premium route →",
+    post_cta_btn: "Bekijk de Rotterdam Premium route",
     post_close: "Of je nu met vrienden, familie of collega's komt: de cocktailwandeling biedt de perfecte mix van smaak, plezier en ontdekking.",
     post_back: "← Terug naar het journal",
     group_eyebrow: "Voor groepen", group_h2: "Vrijgezellenfeesten, <br class=\"w-br-m\">verjaardagen &amp; teamuitjes",
