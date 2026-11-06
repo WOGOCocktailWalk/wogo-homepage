@@ -387,8 +387,15 @@
     .w-hero-trust { font-size: 11.5px; gap: 6px 10px; margin-top: 16px; }
     .w-section { padding: 40px 0; } .w-pad { padding-left: 16px; padding-right: 16px; }
     .w-head { margin-bottom: 20px; }
-    .w-tiers { grid-template-columns: 1fr; gap: 14px; }
-    .w-tier { padding: 24px 20px 22px; }
+    /* Two by two on a phone instead of a long stack. */
+    .w-tiers { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .w-tier { padding: 22px 12px 18px; gap: 8px; }
+    .w-tier-amt { font-size: 30px; }
+    .w-tier-sub { font-size: 10px; letter-spacing: 0.14em; }
+    .w-tier-benefit { font-size: 11.5px; gap: 3px; flex-direction: column; }
+    .w-tier-btn { padding: 12px 8px; font-size: 11px; letter-spacing: 0.02em; }
+    .w-tier-popular { font-size: 9.5px; padding: 4px 10px; }
+    .w-tier-input { padding: 9px 10px; font-size: 13.5px; }
     .w-tier-amt { font-size: 36px; }
     .w-stepcard { gap: 14px; padding: 20px 0; }
     .w-stepcard-num { flex: 0 0 44px; width: 44px; height: 44px; font-size: 19px; }
@@ -431,7 +438,7 @@
   /* The hero gradient runs diagonally, so its bottom edge met the espresso
      band below as a visible step. Fade the last stretch into that exact
      colour so the two read as one surface. */
-  .w-hero-gift::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 160px; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(63,43,33,0) 0%, rgba(63,43,33,0.55) 55%, var(--wogo-espresso, #3f2b21) 100%); }
+  .w-hero-gift::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 300px; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(63,43,33,0) 0%, rgba(63,43,33,0.25) 30%, rgba(63,43,33,0.65) 62%, rgba(63,43,33,0.93) 86%, var(--wogo-espresso, #3f2b21) 100%); }
   .w-hero-gift .w-hero-content { min-height: 480px; }
   .w-gift-hero { flex-direction: row; flex-wrap: wrap; gap: 40px; align-items: center; justify-content: center; text-align: left; max-width: 1000px; }
   .w-gift-copy { flex: 1 1 340px; max-width: 520px; }
@@ -788,6 +795,9 @@
      SECTION: PERFECT FOR — occasion chip row (leaner than the old
      3-card grid; reuses the shared .w-chip pill).
      ============================================================ -->
+<!-- REMOVED on request (6 Nov 2026): the "Any occasion" chip row.
+     Kept here so it can be put back by deleting this comment wrapper.
+     Its occ_* strings are still in the EN markup below and the NL dictionary.
 <section class="w-section salmon w-pad">
   <div class="w-head"><div class="w-eyebrow" data-i18n="occ_eyebrow">Any occasion</div><h2 data-i18n="occ_h2">The right gift, right on time</h2></div>
   <div class="w-chips wg-stagger" role="list" aria-label="Occasions a WOGO gift card suits">
@@ -798,6 +808,7 @@
     <span class="w-chip" role="listitem" data-i18n="occ_justbc">✨ Just because</span>
   </div>
 </section>
+-->
 
 <!-- ============================================================
      SECTION: MINI FAQ — redemption / validity / partial cover.
@@ -862,8 +873,8 @@
      gift-card checkout).
      ============================================================ -->
 <section class="w-section dark w-pad w-final">
-  <h2 class="wg-reveal" data-i18n="final_h2">Give a night, not a thing</h2>
-  <p class="wg-reveal" data-i18n="final_p">Delivered by email in minutes — even if the birthday is today.</p>
+  <h2 class="wg-reveal" data-i18n="final_h2">Give a night, <br class="w-br-m">not a thing</h2>
+  <p class="wg-reveal" data-i18n="final_p">Delivered by email in minutes.</p>
   <a href="#tiers" class="w-final-btn w-scroll" data-i18n="final_btn">Buy a gift card →</a>
 </section>
 
@@ -1231,8 +1242,8 @@
     explore: "Ontdek deze stad →",
     route_reassure: "✓ Reserveringen &amp; routekaart inbegrepen<span class=\"w-sep-m\">&nbsp;·&nbsp;</span><br class=\"w-br-m\">✓ Mocktail-optie op elke route<span class=\"w-sep-m\">&nbsp;·&nbsp;</span><br class=\"w-br-m\">✓ Vragen? <a class=\"w-mail\" href=\"mailto:info@wogoamsterdam.com\">Stuur ons een berichtje</a>",
     /* --- final CTA + sticky --- */
-    final_h2: "Geef een avond, geen cadeau dat stof vangt",
-    final_p: "Binnen een paar minuten per e-mail geleverd — ook als de verjaardag vandaag is.",
+    final_h2: "Geef een avond, <br class=\"w-br-m\">geen cadeau dat stof vangt",
+    final_p: "Binnen een paar minuten per e-mail geleverd.",
     final_btn: "Koop een cadeaubon →",
     sticky_cta: "Koop een cadeaubon · vanaf €30",
     /* --- nav --- */
