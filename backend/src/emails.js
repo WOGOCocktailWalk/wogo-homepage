@@ -322,6 +322,16 @@ function allergiesNotesBlock(notes, lang = 'en') {
 
 const ADDONS_TITLE = { en: 'Extras ordered', nl: "Bestelde extra's" };
 
+// Bar-facing only (migrations/0033). Add-ons are PREPAID to WOGO at checkout,
+// but the bar is the one serving them, so without this line a bar reads
+// "Extras ordered: 2x Bites" as a table order and charges the guest a second
+// time. Guests never see it (the guest already knows they paid), so it is
+// passed explicitly by the two bar-facing renderers rather than defaulted on.
+const ADDONS_PREPAID_NOTE = {
+  en: 'Already paid by the guest at booking. Please invoice WOGO as agreed and do not charge at the table.',
+  nl: 'Al door de gast betaald bij het boeken. Factureer dit zoals afgesproken aan WOGO en reken het niet af aan tafel.',
+};
+
 /**
  * The "extras ordered" list (migrations/0033) — one line per add-on line
  * item: "2× Bites — €11,95". `lines` is whatever src/db.js:getAddonsForBooking
@@ -335,7 +345,7 @@ const ADDONS_TITLE = { en: 'Extras ordered', nl: "Bestelde extra's" };
  * at all — same "nothing to show ⇒ nothing rendered" rule every other
  * optional block in this file follows.
  */
-function addonsBlock(lines, lang = 'en') {
+function addonsBlock(lines, lang = 'en', opts = {}) {
   if (!Array.isArray(lines) || lines.length === 0) return '';
   const rows = lines
     .map((l) => {
@@ -346,8 +356,11 @@ function addonsBlock(lines, lang = 'en') {
         <span style="color:${C.salmonDeep};font-weight:800;">&#8226;</span>&nbsp;&nbsp;<strong style="color:${C.ink};">${escapeHtml(String(l.qty))}&times;</strong> ${escapeHtml(name)} &mdash; ${escapeHtml(money)}</td></tr>`;
     })
     .join('');
+  const prepaid = opts.prepaid
+    ? `<p style="margin:2px 0 0;font-size:12.5px;line-height:1.5;color:${C.brown};">${escapeHtml(ADDONS_PREPAID_NOTE[lang] || ADDONS_PREPAID_NOTE.en)}</p>`
+    : '';
   return `<h3 style="margin:0 0 6px;font-size:13px;font-weight:800;letter-spacing:.02em;color:${C.ink};text-transform:uppercase;">${escapeHtml(ADDONS_TITLE[lang] || ADDONS_TITLE.en)}</h3>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">${rows}</table>`;
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 ${prepaid ? '6px' : '20px'};">${rows}</table>${prepaid}${prepaid ? '<div style="height:20px;"></div>' : ''}`;
 }
 
 /** A dashed-border code callout (migrations/0031) — used by the abandoned-
@@ -696,7 +709,7 @@ export function renderBarNotification(bar, booking, route, opts = {}) {
   // the owner's spec — never shown to a bar that owns nothing on this
   // booking, even if the guest left one.
   const barAddons = Array.isArray(opts.addons) ? opts.addons : [];
-  const addonsSection = addonsBlock(barAddons, lang);
+  const addonsSection = addonsBlock(barAddons, lang, { prepaid: true });
   const addonAllergiesSection = barAddons.length > 0 ? allergiesNotesBlock(booking.addon_notes, lang) : '';
 
   // The allergies/notes block goes FIRST — above even the arrival hero — so
@@ -966,7 +979,7 @@ export function renderBarReschedule(bar, booking, route, opts = {}) {
   // of this booking's add-ons sees neither the extras list nor the allergy
   // note, exactly as before this feature existed.
   const barAddons = Array.isArray(opts.addons) ? opts.addons : [];
-  const addonsSection = addonsBlock(barAddons, lang);
+  const addonsSection = addonsBlock(barAddons, lang, { prepaid: true });
   const addonAllergiesSection = barAddons.length > 0 ? allergiesNotesBlock(booking.addon_notes, lang) : '';
   const content = `
     ${allergiesNotesBlock(booking.notes, lang)}${addonAllergiesSection}${addonsSection}${wasLine}${arrivalHero}
