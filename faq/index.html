@@ -358,16 +358,20 @@
   }
   /* footer: stack columns */
   @media (max-width: 720px) {
-    .w-br-m { display: inline; }
-    .w-sep-m { display: none; }
+    br.w-br-m { display: inline; }
+    span.w-sep-m { display: none; }
     .w-footer { padding-top: 44px; }
     .w-footer-top { flex-direction: column; gap: 30px; }
-    /* Phone: the brand line sits beside Contact instead of above it, and the
-       social pills lose their handles, so the footer is a lot shorter. */
-    .w-footer-brand { display: grid; grid-template-columns: 0.95fr 1.05fr; column-gap: 16px; align-items: start; max-width: none; }
-    .w-footer-word { grid-column: 1; }
-    .w-footer-tag { grid-column: 1; }
-    .w-footer-contact { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; }
+    /* Phone: the WOGO link column moves up beside Contact so the footer is
+       shorter. The salmon wordmark and the tagline stay full width on top. */
+    .w-footer-top { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; row-gap: 26px; }
+    .w-footer-brand, .w-footer-cols { display: contents; }
+    .w-footer-word { grid-column: 1 / -1; }
+    .w-footer-tag { grid-column: 1 / -1; }
+    .w-footer-contact { grid-column: 1; grid-row: 3; margin-top: 0; }
+    .w-footer-col:nth-child(3) { grid-column: 2; grid-row: 3; }
+    .w-footer-col:nth-child(1) { grid-column: 1; grid-row: 4; }
+    .w-footer-col:nth-child(2) { grid-column: 2; grid-row: 4; }
     .w-footer-contact a, .w-footer-contact span { font-size: 12.5px; }
     .w-footer-socials { flex-wrap: nowrap; gap: 8px; padding-left: 10px; padding-right: 10px; }
     .w-footer-socials a { padding: 9px 13px; font-size: 12.5px; }
@@ -389,7 +393,12 @@
     .w-head { margin-bottom: 20px; }
     .w-toc { gap: 8px; flex-wrap: wrap; }
     .w-toc a { font-size: 12px; padding: 9px 14px; }
-    .w-cityhub { grid-template-columns: 1fr 1fr; gap: 12px; }
+    /* Phone: the city cards swipe sideways instead of stacking into a grid. */
+    .w-cityhub { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px;
+      padding-bottom: 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .w-cityhub::-webkit-scrollbar { display: none; }
+    .w-cityhub::after { content: ""; flex: 0 0 4px; }
+    .w-cityhub-card { flex: 0 0 min(72vw, 290px); scroll-snap-align: center; }
     .w-cityhub-name { font-size: 14px; }
     .w-cityhub-sub { font-size: 11px; }
     .w-cityhub-go { font-size: 11.5px; }
@@ -658,7 +667,7 @@
      Reference page: no sticky CTA, no hard sell up top — just
      "choose your route" once every question is answered.
      ============================================================ -->
-<section class="w-section brown" id="cities">
+<section class="w-section peach" id="cities">
   <div class="w-head w-pad wg-reveal"><h2 data-i18n="cities_h2">All clear? Choose your route</h2><p data-i18n="cities_p">7 routes · 5 cities · from €29,95 per person</p></div>
   <div class="w-cityhub w-pad wg-stagger">
     <a class="w-cityhub-card" href="../amsterdam/">
@@ -782,7 +791,7 @@
     <div class="w-footer-top">
       <div class="w-footer-brand">
         <div class="w-footer-word">WOGO</div>
-        <p class="w-footer-tag" data-i18n="foot_tag">Three bars you'd never have found.<br>One night you'll always remember.</p>
+        <p class="w-footer-tag" data-i18n="foot_tag">Three hand-picked bars.<br>One night you'll always remember.</p>
         <div class="w-footer-contact">
           <h3>Contact</h3>
           <a href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a>
@@ -1097,7 +1106,7 @@
     /* --- nav --- */
     nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_faq: "FAQ", nav_about: "Over WOGO", nav_cta: "Bekijk routes",
     /* --- footer --- */
-    foot_tag: "Drie bars die je nooit zelf had gevonden.<br>Eén avond die je altijd bijblijft.",
+    foot_tag: "Drie zorgvuldig gekozen bars.<br>Eén avond die je altijd bijblijft.",
     foot_c1_h: "Routes", foot_c2_h: "Ontdek",
     foot_how: "Hoe het werkt", foot_groups: "Groepsboekingen", foot_gift: "Cadeaukaarten", foot_contact: "Contact", foot_blog: "Blog", foot_faq: "FAQ",
     foot_about: "Over WOGO",

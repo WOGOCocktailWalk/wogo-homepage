@@ -255,8 +255,8 @@
   .w-nav.menu-open ~ .w-sticky-cta { display: none; }
   .w-sticky-cta-btn { display: block; text-align: center; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 14px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); }
   @media (max-width: 720px) {
-    .w-br-m { display: inline; }
-    .w-sep-m { display: none; } .w-sticky-cta { display: block; } }
+    br.w-br-m { display: inline; }
+    span.w-sep-m { display: none; } .w-sticky-cta { display: block; } }
 
   /* ===== SITE NAV styles (reusable — keep self-contained) ===== */
   html { scroll-padding-top: 76px; }           /* so anchor jumps clear the fixed nav */
@@ -360,12 +360,16 @@
   @media (max-width: 720px) {
     .w-footer { padding-top: 44px; }
     .w-footer-top { flex-direction: column; gap: 30px; }
-    /* Phone: the brand line sits beside Contact instead of above it, and the
-       social pills lose their handles, so the footer is a lot shorter. */
-    .w-footer-brand { display: grid; grid-template-columns: 0.95fr 1.05fr; column-gap: 16px; align-items: start; max-width: none; }
-    .w-footer-word { grid-column: 1; }
-    .w-footer-tag { grid-column: 1; }
-    .w-footer-contact { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; }
+    /* Phone: the WOGO link column moves up beside Contact so the footer is
+       shorter. The salmon wordmark and the tagline stay full width on top. */
+    .w-footer-top { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; row-gap: 26px; }
+    .w-footer-brand, .w-footer-cols { display: contents; }
+    .w-footer-word { grid-column: 1 / -1; }
+    .w-footer-tag { grid-column: 1 / -1; }
+    .w-footer-contact { grid-column: 1; grid-row: 3; margin-top: 0; }
+    .w-footer-col:nth-child(3) { grid-column: 2; grid-row: 3; }
+    .w-footer-col:nth-child(1) { grid-column: 1; grid-row: 4; }
+    .w-footer-col:nth-child(2) { grid-column: 2; grid-row: 4; }
     .w-footer-contact a, .w-footer-contact span { font-size: 12.5px; }
     .w-footer-socials { flex-wrap: nowrap; gap: 8px; padding-left: 10px; padding-right: 10px; }
     .w-footer-socials a { padding: 9px 13px; font-size: 12.5px; }
@@ -391,7 +395,12 @@
     .w-stepcard h3 { font-size: 15.5px; }
     .w-stepcard p { font-size: 13.5px; line-height: 1.6; }
     .w-gtk { grid-template-columns: 1fr; gap: 12px; }
-    .w-cityhub { grid-template-columns: 1fr 1fr; gap: 12px; }
+    /* Phone: the city cards swipe sideways instead of stacking into a grid. */
+    .w-cityhub { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px;
+      padding-bottom: 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .w-cityhub::-webkit-scrollbar { display: none; }
+    .w-cityhub::after { content: ""; flex: 0 0 4px; }
+    .w-cityhub-card { flex: 0 0 min(72vw, 290px); scroll-snap-align: center; }
     .w-cityhub-name { font-size: 14px; }
     .w-cityhub-sub { font-size: 11px; }
     .w-cityhub-go { font-size: 11.5px; }
@@ -631,7 +640,7 @@
   <div class="w-hero-content w-gift-hero wg-hero-anim">
     <div class="w-gift-copy">
       <div class="w-hero-overline" data-i18n="hero_eyebrow">The perfect gift</div>
-      <h1 data-i18n="hero_h1">Give a Cocktail Walk Gift Card</h1>
+      <h1 data-i18n="hero_h1">Give a Cocktail Walk <br class="w-br-m">Gift Card</h1>
       <!-- Dash-free punch under the SEO h1 (§1a: the "—" ban) -->
       <p class="w-hero-sub" data-i18n="hero_sub">A night out they'll remember.<br>In their inbox in minutes.</p>
       <a href="#tiers" class="w-hero-cta w-scroll" data-i18n="hero_cta">Buy a gift card →</a>
@@ -821,7 +830,7 @@
      SECTION: CITY HUB CARDS (#cities) — internal links to all four
      city hubs: this is where the card gets spent.
      ============================================================ -->
-<section class="w-section brown" id="cities">
+<section class="w-section peach" id="cities">
   <div class="w-head w-pad"><h2 data-i18n="cities_h2">Where they'll spend it</h2><p data-i18n="cities_p">7 routes · 5 cities · from €29,95 per person</p></div>
   <div class="w-cityhub w-pad wg-stagger">
     <a class="w-cityhub-card" href="../amsterdam/">
@@ -918,7 +927,7 @@
     <div class="w-footer-top">
       <div class="w-footer-brand">
         <div class="w-footer-word">WOGO</div>
-        <p class="w-footer-tag" data-i18n="foot_tag">Three bars you'd never have found.<br>One night you'll always remember.</p>
+        <p class="w-footer-tag" data-i18n="foot_tag">Three hand-picked bars.<br>One night you'll always remember.</p>
         <div class="w-footer-contact">
           <h3>Contact</h3>
           <a href="mailto:info@wogoamsterdam.com">info@wogoamsterdam.com</a>
@@ -1152,7 +1161,7 @@
   var NL = {
     /* --- hero --- */
     hero_eyebrow: "Het perfecte cadeau",
-    hero_h1: "Geef een Cocktail Walk cadeaubon",
+    hero_h1: "Geef een Cocktail Walk <br class=\"w-br-m\">cadeaubon",
     hero_sub: "Een avond uit die bijblijft.<br>Binnen minuten in de inbox.",
     hero_cta: "Koop een cadeaubon →",
     /* gift-card mock face */
@@ -1229,7 +1238,7 @@
     /* --- nav --- */
     nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_faq: "FAQ", nav_about: "Over WOGO", nav_cta: "Bekijk routes",
     /* --- footer --- */
-    foot_tag: "Drie bars die je nooit zelf had gevonden.<br>Eén avond die je altijd bijblijft.",
+    foot_tag: "Drie zorgvuldig gekozen bars.<br>Eén avond die je altijd bijblijft.",
     foot_c1_h: "Routes", foot_c2_h: "Ontdek",
     foot_how: "Hoe het werkt", foot_groups: "Groepsboekingen", foot_gift: "Cadeaukaarten", foot_contact: "Contact", foot_blog: "Blog", foot_faq: "FAQ",
     foot_about: "Over WOGO",
