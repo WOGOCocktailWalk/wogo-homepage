@@ -688,8 +688,12 @@
 <section class="w-calsec" id="wogo-book">
   <div class="w-pad">
     <link rel="stylesheet" href="../../backend/widget/wogo-calendar.css">
-    <div class="wogo-calendar" data-route="utrecht" data-hide-title="1" data-currency="EUR" data-price-cents="2995" data-max-party="6" data-name="Utrecht City Centre" data-city="Utrecht"></div>
-    <script src="../../backend/widget/wogo-calendar.js" defer></script>
+    <div class="w-paused" role="status">
+      <h2 class="w-paused-h" data-i18n="paused_h">Every Utrecht slot is taken</h2>
+      <p class="w-paused-p" data-i18n="paused_p">New dates are opening soon. Join the waitlist and you will hear first when they do.</p>
+      <a href="../../contact/?topic=utrecht-waitlist" class="w-paused-cta" data-i18n="paused_cta">Join the waitlist</a>
+      <p class="w-paused-alt" data-i18n="paused_alt">Can't wait? <a href="../../#cities">Rotterdam, Amsterdam, Delft and Groningen</a> have dates open now.</p>
+    </div>
     <div class="w-book-trust">
       <p class="w-book-trustline" data-i18n="bt_trust">★ Trusted by thousands of guests across the Netherlands · Secure payment · 18+</p>
       <details class="w-book-faq">
@@ -1035,6 +1039,10 @@
     "bh_eyebrow": "Utrecht",
     "bh_h1": "De <span class=\"w-book-city\">Utrecht</span>-walk is volgeboekt",
     "bh_reassure": "Alle plekken zijn nu bezet. Binnenkort komen er nieuwe data bij.",
+    "paused_h": "Alle plekken in Utrecht zijn bezet",
+    "paused_p": "Binnenkort komen er nieuwe data bij. Zet je op de wachtlijst en je hoort het als eerste.",
+    "paused_cta": "Zet me op de wachtlijst",
+    "paused_alt": "Kun je niet wachten? <a href=\"../../#cities\">Rotterdam, Amsterdam, Delft en Groningen</a> hebben nu data vrij.",
   };
 
   /* ===== SHARED NAV/FOOTER v4 wiring =====

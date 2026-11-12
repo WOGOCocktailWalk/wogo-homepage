@@ -351,9 +351,11 @@ function addonsBlock(lines, lang = 'en', opts = {}) {
     .map((l) => {
       const name =
         (lang === 'nl' ? l.name_snapshot_nl || l.name_snapshot_en : l.name_snapshot_en || l.name_snapshot_nl) || '';
-      const money = formatMoney((l.unit_price_cents || 0) * (l.qty || 0), l.currency || 'EUR');
+      // Bar-facing (prepaid) lines never show money: the guest price can carry
+      // WOGO's margin, and the bar invoices its own agreed price.
+      const money = opts.prepaid ? '' : formatMoney((l.unit_price_cents || 0) * (l.qty || 0), l.currency || 'EUR');
       return `<tr><td style="padding:5px 0;font-size:14px;line-height:1.5;color:${C.brown};">
-        <span style="color:${C.salmonDeep};font-weight:800;">&#8226;</span>&nbsp;&nbsp;<strong style="color:${C.ink};">${escapeHtml(String(l.qty))}&times;</strong> ${escapeHtml(name)} &mdash; ${escapeHtml(money)}</td></tr>`;
+        <span style="color:${C.salmonDeep};font-weight:800;">&#8226;</span>&nbsp;&nbsp;<strong style="color:${C.ink};">${escapeHtml(String(l.qty))}&times;</strong> ${escapeHtml(name)}${money ? ` &mdash; ${escapeHtml(money)}` : ''}</td></tr>`;
     })
     .join('');
   const prepaid = opts.prepaid
