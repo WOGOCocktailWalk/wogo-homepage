@@ -84,6 +84,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       notes: "Allergies or notes (optional)",
       notes_ph: "Nut allergy, wheelchair access, celebrating a birthday…",
       gift: "Gift card code (optional)", gift_ph: "WOGO-XXXX-XXXX",
+      gift_hint: "Have a discount code? You add it in the next step, on the payment page. A gift card and a discount code cannot be used on the same booking.",
       /* Marketing opt-in. Unticked by default (GDPR: consent must be a positive
          act) — the checkbox is created unchecked and only ever restored from the
          guest's own in-session snapshot. */
@@ -149,6 +150,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       notes: "Allergieën of opmerkingen (optioneel)",
       notes_ph: "Notenallergie, rolstoeltoegang, een verjaardag vieren…",
       gift: "Cadeaubon-code (optioneel)", gift_ph: "WOGO-XXXX-XXXX",
+      gift_hint: "Heb je een kortingscode? Die vul je in bij de volgende stap, op de betaalpagina. Een cadeaubon en een kortingscode kun je niet op dezelfde boeking gebruiken.",
       optin: "Houd me op de hoogte van nieuwe routes en acties (10% korting op je volgende walk)",
       total: "Totaal", book: "Naar veilig betalen",
       redirecting: "Je gaat naar de beveiligde betaalpagina…",
@@ -794,6 +796,11 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       // (which is entered on Stripe's own Checkout page, not here). Sent as
       // `gift_code` on /api/book; server validates it (backend/src/guest_api.js).
       this.giftInput = this.textField(panel, "wc-gift", t.gift, "text", t.gift_ph, "off");
+      // Where the OTHER kind of code goes: discount codes live on Stripe's page.
+      const giftHint = el("div", "wc-hint", t.gift_hint);
+      giftHint.id = "wc-gift-hint";
+      this.giftInput.el.parentNode.appendChild(giftHint);
+      this.giftInput.el.setAttribute("aria-describedby", "wc-gift-err wc-gift-hint");
 
       // opt-in
       const optWrap = el("label", "wc-check");
