@@ -767,3 +767,51 @@ describe('end-to-end — gift card redeemed through the full webhook confirm pat
     assert.match(guestMail.htmlContent, new RegExp(card.code));
   });
 });
+
+// ---------------------------------------------------------------------------
+// Wix carry-over (admin_api.js import endpoints) — silent, re-runnable
+// ---------------------------------------------------------------------------
+describe('Wix carry-over imports', () => {
+  const req = (items) => new Request('https://api.example.com/admin/api/import/x', {
+    method: 'POST', body: JSON.stringify({ items }),
+    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'wogo-admin' },
+  });
+
+  test('bookings land as confirmed source=wix, block seats, send nothing, and re-running skips', async () => {
+    const { handleImportBookings } = await import('../src/admin_api.js');
+    seedRoute(db, { capacity: 4 });
+    const realFetch = global.fetch;
+    let fetched = 0;
+    global.fetch = async () => { fetched += 1; return new Response('{}', { status: 200 }); };
+    try {
+      const item = { external_id: 'abc-123456', route_id: 'testroute', date: BOOKABLE_DATE, slot: '18:00', party: 3, name: 'Wix Guest', email: 'Guest@Example.com', phone: '+31600000000' };
+      const env = { DB: db, BREVO_API_KEY: 'x' };
+      const first = await (await handleImportBookings(req([item]), env)).json();
+      assert.equal(first.created, 1);
+      const b = await getBooking(db, 'b_wix_abc-123456');
+      assert.equal(b.status, 'confirmed');
+      assert.equal(b.source, 'wix');
+      assert.equal(b.email, 'guest@example.com');
+      const again = await (await handleImportBookings(req([item]), env)).json();
+      assert.equal(again.created, 0);
+      assert.equal(again.results[0].status, 'skipped');
+      const full = await (await handleImportBookings(req([{ ...item, external_id: 'def-123456', party: 2 }]), env)).json();
+      assert.equal(full.results[0].status, 'failed', 'seat guard still holds');
+      assert.equal(fetched, 0, 'no email or other outbound call');
+    } finally { global.fetch = realFetch; }
+  });
+
+  test('gift cards keep their Wix code and remaining balance, and are found with or without dashes', async () => {
+    const { handleImportGiftCards } = await import('../src/admin_api.js');
+    const item = { code: '0tx12dcme1et4ywp', initial_cents: 6000, balance_cents: 2500, recipient_name: 'Rita', recipient_email: 'rita@example.com' };
+    const first = await (await handleImportGiftCards(req([item]), { DB: db })).json();
+    assert.equal(first.created, 1);
+    const again = await (await handleImportGiftCards(req([item]), { DB: db })).json();
+    assert.equal(again.results[0].status, 'skipped');
+    const card = await realDb.getGiftCardByCode(db, '0TX1-2DCM-E1ET-4YWP');
+    assert.equal(card.code, '0TX12DCME1ET4YWP');
+    assert.equal(card.balance_cents, 2500);
+    assert.equal(card.initial_cents, 6000);
+    assert.equal((await realDb.getGiftCardByCode(db, '0tx12dcme1et4ywp')).id, card.id);
+  });
+});

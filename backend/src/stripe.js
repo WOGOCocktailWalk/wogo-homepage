@@ -270,6 +270,52 @@ export async function ensureWelcomePromotionCode(env, code, percentOff) {
 }
 
 /**
+ * Idempotently ensures ONE discount code carried over from Wix exists as a
+ * Stripe Promotion Code with the same literal string. `spec`:
+ *   { code, percent_off | amount_off_cents, max_redemptions?, expires_at? (unix s), name? }
+ * Each code gets its own Coupon (simple, and deleting one never affects
+ * another). Returns { code, created }. Wix rules Stripe cannot express
+ * (once per customer, one route only) are NOT carried over.
+ */
+export async function ensureImportedPromotionCode(env, spec) {
+  const existing = await findPromotionCodeByCode(env, spec.code);
+  if (existing) return { code: existing.code, id: existing.id, created: false };
+
+  const couponBody = new URLSearchParams();
+  if (spec.percent_off) couponBody.set('percent_off', String(spec.percent_off));
+  else {
+    couponBody.set('amount_off', String(spec.amount_off_cents));
+    couponBody.set('currency', 'eur');
+  }
+  couponBody.set('duration', 'once');
+  couponBody.set('name', String(spec.name || spec.code).slice(0, 40));
+  couponBody.set('metadata[source]', 'wix_import');
+  const couponRes = await fetch('https://api.stripe.com/v1/coupons', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: couponBody,
+  });
+  if (!couponRes.ok) throw new Error(`stripe_coupon_failed: ${couponRes.status} ${await couponRes.text()}`);
+  const coupon = await couponRes.json();
+
+  const promoBody = new URLSearchParams();
+  promoBody.set('promotion[type]', 'coupon');
+  promoBody.set('promotion[coupon]', coupon.id);
+  promoBody.set('code', spec.code);
+  if (spec.max_redemptions) promoBody.set('max_redemptions', String(spec.max_redemptions));
+  if (spec.expires_at) promoBody.set('expires_at', String(spec.expires_at));
+  promoBody.set('metadata[source]', 'wix_import');
+  const promoRes = await fetch('https://api.stripe.com/v1/promotion_codes', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: promoBody,
+  });
+  if (!promoRes.ok) throw new Error(`stripe_promotion_code_failed: ${promoRes.status} ${await promoRes.text()}`);
+  const promo = await promoRes.json();
+  return { code: promo.code, id: promo.id, created: true };
+}
+
+/**
  * Verifies a Stripe webhook's Stripe-Signature header using the async Web
  * Crypto pattern (Workers cannot use Node's `crypto` module / stripe-node).
  * `rawBody` MUST be the exact raw request text — never a re-serialized JSON

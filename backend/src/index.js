@@ -149,6 +149,9 @@ router.get('/admin/api/customers', adminApi.handleListCustomers);
 router.get('/admin/api/customers/:email', adminApi.handleGetCustomer);
 router.put('/admin/api/customers/:email', adminApi.handleUpdateCustomer);
 router.post('/admin/api/bookings/manual', adminApi.handleCreateManualBooking);
+router.post('/admin/api/import/bookings', adminApi.handleImportBookings);
+router.post('/admin/api/import/gift-cards', adminApi.handleImportGiftCards);
+router.post('/admin/api/import/promo-codes', adminApi.handleImportPromoCodes);
 
 // -- Security audit (SPEC.md §15.2) — session-guarded like all /admin/api/* --
 router.get('/admin/api/security/login-attempts', adminApi.handleLoginAttempts);

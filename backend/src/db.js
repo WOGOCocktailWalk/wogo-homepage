@@ -257,7 +257,7 @@ INSERT INTO bookings
    status, source, payment_status, discount_code, discount_cents, created_at, hold_expires)
 SELECT
   :id, :route_id, :date, :slot, :party, :name, :email, :phone, :notes, :locale, :marketing_opt_in,
-  'confirmed', 'manual', :payment_status, :discount_code, :discount_cents, datetime('now'), NULL
+  'confirmed', :source, :payment_status, :discount_code, :discount_cents, datetime('now'), NULL
 WHERE
   (
     (SELECT COALESCE(SUM(party), 0) FROM bookings
@@ -289,6 +289,10 @@ export async function createManualBooking(db, params) {
     payment_status: params.payment_status ?? 'paid_invoice',
     discount_code: params.discount_code ?? null,
     discount_cents: params.discount_cents ?? 0,
+    // 'manual' = typed in by the owner; 'wix' = carried over from the old Wix
+    // site (already confirmed and reminded there, so the reminder and review
+    // crons, which only take 'web'/'manual', leave those rows alone).
+    source: params.source === 'wix' ? 'wix' : 'manual',
   };
   const result = await run(db, CREATE_MANUAL_BOOKING_SQL, bound);
   if (result.meta.changes === 1) {
@@ -1459,7 +1463,50 @@ export async function createGiftCard(db, params) {
 }
 
 export async function getGiftCardByCode(db, code) {
-  return first(db, `SELECT * FROM gift_cards WHERE code = :code`, { code: normalizeGiftCardCode(code) });
+  const normalized = normalizeGiftCardCode(code);
+  const exact = await first(db, `SELECT * FROM gift_cards WHERE code = :code`, { code: normalized });
+  if (exact) return exact;
+  // Gift cards carried over from Wix are 16 characters with no dashes, but
+  // guests often type them in groups ("0TX1-2DCM-E1ET-4YWP"). Try again
+  // without dashes before saying the code is unknown.
+  const compact = normalized.replace(/-/g, '');
+  if (compact && compact !== normalized) {
+    return first(db, `SELECT * FROM gift_cards WHERE code = :code`, { code: compact });
+  }
+  return null;
+}
+
+/** Carries ONE existing gift card over from the old Wix site: same code, the
+ * balance that is left on it. No Stripe session, no email. Returns
+ * { created: false } if that code is already in the table (safe to re-run). */
+export async function importGiftCard(db, params) {
+  const code = normalizeGiftCardCode(params.code);
+  const existing = await first(db, `SELECT * FROM gift_cards WHERE code = :code`, { code });
+  if (existing) return { created: false, gift_card: existing };
+  const id = `gc_${crypto.randomUUID()}`;
+  await run(
+    db,
+    `INSERT INTO gift_cards
+       (id, code, initial_cents, balance_cents, currency, buyer_email, buyer_name,
+        recipient_name, recipient_email, message, status, stripe_session, locale, created_at)
+     VALUES
+       (:id, :code, :initial_cents, :balance_cents, :currency, :buyer_email, :buyer_name,
+        :recipient_name, :recipient_email, :message, 'active', NULL, :locale, :created_at)`,
+    {
+      id, code,
+      initial_cents: params.initial_cents,
+      balance_cents: params.balance_cents,
+      currency: params.currency || 'EUR',
+      buyer_email: params.buyer_email || '',
+      buyer_name: params.buyer_name || '',
+      recipient_name: params.recipient_name || '',
+      recipient_email: params.recipient_email || '',
+      message: params.message ?? null,
+      locale: params.locale === 'en' ? 'en' : 'nl',
+      created_at: params.created_at || new Date().toISOString().slice(0, 19).replace('T', ' '),
+    }
+  );
+  return { created: true, gift_card: await first(db, `SELECT * FROM gift_cards WHERE id = :id`, { id }) };
 }
 
 /** Idempotency lookup for the purchase webhook — a redelivered

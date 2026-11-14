@@ -42,7 +42,7 @@ import {
 import { verifyTurnstile } from './turnstile.js';
 import { runHealthCheck } from './healthcheck.js';
 import { ensureContactFolder, ensureContactList, ensureContactAttribute, sendTransactional } from './brevo.js';
-import { ensureWelcomePromotionCode } from './stripe.js';
+import { ensureWelcomePromotionCode, ensureImportedPromotionCode } from './stripe.js';
 import { importSubscribers, handleConfirmedBookingOptIn } from './subscribers.js';
 import { sendWithRetry } from './email_retry.js';
 import { renderAdminLoginLink } from './emails.js';
@@ -285,6 +285,9 @@ export const ROUTE_ROLES = {
   'POST /admin/api/bookings/:id/cancel': 'staff',
   'POST /admin/api/bookings/:id/send-review': 'staff',
   'POST /admin/api/bookings/manual': 'staff',
+  'POST /admin/api/import/bookings': 'owner',
+  'POST /admin/api/import/gift-cards': 'owner',
+  'POST /admin/api/import/promo-codes': 'owner',
   'GET /admin/api/date-overrides': 'staff',
   'POST /admin/api/date-overrides': 'staff',
   'DELETE /admin/api/date-overrides/:id': 'staff',
@@ -3126,4 +3129,123 @@ export async function handleSetNotificationPreferences(request, env) {
   }
   const preferences = await setNotificationPreferences(env, uid, body || {});
   return json({ preferences });
+}
+
+// ---------------------------------------------------------------------------
+// One-off carry-over from the old Wix site (go-live, Nov 2026). All three are
+// owner-only, take { items: [...] } (max 50 per call), are safe to re-run
+// (an item that is already there is reported as 'skipped'), and send NO email
+// of any kind: these guests and bars were already told by Wix.
+// ---------------------------------------------------------------------------
+
+const IMPORT_MAX_ITEMS = 50;
+
+function readImportItems(body) {
+  const items = body && Array.isArray(body.items) ? body.items : null;
+  if (!items || items.length === 0 || items.length > IMPORT_MAX_ITEMS) return null;
+  return items;
+}
+
+/** POST /admin/api/import/bookings — each item:
+ * { external_id, route_id, date, slot, party, name, email, phone?, locale? }.
+ * Lands as a confirmed booking with source 'wix' and id `b_wix_<external_id>`.
+ * Only the real seat count is enforced (same guard as a manual booking). */
+export async function handleImportBookings(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  let body;
+  try { body = await request.json(); } catch { return errorJson('bad_request', 'invalid JSON', 400); }
+  const items = readImportItems(body);
+  if (!items) return errorJson('bad_request', `items must be an array of 1-${IMPORT_MAX_ITEMS}`, 400);
+
+  const results = [];
+  for (const it of items) {
+    const ext = it && typeof it.external_id === 'string' ? it.external_id : '';
+    try {
+      if (!/^[A-Za-z0-9-]{6,64}$/.test(ext)) throw new Error('bad external_id');
+      if (!it.route_id || !DATE_RE.test(it.date || '') || !/^\d{2}:\d{2}$/.test(it.slot || '')) throw new Error('bad route/date/slot');
+      if (!Number.isInteger(it.party) || it.party < 1) throw new Error('bad party');
+      if (!it.name || !it.email || !EMAIL_RE.test(it.email)) throw new Error('bad name/email');
+      const id = `b_wix_${ext}`;
+      if (await db.getBooking(env.DB, id)) { results.push({ external_id: ext, status: 'skipped' }); continue; }
+      const route = await db.getRoute(env.DB, it.route_id);
+      if (!route) throw new Error('route_not_found');
+      const r = await db.createManualBooking(env.DB, {
+        id, route_id: it.route_id, date: it.date, slot: it.slot, party: it.party,
+        name: String(it.name).slice(0, 200), email: String(it.email).toLowerCase(), phone: it.phone || null,
+        notes: null, locale: it.locale === 'en' ? 'en' : 'nl', marketing_opt_in: false,
+        payment_status: 'paid_invoice', source: 'wix',
+      });
+      results.push(r.created
+        ? { external_id: ext, status: 'created' }
+        : { external_id: ext, status: 'failed', reason: `no seats (${r.seats_left} left)` });
+    } catch (err) {
+      results.push({ external_id: ext, status: 'failed', reason: String(err && err.message ? err.message : err).slice(0, 200) });
+    }
+  }
+  const created = results.filter((r) => r.status === 'created').length;
+  await audit(env, request, 'import.bookings', null, null, { created, total: results.length });
+  return json({ created, results });
+}
+
+/** POST /admin/api/import/gift-cards — each item:
+ * { code, initial_cents, balance_cents, buyer_name?, buyer_email?,
+ *   recipient_name?, recipient_email?, message?, created_at? }. */
+export async function handleImportGiftCards(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  let body;
+  try { body = await request.json(); } catch { return errorJson('bad_request', 'invalid JSON', 400); }
+  const items = readImportItems(body);
+  if (!items) return errorJson('bad_request', `items must be an array of 1-${IMPORT_MAX_ITEMS}`, 400);
+
+  const results = [];
+  for (const it of items) {
+    const code = it && typeof it.code === 'string' ? it.code.trim().toUpperCase() : '';
+    try {
+      if (!/^[A-Z0-9-]{4,40}$/.test(code)) throw new Error('bad code');
+      if (!Number.isInteger(it.initial_cents) || !Number.isInteger(it.balance_cents)) throw new Error('bad amounts');
+      if (it.balance_cents <= 0 || it.balance_cents > it.initial_cents) throw new Error('balance out of range');
+      const r = await db.importGiftCard(env.DB, { ...it, code });
+      results.push({ code: code.slice(-4), status: r.created ? 'created' : 'skipped' });
+    } catch (err) {
+      results.push({ code: code.slice(-4), status: 'failed', reason: String(err && err.message ? err.message : err).slice(0, 200) });
+    }
+  }
+  const created = results.filter((r) => r.status === 'created').length;
+  await audit(env, request, 'import.gift_cards', null, null, { created, total: results.length });
+  return json({ created, results });
+}
+
+/** POST /admin/api/import/promo-codes — each item:
+ * { code, percent_off | amount_off_cents, max_redemptions?, expires_at?, name? }.
+ * Creates them in whichever Stripe mode (test/live) the Worker's key is in. */
+export async function handleImportPromoCodes(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  if (!env.STRIPE_SECRET_KEY) return errorJson('bad_request', 'STRIPE_SECRET_KEY is not configured', 400);
+  let body;
+  try { body = await request.json(); } catch { return errorJson('bad_request', 'invalid JSON', 400); }
+  const items = readImportItems(body);
+  if (!items || items.length > 15) return errorJson('bad_request', 'items must be an array of 1-15', 400);
+
+  const results = [];
+  for (const it of items) {
+    const code = it && typeof it.code === 'string' ? it.code.trim() : '';
+    try {
+      if (!/^[A-Za-z0-9_-]{3,60}$/.test(code)) throw new Error('bad code');
+      const pct = Number(it.percent_off) || 0;
+      const amt = Number.isInteger(it.amount_off_cents) ? it.amount_off_cents : 0;
+      if (!(pct > 0 && pct <= 100) && !(amt > 0)) throw new Error('needs percent_off or amount_off_cents');
+      const r = await ensureImportedPromotionCode(env, {
+        code, percent_off: pct > 0 ? pct : 0, amount_off_cents: amt,
+        max_redemptions: Number.isInteger(it.max_redemptions) && it.max_redemptions > 0 ? it.max_redemptions : 0,
+        expires_at: Number.isInteger(it.expires_at) ? it.expires_at : 0,
+        name: it.name,
+      });
+      results.push({ code, status: r.created ? 'created' : 'skipped' });
+    } catch (err) {
+      results.push({ code, status: 'failed', reason: String(err && err.message ? err.message : err).slice(0, 300) });
+    }
+  }
+  const created = results.filter((r) => r.status === 'created').length;
+  await audit(env, request, 'import.promo_codes', null, null, { created, total: results.length, live: String(env.STRIPE_SECRET_KEY).startsWith('sk_live') });
+  return json({ created, live: String(env.STRIPE_SECRET_KEY).startsWith('sk_live'), results });
 }
