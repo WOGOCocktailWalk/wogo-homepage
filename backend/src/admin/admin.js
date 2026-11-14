@@ -4727,7 +4727,7 @@
       }
     }));
     body.appendChild(el("button", {
-      class: "btn btn-ghost", text: "Send me a test notification", style: "margin-left:8px",
+      class: "btn btn-ghost", text: "Send me a test notification", style: "margin:10px 0 0;display:block",
       onclick: async (ev) => {
         const b = ev.currentTarget;
         b.disabled = true;
@@ -4747,7 +4747,20 @@
     const cfg = await api("/admin/public-config");
     if (!cfg.vapid_public_key) throw new Error("Push isn't set up on the server yet");
     const reg = await navigator.serviceWorker.register("/admin/sw.js", { scope: "/admin/" });
-    await navigator.serviceWorker.ready;
+    // Wait for THIS registration's worker to be active. Not
+    // navigator.serviceWorker.ready: that only resolves for a page inside the
+    // worker's scope ("/admin/"), and after a login the page sits at "/admin"
+    // (no slash), so it would wait forever ("Enabling…" never finishing).
+    await new Promise((resolve, reject) => {
+      if (reg.active) return resolve();
+      const sw = reg.installing || reg.waiting;
+      if (!sw) return resolve();
+      const timer = setTimeout(() => reject(new Error("Notifications took too long to start. Close the app, open it again and try once more.")), 15000);
+      sw.addEventListener("statechange", () => {
+        if (sw.state === "activated") { clearTimeout(timer); resolve(); }
+        if (sw.state === "redundant") { clearTimeout(timer); reject(new Error("Couldn't start notifications on this device.")); }
+      });
+    });
     let sub = await reg.pushManager.getSubscription();
     if (!sub) {
       sub = await reg.pushManager.subscribe({

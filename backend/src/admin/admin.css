@@ -563,6 +563,13 @@ input:focus, select:focus, textarea:focus {
 .filters + .card,
 .stat-row + .card,
 .kpi-grid + .card { margin-top: var(--card-gap); }
+/* Several pages (Notifications, Settings…) put each card inside its own plain
+   wrapper <div id="…">, so the cards are no longer direct siblings and the
+   rule above never fires — they sat glued together, most visibly on a phone.
+   Give those plain wrappers the same breathing room. */
+.content > div:not([class]) + div:not([class]),
+.content > div:not([class]) + .card,
+.content > .card + div:not([class]) { margin-top: var(--card-gap); }
 
 .card-head {
   display: flex;
