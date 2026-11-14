@@ -244,6 +244,27 @@ describe('handleGiftCardCheckout', () => {
     assert.equal(capturedBody.get('line_items[0][price_data][currency]'), 'eur');
   });
 
+  test("delivery 'print' needs no recipient email and never passes one on", async () => {
+    const env = { DB: db, STRIPE_SECRET_KEY: 'sk_test_x' };
+    const res = await handleGiftCardCheckout(new Request('https://api.example.com/api/giftcard/checkout', {
+      method: 'POST', body: JSON.stringify(validBody({ delivery: 'print', recipient_email: '' })),
+      headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '10.2.2.21', Origin: 'http://localhost:8000' },
+    }), env);
+    assert.equal(res.status, 200);
+    assert.equal(capturedBody.get('metadata[delivery]'), 'print');
+    assert.equal(capturedBody.get('metadata[recipient_email]'), null);
+    assert.match(capturedBody.get('line_items[0][price_data][product_data][description]'), /PDF to print/);
+  });
+
+  test("delivery 'email' (the default) still requires a recipient email", async () => {
+    const env = { DB: db, STRIPE_SECRET_KEY: 'sk_test_x' };
+    const res = await handleGiftCardCheckout(new Request('https://api.example.com/api/giftcard/checkout', {
+      method: 'POST', body: JSON.stringify(validBody({ recipient_email: '' })),
+      headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '10.2.2.22', Origin: 'http://localhost:8000' },
+    }), env);
+    assert.equal(res.status, 400);
+  });
+
   test('locale "nl" is passed through to Stripe Checkout as locale=nl', async () => {
     const env = { DB: db, STRIPE_SECRET_KEY: 'sk_test_x' };
     const res = await handleGiftCardCheckout(new Request('https://api.example.com/api/giftcard/checkout', {
@@ -465,7 +486,7 @@ describe('handleGiftCardPurchaseCompleted', () => {
     assert.ok(sent.some((m) => m.to === 'buyer@example.com'));
   });
 
-  test('both gift card mails carry the printable PDF when one can be built', async () => {
+  test("'email' delivery: recipient + buyer mails, and neither carries a PDF", async () => {
     const sent = [];
     const session = {
       id: 'cs_gift_purchase_pdf', currency: 'eur',
@@ -475,16 +496,57 @@ describe('handleGiftCardPurchaseCompleted', () => {
         recipient_name: 'Rita Recipient', recipient_email: 'rita@example.com', locale: 'en',
       },
     };
+    let pdfBuilt = 0;
+    await handleGiftCardPurchaseCompleted({ DB: db }, session, {
+      database: realDb,
+      sendTransactional: async (env, msg) => { sent.push(msg); },
+      giftCardPdfAttachment: async () => { pdfBuilt += 1; return { name: 'x.pdf', content: 'JVBERi0=' }; },
+    });
+    assert.equal(sent.length, 2);
+    assert.equal(pdfBuilt, 0, 'no PDF is made when the gift is emailed to the recipient');
+    for (const m of sent) assert.equal(m.attachment, undefined);
+  });
+
+  test("'print' delivery: ONE mail, to the buyer, with the code and the printable PDF", async () => {
+    const sent = [];
+    const session = {
+      id: 'cs_gift_purchase_print', currency: 'eur',
+      metadata: {
+        type: 'giftcard', amount_cents: '3000', delivery: 'print',
+        buyer_name: 'Buyer Bea', buyer_email: 'buyer@example.com',
+        recipient_name: 'Rita Recipient', locale: 'en',
+      },
+    };
     await handleGiftCardPurchaseCompleted({ DB: db }, session, {
       database: realDb,
       sendTransactional: async (env, msg) => { sent.push(msg); },
       giftCardPdfAttachment: async (card) => ({ name: 'WOGO-gift-card-' + card.code + '.pdf', content: 'JVBERi0=' }),
     });
-    assert.equal(sent.length, 2);
-    for (const m of sent) {
-      assert.equal(m.attachment.length, 1);
-      assert.ok(m.attachment[0].name.startsWith('WOGO-gift-card-WOGO-'));
-    }
+    const card = await realDb.getGiftCardByStripeSession(db, 'cs_gift_purchase_print');
+    assert.equal(card.recipient_email, '');
+    assert.equal(sent.length, 1, 'only the buyer is mailed');
+    assert.equal(sent[0].to, 'buyer@example.com');
+    assert.equal(sent[0].attachment.length, 1);
+    assert.ok(sent[0].attachment[0].name.startsWith('WOGO-gift-card-WOGO-'));
+    assert.ok(sent[0].htmlContent.includes(card.code), 'the code is in the mail itself too');
+    assert.match(sent[0].subject, /ready to print/);
+    assert.ok(sent[0].htmlContent.includes('Rita Recipient'));
+  });
+
+  test("'print' delivery still mails the code when the PDF cannot be built", async () => {
+    const sent = [];
+    const session = {
+      id: 'cs_gift_purchase_print_nopdf', currency: 'eur',
+      metadata: { type: 'giftcard', amount_cents: '3000', delivery: 'print', buyer_name: 'B', buyer_email: 'buyer@example.com', recipient_name: 'Rita', locale: 'nl' },
+    };
+    await handleGiftCardPurchaseCompleted({ DB: db }, session, {
+      database: realDb,
+      sendTransactional: async (env, msg) => { sent.push(msg); },
+      giftCardPdfAttachment: async () => null,
+    });
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].attachment, undefined);
+    assert.ok(!/als pdf bij deze e-mail/.test(sent[0].htmlContent), 'does not promise a PDF that is not there');
   });
 
   test('a redelivered event for the SAME purchase session does not mint a second card', async () => {

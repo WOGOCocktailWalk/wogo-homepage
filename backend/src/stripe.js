@@ -149,7 +149,9 @@ export async function createGiftCardCheckoutSession(env, gift) {
   body.set('metadata[buyer_name]', gift.buyer_name);
   body.set('metadata[buyer_email]', gift.buyer_email);
   body.set('metadata[recipient_name]', gift.recipient_name);
-  body.set('metadata[recipient_email]', gift.recipient_email);
+  const print = gift.delivery === 'print' || !gift.recipient_email;
+  if (!print) body.set('metadata[recipient_email]', gift.recipient_email);
+  body.set('metadata[delivery]', print ? 'print' : 'email');
   body.set('metadata[message]', (gift.message || '').slice(0, 490));
   body.set('metadata[locale]', gift.locale === 'nl' ? 'nl' : 'en');
   body.set('locale', gift.locale === 'nl' ? 'nl' : 'en');
@@ -166,8 +168,12 @@ export async function createGiftCardCheckoutSession(env, gift) {
   body.set(
     'line_items[0][price_data][product_data][description]',
     gift.locale === 'nl'
-      ? 'Te gebruiken voor elke WOGO Cocktail Walk, in elke stad. De ontvanger krijgt de cadeaubon per e-mail, met een pdf om te printen.'
-      : 'Valid on any WOGO Cocktail Walk, in any city. The recipient gets the gift card by email, with a PDF to print.'
+      ? (print
+        ? 'Te gebruiken voor elke WOGO Cocktail Walk, in elke stad. Je krijgt de cadeaubon zelf per e-mail, als pdf om te printen.'
+        : 'Te gebruiken voor elke WOGO Cocktail Walk, in elke stad. De ontvanger krijgt de cadeaubon direct per e-mail.')
+      : (print
+        ? 'Valid on any WOGO Cocktail Walk, in any city. You get the gift card by email yourself, as a PDF to print.'
+        : 'Valid on any WOGO Cocktail Walk, in any city. The recipient gets the gift card by email right away.')
   );
   body.set('line_items[0][price_data][product_data][images][0]', `${SITE_ASSET_BASE}/email/giftcard-thumb.jpg`);
 

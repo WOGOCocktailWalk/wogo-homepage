@@ -15,6 +15,7 @@ import {
   renderGuestCancellation,
   renderBarCancellation,
   renderGiftCardRecipient,
+  renderGiftCardBuyerPrint,
   renderGiftCardBuyer,
   renderGiftCardRedemptionAlert,
 } from './emails.js';
@@ -427,26 +428,36 @@ export async function handleGiftCardPurchaseCompleted(env, session, deps = {}) {
     }, { database });
   }
 
-  // Printable gift card (PDF) on both mails. Best effort: null = no attachment.
-  // Skipped when no mail provider is configured (local runs / unit tests), so
-  // nothing reaches out to the network there unless a test injects its own.
-  const buildPdf = deps.giftCardPdfAttachment || (env.BREVO_API_KEY ? giftCardPdfAttachment : null);
-  const pdf = buildPdf ? await buildPdf(giftCard) : null;
-  const attachment = pdf ? [pdf] : undefined;
-
+  // Two ways to give (buyer's choice on the gift card page):
+  //  - 'email': recipient_email is set. The recipient gets the gift by mail and
+  //    the buyer a short receipt. No PDF, nobody needs to print anything.
+  //  - 'print': no recipient_email. The buyer gets ONE mail with the code and
+  //    the printable gift card (PDF) attached, to hand over themselves.
   if (giftCard.recipient_email) {
     const recipientMail = renderGiftCardRecipient(giftCard);
     await sendWithRetry(
       env,
-      { to: giftCard.recipient_email, subject: recipientMail.subject, htmlContent: recipientMail.html, attachment },
+      { to: giftCard.recipient_email, subject: recipientMail.subject, htmlContent: recipientMail.html },
       { database, sendTransactional: brevoSend, kind: 'giftcard_recipient' }
     );
-  }
-  if (giftCard.buyer_email) {
-    const buyerMail = renderGiftCardBuyer(giftCard);
+    if (giftCard.buyer_email) {
+      const buyerMail = renderGiftCardBuyer(giftCard);
+      await sendWithRetry(
+        env,
+        { to: giftCard.buyer_email, subject: buyerMail.subject, htmlContent: buyerMail.html },
+        { database, sendTransactional: brevoSend, kind: 'giftcard_buyer' }
+      );
+    }
+  } else if (giftCard.buyer_email) {
+    // PDF is best effort: null = no attachment, the code is in the mail itself.
+    // Skipped when no mail provider is configured (local runs / unit tests), so
+    // nothing reaches out to the network there unless a test injects its own.
+    const buildPdf = deps.giftCardPdfAttachment || (env.BREVO_API_KEY ? giftCardPdfAttachment : null);
+    const pdf = buildPdf ? await buildPdf(giftCard) : null;
+    const printMail = renderGiftCardBuyerPrint(giftCard, { hasPdf: !!pdf });
     await sendWithRetry(
       env,
-      { to: giftCard.buyer_email, subject: buyerMail.subject, htmlContent: buyerMail.html, attachment },
+      { to: giftCard.buyer_email, subject: printMail.subject, htmlContent: printMail.html, attachment: pdf ? [pdf] : undefined },
       { database, sendTransactional: brevoSend, kind: 'giftcard_buyer' }
     );
   }

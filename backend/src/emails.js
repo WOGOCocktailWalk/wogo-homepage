@@ -1147,6 +1147,11 @@ const GIFT_STRINGS = {
     subjectBuyer: (name) => `Your WOGO Gift Card for ${name} is on its way ✅`,
     headingBuyer: 'Your gift card is on its way!',
     introBuyer: (recipient) => `Thanks for the gift! We've emailed the WOGO Gift Card straight to ${recipient}.`,
+    subjectPrint: (name) => `Your WOGO Gift Card${name ? ' for ' + name : ''} is ready to print 🎁`,
+    headingPrint: 'Your gift card is ready!',
+    introPrint: (name) => `Thanks for the gift! The gift card${name ? ' for ' + name : ''} is attached to this email as a PDF. Print it and hand it over yourself.`,
+    introPrintNoPdf: (name) => `Thanks for the gift! Here is the gift card code${name ? ' for ' + name : ''}. Write it in a card or pass it on yourself.`,
+    printTip: 'Tip: print the PDF on A4 at actual size and cut it out, or simply forward this email.',
     rowRecipient: 'Recipient',
     rowAmount: 'Amount',
     rowCode: 'Code',
@@ -1170,6 +1175,11 @@ const GIFT_STRINGS = {
     subjectBuyer: (name) => `Je WOGO Cadeaubon voor ${name} is onderweg ✅`,
     headingBuyer: 'Je cadeaubon is onderweg!',
     introBuyer: (recipient) => `Bedankt voor het cadeau! We hebben de WOGO Cadeaubon rechtstreeks naar ${recipient} gestuurd.`,
+    subjectPrint: (name) => `Je WOGO Cadeaubon${name ? ' voor ' + name : ''} staat klaar om te printen 🎁`,
+    headingPrint: 'Je cadeaubon staat klaar!',
+    introPrint: (name) => `Bedankt voor het cadeau! De cadeaubon${name ? ' voor ' + name : ''} zit als pdf bij deze e-mail. Print hem uit en geef hem zelf.`,
+    introPrintNoPdf: (name) => `Bedankt voor het cadeau! Hier is de cadeauboncode${name ? ' voor ' + name : ''}. Schrijf hem in een kaart of geef hem zelf door.`,
+    printTip: 'Tip: print de pdf op A4 op ware grootte en knip hem uit, of stuur deze e-mail gewoon door.',
     rowRecipient: 'Ontvanger',
     rowAmount: 'Bedrag',
     rowCode: 'Code',
@@ -1239,6 +1249,38 @@ export function renderGiftCardBuyer(giftCard, opts = {}) {
       heading: t.headingBuyer,
       intro: t.introBuyer(giftCard.recipient_email),
       contentHtml: content,
+    }),
+  };
+}
+
+/** 8b. "Send it to me to print": the buyer chose to hand the gift over
+ * themselves. ONE mail, to the buyer, with the code, how to use it and the
+ * printable gift card attached as a PDF (src/giftcard_pdf.js). Nothing is
+ * mailed to the recipient. opts.hasPdf = false when the PDF could not be made. */
+export function renderGiftCardBuyerPrint(giftCard, opts = {}) {
+  const lang = giftLocale(giftCard, opts);
+  const t = GIFT_STRINGS[lang];
+  const amount = formatMoney(giftCard.balance_cents ?? giftCard.initial_cents, giftCard.currency || 'EUR');
+  const name = giftCard.recipient_name ? String(giftCard.recipient_name).trim() : '';
+  const hasPdf = opts.hasPdf !== false;
+  const intro = hasPdf ? t.introPrint(name) : t.introPrintNoPdf(name);
+  const tip = hasPdf
+    ? `<p style="margin:0 0 22px;font-size:13px;line-height:1.5;color:${C.brown};">${escapeHtml(t.printTip)}</p>`
+    : '';
+  const content = `
+    ${codeHero(giftCard.code, `${t.balanceLabel}: ${amount}`)}
+    ${tip}
+    ${quietSection(t.howTitle, t.how)}`;
+  return {
+    subject: t.subjectPrint(name),
+    html: layout({
+      preheader: intro,
+      hero: { chip: t.chip },
+      imageKind: 'giftcard_buyer',
+      heading: t.headingPrint,
+      intro,
+      contentHtml: content,
+      footerHtml: `<p style="margin:0;font-size:13px;line-height:1.5;color:${C.brown};">${escapeHtml(t.footer)}</p>`,
     }),
   };
 }
@@ -1963,6 +2005,8 @@ export function buildReferenceTemplateSet() {
   push('Gift card recipient', 'EN', renderGiftCardRecipient(REF_GIFT_CARD));
   push('Gift card recipient', 'NL', renderGiftCardRecipient(REF_GIFT_CARD_NL));
   push('Gift card buyer', 'EN', renderGiftCardBuyer(REF_GIFT_CARD));
+  push('Gift card buyer — print it myself', 'EN', renderGiftCardBuyerPrint({ ...REF_GIFT_CARD, recipient_email: '' }));
+  push('Gift card buyer — print it myself', 'NL', renderGiftCardBuyerPrint({ ...REF_GIFT_CARD_NL, recipient_email: '' }));
   push('Subscribe confirm', 'EN', renderSubscribeConfirm(REF_SUBSCRIBER, `${SITE_URL}/api/subscribe/confirm?token=reference-sample-token`));
   push('Subscribe confirm', 'NL', renderSubscribeConfirm(REF_SUBSCRIBER_NL, `${SITE_URL}/api/subscribe/confirm?token=reference-sample-token`));
   push('Welcome', 'EN', renderSubscribeWelcome(REF_SUBSCRIBER, { unsubscribeUrl: `${SITE_URL}/api/unsubscribe?token=reference-sample-token` }));

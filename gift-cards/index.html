@@ -495,6 +495,11 @@
   .gc-field textarea { resize: vertical; min-height: 80px; }
   .gc-check { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; font-weight: 700; color: #3f2b21; line-height: 1.45; cursor: pointer; }
   .gc-check input { width: 19px; height: 19px; flex: 0 0 auto; margin-top: 1px; accent-color: #f2905c; cursor: pointer; }
+  .gc-give { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  .gc-give legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #7e5541; }
+  .gc-give .gc-check { background: #fffaf6; border: 1.5px solid #e7d3c6; border-radius: 12px; padding: 12px 14px; }
+  .gc-give .gc-check:has(input:checked) { border-color: #f2905c; background: #fff3ec; }
+  .gc-field[hidden] { display: none; }
   .gc-field input:focus, .gc-field textarea:focus { outline: none; border-color: #f2905c; box-shadow: 0 0 0 3px rgba(242,144,92,0.18); }
   .gc-form .w-hero-cta { grid-column: 1 / -1; justify-self: stretch; text-align: center; border: none; cursor: pointer; margin-top: 6px; font-family: inherit; }
   .gc-form .w-hero-cta:disabled { opacity: 0.6; cursor: default; }
@@ -762,7 +767,7 @@
       <button type="button" class="w-tier-btn" data-i18n="tierc_btn">Choose this amount →</button>
     </div>
   </div>
-  <p class="w-tiers-note" data-i18n="tiers_note">One gift card per order, with a personal message at checkout.<br>It lands in their inbox within minutes, and they can print it out if they'd rather hold it.</p>
+  <p class="w-tiers-note" data-i18n="tiers_note">One gift card per order, with a personal message at checkout.<br>Email it straight to them, or get it yourself as a PDF to print and hand over.</p>
 
   <!-- ORDER FORM — always present (progressive: works the moment a tile is
        picked, no modal/JS-only gate). POSTs JSON to the Worker; on success
@@ -775,11 +780,16 @@
         <input type="text" name="buyer_name" autocomplete="name" required></label>
       <label class="gc-field gc-full"><span data-i18n="gc_buyer_email">Your email</span>
         <input type="email" name="buyer_email" autocomplete="email" required></label>
-      <!-- Send-to-self: ticking this copies the buyer's own name and address into
-           the recipient fields, so the printable gift email lands in their inbox.
-           Frontend only — the Worker still receives a normal recipient. -->
-      <label class="gc-check gc-full"><input type="checkbox" id="wGcSelf">
-        <span data-i18n="gc_self">Send it to me, so I can print it and hand it over myself</span></label>
+      <!-- How to give it. "email" = mailed straight to the recipient (needs their
+           address). "print" = the buyer gets it as a printable PDF and hands it
+           over; no recipient email is asked for or sent to the Worker. -->
+      <fieldset class="gc-give gc-full">
+        <legend data-i18n="gc_give">How would you like to give it?</legend>
+        <label class="gc-check"><input type="radio" name="delivery" value="email" checked>
+          <span data-i18n="gc_give_email">Email it straight to the recipient</span></label>
+        <label class="gc-check"><input type="radio" name="delivery" value="print">
+          <span data-i18n="gc_give_print">Send it to me as a PDF, so I can print it and hand it over myself</span></label>
+      </fieldset>
       <label class="gc-field" id="wGcRecNameWrap"><span data-i18n="gc_recipient_name">Recipient's name</span>
         <input type="text" name="recipient_name" autocomplete="off" required></label>
       <label class="gc-field" id="wGcRecMailWrap"><span data-i18n="gc_recipient_email">Recipient's email</span>
@@ -787,7 +797,8 @@
       <label class="gc-field gc-full"><span data-i18n="gc_message">Personal message (optional)</span>
         <textarea name="message" rows="3" maxlength="500"></textarea></label>
       <button type="submit" class="w-hero-cta" id="wGcSubmit" data-i18n="gc_submit" disabled>Choose an amount first</button>
-      <p class="gc-note" data-i18n="gc_note">You'll pay securely via Stripe. The gift card is emailed straight to your recipient the moment payment completes.</p>
+      <p class="gc-note" id="wGcNoteEmail" data-i18n="gc_note">You'll pay securely via Stripe. The gift card is emailed straight to your recipient the moment payment completes.</p>
+      <p class="gc-note" id="wGcNotePrint" data-i18n="gc_note_print" hidden>You'll pay securely via Stripe. The gift card arrives in your own inbox as a printable PDF the moment payment completes.</p>
     </form>
   </div>
 </section>
@@ -1195,17 +1206,20 @@
     tierc_sub: "Eigen bedrag",
     tierc_b: "Elk bedrag dat je wilt",
     tierc_btn: "Kies dit bedrag →",
-    tiers_note: "Eén cadeaubon per bestelling, met een persoonlijk bericht bij het afrekenen.<br>Binnen een paar minuten in de inbox, en zelf uit te printen als je hem liever in handen geeft.",
+    tiers_note: "Eén cadeaubon per bestelling, met een persoonlijk bericht bij het afrekenen.<br>Mail hem direct naar de ontvanger, of ontvang hem zelf als pdf om te printen en te geven.",
     /* --- order form --- */
     gc_order_amt_empty: "Kies hierboven een bedrag om te beginnen.",
     gc_buyer_name: "Jouw naam",
     gc_buyer_email: "Jouw e-mailadres",
-    gc_self: "Stuur ’m naar mij, dan print ik hem zelf en geef ik hem persoonlijk",
+    gc_give: "Hoe wil je hem geven?",
+    gc_give_email: "Mail hem direct naar de ontvanger",
+    gc_give_print: "Stuur hem als pdf naar mij, dan print ik hem zelf en geef ik hem persoonlijk",
     gc_recipient_name: "Naam van de ontvanger",
     gc_recipient_email: "E-mailadres van de ontvanger",
     gc_message: "Persoonlijk bericht (optioneel)",
     gc_submit: "Kies eerst een bedrag",
     gc_note: "Je betaalt veilig via Stripe. De cadeaubon wordt direct na betaling naar je ontvanger gemaild.",
+    gc_note_print: "Je betaalt veilig via Stripe. De cadeaubon komt direct na betaling als printbare pdf in je eigen inbox.",
     /* --- how gifting works --- */
     how_eyebrow: "Zo werkt het",
     how_h2: "Van jouw inbox naar hun avond uit",
@@ -2358,7 +2372,8 @@
       buyer_name: String(fd.get('buyer_name') || '').trim(),
       buyer_email: String(fd.get('buyer_email') || '').trim(),
       recipient_name: String(fd.get('recipient_name') || '').trim(),
-      recipient_email: String(fd.get('recipient_email') || '').trim(),
+      recipient_email: fd.get('delivery') === 'print' ? '' : String(fd.get('recipient_email') || '').trim(),
+      delivery: fd.get('delivery') === 'print' ? 'print' : 'email',
       message: String(fd.get('message') || '').trim(),
       locale: lang()
     };
@@ -2400,39 +2415,29 @@
 </script>
 
 <script>
-/* Gift card "send it to me": mirrors the buyer's own name and email into the
-   recipient fields and hides them, so the printable gift email arrives in the
-   buyer's inbox. Purely front-end; the Worker still gets a normal recipient. */
+/* Gift card "how to give it": with "print" the recipient's email field is
+   hidden and not required (the buyer gets the printable PDF themselves); the
+   recipient's NAME stays, it is printed on the card. */
 (function () {
   "use strict";
   var form = document.getElementById("wGcForm");
-  var self = document.getElementById("wGcSelf");
-  if (!form || !self) return;
-  var bName = form.querySelector('[name="buyer_name"]');
-  var bMail = form.querySelector('[name="buyer_email"]');
-  var rName = form.querySelector('[name="recipient_name"]');
+  if (!form) return;
+  var radios = form.querySelectorAll('[name="delivery"]');
   var rMail = form.querySelector('[name="recipient_email"]');
-  var rNameWrap = document.getElementById("wGcRecNameWrap");
   var rMailWrap = document.getElementById("wGcRecMailWrap");
-  if (!bName || !bMail || !rName || !rMail) return;
-
-  function mirror() {
-    if (!self.checked) return;
-    rName.value = bName.value;
-    rMail.value = bMail.value;
-  }
+  var rNameWrap = document.getElementById("wGcRecNameWrap");
+  var noteEmail = document.getElementById("wGcNoteEmail");
+  var notePrint = document.getElementById("wGcNotePrint");
+  if (!radios.length || !rMail) return;
   function apply() {
-    var on = self.checked;
-    if (rNameWrap) rNameWrap.hidden = on;
-    if (rMailWrap) rMailWrap.hidden = on;
-    rName.required = !on;
-    rMail.required = !on;
-    mirror();
+    var print = !!form.querySelector('[name="delivery"][value="print"]:checked');
+    if (rMailWrap) rMailWrap.hidden = print;
+    if (rNameWrap) rNameWrap.classList.toggle("gc-full", print);
+    rMail.required = !print;
+    if (noteEmail) noteEmail.hidden = print;
+    if (notePrint) notePrint.hidden = !print;
   }
-  self.addEventListener("change", apply);
-  bName.addEventListener("input", mirror);
-  bMail.addEventListener("input", mirror);
-  form.addEventListener("submit", mirror, true);
+  Array.prototype.forEach.call(radios, function (r) { r.addEventListener("change", apply); });
   apply();
 })();
 </script>

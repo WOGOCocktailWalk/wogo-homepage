@@ -723,7 +723,12 @@ export async function handleGiftCardCheckout(request, env) {
     return errorJson('bad_request', 'invalid JSON body', 400, request);
   }
 
-  const { amount_cents, buyer_name, buyer_email, recipient_name, recipient_email, message, locale } = body || {};
+  const { amount_cents, buyer_name, buyer_email, recipient_name, message, locale } = body || {};
+  // delivery 'print' = the buyer gets the gift card themselves as a printable
+  // PDF and hands it over; nothing is mailed to the recipient, so no recipient
+  // email is asked for. Anything else = 'email': mailed straight to the recipient.
+  const delivery = body && body.delivery === 'print' ? 'print' : 'email';
+  const recipient_email = delivery === 'print' ? '' : (body || {}).recipient_email;
 
   if (!isValidGiftAmount(amount_cents)) {
     return errorJson(
@@ -742,7 +747,7 @@ export async function handleGiftCardCheckout(request, env) {
   if (!recipient_name || typeof recipient_name !== 'string' || recipient_name.length > 200) {
     return errorJson('bad_request', 'recipient_name is required', 400, request);
   }
-  if (!recipient_email || typeof recipient_email !== 'string' || recipient_email.length > 254 || !EMAIL_RE.test(recipient_email)) {
+  if (delivery === 'email' && (!recipient_email || typeof recipient_email !== 'string' || recipient_email.length > 254 || !EMAIL_RE.test(recipient_email))) {
     return errorJson('bad_request', 'a valid recipient email is required', 400, request);
   }
   if (message !== undefined && message !== null && (typeof message !== 'string' || message.length > 500)) {
@@ -767,6 +772,7 @@ export async function handleGiftCardCheckout(request, env) {
       buyer_email,
       recipient_name,
       recipient_email,
+      delivery,
       message: message || '',
       locale: locale === 'nl' ? 'nl' : 'en',
     });
