@@ -465,6 +465,28 @@ describe('handleGiftCardPurchaseCompleted', () => {
     assert.ok(sent.some((m) => m.to === 'buyer@example.com'));
   });
 
+  test('both gift card mails carry the printable PDF when one can be built', async () => {
+    const sent = [];
+    const session = {
+      id: 'cs_gift_purchase_pdf', currency: 'eur',
+      metadata: {
+        type: 'giftcard', amount_cents: '3000',
+        buyer_name: 'Buyer Bea', buyer_email: 'buyer@example.com',
+        recipient_name: 'Rita Recipient', recipient_email: 'rita@example.com', locale: 'en',
+      },
+    };
+    await handleGiftCardPurchaseCompleted({ DB: db }, session, {
+      database: realDb,
+      sendTransactional: async (env, msg) => { sent.push(msg); },
+      giftCardPdfAttachment: async (card) => ({ name: 'WOGO-gift-card-' + card.code + '.pdf', content: 'JVBERi0=' }),
+    });
+    assert.equal(sent.length, 2);
+    for (const m of sent) {
+      assert.equal(m.attachment.length, 1);
+      assert.ok(m.attachment[0].name.startsWith('WOGO-gift-card-WOGO-'));
+    }
+  });
+
   test('a redelivered event for the SAME purchase session does not mint a second card', async () => {
     const session = {
       id: 'cs_gift_purchase_2', currency: 'eur',

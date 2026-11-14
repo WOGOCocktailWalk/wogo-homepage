@@ -21,6 +21,7 @@ import {
 import * as db from './db.js';
 import { OWNER_NOTIFY_EMAIL, OWNER_ALERT_EMAIL, WEBHOOK_TOLERANCE_SECONDS } from './config.js';
 import { sendWithRetry } from './email_retry.js';
+import { giftCardPdfAttachment } from './giftcard_pdf.js';
 import { handleConfirmedBookingOptIn } from './subscribers.js';
 
 function json(data, status) {
@@ -426,11 +427,18 @@ export async function handleGiftCardPurchaseCompleted(env, session, deps = {}) {
     }, { database });
   }
 
+  // Printable gift card (PDF) on both mails. Best effort: null = no attachment.
+  // Skipped when no mail provider is configured (local runs / unit tests), so
+  // nothing reaches out to the network there unless a test injects its own.
+  const buildPdf = deps.giftCardPdfAttachment || (env.BREVO_API_KEY ? giftCardPdfAttachment : null);
+  const pdf = buildPdf ? await buildPdf(giftCard) : null;
+  const attachment = pdf ? [pdf] : undefined;
+
   if (giftCard.recipient_email) {
     const recipientMail = renderGiftCardRecipient(giftCard);
     await sendWithRetry(
       env,
-      { to: giftCard.recipient_email, subject: recipientMail.subject, htmlContent: recipientMail.html },
+      { to: giftCard.recipient_email, subject: recipientMail.subject, htmlContent: recipientMail.html, attachment },
       { database, sendTransactional: brevoSend, kind: 'giftcard_recipient' }
     );
   }
@@ -438,7 +446,7 @@ export async function handleGiftCardPurchaseCompleted(env, session, deps = {}) {
     const buyerMail = renderGiftCardBuyer(giftCard);
     await sendWithRetry(
       env,
-      { to: giftCard.buyer_email, subject: buyerMail.subject, htmlContent: buyerMail.html },
+      { to: giftCard.buyer_email, subject: buyerMail.subject, htmlContent: buyerMail.html, attachment },
       { database, sendTransactional: brevoSend, kind: 'giftcard_buyer' }
     );
   }

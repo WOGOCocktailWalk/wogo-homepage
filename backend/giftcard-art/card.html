@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WOGO gift card art</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,500&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* A5 landscape 210x148mm. This is the STATIC background of the gift card PDF.
+     The Worker (src/giftcard_pdf.js) draws code, value, names and message on top,
+     so the empty areas here are on purpose. body.nl switches the copy to Dutch,
+     body.thumb is the square picture shown on the Stripe payment page. */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: #2b1e16; }
+  body { font-family: 'Poppins', 'Avenir Next', sans-serif; }
+  .nl-t { display: none; } body.nl .nl-t { display: inline; } body.nl .en-t { display: none; }
+  .card { width: 210mm; height: 148mm; position: relative; overflow: hidden; background: #2b1e16; color: #f8ddc2; padding: 11mm 12mm; display: flex; flex-direction: column; }
+  .photo { position: absolute; top: 0; bottom: 0; left: 30%; right: -10%; z-index: 0; background: url('assets/photo-andrew-glove.jpg') no-repeat; background-size: cover; background-position: 50% 45%; filter: brightness(.85) contrast(1.05); }
+  .shade { position: absolute; inset: 0; z-index: 1; background:
+      linear-gradient(90deg, rgba(43,30,22,1) 0%, rgba(43,30,22,1) 34%, rgba(43,30,22,.8) 50%, rgba(43,30,22,.25) 72%, rgba(43,30,22,0) 100%),
+      linear-gradient(180deg, rgba(43,30,22,.35) 0%, rgba(43,30,22,0) 30%, rgba(43,30,22,.1) 50%, rgba(43,30,22,.96) 76%, rgba(43,30,22,1) 100%); }
+  .dots { position: absolute; inset: 0; z-index: 2; opacity: .45; background-image: radial-gradient(rgba(255,170,129,.55) 0.35mm, transparent 0.36mm); background-size: 22mm 22mm; background-position: 6mm 8mm; }
+  .content { position: relative; z-index: 3; display: flex; flex-direction: column; height: 100%; }
+  .top { display: flex; align-items: center; gap: 4.5mm; }
+  .top .logo { width: 12.5mm; height: 12.5mm; display: block; }
+  .top .sep { width: 0.3mm; height: 9mm; background: rgba(248,221,194,.4); }
+  .top .event { font-size: 2.9mm; font-weight: 700; letter-spacing: 1mm; color: #ffaa81; }
+  .kicker { margin-top: 7mm; font-family: 'Playfair Display', Georgia, serif; font-style: italic; font-size: 6mm; line-height: 1.15; color: #ffaa81; }
+  h1 { margin-top: 2.5mm; white-space: nowrap; font-size: 10.5mm; line-height: 1.08; font-weight: 800; letter-spacing: 1.7mm; color: #f8ddc2; }
+  .sub { margin-top: 3mm; font-size: 3.7mm; font-weight: 500; color: #e9d3c0; }
+  .sub .dot { color: #ffaa81; padding: 0 1mm; }
+  /* names + message are drawn by the Worker between page y=62mm and y=93mm */
+  .code-bar { position: absolute; left: 0; right: 0; top: 85mm; height: 23mm; background: #fbe6d8; border-radius: 5mm; }
+  .code-bar .lbl { position: absolute; top: 5mm; font-size: 2.6mm; font-weight: 700; letter-spacing: 0.9mm; color: #8a5a45; }
+  .code-bar .l1 { left: 8mm; } .code-bar .l2 { left: 132mm; }
+  .code-bar .rule { position: absolute; left: 124mm; top: 5mm; bottom: 5mm; width: 0.3mm; background: rgba(58,36,23,.2); }
+  .foot { margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; }
+  .foot .fine { font-size: 2.6mm; line-height: 1.6; color: #c9b8a9; max-width: 128mm; }
+  .foot .fine b { color: #f8ddc2; font-weight: 600; }
+  .foot .site { text-align: right; }
+  .foot .site b { display: block; font-size: 3.8mm; font-weight: 700; color: #fff; }
+  .foot .site i { display: block; font-style: normal; margin-top: 1mm; font-size: 2.2mm; color: #b8a696; }
+
+  /* square thumbnail for the payment page */
+  body.thumb .card { width: 148mm; height: 148mm; padding: 13mm; }
+  body.thumb .photo { left: 0; right: 0; filter: brightness(.8) contrast(1.05); }
+  body.thumb .shade { background: linear-gradient(180deg, rgba(43,30,22,.75) 0%, rgba(43,30,22,.2) 45%, rgba(43,30,22,.9) 100%); }
+  body.thumb .code-bar, body.thumb .foot, body.thumb .sub { display: none; }
+  body.thumb .top .logo { width: 20mm; height: 20mm; }
+  body.thumb .top .event { font-size: 4.4mm; }
+  body.thumb .kicker { margin-top: auto; font-size: 9mm; }
+  body.thumb h1 { font-size: 17mm; letter-spacing: 2.4mm; white-space: normal; }
+  body.thumb .kicker .en-t, body.thumb .kicker .nl-t { display: none; }
+  body.thumb .kicker::after { content: 'give a night out,'; }
+</style>
+</head>
+<body class="">
+<div class="card">
+  <div class="photo"></div><div class="shade"></div><div class="dots"></div>
+  <div class="content">
+    <div class="top">
+      <img class="logo" src="assets/wogo-logo-salmon.png" alt="">
+      <div class="sep"></div>
+      <div class="event"><span class="en-t">GIFT CARD</span><span class="nl-t">CADEAUBON</span></div>
+    </div>
+    <div class="kicker"><span class="en-t">three bars, three cocktails, your pace.</span><span class="nl-t">drie bars, drie cocktails, jullie tempo.</span></div>
+    <h1>COCKTAIL<span class="br"> </span>WALK</h1>
+    <div class="sub"><span class="en-t">Amsterdam<span class="dot">·</span>Rotterdam<span class="dot">·</span>Utrecht<span class="dot">·</span>Delft<span class="dot">·</span>Groningen</span><span class="nl-t">Amsterdam<span class="dot">·</span>Rotterdam<span class="dot">·</span>Utrecht<span class="dot">·</span>Delft<span class="dot">·</span>Groningen</span></div>
+    <div class="code-bar">
+      <div class="lbl l1"><span class="en-t">YOUR CODE</span><span class="nl-t">JOUW CODE</span></div>
+      <div class="rule"></div>
+      <div class="lbl l2"><span class="en-t">VALUE</span><span class="nl-t">WAARDE</span></div>
+    </div>
+    <div class="foot">
+      <div class="fine">
+        <span class="en-t"><b>How to use it:</b> go to wogococktailwalk.com, pick any city and date, and enter your code in the gift card field at checkout. The value comes off your total. Not exchangeable for cash.</span>
+        <span class="nl-t"><b>Zo gebruik je hem:</b> ga naar wogococktailwalk.com, kies een stad en datum, en vul je code in bij het veld cadeaubon-code tijdens het afrekenen. De waarde gaat van je totaal af. Niet inwisselbaar voor geld.</span>
+      </div>
+      <div class="site"><b>wogococktailwalk.com</b><i><span class="en-t">photo</span><span class="nl-t">foto</span>: Andrew Almeida</i></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

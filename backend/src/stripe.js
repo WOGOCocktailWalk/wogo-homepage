@@ -4,7 +4,7 @@
 // body, exactly how stripe-node does it under the hood). Zero-dependency,
 // Node-API-free: only Web-standard fetch + Web Crypto (crypto.subtle).
 
-import { SITE_URL, STRIPE_EXPIRES_MINUTES, routePathFor } from './config.js';
+import { SITE_URL, SITE_ASSET_BASE, STRIPE_EXPIRES_MINUTES, routePathFor, posterUrlFor } from './config.js';
 
 export async function createCheckoutSession(env, booking, route, addons = []) {
   const body = new URLSearchParams();
@@ -31,6 +31,14 @@ export async function createCheckoutSession(env, booking, route, addons = []) {
   body.set('line_items[0][price_data][currency]', String(route.currency || 'EUR').toLowerCase());
   body.set('line_items[0][price_data][unit_amount]', String(route.price_cents));
   body.set('line_items[0][price_data][product_data][name]', `${route.name} — ${booking.date} ${booking.slot}`);
+  // Payment page shows the route poster and a short description (14 Nov 2026).
+  body.set(
+    'line_items[0][price_data][product_data][description]',
+    booking.locale === 'nl'
+      ? '3 cocktails in 3 bars, in je eigen tempo. Je routekaart komt per e-mail.'
+      : '3 cocktails at 3 bars, at your own pace. Your route map arrives by email.'
+  );
+  body.set('line_items[0][price_data][product_data][images][0]', posterUrlFor(route));
 
   // Add-ons (migrations/0033) — each gets its OWN Stripe line item (name,
   // qty, unit price, in the ROUTE's own currency) so the guest's receipt
@@ -155,6 +163,13 @@ export async function createGiftCardCheckoutSession(env, gift) {
     'line_items[0][price_data][product_data][name]',
     `WOGO Gift Card (€${(gift.amount_cents / 100).toFixed(2).replace('.', ',')})`
   );
+  body.set(
+    'line_items[0][price_data][product_data][description]',
+    gift.locale === 'nl'
+      ? 'Te gebruiken voor elke WOGO Cocktail Walk, in elke stad. De ontvanger krijgt de cadeaubon per e-mail, met een pdf om te printen.'
+      : 'Valid on any WOGO Cocktail Walk, in any city. The recipient gets the gift card by email, with a PDF to print.'
+  );
+  body.set('line_items[0][price_data][product_data][images][0]', `${SITE_ASSET_BASE}/email/giftcard-thumb.jpg`);
 
   const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
     method: 'POST',

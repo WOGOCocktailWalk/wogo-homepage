@@ -10,5 +10,8 @@
   },
   "devDependencies": {
     "wrangler": "^4.113.0"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1"
   }
 }

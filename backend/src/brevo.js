@@ -325,6 +325,8 @@ export async function sendTransactional(env, msg) {
     // override; otherwise it's derived from the HTML.
     payload.textContent = msg.textContent || htmlToText(msg.htmlContent);
     if (msg.replyTo) payload.replyTo = msg.replyTo;
+    // Optional files, e.g. the gift card PDF: [{ name, content (base64) }].
+    if (Array.isArray(msg.attachment) && msg.attachment.length) payload.attachment = msg.attachment;
   } else {
     payload.templateId = msg.templateId;
     payload.params = msg.params;
