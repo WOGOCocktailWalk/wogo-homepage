@@ -358,3 +358,14 @@ describe('temporary "new email format" note on bar booking mails', () => {
     assert.doesNotMatch(await run(6), /new email format/);
   });
 });
+
+describe('Rotterdam Premium: Elvy-Bartendy-Ayla map on NYB-closed dates and from 1 Jan 2027', () => {
+  test('date-specific map wins; other dates keep the normal map', async () => {
+    const { resolveMapUrl } = await import('../src/emails.js');
+    const route = { id: 'rotterdam-premium-gin', map_url: 'https://x/normal-en.pdf', map_url_nl: 'https://x/normal-nl.pdf' };
+    assert.equal(resolveMapUrl(route, 'en', '2026-12-12'), 'https://x/normal-en.pdf');
+    assert.match(resolveMapUrl(route, 'en', '2026-12-17'), /rotterdam-premium-bartendy-en\.pdf$/);
+    assert.match(resolveMapUrl(route, 'nl', '2027-01-08'), /rotterdam-premium-bartendy-nl\.pdf$/);
+    assert.equal(resolveMapUrl({ ...route, id: 'other' }, 'nl', '2027-01-08'), 'https://x/normal-nl.pdf');
+  });
+});

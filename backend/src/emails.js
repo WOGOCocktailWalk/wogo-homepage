@@ -37,7 +37,7 @@ import { isoWeekday, formatMoney } from './logic.js';
 import {
   EMAIL_LOGO_URL, posterUrlFor, emailImageFor, SITE_URL, WELCOME_CODE, routePathFor,
   REVIEW_TRUSTPILOT_URL_EN, REVIEW_TRUSTPILOT_URL_NL, REVIEW_GOOGLE_URL,
-  ABANDONED_DISCOUNT_CODE,
+  ABANDONED_DISCOUNT_CODE, MAP_BY_DATE,
 } from './config.js';
 
 // ---------------------------------------------------------------------------
@@ -852,7 +852,13 @@ const CANCEL_STRINGS = {
  * map_url_by_weekday = {"4":{"en":"…","nl":"…"}} (ISO weekday Mon=1..Sun=7) to
  * send a DIFFERENT map on a specific day — e.g. a Thursday line-up with an extra
  * bar (1NUL8). Falls back to the route's normal map_url / map_url_nl. */
-function resolveMapUrl(route, lang, dateStr) {
+export function resolveMapUrl(route, lang, dateStr) {
+  // Date-specific map first (src/config.js:MAP_BY_DATE), e.g. a temporary or
+  // upcoming line-up that the weekday rule cannot express.
+  const byDate = route && MAP_BY_DATE[route.id];
+  if (byDate && dateStr && ((byDate.from && dateStr >= byDate.from) || (byDate.dates || []).includes(dateStr))) {
+    return lang === 'nl' ? (byDate.nl || byDate.en) : (byDate.en || byDate.nl);
+  }
   let byDay = null;
   try { byDay = route.map_url_by_weekday ? JSON.parse(route.map_url_by_weekday) : null; } catch (e) { byDay = null; }
   const day = (byDay && dateStr) ? byDay[String(isoWeekday(dateStr))] : null;

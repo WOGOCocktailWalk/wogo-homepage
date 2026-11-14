@@ -609,3 +609,20 @@ export const NOTIFICATION_RETENTION_MINUTES = 180 * 24 * 60;       // 180 days, 
 // Times are UTC, the format D1 stores in bookings.created_at.
 export const BAR_FORMAT_NOTICE_FIRST_N = 5;
 export const BAR_FORMAT_NOTICE_COUNT_FROM = '2026-11-16 00:00:00';
+
+// A different route map on specific DATES (routes.map_url_by_weekday only
+// knows weekdays). Used for Rotterdam Premium: NY Basement leaves the route on
+// 1 Jan 2027 and is closed on a few December days, and on all of those walks
+// the line-up is Elvy -> Bartendy -> Ayla (the bars themselves are switched
+// with 'alternate_bars' date overrides in the dashboard). `from` = every date
+// on or after it; `dates` = single days before that.
+// AFTER 1 Jan 2027: put these two maps in the route's own map_url/map_url_nl
+// and delete this entry.
+export const MAP_BY_DATE = {
+  'rotterdam-premium-gin': {
+    from: '2027-01-01',
+    dates: ['2026-12-10', '2026-12-17', '2026-12-18'],
+    en: `${SITE_ASSET_BASE}/maps/rotterdam-premium-bartendy-en.pdf`,
+    nl: `${SITE_ASSET_BASE}/maps/rotterdam-premium-bartendy-nl.pdf`,
+  },
+};
