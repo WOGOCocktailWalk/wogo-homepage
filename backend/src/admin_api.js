@@ -521,6 +521,24 @@ export async function handleLoginLinkMagic(request, env) {
   const invalidRedirect = () => new Response(null, { status: 302, headers: { Location: `${url.origin}/admin/login?state=invalid` } });
   if (!token || typeof token !== 'string') return invalidRedirect();
 
+  // The link is single-use, and mail apps OPEN links by themselves: iPhone
+  // Mail loads a preview when you hold your finger on a link, and spam
+  // scanners fetch every link in a mail. Either would burn the login before
+  // the person ever tapped it. So a plain visit only shows a "Sign in"
+  // button; the login is used up by that button (go=1), which no preview or
+  // scanner presses.
+  if (url.searchParams.get('go') !== '1') {
+    const goUrl = `${url.origin}/admin/login/magic?token=${encodeURIComponent(token)}&go=1`;
+    const page = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>WOGO sign in</title></head>
+<body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f7e8dd;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+<div style="background:#fffaf6;border-radius:22px;padding:36px 28px;max-width:340px;width:86%;text-align:center;box-shadow:0 10px 30px rgba(26,20,16,.1);">
+<div style="font-weight:800;letter-spacing:.3em;font-size:20px;color:#3f2b21;">WO<span style="color:#f2905c;">G</span>O</div>
+<p style="color:#643e2b;font-size:16px;line-height:1.5;margin:18px 0 24px;">Tap the button to sign in to the booking dashboard.</p>
+<a href="${goUrl}" style="display:block;background:#f2905c;color:#201611;font-weight:800;font-size:17px;text-decoration:none;border-radius:14px;padding:15px 18px;">Sign in</a>
+</div></body></html>`;
+    return new Response(page, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' } });
+  }
+
   const tokenHash = await sha256Hex(token);
   const consumed = await db.consumeLoginLink(env.DB, tokenHash);
   if (!consumed) return invalidRedirect();

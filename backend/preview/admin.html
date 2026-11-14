@@ -2885,7 +2885,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
     errBox.classList.remove("show");
     const pasted = ($("#paste-link-input").value || "").trim();
     const fail = (msg) => { errBox.textContent = msg; errBox.classList.add("show"); };
-    const go = (token) => { window.location.href = "/admin/login/magic?token=" + encodeURIComponent(token); };
+    const go = (token) => { window.location.href = "/admin/login/magic?go=1&token=" + encodeURIComponent(token); };
     const m = /[?&]token=([A-Za-z0-9._~-]{16,})/.exec(pasted);
     if (m) return go(m[1]);
     if (!/^https:\/\//i.test(pasted)) return fail("Paste the link you copied from the login email (hold the button, Copy Link).");

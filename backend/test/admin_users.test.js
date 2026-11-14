@@ -257,7 +257,14 @@ describe('magic-link lifecycle', () => {
     assert.ok(magicMatch, 'email body should contain the magic link with a 64-hex-char token');
     const token = magicMatch[1];
 
-    const clickRes = await worker.fetch(req('GET', `/admin/login/magic?token=${token}`), env, CTX);
+    // A mail app's link preview / a scanner opening the bare link must NOT
+    // use up the login: it only gets the "Sign in" confirmation page.
+    const preview = await worker.fetch(req('GET', `/admin/login/magic?token=${token}`), env, CTX);
+    assert.equal(preview.status, 200);
+    assert.equal(preview.headers.get('Set-Cookie'), null);
+    assert.match(await preview.text(), /go=1/);
+
+    const clickRes = await worker.fetch(req('GET', `/admin/login/magic?go=1&token=${token}`), env, CTX);
     assert.equal(clickRes.status, 302);
     assert.equal(clickRes.headers.get('Location'), 'https://api.example.com/admin');
     const cookie = clickRes.headers.get('Set-Cookie').split(';')[0];
@@ -267,7 +274,7 @@ describe('magic-link lifecycle', () => {
     assert.equal(session.email, 'teammate@example.com');
 
     // single-use: clicking the SAME link again fails.
-    const secondClick = await worker.fetch(req('GET', `/admin/login/magic?token=${token}`), env, CTX);
+    const secondClick = await worker.fetch(req('GET', `/admin/login/magic?go=1&token=${token}`), env, CTX);
     assert.equal(secondClick.status, 302);
     assert.equal(secondClick.headers.get('Location'), 'https://api.example.com/admin/login?state=invalid');
     assert.equal(secondClick.headers.get('Set-Cookie'), null);
@@ -280,7 +287,7 @@ describe('magic-link lifecycle', () => {
     const tokenHash = await sha256Hex(rawToken);
     run(testDb, `INSERT INTO admin_login_links (token_hash, user_id, expires_at) VALUES (:h, :u, datetime('now','-1 minute'))`, { h: tokenHash, u: user.id });
 
-    const res = await worker.fetch(req('GET', `/admin/login/magic?token=${rawToken}`), env, CTX);
+    const res = await worker.fetch(req('GET', `/admin/login/magic?go=1&token=${rawToken}`), env, CTX);
     assert.equal(res.status, 302);
     assert.equal(res.headers.get('Location'), 'https://api.example.com/admin/login?state=invalid');
   });
@@ -292,7 +299,7 @@ describe('magic-link lifecycle', () => {
     const tokenHash = await sha256Hex(rawToken);
     run(testDb, `INSERT INTO admin_login_links (token_hash, user_id, expires_at) VALUES (:h, :u, datetime('now','+10 minutes'))`, { h: tokenHash, u: user.id });
 
-    const res = await worker.fetch(req('GET', `/admin/login/magic?token=${rawToken}`), env, CTX);
+    const res = await worker.fetch(req('GET', `/admin/login/magic?go=1&token=${rawToken}`), env, CTX);
     assert.equal(res.status, 302);
     assert.equal(res.headers.get('Location'), 'https://api.example.com/admin/login?state=invalid');
   });
