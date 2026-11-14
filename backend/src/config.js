@@ -625,4 +625,18 @@ export const MAP_BY_DATE = {
     en: `${SITE_ASSET_BASE}/maps/rotterdam-premium-bartendy-en.pdf`,
     nl: `${SITE_ASSET_BASE}/maps/rotterdam-premium-bartendy-nl.pdf`,
   },
+  // From January 2027 Patio Bar is the third stop on both other Rotterdam
+  // routes (R1: Heart Melt > Spikizi > Patio; R2: Bar-Tender > Bartendy >
+  // Patio). Wins over the Thursday map, which no longer applies then
+  // (Thursdays are closed from January).
+  'rotterdam-witte-de-with': {
+    from: '2027-01-01',
+    en: `${SITE_ASSET_BASE}/maps/rotterdam-witte-de-with-patio-en.pdf`,
+    nl: `${SITE_ASSET_BASE}/maps/rotterdam-witte-de-with-patio-nl.pdf`,
+  },
+  'rotterdam-hidden-gems': {
+    from: '2027-01-01',
+    en: `${SITE_ASSET_BASE}/maps/rotterdam-hidden-gems-patio-en.pdf`,
+    nl: `${SITE_ASSET_BASE}/maps/rotterdam-hidden-gems-patio-nl.pdf`,
+  },
 };
