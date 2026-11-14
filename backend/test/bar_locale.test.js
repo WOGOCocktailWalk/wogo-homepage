@@ -381,3 +381,31 @@ describe('a bar with two email addresses', () => {
     assert.deepEqual(body.to, [{ email: 'a@example.com' }, { email: 'b@example.com' }]);
   });
 });
+
+describe('POST /admin/login/resolve (pasted tracking link from the login mail)', () => {
+  const mk = (url) => new Request('https://api.example.com/admin/login/resolve', {
+    method: 'POST', body: JSON.stringify({ url }), headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '10.9.9.9' },
+  });
+  const env = { DB: { prepare: () => ({ bind: () => ({ run: async () => ({ meta: {} }), first: async () => ({ n: 1 }), all: async () => ({ results: [] }) }) }) } };
+  test('follows the mail provider redirect and returns only our own token', async () => {
+    const { handleLoginLinkResolve } = await import('../src/admin_api.js');
+    const realFetch = global.fetch; const seen = [];
+    global.fetch = async (u, o) => { seen.push([u, o && o.redirect]); return new Response(null, { status: 302, headers: { Location: 'https://api.example.com/admin/login/magic?token=' + 'a'.repeat(64) } }); };
+    try {
+      const res = await handleLoginLinkResolve(mk('https://bbhfibad.r.bh.d.sendibt3.com/tr/cl/abc'), env);
+      assert.equal(res.status, 200);
+      assert.equal((await res.json()).token, 'a'.repeat(64));
+      assert.deepEqual(seen, [['https://bbhfibad.r.bh.d.sendibt3.com/tr/cl/abc', 'manual']]);
+    } finally { global.fetch = realFetch; }
+  });
+  test('refuses other hosts without fetching them, and redirects that land elsewhere', async () => {
+    const { handleLoginLinkResolve } = await import('../src/admin_api.js');
+    const realFetch = global.fetch; let n = 0;
+    global.fetch = async () => { n += 1; return new Response(null, { status: 302, headers: { Location: 'https://evil.example.com/admin/login/magic?token=' + 'a'.repeat(64) } }); };
+    try {
+      assert.equal((await handleLoginLinkResolve(mk('https://evil.example.com/x'), env)).status, 400);
+      assert.equal(n, 0);
+      assert.equal((await handleLoginLinkResolve(mk('https://x.sendibt3.com/tr/cl/abc'), env)).status, 400);
+    } finally { global.fetch = realFetch; }
+  });
+});

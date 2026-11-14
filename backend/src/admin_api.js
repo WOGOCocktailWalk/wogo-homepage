@@ -468,6 +468,44 @@ async function sendLoginLinkEmail(request, env, user, opts) {
   }
 }
 
+/** POST /admin/login/resolve {url} (public, rate-limited per IP) — for the
+ * iPhone Home Screen app. The login mail's button is wrapped by the mail
+ * provider's click tracking, so "Copy Link" gives a tracking address, not our
+ * own /admin/login/magic link. This follows that ONE tracking redirect on the
+ * server and hands back only the token, and only when it lands on this
+ * Worker's own magic-link URL. Hosts are limited to the mail provider's
+ * tracking domains, so it cannot be used to make the Worker fetch anything else. */
+const TRACKING_HOST_RE = /(^|\.)(sendibt\d*\.com|sendinblue\.com|brevo\.com)$/i;
+export async function handleLoginLinkResolve(request, env) {
+  let body;
+  try { body = await request.json(); } catch { return errorJson('bad_request', 'invalid JSON', 400); }
+  const raw = body && typeof body.url === 'string' ? body.url.trim() : '';
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  await db.recordRateEvent(env.DB, 'login_resolve_ip', ip);
+  const tries = await db.countRateEventsSince(env.DB, 'login_resolve_ip', ip, new Date(Date.now() - 15 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' '));
+  if (tries > 12) return errorJson('too_many_requests', 'too many attempts, please wait a few minutes', 429);
+
+  const origin = new URL(request.url).origin;
+  const tokenFrom = (u) => {
+    if (u.origin !== origin || u.pathname !== '/admin/login/magic') return null;
+    const t = u.searchParams.get('token');
+    return t && /^[A-Za-z0-9._~-]{16,200}$/.test(t) ? t : null;
+  };
+  let current;
+  try { current = new URL(raw); } catch { return errorJson('bad_request', 'not a link', 400); }
+  for (let hop = 0; hop < 4; hop++) {
+    const direct = tokenFrom(current);
+    if (direct) return json({ token: direct });
+    if (current.protocol !== 'https:' || !TRACKING_HOST_RE.test(current.hostname)) break;
+    let res;
+    try { res = await fetch(current.toString(), { redirect: 'manual' }); } catch { break; }
+    const loc = res.headers.get('Location');
+    if (!loc) break;
+    try { current = new URL(loc, current); } catch { break; }
+  }
+  return errorJson('bad_request', 'that is not a WOGO login link', 400);
+}
+
 /**
  * GET /admin/login/magic?token=... (public — the link clicked out of an
  * email, never a fetch() call, so this always responds with a 302 redirect,

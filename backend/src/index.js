@@ -105,6 +105,7 @@ router.get('/admin/public-config', adminApi.handlePublicConfig);
 // the self-serve entry point (no session exists yet), and the magic-link
 // CLICK carries its own one-time proof (the token itself), not a cookie.
 router.post('/admin/login/request', adminApi.handleLoginLinkRequest);
+router.post('/admin/login/resolve', adminApi.handleLoginLinkResolve);
 router.get('/admin/login/magic', adminApi.handleLoginLinkMagic);
 
 // -- Admin API (session-guarded, role-guarded — see ROUTE_ROLES below) ----------
@@ -203,7 +204,7 @@ router.put('/admin/api/notification-preferences', adminApi.handleSetNotification
 const ADMIN_API_PREFIX = '/admin/api/';
 const PUBLIC_ADMIN_PATHS = new Set([
   '/admin/login', '/admin/logout', '/admin/public-config',
-  '/admin/login/request', '/admin/login/magic',
+  '/admin/login/request', '/admin/login/magic', '/admin/login/resolve',
   // PWA shell assets (migrations/0032) — static and non-sensitive; a
   // Service-Worker script response must never redirect (so /admin/sw.js
   // can NEVER sit behind the session gate below), and the manifest/icons
