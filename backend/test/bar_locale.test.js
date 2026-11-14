@@ -369,3 +369,15 @@ describe('Rotterdam Premium: Elvy-Bartendy-Ayla map on NYB-closed dates and from
     assert.equal(resolveMapUrl({ ...route, id: 'other' }, 'nl', '2027-01-08'), 'https://x/normal-nl.pdf');
   });
 });
+
+describe('a bar with two email addresses', () => {
+  test('sendTransactional sends one mail to both', async () => {
+    const { sendTransactional } = await import('../src/brevo.js');
+    const realFetch = global.fetch; let body = null;
+    global.fetch = async (url, opts) => { body = JSON.parse(opts.body); return new Response(JSON.stringify({ messageId: 'x' }), { status: 201 }); };
+    try {
+      await sendTransactional({ BREVO_API_KEY: 'k' }, { to: 'a@example.com, b@example.com', subject: 's', htmlContent: '<p>x</p>' });
+    } finally { global.fetch = realFetch; }
+    assert.deepEqual(body.to, [{ email: 'a@example.com' }, { email: 'b@example.com' }]);
+  });
+});

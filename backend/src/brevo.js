@@ -313,7 +313,9 @@ export async function sendTransactional(env, msg) {
   const realTo = msg.to;
   const to = redirect || realTo;
 
-  const payload = { to: [{ email: to }] };
+  // A bar can ask for its booking mails at two addresses (e.g. the duty
+  // manager AND the F&B manager): "a@x.com, b@x.com" goes to both in one mail.
+  const payload = { to: String(to).split(',').map((e) => e.trim()).filter(Boolean).map((email) => ({ email })) };
 
   if (msg.htmlContent) {
     payload.sender = msg.sender || EMAIL_SENDER;
