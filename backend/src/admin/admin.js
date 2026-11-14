@@ -225,6 +225,23 @@
     }
   });
 
+  // Pasted login link (Home Screen app on iPhone, where the emailed link
+  // would open Safari instead). Only the token is taken from the pasted text
+  // and it is always sent to THIS site's own /admin/login/magic, never to
+  // whatever host the pasted text names.
+  $("#paste-link-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const errBox = $("#paste-link-error");
+    errBox.classList.remove("show");
+    const m = /[?&]token=([A-Za-z0-9._~-]{16,})/.exec($("#paste-link-input").value || "");
+    if (!m) {
+      errBox.textContent = "That doesn't look like the login link. In the email, hold the button and choose Copy Link.";
+      errBox.classList.add("show");
+      return;
+    }
+    window.location.href = "/admin/login/magic?token=" + encodeURIComponent(m[1]);
+  });
+
   $("#login-confirm-back").addEventListener("click", () => {
     resetLoginView();
     $("#login-email").focus();
