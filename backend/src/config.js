@@ -60,8 +60,8 @@ export const POSTER_BY_ROUTE = {
   groningen: `${SITE_ASSET_BASE}/email/poster-groningen.jpg`,
   delft: `${SITE_ASSET_BASE}/email/poster-delft.jpg`,
   'rotterdam-premium-gin': `${SITE_ASSET_BASE}/email/poster-rotterdam-premium.jpg`,
-  // Still to add (kept on the branded fallback banner until their posters arrive):
-  //   rotterdam-witte-de-with (Route 1), rotterdam-hidden-gems (Route 2)
+  'rotterdam-witte-de-with': `${SITE_ASSET_BASE}/email/poster-rotterdam-route-1.jpg`,
+  'rotterdam-hidden-gems': `${SITE_ASSET_BASE}/email/poster-rotterdam-route-2.jpg`,
 };
 
 /** The poster image for a route: its own if we have one, else the branded banner. */
