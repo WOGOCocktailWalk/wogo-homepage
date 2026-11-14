@@ -3074,3 +3074,15 @@ export async function pruneNotifications(db, { readBeforeStr, anyBeforeStr }) {
 }
 
 export { nowSqlite };
+
+/** How many confirmed bookings a route has had since `sinceStr` (UTC,
+ * 'YYYY-MM-DD HH:MM:SS'). Used for the temporary "new email format" note on
+ * bar mails (src/webhook.js:notifyBars). */
+export async function countConfirmedBookingsForRouteSince(db, routeId, sinceStr) {
+  const row = await first(
+    db,
+    `SELECT COUNT(*) AS n FROM bookings WHERE route_id = :route_id AND status = 'confirmed' AND created_at >= :since`,
+    { route_id: routeId, since: sinceStr }
+  );
+  return row ? Number(row.n) || 0 : 0;
+}

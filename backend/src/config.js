@@ -602,3 +602,10 @@ export const NOTIFICATION_DEFAULT_PREFERENCES = {
 // looked at this yet" shouldn't silently vanish.
 export const NOTIFICATION_READ_RETENTION_MINUTES = 14 * 24 * 60;   // 14 days
 export const NOTIFICATION_RETENTION_MINUTES = 180 * 24 * 60;       // 180 days, read or not
+
+// Bar booking mails carry a yellow "new email format" heads-up on a route's
+// first few confirmed bookings in the new system, counted from go-live (so
+// test bookings before it do not use them up). After that the note is gone.
+// Times are UTC, the format D1 stores in bookings.created_at.
+export const BAR_FORMAT_NOTICE_FIRST_N = 5;
+export const BAR_FORMAT_NOTICE_COUNT_FROM = '2026-11-16 00:00:00';

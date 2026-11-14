@@ -717,8 +717,21 @@ export function renderBarNotification(bar, booking, route, opts = {}) {
   // The allergies/notes block goes FIRST — above even the arrival hero — so
   // bar staff scanning the email can't miss "nut allergy" (the entire reason
   // this field exists). Empty notes ⇒ no block at all.
+  // Temporary heads-up for the switch from the old Wix mails, which showed the
+  // START time of the walk to every bar. Only on a route's first few bookings
+  // in the new system (notifyBars in src/webhook.js decides and passes
+  // opts.formatNotice); after that the mail is the plain one again.
+  // Owner request 14 Nov 2026.
+  const formatNotice = opts.formatNotice
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fff4d6;border:1px solid #e9c46a;border-radius:12px;margin:0 0 18px;">
+        <tr><td style="padding:12px 16px;font-size:14px;line-height:1.5;color:${C.ink};">
+          <strong>Please note: new email format.</strong> The time in this email is the time the guests arrive at <strong>your</strong> bar, not the start time of the walk.
+        </td></tr>
+      </table>`
+    : '';
+
   const content = `
-    ${allergiesNotesBlock(booking.notes, lang)}${addonAllergiesSection}${addonsSection}${arrivalHero}
+    ${allergiesNotesBlock(booking.notes, lang)}${addonAllergiesSection}${addonsSection}${formatNotice}${arrivalHero}
     ${detailPanel(rows, C.salmonDeep)}
     <p style="margin:0;font-size:13.5px;line-height:1.55;color:${C.brown};">
       ${t.closing(escapeHtml(String(booking.party)), escapeHtml(bar.arrival_time))}

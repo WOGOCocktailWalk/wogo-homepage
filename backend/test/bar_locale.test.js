@@ -329,3 +329,32 @@ describe('webhook.js — notifyBars/Reschedule/Cancellation send every bar Engli
     assert.ok(sent[0].subject.startsWith('WOGO reservation CANCELLED'));
   });
 });
+
+describe('temporary "new email format" note on bar booking mails', () => {
+  const bar = { bar_name: 'Bar X', bar_email: 'x@example.com', arrival_time: '18:00' };
+  const booking = { id: 'b1', name: 'G', email: 'g@example.com', party: 2, date: '2026-11-28', slot: '17:00' };
+  const route = { id: 'r', name: 'Route', city: 'Rotterdam' };
+  test('shown when opts.formatNotice is set, absent otherwise', async () => {
+    const { renderBarNotification } = await import('../src/emails.js');
+    assert.match(renderBarNotification(bar, booking, route, { formatNotice: true }).html, /new email format/);
+    assert.doesNotMatch(renderBarNotification(bar, booking, route, {}).html, /new email format/);
+  });
+  test('notifyBars adds it for a route\'s first 5 bookings only', async () => {
+    const { notifyBars } = await import('../src/webhook.js');
+    const run = async (n) => {
+      const sent = [];
+      await notifyBars({ DB: {} }, booking, route, {
+        database: {
+          listBarsForDate: async () => [], listOverridesForDate: async () => [],
+          countConfirmedBookingsForRouteSince: async () => n,
+          enqueueFailedEmail: async () => {},
+        },
+        computeBarArrivals: () => [bar],
+        sendTransactional: async (env, msg) => { sent.push(msg); },
+      });
+      return sent[0].htmlContent;
+    };
+    assert.match(await run(5), /new email format/);
+    assert.doesNotMatch(await run(6), /new email format/);
+  });
+});

@@ -20,7 +20,7 @@ import {
   renderGiftCardRedemptionAlert,
 } from './emails.js';
 import * as db from './db.js';
-import { OWNER_NOTIFY_EMAIL, OWNER_ALERT_EMAIL, WEBHOOK_TOLERANCE_SECONDS } from './config.js';
+import { OWNER_NOTIFY_EMAIL, OWNER_ALERT_EMAIL, WEBHOOK_TOLERANCE_SECONDS, BAR_FORMAT_NOTICE_FIRST_N, BAR_FORMAT_NOTICE_COUNT_FROM } from './config.js';
 import { sendWithRetry } from './email_retry.js';
 import { giftCardPdfAttachment } from './giftcard_pdf.js';
 import { handleConfirmedBookingOptIn } from './subscribers.js';
@@ -241,6 +241,19 @@ export async function notifyBars(env, booking, route, deps = {}) {
   const overridesForDate = await database.listOverridesForDate(env.DB, booking.route_id, booking.date);
   const arrivals = computeBars(route, bars, overridesForDate, booking);
 
+  // "New email format" heads-up on this route's first few bookings only (the
+  // booking being confirmed right now is already counted). Any failure here
+  // just means no note; it must never block the bar mails themselves.
+  let formatNotice = false;
+  try {
+    if (typeof database.countConfirmedBookingsForRouteSince === 'function') {
+      const n = await database.countConfirmedBookingsForRouteSince(env.DB, booking.route_id, BAR_FORMAT_NOTICE_COUNT_FROM);
+      formatNotice = n <= BAR_FORMAT_NOTICE_FIRST_N;
+    }
+  } catch (err) {
+    console.error('bar_format_notice_count_failed', err);
+  }
+
   for (const bar of arrivals) {
     // ONLY this bar's own add-ons — a bar that doesn't own any of this
     // booking's items must never see them (owner requirement, SPEC.md
@@ -248,7 +261,7 @@ export async function notifyBars(env, booking, route, deps = {}) {
     // date-override bar (no DB row to own anything), so it correctly
     // matches nothing there too.
     const barAddons = bar.bar_id ? allAddons.filter((a) => a.bar_id === bar.bar_id) : [];
-    const mail = renderBarNotification(bar, booking, route, { addons: barAddons });
+    const mail = renderBarNotification(bar, booking, route, { addons: barAddons, formatNotice });
     await sendWithRetry(env, { to: bar.bar_email, subject: mail.subject, htmlContent: mail.html }, { database, sendTransactional: brevoSend, kind: 'bar_notification' });
   }
   return arrivals;
