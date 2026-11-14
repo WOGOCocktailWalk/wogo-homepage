@@ -23,7 +23,10 @@ export async function createCheckoutSession(env, booking, route, addons = []) {
   body.set('expires_at', String(expiresAt));
   body.set('metadata[booking_id]', booking.id);
   body.set('payment_intent_data[metadata][booking_id]', booking.id);
-  ['card', 'ideal', 'klarna'].forEach((t, i) => body.set(`payment_method_types[${i}]`, t));
+  // No fixed payment_method_types: Stripe then offers every method that is
+  // switched ON in the dashboard (Settings > Payment methods) and fits the
+  // currency. A hard-coded list made EVERY checkout fail when one method in it
+  // (iDEAL, 15 Nov 2026) was not active on the live account.
   body.set('line_items[0][quantity]', String(booking.party));
   // migrations/0011: Checkout charges in the ROUTE's own currency (Stripe
   // wants the ISO code lowercased); defaults to 'eur' so every existing NL
@@ -155,7 +158,10 @@ export async function createGiftCardCheckoutSession(env, gift) {
   body.set('metadata[message]', (gift.message || '').slice(0, 490));
   body.set('metadata[locale]', gift.locale === 'nl' ? 'nl' : 'en');
   body.set('locale', gift.locale === 'nl' ? 'nl' : 'en');
-  ['card', 'ideal', 'klarna'].forEach((t, i) => body.set(`payment_method_types[${i}]`, t));
+  // No fixed payment_method_types: Stripe then offers every method that is
+  // switched ON in the dashboard (Settings > Payment methods) and fits the
+  // currency. A hard-coded list made EVERY checkout fail when one method in it
+  // (iDEAL, 15 Nov 2026) was not active on the live account.
   body.set('line_items[0][quantity]', '1');
   // WOGO gift cards are EUR-only today (matches every live route) — see
   // BUILD note "gift cards are EUR" / route.currency requirement at redemption.
