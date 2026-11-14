@@ -212,31 +212,27 @@ const booking = {
   name: 'Anna de Vries', email: 'anna@example.com', phone: '+31611111111', notes: null,
 };
 
-describe('renderBarNotification — NL (owner spec wording)', () => {
-  const bar = { bar_name: 'De Botanie', bar_email: 'botanie@example.com', arrival_time: '19:00', locale: 'nl' };
+describe('bars ALWAYS get English, whatever bar.locale says (owner decision 14 Nov 2026)', () => {
+  const nlBar = { bar_name: 'De Botanie', bar_email: 'botanie@example.com', arrival_time: '19:00', locale: 'nl' };
+  const legacyBar = { bar_name: 'Legacy Bar', bar_email: 'legacy@example.com', arrival_time: '19:00' };
 
-  test('subject matches the owner\'s exact spec', () => {
-    const { subject } = renderBarNotification(bar, booking, route);
-    assert.equal(subject, 'WOGO reservering · 19:00 · 2 gasten · 10 oktober 2026');
+  test('new booking: a bar marked "nl" and a bar with no locale both get the English mail', () => {
+    for (const bar of [nlBar, legacyBar]) {
+      const { subject, html } = renderBarNotification(bar, { ...booking, notes: 'Nut allergy' }, route);
+      assert.equal(subject, 'WOGO reservation · 19:00 · 2 guests · 2026-10-10');
+      assert.ok(html.includes(`Hi ${bar.bar_name},`));
+      assert.ok(html.includes('Arrival time'));
+      assert.ok(!html.includes('Aankomsttijd') && !html.includes('Hoi '), 'no Dutch copy');
+    }
   });
 
-  test('heading, hero title, intro, section labels', () => {
-    const { html } = renderBarNotification(bar, booking, route);
-    assert.ok(html.includes('Hoi De Botanie,'), 'greeting');
-    assert.ok(html.includes('Tafel voor 2 om 19:00'), 'hero title');
-    assert.ok(html.includes('Er komt een WOGO Cocktail Walk groep naar jullie toe. Hier is alles wat je nodig hebt.'), 'intro');
-    assert.ok(html.includes('Aankomsttijd'), 'arrival label');
-    assert.ok(html.includes('Gezelschap'), 'party label');
-    assert.ok(html.includes('Naam gast'), 'guest name label');
-    assert.ok(html.includes('Contact gast'), 'guest contact label');
-    assert.ok(html.includes('Reserveer alsjeblieft een tafel voor'), 'closing');
-    assert.ok(!html.includes('—'), 'no em-dashes in the Dutch bar copy');
-  });
-
-  test('allergies block uses the Dutch label, and renders ABOVE the arrival hero (the "nut allergy must reach the bartender" ordering guard, in NL too)', () => {
-    const { html } = renderBarNotification(bar, { ...booking, notes: 'Notenallergie' }, route);
-    assert.ok(html.includes('Allergieën / opmerkingen:'));
-    assert.ok(html.indexOf('Allergieën / opmerkingen:') < html.indexOf('Aankomsttijd'), 'allergies block must render above the arrival-time hero');
+  test('reschedule and cancellation are English for an "nl" bar too', () => {
+    const moved = renderBarReschedule(nlBar, { ...booking, date: '2026-10-08', slot: '18:00' }, route, {});
+    assert.ok(moved.subject.startsWith('WOGO reservation MOVED'));
+    assert.ok(moved.html.includes('New arrival time'));
+    const cancelled = renderBarCancellation(nlBar, booking, route);
+    assert.equal(cancelled.subject, 'WOGO reservation CANCELLED · 2026-10-10 19:00 · 2 guests');
+    assert.ok(cancelled.html.includes('Table released'));
   });
 });
 
@@ -256,41 +252,6 @@ describe('renderBarNotification — EN unchanged', () => {
   });
 });
 
-describe('renderBarNotification — defaults to NL when bar.locale is missing', () => {
-  test('a bar object with no locale field renders Dutch', () => {
-    const bar = { bar_name: 'Legacy Bar', bar_email: 'legacy@example.com', arrival_time: '19:00' };
-    const { html, subject } = renderBarNotification(bar, booking, route);
-    assert.ok(subject.startsWith('WOGO reservering'));
-    assert.ok(html.includes('Hoi Legacy Bar,'));
-  });
-});
-
-describe('renderBarReschedule — NL (owner spec wording)', () => {
-  const bar = { bar_name: 'De Botanie', bar_email: 'botanie@example.com', arrival_time: '18:00', locale: 'nl' };
-  const rescheduledBooking = { ...booking, date: '2026-10-08', slot: '18:00' };
-
-  test('subject matches the owner\'s exact spec', () => {
-    const { subject } = renderBarReschedule(bar, rescheduledBooking, route, {});
-    assert.equal(subject, 'WOGO reservering VERPLAATST · nu 18:00 · 8 oktober 2026');
-  });
-
-  test('the "Was:" line uses the given Dutch wording, no em-dash', () => {
-    const { html } = renderBarReschedule(bar, rescheduledBooking, route, {
-      previous: { date: '2026-10-07', arrival_time: '17:00' },
-    });
-    assert.ok(html.includes('Was:'));
-    assert.ok(html.includes('je mag die tafel vrijgeven.'));
-    assert.ok(!html.includes('—'), 'no em-dashes in the Dutch bar copy');
-  });
-
-  test('hero badge + heading + new arrival label', () => {
-    const { html } = renderBarReschedule(bar, rescheduledBooking, route, {});
-    assert.ok(html.includes('Reservering verplaatst'));
-    assert.ok(html.includes('Hoi De Botanie,'));
-    assert.ok(html.includes('Nieuwe aankomsttijd'));
-  });
-});
-
 describe('renderBarReschedule — EN unchanged', () => {
   const bar = { bar_name: 'Bar A', bar_email: 'bara@example.com', arrival_time: '18:00', locale: 'en' };
   const rescheduledBooking = { ...booking, date: '2026-10-08', slot: '18:00' };
@@ -300,25 +261,6 @@ describe('renderBarReschedule — EN unchanged', () => {
     assert.equal(subject, 'WOGO reservation MOVED · now 18:00 · 2026-10-08 · 2 guests');
     assert.ok(html.includes('New arrival time'));
     assert.ok(html.includes('This WOGO reservation has'));
-  });
-});
-
-describe('renderBarCancellation — NL (owner spec wording)', () => {
-  const bar = { bar_name: 'De Botanie', bar_email: 'botanie@example.com', arrival_time: '19:00', locale: 'nl' };
-
-  test('subject starts with the owner\'s exact Dutch prefix', () => {
-    const { subject } = renderBarCancellation(bar, booking, route);
-    assert.ok(subject.startsWith('WOGO reservering GEANNULEERD ·'));
-    assert.equal(subject, 'WOGO reservering GEANNULEERD · 10 oktober 2026 19:00 · 2 gasten');
-  });
-
-  test('hero + heading + labels', () => {
-    const { html } = renderBarCancellation(bar, booking, route);
-    assert.ok(html.includes('Reservering geannuleerd'));
-    assert.ok(html.includes('Tafel vrijgegeven'));
-    assert.ok(html.includes('Hoi De Botanie,'));
-    assert.ok(html.includes('Datum'));
-    assert.ok(html.includes('Gezelschap'));
   });
 });
 
@@ -337,8 +279,8 @@ describe('renderBarCancellation — EN unchanged', () => {
 // webhook.js — end to end: each bar gets mail in ITS OWN language
 // ---------------------------------------------------------------------------
 
-describe('webhook.js — notifyBars/Reschedule/Cancellation send each bar its own language', () => {
-  test('notifyBars: an NL bar and an EN bar on the same route each get their own language', async () => {
+describe('webhook.js — notifyBars/Reschedule/Cancellation send every bar English', () => {
+  test('notifyBars: an NL bar and an EN bar on the same route both get English', async () => {
     await addBar(sqliteDb, 'testroute', { ord: 1, bar_name: 'NL Bar', bar_email: 'nl@example.com', minutes_offset: 0, locale: 'nl' });
     await addBar(sqliteDb, 'testroute', { ord: 2, bar_name: 'EN Bar', bar_email: 'en@example.com', minutes_offset: 75, locale: 'en' });
 
@@ -351,13 +293,13 @@ describe('webhook.js — notifyBars/Reschedule/Cancellation send each bar its ow
 
     const nlMail = sent.find((m) => m.to === 'nl@example.com');
     const enMail = sent.find((m) => m.to === 'en@example.com');
-    assert.ok(nlMail.subject.startsWith('WOGO reservering'), 'NL bar gets a Dutch subject');
+    assert.ok(nlMail.subject.startsWith('WOGO reservation'), 'NL bar gets an English subject too');
     assert.ok(enMail.subject.startsWith('WOGO reservation'), 'EN bar gets an English subject');
-    assert.ok(nlMail.htmlContent.includes('Hoi NL Bar,'));
+    assert.ok(nlMail.htmlContent.includes('Hi NL Bar,'));
     assert.ok(enMail.htmlContent.includes('Hi EN Bar,'));
   });
 
-  test('notifyBarsReschedule respects each bar\'s locale', async () => {
+  test('notifyBarsReschedule sends English to an NL bar', async () => {
     await addBar(sqliteDb, 'testroute', { ord: 1, bar_name: 'NL Bar', bar_email: 'nl@example.com', minutes_offset: 0, locale: 'nl' });
     const route_ = { id: 'testroute', name: 'Test Route', city: 'Testville' };
     const env = { DB: sqliteDb };
@@ -371,10 +313,10 @@ describe('webhook.js — notifyBars/Reschedule/Cancellation send each bar its ow
     });
 
     assert.equal(sent.length, 1);
-    assert.ok(sent[0].subject.startsWith('WOGO reservering VERPLAATST'));
+    assert.ok(sent[0].subject.startsWith('WOGO reservation MOVED'));
   });
 
-  test('notifyBarsCancellation respects each bar\'s locale', async () => {
+  test('notifyBarsCancellation sends English', async () => {
     await addBar(sqliteDb, 'testroute', { ord: 1, bar_name: 'EN Bar', bar_email: 'en@example.com', minutes_offset: 0, locale: 'en' });
     const route_ = { id: 'testroute', name: 'Test Route', city: 'Testville' };
     const env = { DB: sqliteDb };

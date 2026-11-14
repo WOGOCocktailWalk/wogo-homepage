@@ -676,7 +676,7 @@ const BAR_NOTIFICATION_STRINGS = {
 };
 
 export function renderBarNotification(bar, booking, route, opts = {}) {
-  const lang = bar.locale === 'en' ? 'en' : 'nl';
+  const lang = 'en'; // Bars always get English (owner decision 14 Nov 2026: bar staff is partly English-speaking). bar.locale is ignored.
   const t = BAR_NOTIFICATION_STRINGS[lang];
 
   // Direct guest contact so the bar can reach the group that evening:
@@ -952,7 +952,7 @@ const BAR_RESCHEDULE_STRINGS = {
 };
 
 export function renderBarReschedule(bar, booking, route, opts = {}) {
-  const lang = bar.locale === 'en' ? 'en' : 'nl';
+  const lang = 'en'; // Bars always get English (owner decision 14 Nov 2026: bar staff is partly English-speaking). bar.locale is ignored.
   const t = BAR_RESCHEDULE_STRINGS[lang];
 
   const guestContact =
@@ -1075,7 +1075,7 @@ const BAR_CANCEL_STRINGS = {
 };
 
 export function renderBarCancellation(bar, booking, route) {
-  const lang = bar.locale === 'en' ? 'en' : 'nl';
+  const lang = 'en'; // Bars always get English (owner decision 14 Nov 2026: bar staff is partly English-speaking). bar.locale is ignored.
   const t = BAR_CANCEL_STRINGS[lang];
 
   const rows = [
