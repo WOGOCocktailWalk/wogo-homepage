@@ -220,6 +220,15 @@ export async function createGiftCardCheckoutSession(env, gift) {
  * Looks up an existing Promotion Code by its exact `code` string. Returns the
  * promotion code object, or null if none exists yet.
  */
+async function findActivePromotionCodeByCode(env, code) {
+  const res = await fetch(`https://api.stripe.com/v1/promotion_codes?code=${encodeURIComponent(code)}&active=true&limit=1`, {
+    headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` },
+  });
+  if (!res.ok) throw new Error(`stripe_promotion_code_lookup_failed: ${res.status} ${await res.text()}`);
+  const json = await res.json();
+  return (json.data && json.data[0]) || null;
+}
+
 async function findPromotionCodeByCode(env, code) {
   const res = await fetch(`https://api.stripe.com/v1/promotion_codes?code=${encodeURIComponent(code)}&limit=1`, {
     headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` },
@@ -240,8 +249,22 @@ async function findPromotionCodeByCode(env, code) {
  * needs to see WHY Stripe rejected the create, not just that it failed).
  */
 export async function ensureWelcomePromotionCode(env, code, percentOff) {
-  const existing = await findPromotionCodeByCode(env, code);
-  if (existing) return { code: existing.code, id: existing.id, created: false, coupon_id: existing.coupon };
+  const existing = await findActivePromotionCodeByCode(env, code);
+  // An earlier version of this code was created "first purchase only". That
+  // contradicts what the site promises: the tick box at checkout says "10% off
+  // your NEXT walk", and the person ticking it has just made a purchase. Such
+  // a restricted code is switched off here and replaced by an unrestricted one
+  // with the same letters (same as WELCOME10 always worked on the old Wix site).
+  const restricted = existing && existing.restrictions && existing.restrictions.first_time_transaction;
+  if (existing && !restricted) return { code: existing.code, id: existing.id, created: false, coupon_id: existing.coupon };
+  if (restricted) {
+    const off = await fetch(`https://api.stripe.com/v1/promotion_codes/${existing.id}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ active: 'false' }),
+    });
+    if (!off.ok) throw new Error(`stripe_promotion_code_deactivate_failed: ${off.status} ${await off.text()}`);
+  }
 
   const couponBody = new URLSearchParams();
   couponBody.set('percent_off', String(percentOff));
@@ -261,9 +284,6 @@ export async function ensureWelcomePromotionCode(env, code, percentOff) {
   promoBody.set('promotion[type]', 'coupon');
   promoBody.set('promotion[coupon]', coupon.id);
   promoBody.set('code', code);
-  // See the doc comment above — this is an APPROXIMATION of "once per
-  // customer" (Stripe has no exact equivalent via this API).
-  promoBody.set('restrictions[first_time_transaction]', 'true');
   const promoRes = await fetch('https://api.stripe.com/v1/promotion_codes', {
     method: 'POST',
     headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
