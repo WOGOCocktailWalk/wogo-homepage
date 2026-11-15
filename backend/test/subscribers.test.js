@@ -691,7 +691,7 @@ describe('Booking opt-in — confirmed booking via the Stripe webhook', () => {
     assert.equal(contact.attributes.BOOKINGS_COUNT, 1);
 
     const welcomeMail = mock.state.sent.find((s) => s.htmlContent.includes(WELCOME_CODE));
-    assert.ok(welcomeMail, 'a welcome email with the code should be sent on first opt-in');
+    assert.equal(welcomeMail, undefined, 'no welcome code mail for a checkout tick-box opt-in (owner decision 15 Nov 2026)');
   });
 
   test('a SECOND opted-in booking from an already-confirmed subscriber does not re-send the welcome email', async () => {

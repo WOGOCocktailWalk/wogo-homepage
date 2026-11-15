@@ -212,19 +212,13 @@ export async function handleConfirmedBookingOptIn(env, booking, route, opts = {}
         () => doSyncBookingOptIn(env, subscriber, booking, route, deps)
       );
 
-      // Welcome email (with WELCOME10) only the FIRST time this email becomes
-      // a confirmed subscriber — a guest who already has the code from an
-      // earlier subscribe/booking shouldn't get a second "welcome" + code
-      // reminder on every later booking.
-      if (!wasAlreadyConfirmed && opts.baseUrl) {
-        const unsubscribeUrl = `${opts.baseUrl}/api/unsubscribe?token=${subscriber.unsubscribe_token}`;
-        const mail = renderSubscribeWelcome(subscriber, { unsubscribeUrl });
-        await sendWithRetry(
-          env,
-          { to: subscriber.email, subject: mail.subject, htmlContent: mail.html },
-          { database, sendTransactional: brevoSend, kind: 'subscribe_welcome' }
-        );
-      }
+      // NO welcome email + WELCOME10 code for a guest who ticks the box at
+      // checkout (owner decision 15 Nov 2026). The code is "first purchase
+      // only" and this person has just made that purchase, so it would be a
+      // code they cannot use; the tick box no longer promises a discount
+      // either. The 10% welcome code is only for people who sign up through
+      // the newsletter form, and only ever reaches them by email.
+      void wasAlreadyConfirmed; void opts;
     } else {
       await withRetryQueue(
         database, env, 'booking_attributes',

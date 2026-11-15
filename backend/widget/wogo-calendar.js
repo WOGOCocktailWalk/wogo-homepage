@@ -88,7 +88,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       /* Marketing opt-in. Unticked by default (GDPR: consent must be a positive
          act) — the checkbox is created unchecked and only ever restored from the
          guest's own in-session snapshot. */
-      optin: "Keep me posted on new routes and offers (10% off your next walk)",
+      optin: "Keep me posted on new routes and offers",
       total: "Total", book: "Continue to secure payment",
       redirecting: "Taking you to secure checkout…",
       fine: "You'll pay securely via Stripe: iDEAL, card, Apple Pay or Klarna. Your table is only reserved once payment completes.",
@@ -151,7 +151,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       notes_ph: "Notenallergie, rolstoeltoegang, een verjaardag vieren…",
       gift: "Cadeaubon-code (optioneel)", gift_ph: "WOGO-XXXX-XXXX",
       gift_hint: "Heb je een kortingscode? Die vul je in bij de volgende stap, op de betaalpagina. Een cadeaubon en een kortingscode kun je niet op dezelfde boeking gebruiken.",
-      optin: "Houd me op de hoogte van nieuwe routes en acties (10% korting op je volgende walk)",
+      optin: "Houd me op de hoogte van nieuwe routes en acties",
       total: "Totaal", book: "Naar veilig betalen",
       redirecting: "Je gaat naar de beveiligde betaalpagina…",
       fine: "Je betaalt veilig via Stripe: iDEAL, kaart, Apple Pay of Klarna. Je tafel is pas gereserveerd zodra de betaling rond is.",
