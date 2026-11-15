@@ -52,18 +52,22 @@ function fixtureRoute(overrides = {}) {
 // ---------------------------------------------------------------------------
 
 describe('guest confirmation — per-language route map (migrations/0012)', () => {
-  test('EN booking links the English map (map_url), never the Dutch one', () => {
+  test('EN booking: English map is the main button, the Dutch map a second button', () => {
     const mail = renderGuestConfirmation(fixtureBooking({ locale: 'en' }), fixtureRoute());
     assert.ok(mail.html.includes('Open your route map'), 'EN map button copy present');
     assert.ok(mail.html.includes(`href="${EN_MAP}"`), 'button links the EN map');
-    assert.ok(!mail.html.includes(NL_MAP), 'the NL map URL must not appear anywhere in an EN email');
+    assert.ok(mail.html.includes(`href="${NL_MAP}"`), 'the Dutch map is offered as a second button');
+    assert.ok(mail.html.includes('Nederlandse versie'));
+    assert.ok(mail.html.indexOf(EN_MAP) < mail.html.indexOf(NL_MAP), 'own language first');
   });
 
-  test('NL booking links the Dutch map (map_url_nl), never the English one', () => {
+  test('NL booking: Dutch map is the main button, the English map a second button', () => {
     const mail = renderGuestConfirmation(fixtureBooking({ locale: 'nl' }), fixtureRoute());
     assert.ok(mail.html.includes('Open je routekaart'), 'NL map button copy present');
     assert.ok(mail.html.includes(`href="${NL_MAP}"`), 'button links the NL map');
-    assert.ok(!mail.html.includes(EN_MAP), 'the EN map URL must not appear anywhere in an NL email');
+    assert.ok(mail.html.includes(`href="${EN_MAP}"`), 'the English map is offered as a second button');
+    assert.ok(mail.html.includes('English version'));
+    assert.ok(mail.html.indexOf(NL_MAP) < mail.html.indexOf(EN_MAP), 'own language first');
   });
 
   test('NL booking falls back to the English map when map_url_nl is empty', () => {
@@ -102,7 +106,7 @@ describe('guest confirmation — per-language route map (migrations/0012)', () =
   test('unknown/missing locale is treated as EN (gets the English map)', () => {
     const mail = renderGuestConfirmation(fixtureBooking({ locale: undefined }), fixtureRoute());
     assert.ok(mail.html.includes(`href="${EN_MAP}"`));
-    assert.ok(!mail.html.includes(NL_MAP));
+    assert.ok(mail.html.indexOf(EN_MAP) < mail.html.indexOf(NL_MAP), 'English first, Dutch as the second button');
   });
 });
 

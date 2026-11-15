@@ -522,7 +522,7 @@ export function renderGuestConfirmation(booking, route, opts = {}) {
       <tr><td style="padding:22px 20px;">
         <div style="font-size:17px;font-weight:800;color:${C.ink};margin:0 0 6px;">${escapeHtml(t.mapTitle)}</div>
         <p style="margin:0 0 16px;font-size:14px;line-height:1.55;color:${C.brown};">${escapeHtml(t.mapIntro)}</p>
-        ${primaryButton(mapUrl, t.mapButton)}
+        ${mapButtons(route, lang, booking.date, t.mapButton)}
         <p style="margin:6px 0 0;font-size:12.5px;line-height:1.5;color:${C.muted};">${escapeHtml(t.mapSave)}</p>
       </td></tr>
     </table>`
@@ -868,6 +868,22 @@ export function resolveMapUrl(route, lang, dateStr) {
   return lang === 'nl' ? (route.map_url_nl || route.map_url) : route.map_url;
 }
 
+/** The map button(s): the map in the booking's own language as the main
+ * button, and the OTHER language's map as a quieter second button right
+ * under it, so a guest who booked on the English site can still open the
+ * Dutch map (and the other way round). Owner request 15 Nov 2026. The second
+ * button is left out when the route has no separate map in that language. */
+function mapButtons(route, lang, dateStr, label) {
+  const mine = resolveMapUrl(route, lang, dateStr);
+  if (!mine) return '';
+  const otherLang = lang === 'nl' ? 'en' : 'nl';
+  const other = resolveMapUrl(route, otherLang, dateStr);
+  const mineTag = lang === 'nl' ? 'Nederlands' : 'English';
+  const otherLabel = lang === 'nl' ? 'English version' : 'Nederlandse versie';
+  if (!other || other === mine) return primaryButton(mine, label);
+  return primaryButton(mine, `${label} (${mineTag})`) + secondaryButton(other, otherLabel);
+}
+
 /** The blush route-map card (title + intro + primary button + save note),
  * shared by the confirmation and the reschedule email. Renders only when the
  * route has a map for this language + day (see resolveMapUrl). */
@@ -878,7 +894,7 @@ function guestMapSection(gt, route, lang, dateStr) {
       <tr><td style="padding:22px 20px;">
         <div style="font-size:17px;font-weight:800;color:${C.ink};margin:0 0 6px;">${escapeHtml(gt.mapTitle)}</div>
         <p style="margin:0 0 16px;font-size:14px;line-height:1.55;color:${C.brown};">${escapeHtml(gt.mapIntro)}</p>
-        ${primaryButton(mapUrl, gt.mapButton)}
+        ${mapButtons(route, lang, dateStr, gt.mapButton)}
         <p style="margin:6px 0 0;font-size:12.5px;line-height:1.5;color:${C.muted};">${escapeHtml(gt.mapSave)}</p>
       </td></tr>
     </table>`;
