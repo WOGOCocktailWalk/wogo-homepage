@@ -686,7 +686,6 @@
     <button class="w-filter-btn" data-city="amsterdam" aria-pressed="false">Amsterdam</button>
     <button class="w-filter-btn" data-city="groningen" aria-pressed="false">Groningen</button>
     <button class="w-filter-btn" data-city="delft" aria-pressed="false">Delft</button>
-    <button class="w-filter-btn" data-city="london" aria-pressed="false">London</button>
   </div>
   <!-- NOTE: this scroller is authored FLAT (also the no-JS fallback). The
        country-grouping script below reparents these cards into per-country
@@ -702,7 +701,6 @@
 <div class="w-citycard" data-city="amsterdam"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="amsterdam/ndsm-noord-card.jpg" alt="Amsterdam Noord - City Centre"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">🇳🇱 Amsterdam</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="c6_route">Amsterdam · Noord &amp; City Centre</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="c6_theme">★ Theme: Iconic Amsterdam</div><div class="w-citycard-row" data-i18n="c6_day">📅 Thu–Sat · start 5.30–8pm</div><div class="w-citycard-row" data-i18n="time34">🕐 3–4 hours</div></div><div class="w-citycard-price">€29,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="amsterdam/book/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book your walk</a><a href="amsterdam/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
       <div class="w-citycard" data-city="groningen"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="groningen/gin-walk-hero.jpg" alt="Groningen"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">🇳🇱 Groningen</div><div class="w-citycard-flag" data-i18n="flag_gin">Powered by Bobby's Gin</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="c7_route">Groningen · Bobby's Gin Walk</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="c7_theme">★ Theme: Best Bars</div><div class="w-citycard-row" data-i18n="c7_day">📅 Thu–Sat · start 5–8pm</div><div class="w-citycard-row" data-i18n="time3">🕐 3 hours</div></div><div class="w-citycard-price">€29,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="groningen/book/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book your walk</a><a href="groningen/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
       <div class="w-citycard" data-city="delft"><div class="w-citycard-img"><img class="w-citycard-img-inner" loading="lazy" decoding="async" src="delft/delft-card.jpg" alt="Delft"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">🇳🇱 Delft</div><div class="w-citycard-flag" data-i18n="flag_new">New</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="c8_route">Delft · City Centre</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="c8_theme">★ Theme: Hidden gems</div><div class="w-citycard-row" data-i18n="c8_day">📅 7 days a week</div><div class="w-citycard-row" data-i18n="time3">🕐 3 hours</div></div><div class="w-citycard-price">€29,95 <small data-i18n="per_person">per person</small></div><div class="w-citycard-actions"><a href="delft/book/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="book">Book your walk</a><a href="delft/" class="w-citycard-btn w-citycard-btn-secondary" data-i18n="info">View route</a></div></div></div>
-      <div class="w-citycard w-citycard-soon" data-city="london"><div class="w-citycard-img w-citycard-img-soon"><div class="w-citycard-overlay"></div><div class="w-citycard-badge">🇬🇧 London</div><div class="w-citycard-flag" data-i18n="flag_soon">Coming soon</div></div><div class="w-citycard-body"><div class="w-citycard-route" data-i18n="lon_route">London · Soho &amp; Covent Garden</div><div class="w-citycard-rows"><div class="w-citycard-row" data-i18n="lon_teaser">★ Our first city beyond the Netherlands</div></div><div class="w-citycard-actions"><a href="london/" class="w-citycard-btn w-citycard-btn-primary" data-i18n="intl_soon_btn">Take a first look →</a></div></div></div>
     </div>
   </div>
   <div class="w-pad" style="text-align:center;margin-top:18px;"><span data-i18n="route_reassure" style="display:inline-block;font-size:12.5px;font-weight:700;color:var(--wogo-espresso);letter-spacing:0.01em;">✓ Reservations &amp; route map included<span class="w-sep-m">&nbsp;·&nbsp;</span><br class="w-br-m">✓ Mocktail option on every route<span class="w-sep-m">&nbsp;·&nbsp;</span><br class="w-br-m">✓ Questions? <a class="w-mail" href="mailto:info@wogoamsterdam.com">Write us</a></span></div>
@@ -1156,15 +1154,6 @@
     { name:'Amsterdam', hub:'amsterdam/', routes:[ {name:'Amsterdam', url:'amsterdam/'} ] },
     { name:'Groningen', hub:'groningen/', routes:[ {name:'Groningen',         url:'groningen/'} ] },
     { name:'Delft',     hub:'delft/',     routes:[ {name:'Delft',             url:'delft/'} ] }
-  ] },
-  /* United Kingdom: London is a working PLACEHOLDER example (noindex). The
-     country heading appears automatically now there is more than one country.
-     Replace the London routes below with the real ones at launch. */
-  { code:'gb', name:{en:'United Kingdom',nl:'Verenigd Koninkrijk'}, article:{en:'the ',nl:'het '}, cities: [
-    /* London has no bookable route yet, so it carries NO footer route link.
-       Its one route is Soho, so the nav sends people straight there instead of
-       to a hub page holding a single card. Add more routes here at launch. */
-    { name:'London', hub:'london/soho/', routes:[] }
   ] } ] };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function renderRoutes(lang) {
