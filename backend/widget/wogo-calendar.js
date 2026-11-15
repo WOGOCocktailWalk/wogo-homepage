@@ -658,19 +658,18 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       btn.type = "button";
       btn.setAttribute("data-slot", s.slot); // lets relang() re-find the chosen time after a re-render
       btn.appendChild(el("span", "wc-slot-time", s.slot));
-      let seatsTxt, low = false;
-      if (soldout) seatsTxt = this.t.soldout;
-      else if (s.seats_left === 1) { seatsTxt = this.t.one_seat_left; low = true; }
-      else if (s.seats_left <= LOW_SEATS) { seatsTxt = fmt(this.t.only_left, { "%n": s.seats_left }); low = true; }
-      else seatsTxt = fmt(this.t.seats_left, { "%n": s.seats_left });
-      btn.appendChild(el("span", "wc-slot-seats" + (low ? " wc-low" : ""), seatsTxt));
+      // The number of seats left is deliberately NOT shown (owner decision,
+      // 15 Nov 2026): a quiet slot should not look empty. A slot only says
+      // something when it is sold out. seats_left still caps the party size.
+      const seatsTxt = soldout ? this.t.soldout : "";
+      if (soldout) btn.appendChild(el("span", "wc-slot-seats", seatsTxt));
 
       if (soldout) {
         btn.disabled = true;
         btn.setAttribute("aria-label", `${s.slot} — ${this.t.soldout}`);
       } else {
         btn.setAttribute("aria-pressed", "false");
-        btn.setAttribute("aria-label", `${s.slot} — ${seatsTxt}`);
+        btn.setAttribute("aria-label", s.slot);
         btn.addEventListener("click", () => this.selectSlot(s, btn));
       }
       return btn;
