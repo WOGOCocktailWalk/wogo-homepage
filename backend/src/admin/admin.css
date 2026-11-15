@@ -1707,3 +1707,33 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .drawer.wide { width: min(900px, 96vw); }
 .blog-preview-frame { width: 100%; height: calc(100vh - 160px); border: 0; display: block; background: #fff; }
 
+
+/* ==========================================================================
+   PHONE / HOME-SCREEN APP FIXES (15 Nov 2026) — kept at the very end so they
+   win over the earlier rules of the same weight.
+   ========================================================================== */
+/* 1. Notch / clock: the base .sidebar and .topbar rules further up reset the
+      padding and silently dropped the safe-area space, so the menu's logo sat
+      under the iPhone clock. Re-assert it, and give the detail drawer the same. */
+.sidebar { padding-top: calc(22px + env(safe-area-inset-top)); padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
+.drawer-head { padding-top: calc(18px + env(safe-area-inset-top)); }
+@media (max-width: 900px) {
+  .topbar { padding-top: calc(12px + env(safe-area-inset-top)); }
+  /* 2. Tapping next to the open menu closes it: the dark overlay behind the
+        menu never switched on, so there was nothing to tap. It is the menu's
+        next sibling, so it follows the menu's open state. */
+  .sidebar.open + .scrim { opacity: 1; pointer-events: auto; z-index: 110; }
+  /* 3. Date fields in filter rows overlapped on iPhone (its date control has a
+        fixed inner width): let each take its own share of the row. */
+  .filter-group { min-width: 0; flex: 1 1 140px; }
+  .filter-group select, .filter-group input { min-width: 0; width: 100%; max-width: 100%; box-sizing: border-box; }
+  .filter-group input[type="date"] { -webkit-appearance: none; appearance: none; min-height: 46px; }
+  .filter-group.search { flex-basis: 100%; }
+}
+/* 4. Breathing room between every top-level block of a page, however the page
+      wraps its cards. */
+.content > :is(.card, .filters, .stat-row, .kpi-grid, .tool-grid, .grid, section, div:not([class]))
+  + :is(.card, .filters, .stat-row, .kpi-grid, .tool-grid, .grid, section, div:not([class])) { margin-top: var(--card-gap); }
+.content > div:not([class]) > .card + .card,
+.content > div:not([class]) > div + div:has(> .card),
+.content > div:not([class]) > .card + div:has(> .card) { margin-top: var(--card-gap); }
