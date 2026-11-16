@@ -187,7 +187,7 @@ export function emailImageFor(kind, route) {
 }
 
 // Public — already present in the site's client-side Meta Pixel snippet.
-export const META_PIXEL_ID = '652971109400692';
+export const META_PIXEL_ID = '317282807557294';
 
 export const DEFAULT_CAPACITY = 10;
 export const DEFAULT_MAX_PARTY = 6;
