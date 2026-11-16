@@ -1578,8 +1578,8 @@ export async function handleCreateManualBooking(request, env) {
   });
   await notifyAdmins(env, {
     kind: 'booking_new',
-    title: `💸 Nieuwe boeking — ${route.name}`,
-    body: `${formatNotificationDate(result.booking.date)} · ${result.booking.slot} · ${result.booking.party} gasten · ${formatEuros(totalCents)} · ${result.booking.name}`,
+    title: `💸 Nieuwe boeking · ${formatEuros(totalCents)}`,
+    body: `${result.booking.name} · ${result.booking.party} ${result.booking.party === 1 ? 'gast' : 'gasten'} · ${route.name} · ${formatNotificationDate(result.booking.date)} ${result.booking.slot}`,
     url: `/admin/#/bookings/${bookingId}`,
     booking_id: bookingId,
   });

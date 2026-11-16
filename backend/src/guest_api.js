@@ -47,7 +47,7 @@ import { notifyAdmins } from './notifications.js';
 import { createCheckoutSession, createGiftCardCheckoutSession } from './stripe.js';
 import { sendTransactional } from './brevo.js';
 import { sendWithRetry } from './email_retry.js';
-import { renderInquiryOwnerNotification, renderInquiryAutoAck, renderSubscribeConfirm, renderSubscribeWelcome } from './emails.js';
+import { renderInquiryOwnerNotification, renderInquiryAutoAck, waitlistCityOf, renderSubscribeConfirm, renderSubscribeWelcome } from './emails.js';
 import { generateToken, syncConfirmedSubscriber, syncUnsubscribe } from './subscribers.js';
 import { verifyReminderUnsubscribeToken } from './reminder_optout.js';
 
@@ -897,8 +897,10 @@ export async function handleContact(request, env) {
   // called directly, same contract as every other trigger site.
   await notifyAdmins(env, {
     kind: 'enquiry',
-    title: `✉️ Nieuwe aanvraag — ${kind === 'group' ? 'Groep' : 'Contact'}`,
-    body: `${inquiry.name}${inquiry.city ? ' · ' + inquiry.city : ''} · ${inquiry.message.slice(0, 120)}`,
+    title: waitlistCityOf(inquiry) ? `⏳ Wachtlijst ${waitlistCityOf(inquiry)}` : `✉️ Nieuwe aanvraag — ${kind === 'group' ? 'Groep' : 'Contact'}`,
+    body: waitlistCityOf(inquiry)
+      ? `${inquiry.name}${inquiry.party_size != null ? ' · ' + inquiry.party_size + (inquiry.party_size === 1 ? ' gast' : ' gasten') : ''}${inquiry.date ? ' · ' + inquiry.date : ''}`
+      : `${inquiry.name}${inquiry.city ? ' · ' + inquiry.city : ''} · ${inquiry.message.slice(0, 120)}`,
     url: `/admin/#/inquiries/${inquiry.id}`,
   });
 

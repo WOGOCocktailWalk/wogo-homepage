@@ -1374,17 +1374,20 @@ export function renderGiftCardRedemptionAlert(booking, result) {
  * message leads with who it's from. */
 export function renderInquiryOwnerNotification(inquiry) {
   const isGroup = inquiry.kind === 'group';
+  const waitlistCity = waitlistCityOf(inquiry);
   const subject = isGroup
     ? `Group booking request · ${inquiry.city || 'unknown city'} · ${inquiry.date || 'no date'} · ${inquiry.party_size != null ? inquiry.party_size + 'p' : '?p'}`
-    : `Contact form · ${inquiry.name}`;
+    : waitlistCity
+      ? `Waitlist ${waitlistCity} · ${inquiry.name} · ${inquiry.date || 'no date'} · ${inquiry.party_size != null ? inquiry.party_size + 'p' : '?p'}`
+      : `Contact form · ${inquiry.name}`;
 
   const rows = [
-    ['Kind', escapeHtml(isGroup ? 'Group booking request' : 'Contact message')],
+    ['Kind', escapeHtml(isGroup ? 'Group booking request' : waitlistCity ? `Waitlist sign-up · ${waitlistCity}` : 'Contact message')],
     ['Name', escapeHtml(inquiry.name)],
     ['Email', `<a href="mailto:${escapeHtml(inquiry.email)}" style="color:${C.salmonDeep};text-decoration:none;">${escapeHtml(inquiry.email)}</a>`],
   ];
   if (inquiry.phone) rows.push(['Phone', escapeHtml(inquiry.phone)]);
-  if (isGroup) {
+  if (isGroup || waitlistCity) {
     if (inquiry.city) rows.push(['City', escapeHtml(inquiry.city)]);
     if (inquiry.date) rows.push(['Date', escapeHtml(inquiry.date)]);
     if (inquiry.party_size != null) rows.push(['Party size', escapeHtml(String(inquiry.party_size))]);
@@ -1443,7 +1446,48 @@ const INQUIRY_ACK_STRINGS = {
  * confirmation that their message arrived, separate from the owner
  * notification above. EN/NL via inquiry.locale, same pattern as every
  * guest-facing mail in this file. */
+/** A waitlist sign-up arrives through the same form endpoint as a contact
+ * message; its message starts with "[<City> waitlist]" (see the form on
+ * /utrecht/book/). Returns the city, or null for an ordinary message. */
+export function waitlistCityOf(inquiry) {
+  const m = /^\[(.{2,40}) waitlist\]/i.exec(String((inquiry && inquiry.message) || ''));
+  return m ? m[1] : null;
+}
+
+function renderWaitlistAck(inquiry, city) {
+  const lang = loc(inquiry.locale);
+  const nl = lang === 'nl';
+  const firstName = inquiry.name ? String(inquiry.name).trim().split(/\s+/)[0] : '';
+  const rows = [];
+  if (inquiry.date) rows.push([nl ? 'Gewenste datum' : 'Preferred date', escapeHtml(inquiry.date)]);
+  if (inquiry.party_size != null) rows.push([nl ? 'Gasten' : 'Guests', escapeHtml(String(inquiry.party_size))]);
+  const intro = nl
+    ? `Je staat op de wachtlijst voor ${city}. Zodra er nieuwe data vrijkomen, krijg jij als eerste een mail van ons. Je hoeft nu niets te doen en je betaalt nog niets.`
+    : `You are on the waitlist for ${city}. As soon as new dates open, you will be the first to get an email from us. There is nothing to do right now and nothing to pay yet.`;
+  const alt = nl
+    ? 'Kun je niet wachten? In Rotterdam, Delft, Groningen en Amsterdam kun je nu al boeken.'
+    : 'Can\'t wait? Rotterdam, Delft, Groningen and Amsterdam have dates open now.';
+  const content = `
+    ${rows.length ? detailPanel(rows, C.salmonDeep) : ''}
+    <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${C.brown};">${escapeHtml(alt)}</p>
+    ${primaryButton(`${SITE_URL}/#cities`, nl ? 'Bekijk de andere steden' : 'See the other cities')}
+    <p style="margin:22px 0 0;font-size:16px;line-height:1.5;font-weight:800;color:${C.ink};">${nl ? 'Tot snel, het WOGO-team' : 'See you soon, the WOGO team'}</p>`;
+  return {
+    subject: nl ? `Je staat op de wachtlijst voor ${city} 🍸` : `You are on the ${city} waitlist 🍸`,
+    html: layout({
+      preheader: intro,
+      hero: { chip: nl ? `Wachtlijst ${city}` : `${city} waitlist` },
+      heading: nl ? `Je staat op de lijst${firstName ? ', ' + firstName : ''}!` : `You are on the list${firstName ? ', ' + firstName : ''}!`,
+      intro,
+      contentHtml: content,
+      footerHtml: `<p style="margin:0;font-size:13px;line-height:1.5;color:${C.brown};">${nl ? 'Dit is een automatische bevestiging. Vragen? Beantwoord gewoon deze e-mail.' : 'This is an automatic confirmation. Questions? Just reply to this email.'}</p>`,
+    }),
+  };
+}
+
 export function renderInquiryAutoAck(inquiry) {
+  const waitlistCity = waitlistCityOf(inquiry);
+  if (waitlistCity) return renderWaitlistAck(inquiry, waitlistCity);
   const lang = loc(inquiry.locale);
   const t = INQUIRY_ACK_STRINGS[lang];
   const firstName = inquiry.name ? String(inquiry.name).trim().split(/\s+/)[0] : '';

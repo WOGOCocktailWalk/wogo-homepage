@@ -186,8 +186,10 @@ export async function handleWebhook(request, env, deps = {}) {
           const addonSummary = summarizeAddonsForNotification(addonLines);
           await notifyAdmins(env, {
             kind: 'booking_new',
-            title: `💸 Nieuwe boeking — ${route.name}`,
-            body: `${formatNotificationDate(booking.date)} · ${booking.slot} · ${booking.party} gasten · ${formatEuros(totalCents)} · ${booking.name}${addonSummary}`,
+            // Owner's format (16 Nov 2026), modelled on a payment-app alert:
+            // the amount up front, then who, how many, and which walk.
+            title: `💸 Nieuwe boeking · ${formatEuros(totalCents)}`,
+            body: `${booking.name} · ${booking.party} ${booking.party === 1 ? 'gast' : 'gasten'} · ${route.name} · ${formatNotificationDate(booking.date)} ${booking.slot}${addonSummary}`,
             url: `/admin/#/bookings/${booking.id}`,
             booking_id: booking.id,
           }, { database });
