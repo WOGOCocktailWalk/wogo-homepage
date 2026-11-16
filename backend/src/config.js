@@ -643,3 +643,13 @@ export const MAP_BY_DATE = {
     nl: `${SITE_ASSET_BASE}/maps/rotterdam-hidden-gems-patio-nl.pdf`,
   },
 };
+
+// --- Discount codes that must switch on at a set moment --------------------
+// Stripe promotion codes have an end date but no start date. A code listed
+// here is switched ON by the 5-minute cron during the hour starting at
+// `activate_at` (UTC). Keep the code switched OFF until then.
+// BLACKFRIDAY15: 15%, valid 27 Nov 00:00 - 30 Nov 23:59 Amsterdam time (the
+// end date is set on the code itself in Stripe).
+export const SCHEDULED_PROMO_ACTIVATIONS = [
+  { code: 'BLACKFRIDAY15', activate_at: '2026-11-26T23:00:00Z' },
+];

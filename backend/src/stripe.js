@@ -238,6 +238,22 @@ async function findPromotionCodeByCode(env, code) {
   return (json.data && json.data[0]) || null;
 }
 
+/** Switches an existing promotion code on or off (Stripe allows both ways).
+ * Returns { code, id, active } or throws if the code does not exist. */
+export async function setPromotionCodeActive(env, code, active) {
+  const existing = await findPromotionCodeByCode(env, code);
+  if (!existing) throw new Error(`promotion_code_not_found: ${code}`);
+  if (existing.active === !!active) return { code: existing.code, id: existing.id, active: existing.active, changed: false };
+  const res = await fetch(`https://api.stripe.com/v1/promotion_codes/${existing.id}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ active: active ? 'true' : 'false' }),
+  });
+  if (!res.ok) throw new Error(`stripe_promotion_code_update_failed: ${res.status} ${await res.text()}`);
+  const j = await res.json();
+  return { code: j.code, id: j.id, active: j.active, changed: true };
+}
+
 /**
  * Idempotently ensures a `percentOff`% Promotion Code with the literal string
  * `code` exists, creating the backing Coupon + the Promotion Code if missing.

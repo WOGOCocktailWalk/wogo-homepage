@@ -23,6 +23,8 @@ import { manifestResponse, serviceWorkerResponse, iconResponse } from './admin/p
 import { withSecurityHeaders } from './security_headers.js';
 import { captureError } from './errors.js';
 import { runHealthCheck } from './healthcheck.js';
+import { setPromotionCodeActive } from './stripe.js';
+import { SCHEDULED_PROMO_ACTIVATIONS } from './config.js';
 import { retryFailedEmails } from './email_retry.js';
 import { runGdprRetention } from './retention.js';
 import { exportBackupToR2 } from './backup.js';
@@ -175,6 +177,7 @@ router.get('/admin/api/inquiries', adminApi.handleListInquiries);
 router.post('/admin/api/brevo/setup', adminApi.handleBrevoSetup);
 router.post('/admin/api/brevo/push-reference-templates', adminApi.handleBrevoPushReferenceTemplates);
 router.post('/admin/api/stripe/ensure-welcome-code', adminApi.handleEnsureWelcomeCode);
+router.post('/admin/api/stripe/promo-code', adminApi.handleSetPromoCodeActive);
 router.get('/admin/api/subscribers', adminApi.handleListSubscribers);
 router.get('/admin/api/subscribers.csv', adminApi.handleSubscribersCsv);
 router.post('/admin/api/subscribers/import', adminApi.handleImportSubscribers);
@@ -352,6 +355,15 @@ async function runScheduled(event, env) {
     await retryFailedEmails(env);
     await retryBrevoSyncQueue(env);
     await runHealthCheck(env);
+    // Discount codes with a start moment (src/config.js): switch them on
+    // during the hour that starts at their activate_at.
+    for (const p of SCHEDULED_PROMO_ACTIVATIONS) {
+      const start = Date.parse(p.activate_at);
+      const now = Date.now();
+      if (now >= start && now < start + 3600 * 1000) {
+        try { await setPromotionCodeActive(env, p.code, true); } catch (err) { console.error('scheduled_promo_activation_failed', p.code, err); }
+      }
+    }
     // Abandoned-booking sweep (migrations/0031, BUILD items 1+4): the 1h
     // "still free" nudge + the ~24h follow-up. Reuses this existing 5-minute
     // cadence rather than a dedicated trigger — correctness doesn't depend

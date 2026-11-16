@@ -43,7 +43,7 @@ import { constantTimeEqual } from './logic.js';
 import { verifyTurnstile } from './turnstile.js';
 import { runHealthCheck } from './healthcheck.js';
 import { ensureContactFolder, ensureContactList, ensureContactAttribute, sendTransactional } from './brevo.js';
-import { ensureWelcomePromotionCode, ensureImportedPromotionCode } from './stripe.js';
+import { ensureWelcomePromotionCode, setPromotionCodeActive, ensureImportedPromotionCode } from './stripe.js';
 import { importSubscribers, handleConfirmedBookingOptIn } from './subscribers.js';
 import { sendWithRetry } from './email_retry.js';
 import { renderAdminLoginLink } from './emails.js';
@@ -316,6 +316,7 @@ export const ROUTE_ROLES = {
   'POST /admin/api/brevo/setup': 'owner',
   'POST /admin/api/brevo/push-reference-templates': 'owner',
   'POST /admin/api/stripe/ensure-welcome-code': 'owner',
+  'POST /admin/api/stripe/promo-code': 'owner',
   'GET /admin/api/subscribers.csv': 'owner',
   'POST /admin/api/subscribers/import': 'owner',
   'GET /admin/api/subscribers/sync-queue': 'owner',
@@ -1925,6 +1926,23 @@ export async function handleBrevoPushReferenceTemplates(request, env) {
   const failed = results.filter((r) => r.error).length;
   await audit(env, request, 'brevo.push_reference_templates', null, null, { pushed, failed });
   return json({ pushed, failed, templates: results });
+}
+
+/** POST /admin/api/stripe/promo-code — body { code, active }: switch one
+ * existing Stripe promotion code on or off. Owner only. */
+export async function handleSetPromoCodeActive(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  let body;
+  try { body = await request.json(); } catch { return errorJson('bad_request', 'invalid JSON', 400); }
+  const code = body && typeof body.code === 'string' ? body.code.trim() : '';
+  if (!code || typeof body.active !== 'boolean') return errorJson('bad_request', 'code and active are required', 400);
+  try {
+    const result = await setPromotionCodeActive(env, code, body.active);
+    await audit(env, request, 'stripe.promo_code_active', null, null, result);
+    return json(result);
+  } catch (err) {
+    return errorJson('stripe_error', String(err && err.message ? err.message : err), 502);
+  }
 }
 
 /**
