@@ -1737,3 +1737,6 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .content > div:not([class]) > .card + .card,
 .content > div:not([class]) > div + div:has(> .card),
 .content > div:not([class]) > .card + div:has(> .card) { margin-top: var(--card-gap); }
+/* 5. A row of number tiles that follows a card (e.g. Analytics: "Discount
+      codes used" then the gift-card tiles) sat flush against it. */
+.card + .stat-row, .card + .kpi-grid, .filters + .stat-row { margin-top: var(--card-gap); }
