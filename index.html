@@ -626,19 +626,42 @@
   </div>
 </section>
 <script>
-  // Desktop-only hero video: on wider screens, swap the static poster for the autoplay
-  // video. Mobile keeps the poster (no video download at all — real LCP saving; a CSS
-  // display:none would still download the video, so we gate on markup, not CSS).
-  // Runs right after the hero so the video starts downloading immediately, not after
-  // the rest of the page has parsed. Breakpoint 721px matches the mobile CSS block.
+  // Hero video. Wider screens: swap the static poster for the autoplay video
+  // straight away. Phones: keep the poster as the first paint, then load a light
+  // portrait cut (hero-mobile.mp4, under 1 MB) once the page has loaded, and only
+  // remove the poster when the video is really playing. Skipped when the visitor
+  // asked for reduced motion or data saving. Breakpoint 721px matches the mobile CSS.
   (function () {
     try {
       var tpl = document.getElementById('heroVideoTpl');
-      if (tpl && window.matchMedia && window.matchMedia('(min-width:721px)').matches) {
+      var poster = document.getElementById('heroPoster');
+      if (!tpl || !window.matchMedia) return;
+      if (window.matchMedia('(min-width:721px)').matches) {
         tpl.parentNode.insertBefore(tpl.content.cloneNode(true), tpl);
-        var poster = document.getElementById('heroPoster');
         if (poster) poster.parentNode.removeChild(poster);
+        return;
       }
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      if (navigator.connection && navigator.connection.saveData) return;
+      var start = function () {
+        try {
+          var v = document.createElement('video');
+          v.className = 'w-hero-video';
+          v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
+          v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
+          v.preload = 'auto';
+          v.style.opacity = '0';
+          v.style.transition = 'opacity .4s';
+          v.src = 'hero-mobile.mp4';
+          v.addEventListener('playing', function () {
+            v.style.opacity = '1';
+            if (poster && poster.parentNode) setTimeout(function () { if (poster.parentNode) poster.parentNode.removeChild(poster); }, 450);
+          }, { once: true });
+          tpl.parentNode.insertBefore(v, tpl);
+          var p = v.play(); if (p && p.catch) p.catch(function () {});
+        } catch (e) {}
+      };
+      if (document.readyState === 'complete') start(); else window.addEventListener('load', start);
     } catch (e) {}
   })();
 </script>
