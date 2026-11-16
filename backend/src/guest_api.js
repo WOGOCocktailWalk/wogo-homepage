@@ -45,6 +45,7 @@ import {
 import * as db from './db.js';
 import { notifyAdmins } from './notifications.js';
 import { createCheckoutSession, createGiftCardCheckoutSession } from './stripe.js';
+import { readTracking, sendInitiateCheckoutEvent } from './meta.js';
 import { sendTransactional } from './brevo.js';
 import { sendWithRetry } from './email_retry.js';
 import { renderInquiryOwnerNotification, renderInquiryAutoAck, waitlistCityOf, renderSubscribeConfirm, renderSubscribeWelcome } from './emails.js';
@@ -370,7 +371,7 @@ export async function handleBookingLookup(request, env) {
 // POST /api/book
 // ---------------------------------------------------------------------------
 
-export async function handleBook(request, env) {
+export async function handleBook(request, env, params, ctx) {
   // Defense in depth beyond CORS: CORS only stops a cross-site page READING
   // the response — the state change would still happen. A browser request
   // whose Origin is known and not on the allowlist is rejected outright.
@@ -681,6 +682,8 @@ export async function handleBook(request, env) {
     holdResult.booking.addon_notes = addonNotesCheck.notes;
   }
 
+  const tracking = readTracking(body && body.tracking);
+  holdResult.booking._tracking = tracking;
   let session;
   try {
     session = await createCheckoutSession(env, holdResult.booking, route, resolvedAddons);
@@ -691,6 +694,13 @@ export async function handleBook(request, env) {
   }
 
   await db.attachStripeSession(env.DB, bookingId, session.id);
+
+  // Server-side "started checkout" to Meta, only with marketing consent. Runs
+  // after the response so it can never slow down or break the checkout.
+  if (tracking.consent) {
+    const p = sendInitiateCheckoutEvent(env, holdResult.booking, route, tracking, request).catch(() => {});
+    if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(p); else await p;
+  }
 
   return json({ booking_id: bookingId, checkout_url: session.url }, 200, request);
 }

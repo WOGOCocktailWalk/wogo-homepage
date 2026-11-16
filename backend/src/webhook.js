@@ -167,7 +167,12 @@ export async function handleWebhook(request, env, deps = {}) {
             handleConfirmedBookingOptIn(env, booking, route, { baseUrl: new URL(request.url).origin }, { database, sendTransactional: brevoSend })
           );
 
-          await safe(() => metaSend(env, booking, route));
+          const smd = session.metadata || {};
+          await safe(() => metaSend(env, booking, route, {
+            consent: smd.meta_consent === '1',
+            fbp: smd.fbp || null, fbc: smd.fbc || null,
+            value_cents: Number.isInteger(session.amount_total) ? session.amount_total : undefined,
+          }));
 
           // Dashboard push notification (BUILD: PWA/push build, migrations/
           // 0032) — a new confirmed sale, replacing the Wix app notification

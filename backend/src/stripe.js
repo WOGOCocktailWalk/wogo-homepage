@@ -22,6 +22,13 @@ export async function createCheckoutSession(env, booking, route, addons = []) {
   const expiresAt = Math.floor(Date.now() / 1000) + STRIPE_EXPIRES_MINUTES * 60;
   body.set('expires_at', String(expiresAt));
   body.set('metadata[booking_id]', booking.id);
+  // Marketing-cookie choice + Meta browser ids, so the webhook can report the
+  // Purchase to Meta server-side ONLY for a guest who accepted (src/meta.js).
+  if (booking._tracking && booking._tracking.consent) {
+    body.set('metadata[meta_consent]', '1');
+    if (booking._tracking.fbp) body.set('metadata[fbp]', booking._tracking.fbp);
+    if (booking._tracking.fbc) body.set('metadata[fbc]', booking._tracking.fbc);
+  }
   body.set('payment_intent_data[metadata][booking_id]', booking.id);
   // No fixed payment_method_types: Stripe then offers every method that is
   // switched ON in the dashboard (Settings > Payment methods) and fits the

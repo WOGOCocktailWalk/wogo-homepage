@@ -1824,7 +1824,7 @@
   function send(name, p) {
     if (gaLoaded && window.gtag) { try { gtag("event", name, p); } catch (e) {} }
     if (metaLoaded && window.fbq && META[name]) {
-      try { window.fbq("track", META[name], metaParams(p)); } catch (e) {}
+      try { if (p && p.event_id) window.fbq("track", META[name], metaParams(p), { eventID: p.event_id }); else window.fbq("track", META[name], metaParams(p)); } catch (e) {}
     }
   }
 

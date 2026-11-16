@@ -1072,9 +1072,14 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
           price, quantity: this.party,
         };
         if (this.route && this.route.city) item.item_category = this.route.city;
+        /* One id for this checkout, shared by the browser event below and the
+           server-side copy the booking system sends to Meta, so Meta counts
+           the checkout once. */
+        this._checkoutEventId = "ic_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
         if (window.wogoTrack) {
           window.wogoTrack("begin_checkout", {
             currency, value: Math.round(price * this.party * 100) / 100, items: [item],
+            event_id: this._checkoutEventId,
           });
         }
         /* Stash the route so the confirmation page — reached after a same-tab
@@ -1101,6 +1106,22 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
         // their confirmation email and confirmation page come back in.
         locale: currentLang(this.mount, this.lang), marketing_opt_in: !!this.optIn.checked,
       };
+      /* Marketing-cookie choice + Meta's own browser ids (only when the guest
+         accepted marketing cookies): lets the booking system report this
+         checkout and the later purchase to Meta server-side. Nothing is sent
+         for a guest who declined. */
+      try {
+        if (window.wogoConsent && window.wogoConsent.marketing === true) {
+          const ck = (n) => { const m = document.cookie.match(new RegExp("(?:^|; )" + n + "=([^;]*)")); return m ? decodeURIComponent(m[1]) : null; };
+          let fbc = ck("_fbc");
+          if (!fbc) {
+            const c = window.__wogoCarry || {};
+            const click = c.fbclid || new URLSearchParams(window.location.search).get("fbclid");
+            if (click) fbc = "fb.1." + Date.now() + "." + click;
+          }
+          payload.tracking = { consent: true, event_id: this._checkoutEventId || null, fbp: ck("_fbp"), fbc: fbc || null };
+        }
+      } catch (e) { /* tracking must never block a booking */ }
       if (giftCode) payload.gift_code = giftCode;
       // Add-ons (migrations/0033) — ONLY present on the request at all when
       // at least one was actually picked (qty > 0). A route with no active
