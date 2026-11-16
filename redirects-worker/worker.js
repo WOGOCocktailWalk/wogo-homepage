@@ -120,7 +120,9 @@ export function target(url) {
 
 export default {
   async fetch(request) {
-    const to = target(request.url);
+    let to = target(request.url);
+    // Plain http:// visits are sent to the secure address.
+    if (!to && request.url.startsWith('http://')) to = 'https://' + request.url.slice(7);
     if (!to || to === request.url) return fetch(request);
     return Response.redirect(to, 301);
   },
