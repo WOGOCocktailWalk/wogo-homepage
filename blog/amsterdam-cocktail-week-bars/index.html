@@ -816,7 +816,25 @@
         }
       }
     } catch (e) {}
-    if (Object.keys(carry).length) window.__wogoCarry = carry;
+    if (Object.keys(carry).length) {
+      window.__wogoCarry = carry;
+      /* Safety net: ANY link to another page of this site gets the tags at
+         click time (the top-menu Book button and others were skipped before). */
+      document.addEventListener('click', function (ev) {
+        try {
+          var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
+          if (!a) return;
+          var raw = a.getAttribute('href') || '';
+          if (!raw || raw.charAt(0) === '#' || /^(mailto:|tel:|javascript:)/i.test(raw)) return;
+          var u = new URL(a.href, window.location.href);
+          if (u.origin !== window.location.origin || /\.(pdf|jpg|png|webp|mp4)$/i.test(u.pathname)) return;
+          if (u.pathname === window.location.pathname && u.hash) return;
+          var changed = false;
+          Object.keys(carry).forEach(function (k) { if (!u.searchParams.has(k)) { u.searchParams.set(k, carry[k]); changed = true; } });
+          if (changed) a.href = u.toString();
+        } catch (e) {}
+      }, true);
+    }
   })();
 
   /* ===== COMPLETE NL DICTIONARY — every data-i18n key on this page.
