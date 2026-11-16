@@ -39,6 +39,7 @@ import {
   sendGuestRescheduleEmail, notifyBarsReschedule,
   sendGuestCancellationEmail, notifyBarsCancellation,
 } from './webhook.js';
+import { constantTimeEqual } from './logic.js';
 import { verifyTurnstile } from './turnstile.js';
 import { runHealthCheck } from './healthcheck.js';
 import { ensureContactFolder, ensureContactList, ensureContactAttribute, sendTransactional } from './brevo.js';
@@ -3182,6 +3183,25 @@ export async function handleNotificationsPending(request, env) {
     unreadOnly: true,
     limit: 5,
   });
+  return json({ notifications });
+}
+
+/** POST /admin/push/pending — same answer as handleNotificationsPending,
+ * but authenticated by the DEVICE instead of a login session: the service
+ * worker sends its own push subscription's endpoint + auth secret (both
+ * known only to that browser, this server and the push service). This is
+ * what lets a phone show "New booking: Delft, 2 guests" days after the last
+ * login, instead of a generic fallback or nothing. Read-only; returns the
+ * same handful of unread notifications, never anything else. */
+export async function handlePushPending(request, env) {
+  let body;
+  try { body = await request.json(); } catch { return errorJson('bad_request', 'invalid JSON', 400); }
+  const endpoint = body && typeof body.endpoint === 'string' ? body.endpoint : '';
+  const auth = body && typeof body.auth === 'string' ? body.auth : '';
+  if (!endpoint || !auth || endpoint.length > 2000) return errorJson('unauthorized', null, 401);
+  const sub = await db.getPushSubscriptionByEndpoint(env.DB, endpoint);
+  if (!sub || !sub.auth || !constantTimeEqual(String(sub.auth), auth)) return errorJson('unauthorized', null, 401);
+  const notifications = await db.listNotifications(env.DB, { userId: sub.user_id || null, unreadOnly: true, limit: 5 });
   return json({ notifications });
 }
 

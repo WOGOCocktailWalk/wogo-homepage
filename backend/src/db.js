@@ -3070,6 +3070,11 @@ export async function getNotificationById(db, id) {
   return first(db, `SELECT * FROM notifications WHERE id = :id`, { id });
 }
 
+/** One push subscription by its endpoint URL (or null). */
+export async function getPushSubscriptionByEndpoint(db, endpoint) {
+  return first(db, `SELECT * FROM push_subscriptions WHERE endpoint = :endpoint`, { endpoint });
+}
+
 /**
  * Notifications VISIBLE to `userId` — every broadcast row (`user_id IS
  * NULL`) plus any row targeted specifically at this user (the Settings

@@ -20,7 +20,7 @@
        page's location.hash directly) or opens a new one.
    ========================================================================== */
 
-const SHELL_CACHE = 'wogo-admin-shell-v1';
+const SHELL_CACHE = 'wogo-admin-shell-v2';
 const SHELL_URL = '/admin/';
 
 self.addEventListener('install', (event) => {
@@ -57,19 +57,48 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+function showGeneric() {
+  return self.registration.showNotification('New activity in WOGO', {
+    body: 'Tap to open the dashboard.',
+    tag: 'wogo-generic-' + Date.now(),
+    data: { url: '/admin/' },
+    icon: '/admin/icon-192.png',
+  });
+}
+
+/* The push itself carries no text. Ask the server what is new, identifying as
+   THIS DEVICE (its own push subscription endpoint + auth secret) so it works
+   without a login session; fall back to the session-cookie route for older
+   subscriptions. iOS requires a visible notification for EVERY push, so any
+   failure or an empty answer still shows the generic one. */
+function fetchPending() {
+  return self.registration.pushManager.getSubscription().then((sub) => {
+    const j = sub && sub.toJSON ? sub.toJSON() : null;
+    if (!j || !j.endpoint || !j.keys || !j.keys.auth) throw new Error('no subscription');
+    return fetch('/admin/push/pending', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: j.endpoint, auth: j.keys.auth }),
+    });
+  }).then((res) => {
+    if (!res.ok) throw new Error('device fetch failed: ' + res.status);
+    return res.json();
+  }).catch(() =>
+    fetch('/admin/api/notifications/pending', { credentials: 'include' }).then((res) => {
+      if (!res.ok) throw new Error('pending fetch failed: ' + res.status);
+      return res.json();
+    })
+  );
+}
+
 self.addEventListener('push', (event) => {
   event.waitUntil(
-    fetch('/admin/api/notifications/pending', { credentials: 'include' })
-      .then((res) => {
-        if (!res.ok) throw new Error('pending fetch failed: ' + res.status);
-        return res.json();
-      })
+    fetchPending()
       .then((data) => {
         const notifs = (data && data.notifications) || [];
-        if (notifs.length === 0) return null;
-        // Cap at 3 individual OS notifications — a device that was offline
-        // for a while shouldn't surface a wall of alerts at once; the
-        // dashboard's own Today view is where the full backlog lives.
+        if (notifs.length === 0) return showGeneric();
+        // Cap at 3 individual OS notifications; the dashboard's Today view
+        // is where the full backlog lives.
         return Promise.all(notifs.slice(0, 3).map((n) =>
           self.registration.showNotification(n.title, {
             body: n.body,
@@ -80,17 +109,7 @@ self.addEventListener('push', (event) => {
           })
         ));
       })
-      .catch(() =>
-        // Session expired, offline, or any other failure — SPEC.md asks
-        // explicitly for this fallback rather than failing silently: a
-        // generic notification still tells the owner something happened.
-        self.registration.showNotification('New activity in WOGO', {
-          body: 'Tap to open the dashboard.',
-          tag: 'wogo-generic',
-          data: { url: '/admin/' },
-          icon: '/admin/icon-192.png',
-        })
-      )
+      .catch(() => showGeneric())
   );
 });
 

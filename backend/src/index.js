@@ -199,6 +199,7 @@ router.post('/admin/api/push/test', adminApi.handlePushTest);
 router.get('/admin/api/notifications', adminApi.handleListNotifications);
 router.post('/admin/api/notifications/:id/read', adminApi.handleMarkNotificationRead);
 router.get('/admin/api/notifications/pending', adminApi.handleNotificationsPending);
+router.post('/admin/push/pending', adminApi.handlePushPending);
 router.get('/admin/api/notification-preferences', adminApi.handleGetNotificationPreferences);
 router.put('/admin/api/notification-preferences', adminApi.handleSetNotificationPreferences);
 
@@ -206,6 +207,8 @@ const ADMIN_API_PREFIX = '/admin/api/';
 const PUBLIC_ADMIN_PATHS = new Set([
   '/admin/login', '/admin/logout', '/admin/public-config',
   '/admin/login/request', '/admin/login/magic', '/admin/login/resolve',
+  // Device-authenticated (push endpoint + auth secret), see handlePushPending.
+  '/admin/push/pending',
   // PWA shell assets (migrations/0032) — static and non-sensitive; a
   // Service-Worker script response must never redirect (so /admin/sw.js
   // can NEVER sit behind the session gate below), and the manifest/icons

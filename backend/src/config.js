@@ -215,7 +215,9 @@ export const STRIPE_EXPIRES_MINUTES = 30; // Stripe's minimum for Checkout Sessi
 export const BOOKING_HORIZON_DAYS = 90;
 export const WEBHOOK_TOLERANCE_SECONDS = 300;
 
-export const ADMIN_SESSION_MAX_AGE_SECONDS = 43200; // 12h
+// Owner decision 16 Nov 2026: stay logged in for 30 days (was 12h), so the
+// phone app does not ask for a new login link every day.
+export const ADMIN_SESSION_MAX_AGE_SECONDS = 30 * 24 * 3600;
 
 // --- Abuse-protection limits (SPEC.md §15, migrations/0005) ------------------
 // Seat-hold abuse: a scripted attacker must not be able to lock all seats with
