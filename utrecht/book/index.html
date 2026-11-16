@@ -589,6 +589,21 @@
   .w-paused-alt { font-size: 14px; line-height: 1.55; color: var(--wogo-brown-soft, #7e5541); margin: 20px auto 0; max-width: 460px; }
   .w-paused-alt a { color: var(--wogo-salmon-ink, #a34a12); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
   @media (max-width: 560px) { .w-paused { padding: 32px 20px; } }
+  .w-wl { max-width: 480px; margin: 0 auto; text-align: left; }
+  .w-wl-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .w-wl-row3 { grid-template-columns: 1.3fr 1fr 0.8fr; }
+  .w-wl-f { display: block; min-width: 0; }
+  .w-wl-f span { display: block; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--wogo-brown-soft, #7e5541); margin-bottom: 6px; }
+  .w-wl-f input, .w-wl-f select { width: 100%; box-sizing: border-box; min-height: 48px; padding: 10px 12px; border: 1px solid rgba(63,43,33,0.22); border-radius: 12px; background: #fff; color: var(--wogo-ink, #201611); font: inherit; font-size: 16px; -webkit-appearance: none; appearance: none; }
+  .w-wl-f input:focus, .w-wl-f select:focus { outline: 2px solid var(--wogo-salmon-ink, #a34a12); outline-offset: 1px; }
+  .w-wl-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+  .w-wl .w-paused-cta { width: 100%; border: 0; cursor: pointer; font-family: inherit; margin-top: 4px; }
+  .w-wl .w-paused-cta[disabled] { opacity: 0.6; cursor: default; transform: none; }
+  .w-wl-status { margin: 14px 0 0; padding: 12px 14px; border-radius: 12px; font-size: 15px; line-height: 1.5; text-align: center; }
+  .w-wl-status.ok { background: #e9f6ec; color: #1d5a2c; }
+  .w-wl-status.err { background: #fdecea; color: #8a1f17; }
+  .w-wl-note { margin: 12px 0 0; font-size: 13px; color: var(--wogo-brown-soft, #7e5541); text-align: center; }
+  @media (max-width: 560px) { .w-wl-row, .w-wl-row3 { grid-template-columns: 1fr; } }
   .w-calsec .wogo-calendar { max-width: 720px; margin: 0 auto; }
   #wogo-book { scroll-margin-top: 90px; }
   @media (max-width: 720px) { .w-bookhead { padding: 92px 0 22px; } .w-calsec { padding: 22px 0 40px; } }
@@ -689,8 +704,30 @@
     <link rel="stylesheet" href="../../backend/widget/wogo-calendar.css">
     <div class="w-paused" role="status">
       <h2 class="w-paused-h" data-i18n="paused_h">Fully booked</h2>
-      <p class="w-paused-p" data-i18n="paused_p">New dates are opening soon. Join the waitlist and you will hear first when they do.</p>
-      <a href="../../contact/?topic=utrecht-waitlist" class="w-paused-cta" data-i18n="paused_cta">Join the waitlist</a>
+      <p class="w-paused-p" data-i18n="paused_p">New dates are opening soon. Tell us when you would like to come and you will hear first when they do.</p>
+      <!-- Waitlist form: posts to POST /api/contact (kind 'contact', city Utrecht).
+           info@ gets the lead (reply-to = the guest), the guest gets the standard
+           "we got your message" mail, and it shows under enquiries in the dashboard. -->
+      <form class="w-wl" id="wWaitlist" novalidate>
+        <div class="w-wl-row">
+          <label class="w-wl-f"><span data-i18n="wl_name">Your name</span><input type="text" name="name" autocomplete="name" required maxlength="120"></label>
+          <label class="w-wl-f"><span data-i18n="wl_email">Email</span><input type="email" name="email" autocomplete="email" required maxlength="254"></label>
+        </div>
+        <div class="w-wl-row w-wl-row3">
+          <label class="w-wl-f"><span data-i18n="wl_date">Preferred date</span><input type="date" name="date" required></label>
+          <label class="w-wl-f"><span data-i18n="wl_time">Preferred time</span>
+            <select name="time" required>
+              <option value="17:00">17:00</option><option value="18:00">18:00</option><option value="19:00" selected>19:00</option><option value="20:00">20:00</option><option value="21:00">21:00</option>
+              <option value="flexible" data-i18n="wl_flex">Flexible</option>
+            </select></label>
+          <label class="w-wl-f"><span data-i18n="wl_guests">Guests</span>
+            <select name="guests"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></label>
+        </div>
+        <input type="text" name="website" class="w-wl-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button type="submit" class="w-paused-cta" data-i18n="paused_cta">Join the waitlist</button>
+        <p class="w-wl-status" id="wWaitlistStatus" role="status" hidden></p>
+        <p class="w-wl-note" data-i18n="wl_note">No payment now. We email you as soon as dates open.</p>
+      </form>
       <p class="w-paused-alt" data-i18n="paused_alt">Can't wait? <a href="../../#cities">Rotterdam, Amsterdam, Delft and Groningen</a> have dates open now.</p>
     </div>
     <div class="w-book-trust">
@@ -1039,8 +1076,15 @@
     "bh_h1": "De <span class=\"w-book-city\">Utrecht</span>-walk is volgeboekt",
     "bh_reassure": "Alle plekken zijn nu bezet. Binnenkort komen er nieuwe data bij.",
     "paused_h": "Volgeboekt",
-    "paused_p": "Binnenkort komen er nieuwe data bij. Zet je op de wachtlijst en je hoort het als eerste.",
+    "paused_p": "Binnenkort komen er nieuwe data bij. Laat weten wanneer je wilt komen en je hoort het als eerste.",
     "paused_cta": "Zet me op de wachtlijst",
+    "wl_name": "Je naam",
+    "wl_email": "E-mail",
+    "wl_date": "Gewenste datum",
+    "wl_time": "Gewenste tijd",
+    "wl_flex": "Flexibel",
+    "wl_guests": "Gasten",
+    "wl_note": "Je betaalt nu niets. We mailen je zodra er data vrijkomen.",
     "paused_alt": "Kun je niet wachten? <a href=\"../../#cities\">Rotterdam, Amsterdam, Delft en Groningen</a> hebben nu data vrij.",
   };
 
@@ -2086,6 +2130,48 @@
     f.classList.add('is-ticker');
     f.setAttribute('data-ticker', '1');
   } catch (e) {}
+})();
+</script>
+<script>
+/* Utrecht waitlist form (see the form's own comment above). */
+(function () {
+  var f = document.getElementById('wWaitlist'); if (!f) return;
+  var API = 'https://wogo-booking-backend.purple-glitter-720e.workers.dev';
+  var st = document.getElementById('wWaitlistStatus');
+  var d = f.elements.date;
+  try { var t = new Date(); t.setDate(t.getDate() + 1); d.min = t.toISOString().slice(0, 10); } catch (e) {}
+  function nl() { return (document.documentElement.lang || 'en').toLowerCase().indexOf('nl') === 0; }
+  var T = {
+    en: { fill: 'Please fill in your name, a valid email and a date.', sending: 'Sending…', ok: 'You are on the list. We will email you as soon as Utrecht dates open.', err: 'That did not go through. Please try again, or email info@wogoamsterdam.com.', rate: 'Too many tries. Please wait a few minutes and try again.' },
+    nl: { fill: 'Vul je naam, een geldig e-mailadres en een datum in.', sending: 'Versturen…', ok: 'Je staat op de lijst. We mailen je zodra er data in Utrecht vrijkomen.', err: 'Dat ging niet goed. Probeer het opnieuw, of mail info@wogoamsterdam.com.', rate: 'Te veel pogingen. Wacht een paar minuten en probeer het opnieuw.' }
+  };
+  function say(kind, msg) { st.className = 'w-wl-status ' + kind; st.textContent = msg; st.hidden = false; }
+  f.addEventListener('submit', async function (ev) {
+    ev.preventDefault();
+    var L = nl() ? T.nl : T.en;
+    var name = f.elements.name.value.trim(), email = f.elements.email.value.trim();
+    var date = f.elements.date.value, time = f.elements.time.value, guests = parseInt(f.elements.guests.value, 10) || 2;
+    if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !date) { say('err', L.fill); return; }
+    var btn = f.querySelector('button[type=submit]'), label = btn.textContent;
+    btn.disabled = true; btn.textContent = L.sending; st.hidden = true;
+    try {
+      var res = await fetch(API + '/api/contact', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'contact', name: name, email: email, city: 'Utrecht',
+          date: date + (time === 'flexible' ? ' (time flexible)' : ' ' + time), party_size: guests,
+          message: '[Utrecht waitlist]\n\nPreferred date: ' + date + '\nPreferred time: ' + time + '\nGuests: ' + guests,
+          locale: nl() ? 'nl' : 'en', website: f.elements.website.value
+        })
+      });
+      var data = await res.json().catch(function () { return {}; });
+      if (res.ok && data.ok) {
+        f.reset(); say('ok', L.ok);
+        try { if (window.wogoTrack) window.wogoTrack('generate_lead', { kind: 'waitlist', city: 'Utrecht' }); } catch (e) {}
+      } else say('err', res.status === 429 ? L.rate : L.err);
+    } catch (e) { say('err', L.err); }
+    btn.disabled = false; btn.textContent = label;
+  });
 })();
 </script>
 </body>
