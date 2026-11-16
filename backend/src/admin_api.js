@@ -709,9 +709,17 @@ export async function handleResendConfirmation(request, env, params) {
   // migrations/0033: a resend must show the same extras list the original
   // confirmation did — [] for the overwhelming majority of bookings.
   const addons = await db.getAddonsForBooking(env.DB, booking.id);
-  await sendGuestConfirmationEmails(env, booking, route, { addons });
-  await audit(env, request, 'booking.resend_confirmation', 'booking', booking.id, { email: booking.email });
-  return json({ ok: true });
+  // Optional body { bars: true }: ALSO re-send the bar notifications. Off by
+  // default (see above). Meant for the rare case where the original bar mails
+  // never reached the bars, e.g. a booking made while the pre-launch email
+  // test redirect was still on.
+  let body = {};
+  try { body = await request.json(); } catch { body = {}; }
+  const alsoBars = !!(body && body.bars === true);
+  if (!(body && body.guest === false)) await sendGuestConfirmationEmails(env, booking, route, { addons });
+  if (alsoBars) await notifyBars(env, booking, route, { addons });
+  await audit(env, request, 'booking.resend_confirmation', 'booking', booking.id, { email: booking.email, bars: alsoBars });
+  return json({ ok: true, bars: alsoBars });
 }
 
 // migrations/0033: addons_summary/addons_revenue_cents/addon_notes are
