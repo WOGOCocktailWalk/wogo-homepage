@@ -310,6 +310,7 @@ export const ROUTE_ROLES = {
   'GET /admin/api/audit-log': 'owner',
   'GET /admin/api/error-log': 'owner',
   'GET /admin/api/failed-emails': 'owner',
+  'GET /admin/api/email-log': 'owner',
   'GET /admin/api/health': 'owner',
   'POST /admin/api/brevo/setup': 'owner',
   'POST /admin/api/brevo/push-reference-templates': 'owner',
@@ -1774,6 +1775,28 @@ export async function handleErrorLog(request, env) {
 export async function handleFailedEmails(request, env) {
   const emails = await db.listRecentFailedEmails(env.DB, 100);
   return json({ emails });
+}
+
+/** GET /admin/api/email-log?email=x&days=3 — what the mail service (Brevo)
+ * itself recorded for one recipient: every transactional mail with its
+ * subject and its delivery events (sent / delivered / opened / bounced).
+ * Read-only; this is the proof that a mail really went out, as opposed to
+ * failed-emails, which only lists the ones that did NOT. */
+export async function handleEmailLog(request, env) {
+  const url = new URL(request.url);
+  const email = String(url.searchParams.get('email') || '').trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) return errorJson('bad_request', 'email required', 400);
+  const days = Math.min(30, Math.max(1, parseInt(url.searchParams.get('days') || '3', 10) || 3));
+  const qs = new URLSearchParams({ email, days: String(days), limit: '100', sort: 'desc' });
+  const res = await fetch(`https://api.brevo.com/v3/smtp/statistics/events?${qs}`, {
+    headers: { 'api-key': env.BREVO_API_KEY, accept: 'application/json' },
+  });
+  if (!res.ok) return errorJson('brevo_error', `${res.status} ${(await res.text()).slice(0, 200)}`, 502);
+  const data = await res.json();
+  const events = (data.events || []).map((e) => ({
+    date: e.date, event: e.event, subject: e.subject, message_id: e.messageId, reason: e.reason || undefined,
+  }));
+  return json({ email, days, events });
 }
 
 export async function handleHealthCheck(request, env) {

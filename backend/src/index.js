@@ -161,6 +161,7 @@ router.get('/admin/api/security/login-attempts', adminApi.handleLoginAttempts);
 router.get('/admin/api/audit-log', adminApi.handleAuditLog);
 router.get('/admin/api/error-log', adminApi.handleErrorLog);
 router.get('/admin/api/failed-emails', adminApi.handleFailedEmails);
+router.get('/admin/api/email-log', adminApi.handleEmailLog);
 router.get('/admin/api/health', adminApi.handleHealthCheck);
 
 // -- Gift cards (migrations/0018/0019) ---------------------------------------
