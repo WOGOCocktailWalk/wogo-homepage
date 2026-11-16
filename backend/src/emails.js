@@ -37,7 +37,7 @@ import { isoWeekday, formatMoney } from './logic.js';
 import {
   EMAIL_LOGO_URL, posterUrlFor, emailImageFor, SITE_URL, WELCOME_CODE, routePathFor,
   REVIEW_TRUSTPILOT_URL_EN, REVIEW_TRUSTPILOT_URL_NL, REVIEW_GOOGLE_URL,
-  ABANDONED_DISCOUNT_CODE, MAP_BY_DATE,
+  ABANDONED_DISCOUNT_CODE, ABANDONED_DISCOUNT_PERCENT, MAP_BY_DATE,
 } from './config.js';
 
 // ---------------------------------------------------------------------------
@@ -370,8 +370,10 @@ function addonsBlock(lines, lang = 'en', opts = {}) {
  * Only ever called when the caller already checked the code is non-empty, so
  * no empty/dangling code block ever renders. `lang` only picks the one label
  * string; the code itself is never translated. */
-function discountBlock(code, lang) {
-  const label = lang === 'nl' ? 'Gebruik deze code bij het boeken:' : 'Use this code when you book:';
+function discountBlock(code, lang, percent) {
+  const label = percent
+    ? (lang === 'nl' ? `${percent}% korting op je eerste walk. Gebruik deze code bij het boeken:` : `${percent}% off your first walk. Use this code when you book:`)
+    : (lang === 'nl' ? 'Gebruik deze code bij het boeken:' : 'Use this code when you book:');
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.blush};border:1px dashed ${C.salmonDeep};border-radius:12px;margin:0 0 18px;">
     <tr><td style="padding:14px 16px;text-align:center;">
       <div style="font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:${C.brown};">${escapeHtml(label)}</div>
@@ -1725,8 +1727,8 @@ export function renderReviewRequest(booking, route) {
 // the 1h "still free" nudge and the ~24h follow-up, same visual language as
 // every other guest mail, deliberately NEVER saying "reserved"/"held" (see
 // GUEST_STRINGS above) — nothing is held for them, it's just still open.
-// NO discount by default (ABANDONED_DISCOUNT_CODE, config.js, '' = no
-// block). Carries the reminder-unsubscribe link (opts.unsubscribeUrl) —
+// The discount block (ABANDONED_DISCOUNT_CODE, config.js, '' = none) is
+// shown in the FOLLOW-UP only, never in the 1h mail. Carries the reminder-unsubscribe link (opts.unsubscribeUrl) —
 // NOT the marketing `subscribers` unsubscribe (migrations/0031's own note).
 // ---------------------------------------------------------------------------
 
@@ -1806,7 +1808,7 @@ function renderAbandonedCore(variant, booking, route, opts = {}) {
 
   const content = `
     ${detailPanel(rows, C.salmonDeep)}
-    ${ABANDONED_DISCOUNT_CODE ? discountBlock(ABANDONED_DISCOUNT_CODE, lang) : ''}
+    ${ABANDONED_DISCOUNT_CODE && variant === 'followup' ? discountBlock(ABANDONED_DISCOUNT_CODE, lang, ABANDONED_DISCOUNT_PERCENT) : ''}
     ${primaryButton(bookUrl, t.ctaButton)}
     <p style="margin:14px 0 0;font-size:13px;line-height:1.55;color:${C.muted};">${escapeHtml(t.alreadyBooked)}</p>`;
 

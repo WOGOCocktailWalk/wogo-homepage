@@ -499,11 +499,12 @@ export const GITHUB_COMMIT_AUTHOR = { name: 'WOGO Admin', email: 'info@wogoamste
 export const ABANDONED_FIRST_EMAIL_MIN_MINUTES = 60;        // send the 1st mail once the hold is at least this old
 export const ABANDONED_FOLLOWUP_MIN_MINUTES = 24 * 60;      // send the follow-up once the hold is at least this old
 export const ABANDONED_WINDOW_MAX_MINUTES = 48 * 60;        // never consider a hold older than this (stale safety cap)
-// Owner policy default: NO discount in either abandoned-booking email. Kept
-// as a named constant (not a bare '' inline in emails.js) so turning one on
-// later is a one-line change here — when empty, src/emails.js renders no
-// discount block at all, never an empty/broken one.
-export const ABANDONED_DISCOUNT_CODE = '';
+// Owner decision 16 Nov 2026: the 1h mail carries NO discount; the ~24h
+// follow-up offers a small comeback code. The code lives in Stripe as a
+// promotion code restricted to a customer's first purchase. Set the code to
+// '' to switch the offer off again (src/emails.js then renders no block).
+export const ABANDONED_DISCOUNT_CODE = 'COMEBACK5';
+export const ABANDONED_DISCOUNT_PERCENT = 5;
 
 // --- Walk reminder, 2 days before (migrations/0031, src/reminders.js) ------
 export const WALK_REMINDER_DAYS_BEFORE = 2;

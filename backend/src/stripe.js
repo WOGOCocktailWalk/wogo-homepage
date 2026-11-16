@@ -330,7 +330,8 @@ export async function ensureImportedPromotionCode(env, spec) {
   promoBody.set('code', spec.code);
   if (spec.max_redemptions) promoBody.set('max_redemptions', String(spec.max_redemptions));
   if (spec.expires_at) promoBody.set('expires_at', String(spec.expires_at));
-  promoBody.set('metadata[source]', 'wix_import');
+  if (spec.first_time_only) promoBody.set('restrictions[first_time_transaction]', 'true');
+  promoBody.set('metadata[source]', spec.source || 'wix_import');
   const promoRes = await fetch('https://api.stripe.com/v1/promotion_codes', {
     method: 'POST',
     headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },

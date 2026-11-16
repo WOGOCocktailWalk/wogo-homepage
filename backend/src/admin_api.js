@@ -3295,6 +3295,8 @@ export async function handleImportPromoCodes(request, env) {
         max_redemptions: Number.isInteger(it.max_redemptions) && it.max_redemptions > 0 ? it.max_redemptions : 0,
         expires_at: Number.isInteger(it.expires_at) ? it.expires_at : 0,
         name: it.name,
+        first_time_only: it.first_time_only === true,
+        source: typeof it.source === 'string' ? it.source.slice(0, 40) : undefined,
       });
       results.push({ code, status: r.created ? 'created' : 'skipped' });
     } catch (err) {

@@ -108,10 +108,19 @@ describe('renderAbandonedBooking / renderAbandonedFollowup', () => {
     assert.doesNotMatch(mail.html, /—/);
   });
 
-  test('no discount block when ABANDONED_DISCOUNT_CODE is empty (the owner default)', () => {
-    assert.equal(ABANDONED_DISCOUNT_CODE, '', 'sanity: default must be empty');
-    const mail = renderAbandonedBooking(booking, route);
-    assert.doesNotMatch(mail.html, /Use this code/i);
+  test('the 1h mail never carries a discount; the follow-up carries the comeback code', () => {
+    const first = renderAbandonedBooking(booking, route);
+    assert.doesNotMatch(first.html, /Use this code/i);
+    if (ABANDONED_DISCOUNT_CODE) assert.doesNotMatch(first.html, new RegExp(ABANDONED_DISCOUNT_CODE));
+    const followup = renderAbandonedFollowup(booking, route);
+    if (ABANDONED_DISCOUNT_CODE) {
+      assert.match(followup.html, new RegExp(ABANDONED_DISCOUNT_CODE));
+      assert.match(followup.html, /off your first walk/);
+      const nl = renderAbandonedFollowup({ ...booking, locale: 'nl' }, route);
+      assert.match(nl.html, /korting op je eerste walk/);
+    } else {
+      assert.doesNotMatch(followup.html, /Use this code/i);
+    }
   });
 
   test('carries the unsubscribe link when opts.unsubscribeUrl is passed', () => {
