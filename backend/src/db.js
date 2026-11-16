@@ -2809,7 +2809,10 @@ export async function deleteBlogAssetsForPost(db, postId) {
 
 /**
  * First-email candidates: a 'hold'/'expired' WEB booking (never a manual
- * phone booking — that's not an abandoned online checkout) with a real
+ * phone booking — that's not an abandoned online checkout), ONLY from a guest
+ * who ticked the "keep me posted on new routes and offers" box at checkout
+ * (marketing_opt_in = 1; audit 16 Nov 2026 + owner decision: these are
+ * marketing mails, so no tick means no mail), with a real
  * email, old enough to be genuinely abandoned (>= ABANDONED_FIRST_EMAIL_MIN_MINUTES)
  * but not so old it's stale (<= ABANDONED_WINDOW_MAX_MINUTES — a safety cap
  * so a cron outage lasting days doesn't fire a pile of nudges once it
@@ -2824,6 +2827,7 @@ export async function listAbandonedFirstCandidates(db) {
        WHERE status IN ('hold','expired')
          AND source = 'web'
          AND email IS NOT NULL AND TRIM(email) != ''
+         AND marketing_opt_in = 1
          AND abandoned_sent_at IS NULL
          AND created_at <= :min_age
          AND created_at >= :max_age
@@ -2841,6 +2845,7 @@ export async function listAbandonedFollowupCandidates(db) {
        WHERE status IN ('hold','expired')
          AND source = 'web'
          AND email IS NOT NULL AND TRIM(email) != ''
+         AND marketing_opt_in = 1
          AND abandoned_sent_at IS NOT NULL
          AND abandoned_followup_sent_at IS NULL
          AND created_at <= :min_age

@@ -46,16 +46,16 @@ function seedBooking(testDb, {
   id, route_id = 'r1', date = FAR_FUTURE_DATE, slot = '18:00', party = 2,
   name = 'Guest', email = 'guest@example.com', locale = 'en',
   status = 'hold', source = 'web', offsetMinutes = -90,
-  abandoned_sent_at = null, abandoned_followup_sent_at = null,
+  abandoned_sent_at = null, abandoned_followup_sent_at = null, optIn = 1,
 }) {
   run(
     testDb,
     `INSERT INTO bookings
        (id, route_id, date, slot, party, name, email, phone, locale, marketing_opt_in, status, created_at, source, abandoned_sent_at, abandoned_followup_sent_at)
      VALUES
-       (:id, :route_id, :date, :slot, :party, :name, :email, NULL, :locale, 0, :status, datetime('now', :offset), :source, :abandoned_sent_at, :abandoned_followup_sent_at)`,
+       (:id, :route_id, :date, :slot, :party, :name, :email, NULL, :locale, :opt_in, :status, datetime('now', :offset), :source, :abandoned_sent_at, :abandoned_followup_sent_at)`,
     {
-      id, route_id, date, slot, party, name, email, locale, status, source,
+      id, route_id, date, slot, party, name, email, locale, status, source, opt_in: optIn,
       offset: `${offsetMinutes} minutes`,
       abandoned_sent_at, abandoned_followup_sent_at,
     }
@@ -150,6 +150,15 @@ describe('dedupeByEmailNewestFirst', () => {
 // ---------------------------------------------------------------------------
 
 describe('sendAbandonedSweep — first-email stage', () => {
+  test('a guest who did NOT tick the offers box gets no abandoned-booking mail at all', async () => {
+    seedRoute(testDb);
+    seedBooking(testDb, { id: 'b_noopt', email: 'noopt@example.com', optIn: 0 });
+    seedBooking(testDb, { id: 'b_noopt2', email: 'noopt2@example.com', optIn: 0, offsetMinutes: -25 * 60, abandoned_sent_at: '2026-01-01 00:00:00' });
+    const sent = [];
+    await sendAbandonedSweep(ENV(), { sendTransactional: async (env, msg) => { sent.push(msg); } });
+    assert.equal(sent.length, 0);
+  });
+
   test('sends the 1h nudge for a genuinely abandoned hold', async () => {
     seedRoute(testDb);
     seedBooking(testDb, { id: 'b1', offsetMinutes: -90, email: 'b1@example.com' });
