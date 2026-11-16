@@ -1,0 +1,38 @@
+name = "wogo-redirects"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+workers_dev = false
+
+routes = [
+  { pattern = "*wogococktailwalk.com/amsterdam-cocktail*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/barcelona-cocktailwalk*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/bars", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/bars/*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/book-online*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/booking-calendar*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/booking-form*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/cancel-reservation*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/copy-of-home*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/experience-details*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/experiences*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/groningen-cocktail-walk*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/groupbookings*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/plans-pricing*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/post/*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/reservations*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/rotterdam-cocktail-walk*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/rotterdam-premium-cocktail-walk*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/schiedam-cocktail-walk*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/search", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/search/*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/service-page*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/workwithus*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/blog/categories*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/blog/tags*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/category/*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/product-page*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/nl", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/nl/*", zone_name = "wogococktailwalk.com" },
+  { pattern = "nl.wogococktailwalk.com/*", zone_name = "wogococktailwalk.com" },
+  { pattern = "en.wogococktailwalk.com/*", zone_name = "wogococktailwalk.com" },
+]
