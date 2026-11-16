@@ -224,7 +224,13 @@ const PUBLIC_ADMIN_PATHS = new Set([
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    const { pathname } = url;
+    // SECURITY (audit 16 Nov 2026): the router ignores empty path segments, so
+    // '//admin/api/x' matched the '/admin/api/x' route while the login gate
+    // below, which looked at the raw path, did not see '/admin' at the start
+    // and let it through without a session. Every check in this function now
+    // works on the SAME normalised path the router matches on: one leading
+    // slash, no empty segments, no trailing slash.
+    const pathname = '/' + url.pathname.split('/').filter(Boolean).join('/');
 
     let response;
     try {
@@ -254,8 +260,14 @@ export default {
         // public (login IS the auth check; logout must work even with a
         // stale/expired cookie; public-config/login-request/login-magic are
         // what the pre-session login page itself needs).
-        if (pathname.startsWith('/admin') && !PUBLIC_ADMIN_PATHS.has(pathname)) {
-          const isApi = pathname.startsWith(ADMIN_API_PREFIX);
+        // Second, independent lock: the gate also keys on the ROUTE THAT
+        // MATCHED, not only on how the address is spelled. Whatever form a
+        // path takes, a handler registered under /admin can never run
+        // without passing this block unless it is on the public list.
+        const matchedAdmin = !!(match && (match.pattern === '/admin' || match.pattern.startsWith('/admin/')));
+        const isPublicAdmin = PUBLIC_ADMIN_PATHS.has(pathname) && (!match || PUBLIC_ADMIN_PATHS.has(match.pattern));
+        if ((pathname.startsWith('/admin') || matchedAdmin) && !isPublicAdmin) {
+          const isApi = pathname.startsWith(ADMIN_API_PREFIX) || !!(match && match.pattern.startsWith(ADMIN_API_PREFIX));
           // resolveSession (src/admin_api.js) wraps auth.js's pure cookie
           // decode with a live admin_users re-check for a personal login, so
           // a disable/role-change takes effect on this very request, not up

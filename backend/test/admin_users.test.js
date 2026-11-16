@@ -635,3 +635,40 @@ describe('admin login screen — served HTML (assets.js, built by build.mjs)', (
     assert.match(html, /Shared access code/);
   });
 });
+
+
+// ---------------------------------------------------------------------------
+// Audit 16 Nov 2026: the login gate must not be bypassable by spelling the
+// address differently (the router ignores empty path segments).
+// ---------------------------------------------------------------------------
+const PUBLIC_FOR_TEST = new Set(['/admin/login', '/admin/logout', '/admin/public-config', '/admin/login/request', '/admin/login/magic', '/admin/login/resolve', '/admin/push/pending', '/admin/manifest.webmanifest', '/admin/sw.js', '/admin/icon-192.png', '/admin/icon-512.png', '/admin/apple-touch-icon.png']);
+
+describe('login gate cannot be bypassed by path spelling', () => {
+  const variants = ['//admin/api/bookings', '///admin/api/bookings', '/admin//api/bookings', '//admin//api//bookings', '/admin/api/bookings/', '//admin/api/users', '/./admin/api/bookings', '/x/../admin/api/bookings'];
+  for (const path of variants) {
+    test(`GET ${path} without a session is refused`, async () => {
+      const env = BASE_ENV(testDb);
+      const res = await worker.fetch(new Request('https://w.test' + path), env, CTX);
+      assert.ok([401, 302, 404].includes(res.status), `expected 401/302/404, got ${res.status}`);
+      assert.notEqual(res.status, 200);
+    });
+  }
+  test('POST //admin/api/users with the CSRF header but no session is refused', async () => {
+    const env = BASE_ENV(testDb);
+    const res = await worker.fetch(new Request('https://w.test//admin/api/users', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'wogo-admin' },
+      body: JSON.stringify({ email: 'attacker@example.com', role: 'owner' }),
+    }), env, CTX);
+    assert.equal(res.status, 401);
+  });
+  test('every registered /admin route except the public list requires a session', async () => {
+    const env = BASE_ENV(testDb);
+    for (const r of router.routes()) {
+      if (!r.pattern.startsWith('/admin')) continue;
+      if (PUBLIC_FOR_TEST.has(r.pattern)) continue;
+      const path = '/' + r.pattern.replace(/:[a-zA-Z_]+/g, 'x');
+      const res = await worker.fetch(new Request('https://w.test/' + path, { method: r.method, headers: { 'X-Requested-With': 'wogo-admin', 'Content-Type': 'application/json' }, body: r.method === 'GET' ? undefined : '{}' }), env, CTX);
+      assert.ok(res.status === 401 || res.status === 302, `${r.method} //${r.pattern} answered ${res.status} without a session`);
+    }
+  });
+});
