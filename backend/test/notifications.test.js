@@ -662,3 +662,31 @@ describe('handleCreateManualBooking — booking_new notification', () => {
     }
   });
 });
+
+// Single-bar send (admin "Send to one bar"): only that bar is mailed, with
+// an optional arrival-time override for that one mail.
+import { notifyBars as notifyBarsOneBar } from '../src/webhook.js';
+test('notifyBars with onlyBarEmail mails just that bar at the given time', async () => {
+  const sent = [];
+  const deps = {
+    database: {
+      listBarsForDate: async () => [],
+      listOverridesForDate: async () => [],
+    },
+    computeBarArrivals: () => [
+      { bar_id: null, bar_name: 'First', bar_email: 'first@example.com', arrival_time: '19:00', locale: 'nl' },
+      { bar_id: null, bar_name: 'Second', bar_email: 'Second@Example.com', arrival_time: '20:00', locale: 'nl' },
+    ],
+    sendTransactional: async (_env, msg) => { sent.push(msg); return { ok: true }; },
+    onlyBarEmail: 'second@example.com',
+    arrivalTime: '20:30',
+  };
+  const booking = { id: 'b_t', route_id: 'r', date: '2026-12-18', slot: '19:00', party: 5, name: 'Test Guest', email: 'g@example.com', phone: '', locale: 'nl' };
+  const route = { id: 'r', name: 'Test Route', city: 'Rotterdam' };
+  const out = await notifyBarsOneBar({ DB: {} }, booking, route, deps);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].arrival_time, '20:30');
+  assert.equal(sent.length, 1);
+  assert.match(JSON.stringify(sent[0]), /second@example\.com/i);
+  assert.match(sent[0].htmlContent, /20:30/);
+});

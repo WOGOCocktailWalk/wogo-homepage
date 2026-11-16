@@ -20,7 +20,7 @@
        page's location.hash directly) or opens a new one.
    ========================================================================== */
 
-const SHELL_CACHE = 'wogo-admin-shell-v2';
+const SHELL_CACHE = 'wogo-admin-shell-v3';
 const SHELL_URL = '/admin/';
 
 self.addEventListener('install', (event) => {
@@ -92,6 +92,20 @@ function fetchPending() {
 }
 
 self.addEventListener('push', (event) => {
+  // Preferred: the text arrives inside the push itself (encrypted for this
+  // device), so it can be shown at once with no network call.
+  let inline = null;
+  try { inline = event.data ? event.data.json() : null; } catch (e) { inline = null; }
+  if (inline && inline.title) {
+    event.waitUntil(self.registration.showNotification(inline.title, {
+      body: inline.body || '',
+      tag: inline.id || ('wogo-' + Date.now()),
+      data: { url: inline.url || '/admin/' },
+      icon: '/admin/icon-192.png',
+      badge: '/admin/icon-192.png',
+    }));
+    return;
+  }
   event.waitUntil(
     fetchPending()
       .then((data) => {

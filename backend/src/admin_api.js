@@ -9,6 +9,7 @@ import {
   buildHighlightsSales, computePctDelta, pageViewsByCity,
   validateBlogSlug, validateBlogCategory, sanitizeBlogHtml, stripHtmlTags,
   analyticsRevenueCents, formatNotificationDate, formatEuros, summarizeAddonsForNotification,
+  computeBarArrivals,
 } from './logic.js';
 import {
   LOGIN_FAIL_THRESHOLD,
@@ -282,6 +283,7 @@ export const ROUTE_ROLES = {
   'PUT /admin/api/routes/:id/addons/:addonId': 'staff',
   'DELETE /admin/api/routes/:id/addons/:addonId': 'staff',
   'POST /admin/api/bookings/:id/resend': 'staff',
+  'GET /admin/api/bookings/:id/bars': 'staff',
   'POST /admin/api/bookings/:id/reschedule': 'staff',
   'POST /admin/api/bookings/:id/cancel': 'staff',
   'POST /admin/api/bookings/:id/send-review': 'staff',
@@ -719,10 +721,40 @@ export async function handleResendConfirmation(request, env, params) {
   let body = {};
   try { body = await request.json(); } catch { body = {}; }
   const alsoBars = !!(body && body.bars === true);
+  // Optional body { bar_email, arrival_time? }: mail ONE bar on this
+  // booking's line-up (and nobody else — the guest is skipped too), with an
+  // optional "HH:MM" arrival time that replaces the computed one for this
+  // mail only. For a booking a bar never heard about, e.g. a Wix booking on
+  // a date where the line-up differs from what Wix forwarded.
+  const oneBar = body && typeof body.bar_email === 'string' ? body.bar_email.trim().toLowerCase() : '';
+  if (oneBar) {
+    const arrivalTime = body.arrival_time == null || body.arrival_time === '' ? null : String(body.arrival_time);
+    if (arrivalTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(arrivalTime)) {
+      return errorJson('bad_request', 'arrival_time must be HH:MM', 400);
+    }
+    const sent = await notifyBars(env, booking, route, { addons, onlyBarEmail: oneBar, arrivalTime });
+    if (!sent.length) return errorJson('bad_request', 'that bar is not on this booking\'s route for this date', 400);
+    await audit(env, request, 'booking.resend_one_bar', 'booking', booking.id, { bar: sent[0].bar_name, arrival_time: sent[0].arrival_time });
+    return json({ ok: true, bar: sent[0].bar_name, arrival_time: sent[0].arrival_time });
+  }
   if (!(body && body.guest === false)) await sendGuestConfirmationEmails(env, booking, route, { addons });
   if (alsoBars) await notifyBars(env, booking, route, { addons });
   await audit(env, request, 'booking.resend_confirmation', 'booking', booking.id, { email: booking.email, bars: alsoBars });
   return json({ ok: true, bars: alsoBars });
+}
+
+/** GET /admin/api/bookings/:id/bars — the bars on this booking's line-up for
+ * its date (date overrides applied) with each one's computed arrival time.
+ * Feeds the drawer's "Send to one bar" list. */
+export async function handleBookingBars(request, env, params) {
+  const booking = await db.getBooking(env.DB, params.id);
+  if (!booking) return errorJson('not_found', null, 404);
+  const route = await db.getRoute(env.DB, booking.route_id);
+  if (!route) return errorJson('route_not_found', null, 404);
+  const bars = await db.listBarsForDate(env.DB, booking.route_id, booking.date);
+  const overrides = await db.listOverridesForDate(env.DB, booking.route_id, booking.date);
+  const arrivals = computeBarArrivals(route, bars, overrides, booking);
+  return json({ bars: arrivals.map((a) => ({ bar_name: a.bar_name, bar_email: a.bar_email, arrival_time: a.arrival_time })) });
 }
 
 // migrations/0033: addons_summary/addons_revenue_cents/addon_notes are

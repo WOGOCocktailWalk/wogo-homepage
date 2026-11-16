@@ -1740,3 +1740,10 @@ table.data tbody tr:last-child td { border-bottom: none; }
 /* 5. A row of number tiles that follows a card (e.g. Analytics: "Discount
       codes used" then the gift-card tiles) sat flush against it. */
 .card + .stat-row, .card + .kpi-grid, .filters + .stat-row { margin-top: var(--card-gap); }
+
+/* Booking drawer: "Send this booking to one bar" */
+.one-bar { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); }
+.one-bar h4 { margin: 0 0 4px; }
+.one-bar .capacity-hint { padding: 0; margin: 0 0 10px; }
+.one-bar-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.one-bar-row .grow { flex: 1; }

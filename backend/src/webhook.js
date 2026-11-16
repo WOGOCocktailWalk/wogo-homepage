@@ -246,7 +246,18 @@ export async function notifyBars(env, booking, route, deps = {}) {
 
   const bars = await database.listBarsForDate(env.DB, booking.route_id, booking.date);
   const overridesForDate = await database.listOverridesForDate(env.DB, booking.route_id, booking.date);
-  const arrivals = computeBars(route, bars, overridesForDate, booking);
+  const allArrivals = computeBars(route, bars, overridesForDate, booking);
+  // Optional single-bar send (admin "Send to one bar"): deps.onlyBarEmail
+  // narrows the fan-out to that one bar, and deps.arrivalTime ("HH:MM")
+  // replaces its computed arrival time for this one mail only. Without
+  // them every bar on the line-up is mailed, exactly as before.
+  const onlyBar = typeof deps.onlyBarEmail === 'string' ? deps.onlyBarEmail.trim().toLowerCase() : '';
+  let arrivals = allArrivals;
+  if (onlyBar) {
+    arrivals = allArrivals
+      .filter((a) => String(a.bar_email || '').trim().toLowerCase() === onlyBar)
+      .map((a) => (deps.arrivalTime ? { ...a, arrival_time: deps.arrivalTime } : a));
+  }
 
   // "New email format" heads-up on this route's first few bookings only (the
   // booking being confirmed right now is already counted). Any failure here

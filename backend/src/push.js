@@ -66,21 +66,85 @@ export async function sendPushTickle(env, subscription, deps = {}) {
   const aud = `${endpointUrl.protocol}//${endpointUrl.host}`;
   const jwt = await signVapidJwt(env.VAPID_PRIVATE_KEY, aud);
 
-  const res = await doFetch(subscription.endpoint, {
-    method: 'POST',
-    headers: {
-      // RFC 8292's "vapid" auth scheme — accepted by every major push
-      // service (FCM-backed Chrome/Edge endpoints AND Mozilla's autopush),
-      // unlike the older two-header (Authorization: WebPush + Crypto-Key)
-      // form some docs still show.
-      Authorization: `vapid t=${jwt}, k=${VAPID_PUBLIC_KEY}`,
-      TTL: String(PUSH_TTL_SECONDS),
-      'Content-Length': '0',
-    },
-  });
+  // When the caller hands over the notification text AND the device's keys
+  // are on file, the text travels INSIDE the push, encrypted for that one
+  // device (RFC 8291). The phone can then show it at once, without first
+  // calling back to this server — which is what failed silently on iPhone
+  // (16 Nov 2026). Without text or keys it stays a bare wake-up, as before.
+  let body = null;
+  if (deps.payload && subscription.p256dh && subscription.auth) {
+    try { body = await encryptPushPayload(JSON.stringify(deps.payload), subscription.p256dh, subscription.auth); }
+    catch (err) { console.error('push_encrypt_failed', String(err && err.message ? err.message : err)); body = null; }
+  }
+  const headers = {
+    // RFC 8292's "vapid" auth scheme — accepted by every major push
+    // service (FCM-backed Chrome/Edge endpoints AND Mozilla's autopush),
+    // unlike the older two-header (Authorization: WebPush + Crypto-Key)
+    // form some docs still show.
+    Authorization: `vapid t=${jwt}, k=${VAPID_PUBLIC_KEY}`,
+    TTL: String(PUSH_TTL_SECONDS),
+    Urgency: 'high',
+  };
+  if (body) {
+    headers['Content-Encoding'] = 'aes128gcm';
+    headers['Content-Type'] = 'application/octet-stream';
+  } else {
+    headers['Content-Length'] = '0';
+  }
+  const res = await doFetch(subscription.endpoint, { method: 'POST', headers, body: body || undefined });
 
   if (res.status === 404 || res.status === 410) {
     return { ok: false, status: res.status, gone: true };
   }
   return { ok: res.ok, status: res.status };
+}
+
+
+// ---------------------------------------------------------------------------
+// RFC 8291 "aes128gcm" message encryption for Web Push, with WebCrypto only.
+// ---------------------------------------------------------------------------
+function b64uToBytes(str) {
+  const b64 = String(str).replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((String(str).length + 3) % 4);
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function concatBytes(...parts) {
+  const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+  let o = 0;
+  for (const p of parts) { out.set(p, o); o += p.length; }
+  return out;
+}
+async function hkdf(salt, ikm, info, length) {
+  const key = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']);
+  return new Uint8Array(await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt, info }, key, length * 8));
+}
+
+/** Encrypts `plaintext` (string) for the device whose subscription keys are
+ * `p256dhB64u` (its public key) and `authB64u` (its auth secret). Returns the
+ * request body bytes. `deps` exists only so a test can fix the randomness. */
+export async function encryptPushPayload(plaintext, p256dhB64u, authB64u, deps = {}) {
+  const enc = new TextEncoder();
+  const uaPublic = b64uToBytes(p256dhB64u);          // 65 bytes, uncompressed P-256 point
+  const authSecret = b64uToBytes(authB64u);          // 16 bytes
+  if (uaPublic.length !== 65 || authSecret.length < 16) throw new Error('bad subscription keys');
+  const data = enc.encode(plaintext);
+  if (data.length > 3000) throw new Error('payload too large');
+
+  const asKeys = deps.keyPair || await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+  const asPublic = new Uint8Array(await crypto.subtle.exportKey('raw', asKeys.publicKey));
+  const uaKey = await crypto.subtle.importKey('raw', uaPublic, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  const shared = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: uaKey }, asKeys.privateKey, 256));
+
+  const ikm = await hkdf(authSecret, shared, concatBytes(enc.encode('WebPush: info\0'), uaPublic, asPublic), 32);
+  const salt = deps.salt || crypto.getRandomValues(new Uint8Array(16));
+  const cek = await hkdf(salt, ikm, enc.encode('Content-Encoding: aes128gcm\0'), 16);
+  const nonce = await hkdf(salt, ikm, enc.encode('Content-Encoding: nonce\0'), 12);
+
+  const aesKey = await crypto.subtle.importKey('raw', cek, 'AES-GCM', false, ['encrypt']);
+  // One record: the data followed by the 0x02 "last record" delimiter.
+  const cipher = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, aesKey, concatBytes(data, new Uint8Array([2]))));
+  const header = concatBytes(salt, new Uint8Array([0, 0, 16, 0]), new Uint8Array([asPublic.length]), asPublic); // rs = 4096
+  return concatBytes(header, cipher);
 }

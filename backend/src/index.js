@@ -131,6 +131,7 @@ router.get('/admin/api/routes', adminApi.handleListAllRoutes);
 router.post('/admin/api/routes', adminApi.handleCreateRoute);
 router.put('/admin/api/routes/:id', adminApi.handleUpdateRoute);
 router.post('/admin/api/bookings/:id/resend', adminApi.handleResendConfirmation);
+router.get('/admin/api/bookings/:id/bars', adminApi.handleBookingBars);
 router.post('/admin/api/bookings/:id/reschedule', adminApi.handleRescheduleBooking);
 router.post('/admin/api/bookings/:id/cancel', adminApi.handleCancelBooking);
 router.post('/admin/api/bookings/:id/send-review', adminApi.handleSendReviewRequest);

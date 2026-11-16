@@ -79,7 +79,9 @@ export async function fanOutPush(env, notification, deps = {}) {
         const prefs = await getNotificationPreferences(env, sub.user_id, deps);
         if (prefs[group] === false) continue;
       }
-      const result = await sendPushTickle(env, sub, deps);
+      const result = await sendPushTickle(env, sub, notification.title
+        ? { ...deps, payload: { id: notification.id, title: notification.title, body: notification.body || '', url: notification.url || '/admin/' } }
+        : deps);
       if (result.gone) {
         await database.deletePushSubscriptionByEndpoint(env.DB, sub.endpoint);
       } else if (result.ok) {
@@ -117,7 +119,7 @@ export async function notifyAdmins(env, { id, kind, title, body, url, booking_id
       booking_id: booking_id ?? null,
       user_id: user_id ?? null,
     });
-    await fanOutPush(env, { id: notifId, kind, user_id: user_id ?? null }, deps);
+    await fanOutPush(env, { id: notifId, kind, user_id: user_id ?? null, title, body, url: url ?? null }, deps);
     return { ok: true, id: notifId };
   } catch (err) {
     console.error('notify_admins_failed', kind, String(err && err.message ? err.message : err));

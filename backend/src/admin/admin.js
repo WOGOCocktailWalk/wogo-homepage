@@ -753,6 +753,40 @@
       body.appendChild(cancelWrap);
     }
 
+    // "Send to one bar": mail just one bar on this booking's line-up, with
+    // an optional different arrival time. For a booking a bar never heard
+    // about (e.g. a Wix booking on a date with a different line-up).
+    if (movable) {
+      const barsWrap = el("div", { class: "one-bar" });
+      barsWrap.appendChild(el("h4", { text: "Send this booking to one bar" }));
+      barsWrap.appendChild(el("p", { class: "capacity-hint", text: "Only that bar gets the email. Change the time first if they should arrive at a different time." }));
+      const barsList = el("div", { class: "one-bar-list", text: "Loading bars…" });
+      barsWrap.appendChild(barsList);
+      body.appendChild(barsWrap);
+      api("/admin/api/bookings/" + b.id + "/bars").then((res) => {
+        clear(barsList);
+        const list = (res && res.bars) || [];
+        if (!list.length) { barsList.textContent = "No bars on this route for this date."; return; }
+        list.forEach((bar) => {
+          const timeIn = el("input", { type: "time", style: "width:118px", value: bar.arrival_time });
+          const sendBtn = el("button", { class: "btn btn-quiet btn-sm", text: "Send", onclick: async (ev) => {
+            const btn = ev.currentTarget;
+            const t = timeIn.value || bar.arrival_time;
+            if (!window.confirm("Email " + bar.bar_name + " this booking (" + b.name + ", arriving " + t + ")?")) return;
+            btn.disabled = true; btn.textContent = "Sending…";
+            try {
+              await api("/admin/api/bookings/" + b.id + "/resend", { method: "POST", body: { bar_email: bar.bar_email, arrival_time: t } });
+              toast("Sent to " + bar.bar_name + " (" + t + ")", "ok");
+              btn.textContent = "Sent";
+            } catch (e) { toast(e.message, "err"); btn.disabled = false; btn.textContent = "Send"; }
+          } });
+          barsList.appendChild(el("div", { class: "one-bar-row" }, [
+            el("span", { class: "grow", text: bar.bar_name }), timeIn, sendBtn
+          ]));
+        });
+      }).catch((e) => { barsList.textContent = e.message; });
+    }
+
     const foot = $("#drawer-foot");
     clear(foot);
     foot.appendChild(el("button", {

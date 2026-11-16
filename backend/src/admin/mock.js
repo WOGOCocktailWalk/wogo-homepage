@@ -506,6 +506,7 @@
       return json({ booking: b });
     }
     if ((m = match(path, /^\/admin\/api\/bookings\/([^\/]+)\/resend$/))) return json({ ok: true });
+    if ((m = match(path, /^\/admin\/api\/bookings\/([^\/]+)\/bars$/))) return json({ bars: [{ bar_name: "Bar One", bar_email: "one@example.com", arrival_time: "19:00" }, { bar_name: "Bar Two", bar_email: "two@example.com", arrival_time: "20:00" }] });
     if ((m = match(path, /^\/admin\/api\/bookings\/([^\/]+)\/send-review$/)) && method === "POST") {
       const b = bookings.find((x) => x.id === m[1]);
       if (b) b.review_sent_at = new Date().toISOString();
