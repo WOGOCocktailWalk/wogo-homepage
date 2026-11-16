@@ -331,7 +331,12 @@ export async function getHighlightsTraffic(env, from, to, previousFrom, previous
     // dimensionValues: [date, dateRange] — `dateRange` is GA4's own implicit
     // trailing dimension (NOT one this code declared in `dimensions` above),
     // appended automatically whenever 2+ dateRanges are requested.
-    const date = dim(row, 0);
+    // GA4 returns the date dimension as 'YYYYMMDD'; the rest of this system
+    // (and the per-day fill in the highlights handler) keys days as
+    // 'YYYY-MM-DD'. Without this, every day silently matched nothing and the
+    // per-day visitor numbers ("today · yesterday", sparklines) read zero.
+    const rawDate = dim(row, 0);
+    const date = /^\d{8}$/.test(rawDate) ? `${rawDate.slice(0, 4)}-${rawDate.slice(4, 6)}-${rawDate.slice(6)}` : rawDate;
     const rangeTag = row.dimensionValues[1] ? row.dimensionValues[1].value : 'date_range_0';
     const entry = { date, sessions: metric(row, 0), page_views: metric(row, 1), unique_visitors: metric(row, 2) };
     if (rangeTag === 'date_range_1') previousDaily.push(entry);
