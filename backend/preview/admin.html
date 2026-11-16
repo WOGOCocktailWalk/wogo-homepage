@@ -3317,7 +3317,8 @@ table.data tbody tr:last-child td { border-bottom: none; }
       (b.discount_code || b.discount_cents > 0)
         ? ["Discount", (b.discount_code ? b.discount_code + " · " : "") + "−" + euros(b.discount_cents || 0) + (r ? "  → paid " + euros(Math.max(0, r.price_cents * b.party - (b.discount_cents || 0))) : "")]
         : null,
-      ["Source", b.source === "manual" ? "Manual (phone booking)" : "Website"],
+      ["Source", b.source === "manual" ? "Manual (phone booking)" : b.source === "wix" ? "Copied from Wix" : "Website"],
+      b.source === "web" ? ["Came from", cameFrom(b)] : null,
       b.payment_status ? ["Payment", prettyPayment(b.payment_status)] : null,
       ["Email", b.email],
       ["Phone", b.phone || "—"],
@@ -6466,6 +6467,30 @@ table.data tbody tr:last-child td { border-bottom: none; }
     $("#drawer").classList.add("show");
     $("#drawer").setAttribute("aria-hidden", "false");
     $("#drawer-scrim").classList.add("show");
+  }
+
+  /* Where this guest's visit started, in plain words, from the first-touch
+     fields saved with the booking (campaign tags, the outside site, the page
+     they landed on). */
+  function cameFrom(b) {
+    var src = (b.utm_source || "").toLowerCase(), med = (b.utm_medium || "").toLowerCase();
+    var host = "";
+    try { host = b.referrer ? new URL(b.referrer).hostname.replace(/^www\./, "") : ""; } catch (e) { host = ""; }
+    if (/wogococktailwalk\.com$/.test(host)) host = "";
+    var names = { ig: "Instagram", instagram: "Instagram", fb: "Facebook", facebook: "Facebook", an: "Meta Audience Network", meta: "Facebook / Instagram", google: "Google", tiktok: "TikTok", so: "Email" };
+    var label;
+    if (src) {
+      var paid = /paid|cpc|ads?$|click-id/.test(med);
+      label = (names[src] || b.utm_source) + (paid ? " ad" : med ? " (" + b.utm_medium + ")" : "");
+      if (b.utm_campaign) label += " · campaign " + b.utm_campaign;
+    } else if (host) {
+      var site = /instagram\./.test(host) ? "Instagram" : /facebook\.|fb\./.test(host) ? "Facebook" : /google\./.test(host) ? "Google search" : /bing\./.test(host) ? "Bing search" : /tiktok\./.test(host) ? "TikTok" : /getyourguide\./.test(host) ? "GetYourGuide" : host;
+      label = site;
+    } else {
+      label = "Direct (typed the address, a bookmark, or unknown)";
+    }
+    if (b.landing_path && !/\/book\/?$/.test(b.landing_path)) label += " · landed on " + b.landing_path;
+    return label;
   }
 
   function prettyPayment(p) { return { paid_invoice: "Paid on invoice", free: "Free", comp: "Comp (on the house)" }[p] || p; }

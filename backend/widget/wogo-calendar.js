@@ -47,8 +47,21 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       });
     } catch (e) { /* tracking must never block a booking */ }
     try {
-      out.referrer = clip(typeof document !== "undefined" ? document.referrer : null);
-      out.landing_path = clip(typeof window !== "undefined" ? window.location.pathname : null);
+      /* First touch (see the shared footer snippet): `wref` is the outside
+         site this visit came from and `wlp` the page it landed on, carried
+         through the links. Without them, fall back to this page itself. */
+      const carry2 = (typeof window !== "undefined" && window.__wogoCarry) || {};
+      const sp2 = new URLSearchParams((typeof window !== "undefined" && window.location.search) || "");
+      const pick = (k) => carry2[k] || sp2.get(k) || null;
+      const wref = pick("wref"), wlp = pick("wlp");
+      out.referrer = clip(wref ? "https://" + wref : (typeof document !== "undefined" ? document.referrer : null));
+      out.landing_path = clip(wlp || (typeof window !== "undefined" ? window.location.pathname : null));
+      /* A click from a Meta or Google ad without campaign tags still carries
+         a click id: record at least which platform it was. */
+      if (!out.utm_source) {
+        if (pick("fbclid")) { out.utm_source = "meta"; out.utm_medium = out.utm_medium || "click-id"; }
+        else if (pick("gclid")) { out.utm_source = "google"; out.utm_medium = out.utm_medium || "click-id"; }
+      }
     } catch (e) {
       out.referrer = null;
       out.landing_path = null;

@@ -793,13 +793,26 @@
 (function () {
   /* ===== UTM carry-through (identical to homepage) ===== */
   (function () {
-    var keep = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','fbclid','gclid','msclkid'];
+    var keep = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','fbclid','gclid','msclkid','wref','wlp'];
     var carry = {};
     try { var sp = new URLSearchParams(window.location.search); keep.forEach(function (k) { var v = sp.get(k); if (v) carry[k] = v; }); } catch (e) {}
     try {
       if (document.referrer) {
         var rp = new URL(document.referrer).searchParams;
         keep.forEach(function (k) { if (!carry[k]) { var v = rp.get(k); if (v) carry[k] = v; } });
+      }
+    } catch (e) {}
+    /* First touch: when this visit arrived from another website, remember that
+       site's name (wref) and the page the visitor landed on (wlp) and pass
+       them along in the links, like the campaign tags above. Nothing is
+       stored on the device. */
+    try {
+      if (!carry.wref && document.referrer) {
+        var rh = new URL(document.referrer).hostname.replace(/^www\./, '');
+        if (rh && !/(^|\.)wogococktailwalk\.com$/.test(rh) && !/(^|\.)stripe\.com$/.test(rh)) {
+          carry.wref = rh.slice(0, 60);
+          if (!carry.wlp) carry.wlp = window.location.pathname.slice(0, 80);
+        }
       }
     } catch (e) {}
     if (Object.keys(carry).length) window.__wogoCarry = carry;
