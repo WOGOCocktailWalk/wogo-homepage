@@ -2756,7 +2756,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
     subscribers: { list: [], total: 0, counts: null, loaded: false, filters: { status: "", source: "", q: "" } },
     me: null, // {uid, email, name, role} — set by boot(), drives client-side UI hiding (server ROUTE_ROLES is the real control)
     users: { list: [], loaded: false },
-    analytics: { sub: "sales", range: null, group: "day", data: null, kpi: null, loading: false, traffic: null, highlights: null, realtime: null, behavior: null, marketing: null },
+    analytics: { sub: "sales", range: null, group: "day", channel: "all", data: null, kpi: null, loading: false, traffic: null, highlights: null, realtime: null, behavior: null, marketing: null },
     blog: { list: [], counts: null, loaded: false, statusFilter: "", editing: null, slugLocked: false, slugTouched: false, dirty: false }
   };
   let realtimeTimer = null; // auto-refresh interval while the Real-time page is mounted — cleared on every navigation
@@ -5488,8 +5488,14 @@ table.data tbody tr:last-child td { border-bottom: none; }
       renderAnalytics(root);
     }, "Custom");
     const groupSel = selectField("Group by", "", ["day", "week", "month"], (v) => { S.analytics.group = v; renderAnalytics(root); }, S.analytics.group);
-    return el("div", { class: "filters" }, el("div", { class: "filters-row" }, [presetSel, fromF, toF, groupSel]));
+    /* Where the booking was made: everything, only this new website, or only
+       the bookings that were copied over from Wix. */
+    const CH = { "All bookings": "all", "New website": "web", "Wix (copied over)": "wix" };
+    const chLabel = Object.keys(CH).find((k) => CH[k] === S.analytics.channel) || "All bookings";
+    const chSel = selectField("Bookings from", "", Object.keys(CH), (v) => { S.analytics.channel = CH[v] || "all"; renderAnalytics(root); }, chLabel);
+    return el("div", { class: "filters" }, el("div", { class: "filters-row" }, [presetSel, fromF, toF, groupSel, chSel]));
   }
+  function chq() { return S.analytics.channel && S.analytics.channel !== "all" ? "&channel=" + S.analytics.channel : ""; }
 
   function renderAnalyticsPlaceholder(body, label) {
     clear(body);
@@ -5525,10 +5531,10 @@ table.data tbody tr:last-child td { border-bottom: none; }
   async function loadAnalyticsSales(body) {
     try {
       const r = S.analytics.range;
-      const qs = "from=" + r.from + "&to=" + r.to + "&group=" + S.analytics.group;
+      const qs = "from=" + r.from + "&to=" + r.to + "&group=" + S.analytics.group + chq();
       const [data, kpi, addons] = await Promise.all([
         api("/admin/api/analytics?" + qs),
-        api("/admin/api/analytics/kpi"),
+        api("/admin/api/analytics/kpi?x=1" + chq()),
         // migrations/0033 — same from/to range as the main Sales query
         // (judged by WALK date, like every other breakdown on this page).
         api("/admin/api/analytics/addons?from=" + r.from + "&to=" + r.to)
@@ -5845,7 +5851,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
   async function loadAnalyticsHighlights(body) {
     try {
       const r = S.analytics.range;
-      const data = await api("/admin/api/analytics/highlights?from=" + r.from + "&to=" + r.to);
+      const data = await api("/admin/api/analytics/highlights?from=" + r.from + "&to=" + r.to + chq());
       S.analytics.highlights = data;
       paintAnalyticsHighlights(body);
     } catch (e) {
@@ -6098,7 +6104,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
   async function loadAnalyticsMarketing(body) {
     try {
       const r = S.analytics.range;
-      const data = await api("/admin/api/analytics/marketing?from=" + r.from + "&to=" + r.to);
+      const data = await api("/admin/api/analytics/marketing?from=" + r.from + "&to=" + r.to + chq());
       S.analytics.marketing = data;
       paintAnalyticsMarketing(body);
     } catch (e) {

@@ -2452,16 +2452,26 @@ const ANALYTICS_BOOKING_COLUMNS = `
   b.discount_cents, b.gift_applied_cents, r.price_cents,
   b.email, b.name, b.utm_source, b.utm_medium, b.utm_campaign, b.utm_content`;
 
+/** Optional "where was it booked" filter for the analytics queries:
+ * 'wix' = bookings copied over from the old Wix site, 'web' = everything made
+ * in this system (website + manual), anything else = both. Only ever returns
+ * one of three fixed strings, never user text. */
+function analyticsChannelSql(channel) {
+  if (channel === 'wix') return " AND b.source = 'wix'";
+  if (channel === 'web') return " AND b.source != 'wix'";
+  return '';
+}
+
 /** Confirmed bookings whose WALK date (`bookings.date`) falls in [from, to]
  * (both 'YYYY-MM-DD') — the "business happened in this period" lens: every
  * by-route/by-city/by-weekday/by-slot/by-source/by-locale/discount breakdown
  * is built from this set. */
-export async function listBookingsForAnalyticsByWalkDate(db, from, to) {
+export async function listBookingsForAnalyticsByWalkDate(db, from, to, channel) {
   return all(
     db,
     `SELECT ${ANALYTICS_BOOKING_COLUMNS}
        FROM bookings b JOIN routes r ON r.id = b.route_id
-      WHERE b.status IN ('confirmed', 'confirmed_conflict') AND b.date BETWEEN :from AND :to`,
+      WHERE b.status IN ('confirmed', 'confirmed_conflict') AND b.date BETWEEN :from AND :to${analyticsChannelSql(channel)}`,
     { from, to }
   );
 }
@@ -2471,12 +2481,12 @@ export async function listBookingsForAnalyticsByWalkDate(db, from, to) {
  * caller) — the "sold in this period" lens, used only for the separate
  * sale-date time series (owner requirement: "by booking DATE ... and also by
  * created_at"). */
-export async function listBookingsForAnalyticsBySaleDate(db, fromDatetime, toDatetime) {
+export async function listBookingsForAnalyticsBySaleDate(db, fromDatetime, toDatetime, channel) {
   return all(
     db,
     `SELECT ${ANALYTICS_BOOKING_COLUMNS}
        FROM bookings b JOIN routes r ON r.id = b.route_id
-      WHERE b.status IN ('confirmed', 'confirmed_conflict') AND b.created_at BETWEEN :from AND :to`,
+      WHERE b.status IN ('confirmed', 'confirmed_conflict') AND b.created_at BETWEEN :from AND :to${analyticsChannelSql(channel)}`,
     { from: fromDatetime, to: toDatetime }
   );
 }

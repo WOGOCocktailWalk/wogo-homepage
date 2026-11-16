@@ -2090,6 +2090,13 @@ function parseAnalyticsRange(url) {
 
 const ANALYTICS_GROUPS = new Set(['day', 'week', 'month']);
 
+/** ?channel=wix|web on any analytics endpoint narrows the numbers to
+ * bookings copied from Wix, or to bookings made in this system. */
+function analyticsChannel(request) {
+  const c = new URL(request.url).searchParams.get('channel');
+  return c === 'wix' || c === 'web' ? c : null;
+}
+
 /**
  * GET /admin/api/analytics?from&to&group=day|week|month (viewer+). Two
  * independent lenses on the SAME [from,to] window (owner requirement: "by
@@ -2122,8 +2129,8 @@ export async function handleAnalytics(request, env) {
   const saleTo = `${range.to} 23:59:59`;
 
   const [walkRows, saleRows, cancelled, upcoming, giftSales, giftRedeemedCents, giftOutstandingCents, inquiries, newSubs, subsByStatus] = await Promise.all([
-    db.listBookingsForAnalyticsByWalkDate(env.DB, range.from, range.to),
-    db.listBookingsForAnalyticsBySaleDate(env.DB, saleFrom, saleTo),
+    db.listBookingsForAnalyticsByWalkDate(env.DB, range.from, range.to, analyticsChannel(request)),
+    db.listBookingsForAnalyticsBySaleDate(env.DB, saleFrom, saleTo, analyticsChannel(request)),
     db.countCancelledBookingsByWalkDate(env.DB, range.from, range.to),
     db.listUpcomingGuestsByDate(env.DB, nowSqlite().slice(0, 10), 10),
     db.giftCardSalesSummary(env.DB, saleFrom, saleTo),
@@ -2215,7 +2222,7 @@ export async function handleAnalyticsKpi(request, env) {
     const fromDt = `${fromDate} 00:00:00`;
     const toDt = `${toDate} 23:59:59`;
     const [rows, newSubs, giftSales] = await Promise.all([
-      db.listBookingsForAnalyticsBySaleDate(env.DB, fromDt, toDt),
+      db.listBookingsForAnalyticsBySaleDate(env.DB, fromDt, toDt, analyticsChannel(request)),
       db.countNewConfirmedSubscribers(env.DB, fromDt, toDt),
       db.giftCardSalesSummary(env.DB, fromDt, toDt),
     ]);
@@ -2375,8 +2382,8 @@ export async function handleAnalyticsHighlights(request, env) {
   // the fact that utm_source/GA4 sessions are both naturally dated by when
   // the visit/purchase happened, not by some future walk date.
   const [currentRows, previousRows, trafficRaw] = await Promise.all([
-    db.listBookingsForAnalyticsBySaleDate(env.DB, `${range.from} 00:00:00`, `${range.to} 23:59:59`),
-    db.listBookingsForAnalyticsBySaleDate(env.DB, `${previousFrom} 00:00:00`, `${previousTo} 23:59:59`),
+    db.listBookingsForAnalyticsBySaleDate(env.DB, `${range.from} 00:00:00`, `${range.to} 23:59:59`, analyticsChannel(request)),
+    db.listBookingsForAnalyticsBySaleDate(env.DB, `${previousFrom} 00:00:00`, `${previousTo} 23:59:59`, analyticsChannel(request)),
     isGa4Configured(env)
       ? cachedGa4(
           env,
@@ -2505,7 +2512,7 @@ export async function handleAnalyticsMarketing(request, env) {
   const toDt = `${range.to} 23:59:59`;
 
   const [walkRows, subscriberGrowth, subscribersBySource, giftSales, giftRedeemedCents, traffic] = await Promise.all([
-    db.listBookingsForAnalyticsByWalkDate(env.DB, range.from, range.to),
+    db.listBookingsForAnalyticsByWalkDate(env.DB, range.from, range.to, analyticsChannel(request)),
     db.subscribersGrowthByDay(env.DB, fromDt, toDt),
     db.countSubscribersBySource(env.DB),
     db.giftCardSalesSummary(env.DB, fromDt, toDt),
