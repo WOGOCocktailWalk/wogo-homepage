@@ -3,7 +3,7 @@
 // STAGING: points at the live GitHub Pages site so the whole booking flow
 // (Stripe success/cancel redirect, confirmation page) works before the Wix
 // cutover. AT CUTOVER: change back to 'https://www.wogococktailwalk.com'.
-export const SITE_URL = 'https://wogococktailwalk.github.io/wogo-homepage';
+export const SITE_URL = 'https://www.wogococktailwalk.com';
 
 // Echoed back as Access-Control-Allow-Origin ONLY if the request Origin matches
 // one of these exactly, or matches the localhost dev pattern below.
@@ -41,7 +41,7 @@ export const EMAIL_SENDER = { email: 'info@wogoamsterdam.com', name: 'WOGO Cockt
 // 'https://www.wogococktailwalk.com' and move the /email/ + /maps/ folders to
 // the real domain — see OWNER-SECURITY-TODO.md. A broken <img> shows a torn
 // placeholder, so these MUST point at a host that is actually serving them.
-export const SITE_ASSET_BASE = 'https://wogococktailwalk.github.io/wogo-homepage';
+export const SITE_ASSET_BASE = 'https://www.wogococktailwalk.com';
 
 // The real WOGO logo (salmon mark on transparent — reads on the dark hero) and
 // the universal branded banner photo (email-safe JPG; used when a route has no
