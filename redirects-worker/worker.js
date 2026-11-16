@@ -120,6 +120,18 @@ export function target(url) {
 
 export default {
   async fetch(request) {
+    // Route maps (/maps/*.pdf) stay reachable for anyone with the link (the
+    // confirmation email), but search engines are told not to list them: the
+    // bars are meant to stay a surprise until someone has booked.
+    try {
+      const u0 = new URL(request.url);
+      if (u0.protocol === 'https:' && u0.pathname.toLowerCase().startsWith('/maps/')) {
+        const res = await fetch(request);
+        const out = new Response(res.body, res);
+        out.headers.set('X-Robots-Tag', 'noindex, nofollow');
+        return out;
+      }
+    } catch (e) { /* fall through to the normal handling */ }
     let to = target(request.url);
     // Plain http:// visits are sent to the secure address.
     if (!to && request.url.startsWith('http://')) to = 'https://' + request.url.slice(7);

@@ -817,6 +817,8 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       // opt-in
       const optWrap = el("label", "wc-check");
       this.optIn = el("input"); this.optIn.type = "checkbox";
+      /* Owner decision 16 Nov 2026: ticked by default; the guest can untick. */
+      this.optIn.checked = true;
       optWrap.appendChild(this.optIn);
       optWrap.appendChild(el("span", null, t.optin));
       panel.appendChild(optWrap);
