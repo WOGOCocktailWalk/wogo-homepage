@@ -18,6 +18,11 @@
 <meta name="theme-color" content="#ffaa81">
 <title>Book your Rotterdam Route 1 walk | WOGO</title>
 <link rel="canonical" href="https://www.wogococktailwalk.com/rotterdam/route-1/book/">
+<!-- i18n-alt:start (made by tools/build-nl.js; do not edit) -->
+<link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/rotterdam/route-1/book/">
+<link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/rotterdam/route-1/book/">
+<link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/rotterdam/route-1/book/">
+<!-- i18n-alt:end -->
 <meta name="description" content="Book Rotterdam Route 1, our local-favourites cocktail walk. Pick your date and time: 3 cocktails, 3 hand-picked bars, tables reserved. €29,95pp.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="WOGO Cocktail Walk">
@@ -632,7 +637,7 @@
          the route list, content pages link {BASE}#cities); route pages scroll to
          the real #book section and keep "Book now" / "Boek nu". -->
     <div class="w-nav-right">
-      <div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language: EN"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"></ul></div>
+      <div class="w-lang"><button type="button" class="w-lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language: EN"><svg class="w-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25"></circle><path d="M2.75 12h18.5M12 2.75c2.4 2.5 3.85 5.7 3.85 9.25S14.4 18.75 12 21.25c-2.4-2.5-3.85-5.7-3.85-9.25S9.6 5.25 12 2.75z"></path></svg><span class="w-lang-code">EN</span><span class="w-lang-caret" aria-hidden="true">▾</span></button><ul class="w-lang-menu" role="listbox" aria-label="Choose language"><li role="presentation"><a class="w-lang-opt" role="option" tabindex="-1" data-lang="en" hreflang="en" lang="en" href="./" aria-selected="true"><span class="w-lang-opt-code" aria-hidden="true">EN</span>English</a></li><li role="presentation"><a class="w-lang-opt" role="option" tabindex="-1" data-lang="nl" hreflang="nl" lang="nl" href="../../../nl/rotterdam/route-1/book/" aria-selected="false"><span class="w-lang-opt-code" aria-hidden="true">NL</span>Nederlands</a></li></ul></div>
       <a href="#wogo-book" class="w-nav-cta w-scroll" data-i18n="nav_cta">Book your walk</a>
       <button class="w-nav-burger" id="wNavBurger" aria-label="Open menu" aria-controls="wNavOverlay" aria-expanded="false"><span></span><span></span><span></span></button>
     </div>
@@ -2099,5 +2104,82 @@
   } catch (e) {}
 })();
 </script>
+<!-- i18n-switch:start (made by tools/build-nl.js; do not edit) -->
+<style>.w-lang-menu li{list-style:none;margin:0;padding:0}.w-lang-menu a.w-lang-opt{color:var(--wogo-ink);text-decoration:none}</style>
+<script>
+/* Language menu = real links between the English and the Dutch address of this
+   page (/faq/ <-> /nl/faq/). The choice is remembered (localStorage "wogoLang",
+   as before). Nothing here ever redirects on its own: a page only changes
+   address when the visitor clicks. */
+(function () {
+  "use strict";
+  var HERE = "en", ALT = {"en":"./","nl":"../../../nl/rotterdam/route-1/book/"}, TO_ROOT = "../../../",
+      NL_PAGES = ["","rotterdam/","utrecht/","amsterdam/","groningen/","delft/","rotterdam/route-1/","rotterdam/route-2/","rotterdam/route-3-premium/","rotterdam/route-1/book/","rotterdam/route-2/book/","rotterdam/route-3-premium/book/","amsterdam/book/","delft/book/","groningen/book/","utrecht/book/","how-it-works/","groups/","gift-cards/","about/","contact/","faq/","for-bars/","privacy/","cookies/","terms/","disclaimer/","accessibility/","complaints/"];
+  var LABEL = { en: "English", nl: "Nederlands" };
+  function remember(l) { try { localStorage.setItem("wogoLang", l); } catch (e) {} }
+  function shown() { return (document.documentElement.lang || "en").toLowerCase().indexOf("nl") === 0 ? "nl" : "en"; }
+  Array.prototype.forEach.call(document.querySelectorAll(".w-lang"), function (w) {
+    var btn = w.querySelector(".w-lang-btn"), menu = w.querySelector(".w-lang-menu");
+    if (!btn || !menu) return;
+    var now = shown();
+    menu.innerHTML = ["en", "nl"].map(function (l) {
+      return '<li role="presentation"><a class="w-lang-opt" role="option" tabindex="-1" data-lang="' + l + '" hreflang="' + l + '" lang="' + l + '" href="' + ALT[l] + '" aria-selected="' + (l === now) + '"><span class="w-lang-opt-code" aria-hidden="true">' + l.toUpperCase() + '</span>' + LABEL[l] + '</a></li>';
+    }).join("");
+    var opts = Array.prototype.slice.call(menu.querySelectorAll(".w-lang-opt"));
+    function close(refocus) { w.classList.remove("open"); btn.setAttribute("aria-expanded", "false"); if (refocus) { try { btn.focus(); } catch (e) {} } }
+    opts.forEach(function (o, i) {
+      o.addEventListener("click", function (e) {
+        var l = o.getAttribute("data-lang");
+        remember(l);
+        if (l === HERE) {
+          /* Already on this language's address. Only an English address that is
+             being shown in Dutch (browser language) needs a fresh load. */
+          e.preventDefault();
+          if (shown() !== l) { window.location.reload(); } else { close(true); }
+          return;
+        }
+        /* Go to the twin page, keeping the campaign tags and the place on the page. */
+        try {
+          var u = new URL(o.href, window.location.href);
+          new URLSearchParams(window.location.search).forEach(function (v, k) { if (!u.searchParams.has(k)) u.searchParams.set(k, v); });
+          if (window.location.hash && !u.hash) u.hash = window.location.hash;
+          o.href = u.toString();
+        } catch (err) {}
+      });
+      o.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowDown") { e.preventDefault(); (opts[i + 1] || opts[0]).focus(); }
+        else if (e.key === "ArrowUp") { e.preventDefault(); (opts[i - 1] || opts[opts.length - 1]).focus(); }
+        else if (e.key === "Home") { e.preventDefault(); opts[0].focus(); }
+        else if (e.key === "End") { e.preventDefault(); opts[opts.length - 1].focus(); }
+        else if (e.key === " " || e.key === "Spacebar") { e.preventDefault(); o.click(); }
+        else if (e.key === "Escape") { e.preventDefault(); close(true); }
+      });
+    });
+  });
+  /* An English address can still be SHOWN in Dutch (Dutch browser, or Dutch
+     chosen earlier). From there, every link to a page that exists in Dutch
+     goes to the Dutch address, so the visitor continues on real Dutch pages. */
+  if (HERE === "en") {
+    var root = new URL(TO_ROOT, window.location.href).pathname;
+    document.addEventListener("click", function (ev) {
+      try {
+        if (shown() !== "nl" || ev.defaultPrevented) return;
+        var a = ev.target && ev.target.closest ? ev.target.closest("a[href]") : null;
+        if (!a || a.classList.contains("w-lang-opt") || a.hasAttribute("download")) return;
+        var raw = a.getAttribute("href") || "";
+        if (!raw || raw.charAt(0) === "#" || /^(mailto:|tel:|javascript:)/i.test(raw)) return;
+        var u = new URL(a.href, window.location.href);
+        if (u.origin !== window.location.origin || u.pathname === window.location.pathname) return;
+        if (u.pathname.indexOf(root) !== 0) return;
+        var rel = u.pathname.slice(root.length).replace(/index\.html$/, "");
+        if (NL_PAGES.indexOf(rel) === -1) return;
+        u.pathname = root + "nl/" + rel;
+        a.href = u.toString();
+      } catch (e) {}
+    }, true);
+  }
+})();
+</script>
+<!-- i18n-switch:end -->
 </body>
 </html>

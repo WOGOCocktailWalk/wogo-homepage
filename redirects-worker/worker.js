@@ -104,9 +104,11 @@ const PREFIX = [
   ]
 ];
 
-// Old Dutch addresses (/nl/...) mirrored the English ones on Wix. Send each to
-// the page that matches, instead of all to the homepage: first a few Dutch
-// article names, then the same lookup as English, then the same section name.
+// Old Dutch addresses (/nl/...) mirrored the English ones on Wix. Each one now
+// goes to the matching DUTCH page of the new site (/nl/<new address>/): first a
+// few Dutch article names, then the same lookup as English, then the same
+// section name. Where no Dutch page exists yet (the blog) the English page is
+// used. The Dutch pages themselves (/nl/faq/ and so on) are left alone.
 const NL_POSTS = {
   "/post/de-7-beste-bars-in-utrecht-voor-een-fantastische-avond-uit": "/blog/top-7-bars-utrecht/",
   "/post/ontdek-rotterdams-nieuwe-premium-cocktailroute-met-bobby-s-gin": "/blog/rotterdam-premium-gin-walk-launch/",
@@ -118,8 +120,14 @@ const NL_POSTS = {
   "/post/beste-bars-in-amsterdam": "/amsterdam/",
   "/post/5-beste-cocktailbars-in-amsterdam-om-deze-zomer-te-bezoeken": "/amsterdam/",
   "/privacy-policy": "/privacy/",
+  "/blog-feed.xml": "/blog/",
 };
-const NEW_SECTIONS = new Set(['about', 'amsterdam', 'blog', 'contact', 'cookies', 'delft', 'faq', 'for-bars', 'gift-cards', 'groningen', 'groups', 'how-it-works', 'privacy', 'rotterdam', 'terms', 'utrecht']);
+const NEW_SECTIONS = new Set(['about', 'accessibility', 'amsterdam', 'blog', 'complaints', 'contact', 'cookies', 'delft', 'disclaimer', 'faq', 'for-bars', 'gift-cards', 'groningen', 'groups', 'how-it-works', 'privacy', 'rotterdam', 'terms', 'utrecht']);
+// The pages that exist in Dutch under /nl/. This list is written by
+// tools/build-nl.js (it reads sitemap.xml), so it always matches the site.
+// nl-pages:start (made by tools/build-nl.js; do not edit)
+const NL_PAGES = new Set(["/", "/rotterdam/", "/utrecht/", "/amsterdam/", "/groningen/", "/delft/", "/rotterdam/route-1/", "/rotterdam/route-2/", "/rotterdam/route-3-premium/", "/rotterdam/route-1/book/", "/rotterdam/route-2/book/", "/rotterdam/route-3-premium/book/", "/amsterdam/book/", "/delft/book/", "/groningen/book/", "/utrecht/book/", "/how-it-works/", "/groups/", "/gift-cards/", "/about/", "/contact/", "/faq/", "/for-bars/", "/privacy/", "/cookies/", "/terms/", "/disclaimer/", "/accessibility/", "/complaints/"]);
+// nl-pages:end
 function lookup(path) {
   let to = EXACT[path];
   if (to === undefined) {
@@ -132,13 +140,17 @@ function lookup(path) {
 function dutchTarget(path) {
   if (path !== '/nl' && !path.startsWith('/nl/')) return undefined;
   const rest = path.slice(3) || '/';
-  if (rest === '/') return '/';
-  if (NL_POSTS[rest]) return NL_POSTS[rest];
-  const mapped = lookup(rest);
-  if (mapped !== undefined) return mapped;
-  const first = rest.split('/')[1];
-  if (NEW_SECTIONS.has(first)) return rest.endsWith('/') ? rest : rest + '/';
-  return '/';
+  let to;
+  if (rest === '/') to = '/';
+  else if (NL_POSTS[rest]) to = NL_POSTS[rest];
+  else {
+    to = lookup(rest);
+    if (to === undefined) {
+      const first = rest.split('/')[1];
+      to = NEW_SECTIONS.has(first) ? rest + '/' : '/';
+    }
+  }
+  return NL_PAGES.has(to) ? '/nl' + to : to;
 }
 
 export function target(url) {
