@@ -164,8 +164,8 @@ const NL_PAGES = new Set(["/", "/rotterdam/", "/utrecht/", "/amsterdam/", "/gron
 // It is used ONLY to send old Wix addresses to a Dutch article when there is
 // one; the Dutch pages themselves are always handed through (see fetch below).
 // nl-blog:start (made by tools/build-nl.js; do not edit)
-const NL_BLOG = new Set([]);
-const NL_BLOG_INDEX = false;
+const NL_BLOG = new Set(["2026-cocktail-trends", "5-best-cocktail-bars-amsterdam-summer", "amsterdam-cocktail-week-bars", "best-bars-in-amsterdam", "best-bars-in-groningen", "best-cocktail-bars-amsterdam", "best-cocktail-bars-in-rotterdam", "birthday-celebration-ideas-netherlands", "espresso-martini-recipe", "mocktails-and-their-history", "new-bars-rotterdam-night-out", "rotterdam-premium-gin-walk-launch", "spring-cocktail-recipes", "top-7-bars-in-amsterdam", "top-7-bars-utrecht", "utrecht-night-out-cocktails", "vodka-or-gin", "what-is-a-self-guided-cocktail-walk", "winter-christmas-cocktail-recipes"]);
+const NL_BLOG_INDEX = true;
 // nl-blog:end
 function lookup(path) {
   let to = EXACT[path];
