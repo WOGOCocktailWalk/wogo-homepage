@@ -428,7 +428,7 @@ export const ANALYTICS_MAX_RANGE_DAYS = 400;
 // re-publish (or a one-off re-render pass) to pick up the change, since
 // noindex/sitemap membership is baked into the committed HTML/XML at publish
 // time, not computed at request time (the files are static).
-export const SITE_NOINDEX = true;
+export const SITE_NOINDEX = false;
 
 // The dashboard's fixed category chips (BUILD §21.4) — validated server-side
 // on every blog_posts write so a typo'd category can't silently create a

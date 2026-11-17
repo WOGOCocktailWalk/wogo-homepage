@@ -193,6 +193,8 @@ router.delete('/admin/api/blog/:id', adminApi.handleDeleteBlogPost);
 router.post('/admin/api/blog/:id/preview', adminApi.handlePreviewBlogPost);
 router.post('/admin/api/blog/:id/publish', adminApi.handlePublishBlogPost);
 router.post('/admin/api/blog/:id/unpublish', adminApi.handleUnpublishBlogPost);
+router.post('/admin/api/blog/:id/schedule', adminApi.handleScheduleBlogPost);
+router.delete('/admin/api/blog/:id/schedule', adminApi.handleUnscheduleBlogPost);
 router.post('/admin/api/blog/:id/assets', adminApi.handleUploadBlogAsset);
 
 // -- Push notifications + in-dashboard feed (migrations/0032, PWA/push build) --
@@ -383,6 +385,8 @@ async function runScheduled(event, env) {
     // on exact timing (same reasoning as the hold-expiry sweep above), and
     // the Workers free plan is already at 3 triggers (see wrangler.toml).
     await sendAbandonedSweep(env);
+    // Blog posts planned for later (dashboard → Blog → "Publish later").
+    try { await adminApi.publishDueBlogPosts(env); } catch (err) { console.error('blog_schedule_sweep_failed', err); }
 
     if (event.cron === DAILY_CRON) {
       // Once/day: GDPR retention anonymization, the R2 backup export

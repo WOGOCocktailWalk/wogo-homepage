@@ -1747,3 +1747,9 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .one-bar .capacity-hint { padding: 0; margin: 0 0 10px; }
 .one-bar-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
 .one-bar-row .grow { flex: 1; }
+
+/* Blog: "Publish later" box under the editor buttons */
+.blog-schedule { margin-top: 18px; padding: 14px 16px; border: 1px solid var(--line, rgba(0,0,0,.12)); border-radius: 12px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.blog-schedule-text { flex: 1 1 260px; font-size: 14px; line-height: 1.45; }
+.blog-schedule-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.blog-schedule-row input[type="datetime-local"] { min-height: 40px; padding: 6px 10px; font: inherit; }

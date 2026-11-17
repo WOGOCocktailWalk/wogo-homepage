@@ -2288,7 +2288,7 @@
     brevoContacts: "https://app.brevo.com/contact/list",
     stripePayments: "https://dashboard.stripe.com/payments",
     stripePayouts: "https://dashboard.stripe.com/payouts",
-    stripePromos: "https://dashboard.stripe.com/promotion_codes",
+    stripePromos: "https://dashboard.stripe.com/coupons",
     ga: "https://analytics.google.com/analytics/web/",
     gbp: "https://business.google.com/dashboard",
     gbpReviews: "https://business.google.com/reviews",
@@ -2322,7 +2322,7 @@
       links: [
         ["Payments", TOOL_LINKS.stripePayments, "Find a guest's payment, and refund it here."],
         ["Payouts", TOOL_LINKS.stripePayouts, "What Stripe has paid into the WOGO bank account, and when."],
-        ["Promotion codes", TOOL_LINKS.stripePromos, "Create or switch off a discount code."]
+        ["Promotion codes", TOOL_LINKS.stripePromos, "Opens the Coupons page in Stripe. Click a coupon to see, create or switch off its promotion codes."]
       ],
       caution: "Refunds are done here by hand. Cancelling a booking in this dashboard frees the seats and emails everyone — it does NOT refund the money."
     },
@@ -4030,7 +4030,15 @@
   const BLOG_CATEGORIES = ["City guide", "New route", "Explained", "Recipes", "News"];
   const BLOG_SITE_BASE = "https://www.wogococktailwalk.com"; // meta/canonical convention — see src/config.js:BLOG_CANONICAL_BASE
 
-  function blogStatusBadge(status) {
+  function blogWhen(iso) {
+    const d = new Date(iso);
+    if (isNaN(d)) return "";
+    return d.toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  }
+  function blogStatusBadge(status, scheduledAt) {
+    if (status !== "published" && scheduledAt) {
+      return el("span", { class: "badge hold", text: "Planned · " + blogWhen(scheduledAt) });
+    }
     return el("span", { class: "badge " + (status === "published" ? "confirmed" : "hold"), text: status === "published" ? "Published" : "Draft" });
   }
   function slugify(s) {
@@ -4139,7 +4147,7 @@
       const row = el("tr", { style: "cursor:pointer", onclick: () => openBlogEditor(p.id) }, [
         el("td", { class: "td-name", text: p.title_en }),
         el("td", { class: "td-sub", text: p.category }),
-        el("td", {}, blogStatusBadge(p.status)),
+        el("td", {}, blogStatusBadge(p.status, p.scheduled_at)),
         el("td", { class: "td-sub", text: (p.updated_by || "—") + (p.updated_at ? " · " + String(p.updated_at).slice(0, 16).replace("T", " ") : "") }),
         el("td", {}, liveLink)
       ]);
@@ -4374,6 +4382,26 @@
         openBlogEditor(data.post.id);
       } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
     }
+    async function doSchedule(value) {
+      if (!value) { toast("Choose a date and time first", "err"); return; }
+      const when = new Date(value); // the picker gives local (Dutch) time
+      if (isNaN(when)) { toast("Choose a date and time first", "err"); return; }
+      await saveDraft(true);
+      try {
+        await api("/admin/api/blog/" + post.id + "/schedule", { method: "POST", body: { publish_at: when.toISOString() } });
+        toast("Planned for " + blogWhen(when.toISOString()), "ok");
+        S.blog.loaded = false;
+        openBlogEditor(post.id);
+      } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+    }
+    async function doUnschedule() {
+      try {
+        await api("/admin/api/blog/" + post.id + "/schedule", { method: "DELETE" });
+        toast("No longer planned — it is a normal draft again", "ok");
+        S.blog.loaded = false;
+        openBlogEditor(post.id);
+      } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+    }
     async function doUnpublish() {
       if (!confirm("Take this post off the live website? (It stays here as a draft.)")) return;
       try {
@@ -4397,7 +4425,7 @@
     const card = el("div", { class: "card" });
     card.appendChild(el("div", { class: "card-head" }, [
       el("h2", { text: post.title_en || "Untitled post" }),
-      blogStatusBadge(post.status)
+      blogStatusBadge(post.status, post.scheduled_at)
     ]));
 
     // Everything below lives inside a padded body — appended straight onto the
@@ -4446,6 +4474,34 @@
       actions.appendChild(el("button", { class: "btn btn-danger", text: "Delete", onclick: doDelete }));
     }
     form.appendChild(actions);
+
+    // "Publish later": pick a moment, the website puts the post live by itself
+    // (within 5 minutes of that moment). Only for posts that are not live yet.
+    if (canWrite && post.status !== "published") {
+      const box = el("div", { class: "blog-schedule" });
+      if (post.scheduled_at) {
+        box.appendChild(el("div", { class: "blog-schedule-text" }, [
+          el("strong", { text: "Planned: " + blogWhen(post.scheduled_at) }),
+          el("span", { text: " — goes live by itself at that moment. Changes you save before then are included." })
+        ]));
+        box.appendChild(el("button", { class: "btn btn-ghost btn-sm", text: "Cancel planning", onclick: doUnschedule }));
+      } else {
+        const pad = (n) => String(n).padStart(2, "0");
+        const t = new Date(Date.now() + 24 * 3600 * 1000);
+        t.setHours(9, 0, 0, 0);
+        const def = t.getFullYear() + "-" + pad(t.getMonth() + 1) + "-" + pad(t.getDate()) + "T" + pad(t.getHours()) + ":" + pad(t.getMinutes());
+        const whenInput = el("input", { type: "datetime-local", value: def, "aria-label": "Publish date and time" });
+        box.appendChild(el("div", { class: "blog-schedule-text" }, [
+          el("strong", { text: "Publish later" }),
+          el("span", { text: " — choose a date and time and the post goes live by itself." })
+        ]));
+        box.appendChild(el("div", { class: "blog-schedule-row" }, [
+          whenInput,
+          el("button", { class: "btn btn-ghost", text: "Plan it", onclick: () => doSchedule(whenInput.value) })
+        ]));
+      }
+      form.appendChild(box);
+    }
 
     root.appendChild(card);
   }

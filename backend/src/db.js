@@ -1813,6 +1813,16 @@ export async function getSetting(db, k) {
   return row ? row.v : null;
 }
 
+export async function deleteSetting(db, k) {
+  await run(db, `DELETE FROM settings WHERE k = :k`, { k });
+}
+
+/** Every settings row whose key starts with `prefix` (used for the blog's
+ * "publish later" list — one row per scheduled post). */
+export async function listSettingsByPrefix(db, prefix) {
+  return all(db, `SELECT k, v FROM settings WHERE substr(k, 1, :n) = :prefix`, { n: prefix.length, prefix });
+}
+
 export async function setSetting(db, k, v) {
   await run(
     db,

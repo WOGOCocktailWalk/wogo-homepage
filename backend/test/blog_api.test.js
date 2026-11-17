@@ -370,9 +370,10 @@ describe('publish / unpublish — GitHub Contents API', () => {
 
     assert.ok(gh.files.has('blog/ready-post/index.html'));
     assert.ok(gh.files.has('blog/index.html'));
-    // SITE_NOINDEX is currently true in config.js — sitemap must be untouched.
-    assert.equal(SITE_NOINDEX, true);
-    assert.ok(![...gh.calls].some((c) => c.url.includes('sitemap.xml')));
+    // Site is live (SITE_NOINDEX false since 17 Nov 2026): a publish must
+    // also add the post to sitemap.xml so search engines find it.
+    assert.equal(SITE_NOINDEX, false);
+    assert.ok([...gh.calls].some((c) => c.url.includes('sitemap.xml')));
 
     const stored = await db.getBlogPost(testDb, post.id);
     assert.equal(stored.status, 'published');
@@ -551,5 +552,91 @@ describe('asset upload', () => {
     const form = new FormData();
     const res = await worker.fetch(req('POST', `/admin/api/blog/${post.id}/assets`, { cookie, formData: form }), env, CTX);
     assert.equal(res.status, 400);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// "Publish later" (17 Nov 2026) — a planned post goes live by itself
+// ---------------------------------------------------------------------------
+import { publishDueBlogPosts } from '../src/admin_api.js';
+
+describe('blog — publish later', () => {
+  async function createReady(env, cookie, slug = 'planned-post') {
+    const res = await worker.fetch(req('POST', '/admin/api/blog', { cookie, body: readyPostBody({ slug }) }), env, CTX);
+    const { post } = await res.json();
+    await db.updateBlogPost(testDb, post.id, { cover_image_path: `blog/${slug}/cover.jpg` });
+    return db.getBlogPost(testDb, post.id);
+  }
+  const inHours = (h) => new Date(Date.now() + h * 3600 * 1000).toISOString();
+
+  test('planning stores the moment, shows it in the list, and nothing is published before that moment', async () => {
+    const env = BASE_ENV(testDb);
+    const cookie = await cookieHeaderFor({ uid: null, role: 'staff', email: 's@example.com' });
+    const post = await createReady(env, cookie);
+    const when = inHours(24);
+
+    const res = await worker.fetch(req('POST', `/admin/api/blog/${post.id}/schedule`, { cookie, body: { publish_at: when } }), env, CTX);
+    assert.equal(res.status, 200);
+    assert.equal((await res.json()).post.scheduled_at, when);
+
+    const list = await (await worker.fetch(req('GET', '/admin/api/blog', { cookie }), env, CTX)).json();
+    assert.equal(list.posts.find((p) => p.id === post.id).scheduled_at, when);
+
+    const callsBefore = gh.calls.length;
+    const report = await publishDueBlogPosts(env);
+    assert.deepEqual(report.published, []);
+    assert.equal(gh.calls.length, callsBefore);
+    assert.equal((await db.getBlogPost(testDb, post.id)).status, 'draft');
+  });
+
+  test('once the moment has passed the timer publishes the post and clears the planning', async () => {
+    const env = BASE_ENV(testDb);
+    const cookie = await cookieHeaderFor({ uid: null, role: 'staff', email: 's@example.com' });
+    const post = await createReady(env, cookie);
+    const when = inHours(1);
+    await worker.fetch(req('POST', `/admin/api/blog/${post.id}/schedule`, { cookie, body: { publish_at: when } }), env, CTX);
+
+    const report = await publishDueBlogPosts(env, Date.parse(when) + 60 * 1000);
+    assert.deepEqual(report.published, [post.id]);
+    const stored = await db.getBlogPost(testDb, post.id);
+    assert.equal(stored.status, 'published');
+    assert.ok(gh.files.has('blog/planned-post/index.html'));
+    assert.equal(await db.getSetting(testDb, 'blog_schedule:' + post.id), null);
+
+    // A second tick must not publish it again.
+    const again = await publishDueBlogPosts(env, Date.parse(when) + 10 * 60 * 1000);
+    assert.deepEqual(again.published, []);
+  });
+
+  test('a moment in the past, a missing date, and an unfinished post are all refused', async () => {
+    const env = BASE_ENV(testDb);
+    const cookie = await cookieHeaderFor({ uid: null, role: 'staff', email: 's@example.com' });
+    const post = await createReady(env, cookie);
+    const past = await worker.fetch(req('POST', `/admin/api/blog/${post.id}/schedule`, { cookie, body: { publish_at: inHours(-1) } }), env, CTX);
+    assert.equal(past.status, 400);
+    const none = await worker.fetch(req('POST', `/admin/api/blog/${post.id}/schedule`, { cookie, body: {} }), env, CTX);
+    assert.equal(none.status, 400);
+
+    const bare = await (await worker.fetch(req('POST', '/admin/api/blog', { cookie, body: readyPostBody({ slug: 'no-cover' }) }), env, CTX)).json();
+    const notReady = await worker.fetch(req('POST', `/admin/api/blog/${bare.post.id}/schedule`, { cookie, body: { publish_at: inHours(5) } }), env, CTX);
+    assert.equal(notReady.status, 400);
+    assert.equal((await notReady.json()).error, 'not_ready');
+  });
+
+  test('cancelling the planning makes it a plain draft again; a viewer may not plan', async () => {
+    const env = BASE_ENV(testDb);
+    const cookie = await cookieHeaderFor({ uid: null, role: 'staff', email: 's@example.com' });
+    const post = await createReady(env, cookie);
+    const when = inHours(2);
+    await worker.fetch(req('POST', `/admin/api/blog/${post.id}/schedule`, { cookie, body: { publish_at: when } }), env, CTX);
+    const del = await worker.fetch(req('DELETE', `/admin/api/blog/${post.id}/schedule`, { cookie }), env, CTX);
+    assert.equal(del.status, 200);
+    const report = await publishDueBlogPosts(env, Date.parse(when) + 60 * 1000);
+    assert.deepEqual(report.published, []);
+    assert.equal((await db.getBlogPost(testDb, post.id)).status, 'draft');
+
+    const viewer = await cookieHeaderFor({ uid: null, role: 'viewer', email: 'v@example.com' });
+    const denied = await worker.fetch(req('POST', `/admin/api/blog/${post.id}/schedule`, { cookie: viewer, body: { publish_at: inHours(3) } }), env, CTX);
+    assert.equal(denied.status, 403);
   });
 });

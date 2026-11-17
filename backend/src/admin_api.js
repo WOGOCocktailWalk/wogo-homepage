@@ -342,6 +342,8 @@ export const ROUTE_ROLES = {
   'PUT /admin/api/blog/:id': 'staff',
   'POST /admin/api/blog/:id/publish': 'staff',
   'POST /admin/api/blog/:id/unpublish': 'staff',
+  'POST /admin/api/blog/:id/schedule': 'staff',
+  'DELETE /admin/api/blog/:id/schedule': 'staff',
   'POST /admin/api/blog/:id/assets': 'staff',
   'DELETE /admin/api/blog/:id': 'owner',
 
@@ -2609,13 +2611,15 @@ export async function handleListBlogPosts(request, env) {
     db.listBlogPosts(env.DB, status ? { status } : {}),
     db.countBlogPostsByStatus(env.DB),
   ]);
-  return json({ posts: posts.map(withCoverUrl), counts });
+  const schedule = await blogScheduleMap(env);
+  return json({ posts: posts.map(withCoverUrl).map((x) => ({ ...x, scheduled_at: schedule[x.id] || null })), counts });
 }
 
 export async function handleGetBlogPost(request, env, params) {
   const post = await db.getBlogPost(env.DB, params.id);
   if (!post) return errorJson('not_found', 'post not found', 404);
-  return json({ post: withCoverUrl(post) });
+  const scheduledAt = post.status === 'published' ? null : await db.getSetting(env.DB, BLOG_SCHEDULE_PREFIX + post.id);
+  return json({ post: { ...withCoverUrl(post), scheduled_at: scheduledAt || null } });
 }
 
 /**
@@ -2833,10 +2837,92 @@ export async function handleDeleteBlogPost(request, env, params) {
   // first, or deleting a post that ever had an image uploaded fails the
   // constraint on real D1 (the test sqlite adapter runs with foreign_keys
   // OFF, which is why this only ever surfaces against the live database).
+  await db.deleteSetting(env.DB, BLOG_SCHEDULE_PREFIX + params.id);
   await db.deleteBlogAssetsForPost(env.DB, params.id);
   await db.deleteBlogPost(env.DB, params.id);
   await audit(env, request, 'blog.delete', 'blog_post', params.id, { slug: existing.slug });
   return json({ ok: true });
+}
+
+// ---------------------------------------------------------------------------
+// "Publish later" (17 Nov 2026). A planned post is one row in the generic
+// settings table — key `blog_schedule:<post id>`, value the UTC moment — so
+// no database change was needed. The 5-minute timer (src/index.js) calls
+// publishDueBlogPosts(), which runs the exact same publish as the button.
+// ---------------------------------------------------------------------------
+const BLOG_SCHEDULE_PREFIX = 'blog_schedule:';
+const BLOG_SCHEDULE_GIVE_UP_MS = 6 * 3600 * 1000; // stop retrying a failing post after 6h
+
+async function blogScheduleMap(env) {
+  const rows = await db.listSettingsByPrefix(env.DB, BLOG_SCHEDULE_PREFIX);
+  const map = {};
+  for (const r of rows || []) map[r.k.slice(BLOG_SCHEDULE_PREFIX.length)] = r.v;
+  return map;
+}
+
+/** POST /admin/api/blog/:id/schedule (staff+) — body `{ publish_at }` (ISO
+ * date-time). The post must already be complete enough to publish, so a
+ * planned post can't silently fail later for a missing photo. */
+export async function handleScheduleBlogPost(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const existing = await db.getBlogPost(env.DB, params.id);
+  if (!existing) return errorJson('not_found', 'post not found', 404);
+  if (existing.status === 'published') return errorJson('bad_request', 'this post is already live', 400);
+  let body;
+  try { body = await request.json(); } catch { return errorJson('bad_request', 'invalid JSON', 400); }
+  const when = Date.parse(body && body.publish_at);
+  if (!Number.isFinite(when)) return errorJson('bad_request', 'choose a date and time', 400);
+  if (when < Date.now() + 60 * 1000) return errorJson('bad_request', 'choose a moment in the future', 400);
+  if (when > Date.now() + 366 * 24 * 3600 * 1000) return errorJson('bad_request', 'choose a moment within one year', 400);
+  const readyCheck = checkPublishReady(existing);
+  if (!readyCheck.ok) return errorJson('not_ready', readyCheck.message, 400);
+  const iso = new Date(when).toISOString();
+  await db.setSetting(env.DB, BLOG_SCHEDULE_PREFIX + params.id, iso);
+  await audit(env, request, 'blog.schedule', 'blog_post', params.id, { slug: existing.slug, publish_at: iso });
+  return json({ post: { ...withCoverUrl(existing), scheduled_at: iso } });
+}
+
+/** DELETE /admin/api/blog/:id/schedule (staff+) — back to a plain draft. */
+export async function handleUnscheduleBlogPost(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const existing = await db.getBlogPost(env.DB, params.id);
+  if (!existing) return errorJson('not_found', 'post not found', 404);
+  await db.deleteSetting(env.DB, BLOG_SCHEDULE_PREFIX + params.id);
+  await audit(env, request, 'blog.unschedule', 'blog_post', params.id, { slug: existing.slug });
+  return json({ post: { ...withCoverUrl(existing), scheduled_at: null } });
+}
+
+/** Called by the 5-minute timer: publishes every planned post whose moment
+ * has come. Returns a small report (used by the tests). A post that fails
+ * stays planned and is retried on the next tick, for at most 6 hours. */
+export async function publishDueBlogPosts(env, now = Date.now()) {
+  const report = { published: [], failed: [], dropped: [] };
+  const map = await blogScheduleMap(env);
+  for (const [id, iso] of Object.entries(map)) {
+    const due = Date.parse(iso);
+    if (!Number.isFinite(due)) { await db.deleteSetting(env.DB, BLOG_SCHEDULE_PREFIX + id); report.dropped.push(id); continue; }
+    if (due > now) continue;
+    const post = await db.getBlogPost(env.DB, id);
+    if (!post || post.status === 'published') { await db.deleteSetting(env.DB, BLOG_SCHEDULE_PREFIX + id); report.dropped.push(id); continue; }
+    let ok = false;
+    try {
+      const req = new Request('https://internal.invalid/admin/api/blog/' + id + '/publish', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'wogo-admin', 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      req.adminSession = { role: 'owner', email: 'planned publish' };
+      const res = await handlePublishBlogPost(req, env, { id });
+      ok = res.status === 200;
+      if (!ok) console.error('blog_scheduled_publish_failed', id, res.status, await res.text());
+    } catch (err) {
+      console.error('blog_scheduled_publish_failed', id, String(err && err.message ? err.message : err));
+    }
+    if (ok) { report.published.push(id); continue; } // handlePublishBlogPost cleared the row
+    if (now - due > BLOG_SCHEDULE_GIVE_UP_MS) { await db.deleteSetting(env.DB, BLOG_SCHEDULE_PREFIX + id); report.dropped.push(id); }
+    else report.failed.push(id);
+  }
+  return report;
 }
 
 /**
@@ -2983,6 +3069,7 @@ export async function handlePublishBlogPost(request, env, params) {
   await republishBlogIndex(env, branch, actor);
   await updateSitemapForPost(env, post, branch, { add: true });
 
+  await db.deleteSetting(env.DB, BLOG_SCHEDULE_PREFIX + params.id); // it's live now: nothing left to plan
   await audit(env, request, 'blog.publish', 'blog_post', params.id, { slug: post.slug, branch, commit: postResult.commit_sha });
   return json({ post: withCoverUrl(post), commit_sha: postResult.commit_sha });
 }
