@@ -301,6 +301,13 @@ export const HEALTH_CHECK_BASE_URL_VAR = 'HEALTH_CHECK_BASE_URL';
 // than this many months. Default 24 (owner's stated default).
 export const GDPR_RETENTION_MONTHS = 24;
 
+// Enquiries, group requests and waiting-list entries (the `inquiries` table):
+// the privacy page promises they are kept up to 2 years after the last
+// contact. The table has no "last contact" column, so the age is measured
+// from created_at (the first message): a little stricter than the promise,
+// never looser. Deleted by the nightly job (src/retention.js).
+export const INQUIRY_RETENTION_MONTHS = 24;
+
 // Daily D1 -> R2 export (src/backup.js): how many days of daily snapshots to
 // keep in the bucket before the cron prunes older ones. R2's free tier is
 // 10GB storage — at WOGO's volume (a few thousand bookings) this retention

@@ -2059,17 +2059,57 @@ export async function pingDb(db) {
 // ever touches rows it hasn't already anonymized.
 // ---------------------------------------------------------------------------
 
+/**
+ * THE one definition of "anonymise a booking", shared by the nightly 24-month
+ * job (anonymizeOldBookings below) and the owner's "erase one customer" tool
+ * (eraseCustomerData), so the two can never drift apart.
+ *
+ * Cleared: name, email (replaced by a unique unreachable placeholder), phone,
+ * notes AND addon_notes (allergy/dietary text, possibly health data), the
+ * transient hold ip, and the first-touch marketing fields (utm_*, referrer,
+ * landing_path; the dashboard's analytics never look back further than
+ * ANALYTICS_MAX_RANGE_DAYS = 400 days, so nothing reads them after 24 months).
+ *
+ * KEPT on purpose (financial / accounting facts, no free text): route, date,
+ * slot, party, status, price-related columns (discount_code/discount_cents,
+ * payment_status, gift_code/gift_applied_cents), stripe_session and
+ * stripe_payment_intent (needed to reconcile with Stripe), locale,
+ * marketing_opt_in, created_at, and the booking_addons rows (they only hold
+ * name snapshots, quantities and prices, no guest text).
+ */
+export const ANONYMIZE_BOOKING_SET_SQL = `name = '[deleted]', email = 'deleted-' || id || '@wogoamsterdam.invalid', phone = NULL,
+        notes = NULL, addon_notes = NULL, ip = NULL,
+        utm_source = NULL, utm_medium = NULL, utm_campaign = NULL, utm_content = NULL,
+        referrer = NULL, landing_path = NULL`;
+
+/** True when a booking row still carries something to scrub. Idempotence
+ * guard: after the UPDATE every one of these is empty, so a re-run touches
+ * nothing. It deliberately is NOT just `name != '[deleted]'`: rows that were
+ * anonymised by an older version of this job kept their add-on notes and
+ * marketing fields, and must still be cleaned. */
+export const BOOKING_NEEDS_SCRUB_SQL = `(name != '[deleted]' OR phone IS NOT NULL OR notes IS NOT NULL OR addon_notes IS NOT NULL
+        OR utm_source IS NOT NULL OR utm_medium IS NOT NULL OR utm_campaign IS NOT NULL OR utm_content IS NOT NULL
+        OR referrer IS NOT NULL OR landing_path IS NOT NULL)`;
+
 export async function anonymizeOldBookings(db, beforeStr) {
   const result = await run(
     db,
     `UPDATE bookings
-        SET name = '[deleted]', email = 'deleted-' || id || '@wogoamsterdam.invalid', phone = NULL, notes = NULL
+        SET ${ANONYMIZE_BOOKING_SET_SQL}
       WHERE created_at < :before
         AND status IN ('confirmed', 'confirmed_conflict', 'cancelled', 'expired')
-        AND name != '[deleted]'`,
+        AND ${BOOKING_NEEDS_SCRUB_SQL}`,
     { before: beforeStr }
   );
   return { anonymized: result.meta.changes };
+}
+
+/** Deletes enquiries (contact messages, group requests AND waiting-list
+ * entries, which are `inquiries` rows) created before `beforeStr`.
+ * There is no "last contact" column, so age is measured from created_at. */
+export async function deleteOldInquiries(db, beforeStr) {
+  const result = await run(db, `DELETE FROM inquiries WHERE created_at < :before`, { before: beforeStr });
+  return result.meta.changes;
 }
 
 // ---------------------------------------------------------------------------

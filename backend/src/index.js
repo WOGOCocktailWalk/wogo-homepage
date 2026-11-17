@@ -26,7 +26,7 @@ import { runHealthCheck } from './healthcheck.js';
 import { setPromotionCodeActive } from './stripe.js';
 import { SCHEDULED_PROMO_ACTIVATIONS } from './config.js';
 import { retryFailedEmails } from './email_retry.js';
-import { runGdprRetention } from './retention.js';
+import { runGdprRetention, runInquiryRetention } from './retention.js';
 import { exportBackupToR2 } from './backup.js';
 import { retryBrevoSyncQueue } from './brevo_sync.js';
 import { sendDailyReviewRequests } from './reviews.js';
@@ -409,6 +409,7 @@ async function runScheduled(event, env) {
       // (no value in pruning these every 5 minutes given their multi-month
       // retention windows).
       await runGdprRetention(env);
+      await runInquiryRetention(env);
       await pruneErrorLog(env.DB, sqliteMinutesAgo(ERROR_LOG_RETENTION_MINUTES));
       await pruneAdminAudit(env.DB, sqliteMinutesAgo(ADMIN_AUDIT_RETENTION_MINUTES));
       await pruneResolvedFailedEmails(env.DB, sqliteMinutesAgo(FAILED_EMAIL_RESOLVED_RETENTION_MINUTES));
