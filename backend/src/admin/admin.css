@@ -1753,3 +1753,11 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .blog-schedule-text { flex: 1 1 260px; font-size: 14px; line-height: 1.45; }
 .blog-schedule-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .blog-schedule-row input[type="datetime-local"] { min-height: 40px; padding: 6px 10px; font: inherit; }
+
+/* Waiting list */
+.wl-actions { white-space: nowrap; text-align: right; }
+.wl-actions .btn + .btn { margin-left: 6px; }
+.wl-note { max-width: 260px; white-space: normal; }
+tr.wl-done td { opacity: .55; }
+tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
+.wl-foot { font-size: 13px; opacity: .8; }

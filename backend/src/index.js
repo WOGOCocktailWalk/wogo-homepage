@@ -173,6 +173,9 @@ router.post('/admin/api/gift-cards/:code/void', adminApi.handleVoidGiftCard);
 
 // -- Contact + group-booking inquiries (migrations/0021) ---------------------
 router.get('/admin/api/inquiries', adminApi.handleListInquiries);
+router.post('/admin/api/waitlist', adminApi.handleAddWaitlistEntry);
+router.post('/admin/api/inquiries/:id/status', adminApi.handleSetInquiryStatus);
+router.delete('/admin/api/inquiries/:id', adminApi.handleDeleteWaitlistEntry);
 
 // -- Newsletter subscribers (migrations/0024, BUILD §17) ---------------------
 router.post('/admin/api/brevo/setup', adminApi.handleBrevoSetup);

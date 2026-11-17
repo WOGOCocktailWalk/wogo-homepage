@@ -1649,6 +1649,19 @@ export async function createInquiry(db, params) {
   return first(db, `SELECT * FROM inquiries WHERE id = :id`, { id: params.id });
 }
 
+export async function getInquiry(db, id) {
+  return first(db, `SELECT * FROM inquiries WHERE id = :id`, { id });
+}
+
+export async function updateInquiryStatus(db, id, status) {
+  await run(db, `UPDATE inquiries SET status = :status WHERE id = :id`, { id, status });
+  return getInquiry(db, id);
+}
+
+export async function deleteInquiry(db, id) {
+  await run(db, `DELETE FROM inquiries WHERE id = :id`, { id });
+}
+
 /** GET /admin/api/inquiries — newest first. No filters/pagination yet (low
  * volume expected); add when the admin UI for this lands (see SETUP.md).
  * Tiebreak on `rowid` (monotonic per insert) as well as `created_at`:

@@ -640,3 +640,62 @@ describe('blog — publish later', () => {
     assert.equal(denied.status, 403);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Waiting list by hand (17 Nov 2026) — lives here because this file already
+// has the admin-session + database set-up these tests need.
+// ---------------------------------------------------------------------------
+describe('waiting list — add by hand', () => {
+  test('a phone-only guest is added, shows up in the list as a waitlist row, and nothing is sent', async () => {
+    const env = BASE_ENV(testDb);
+    const cookie = await cookieHeaderFor({ uid: null, role: 'staff', email: 's@example.com' });
+    const before = gh.calls.length;
+    const res = await worker.fetch(req('POST', '/admin/api/waitlist', { cookie, body: {
+      name: '', phone: '+31 6 00000000', city: 'Utrecht', date: 'Sat 31 Jan 2027', party_size: 4, note: 'asked via WhatsApp',
+    } }), env, CTX);
+    assert.equal(res.status, 201);
+    const { inquiry } = await res.json();
+    assert.equal(inquiry.name, 'Name unknown');
+    assert.equal(inquiry.email, '');
+    assert.equal(inquiry.phone, '+31 6 00000000');
+    assert.equal(inquiry.party_size, 4);
+    assert.match(inquiry.message, /^\[Utrecht waitlist\]/);
+    assert.match(inquiry.message, /asked via WhatsApp/);
+    assert.equal(gh.calls.length, before); // no outgoing request of any kind (no mail, no push)
+
+    const list = await (await worker.fetch(req('GET', '/admin/api/inquiries', { cookie }), env, CTX)).json();
+    assert.equal(list.inquiries.length, 1);
+  });
+
+  test('needs a way to reach the guest, a city, and a sensible email / guest count', async () => {
+    const env = BASE_ENV(testDb);
+    const cookie = await cookieHeaderFor({ uid: null, role: 'staff', email: 's@example.com' });
+    const post = (body) => worker.fetch(req('POST', '/admin/api/waitlist', { cookie, body }), env, CTX);
+    assert.equal((await post({ name: 'A', city: 'Utrecht' })).status, 400);
+    assert.equal((await post({ name: 'A', phone: '06', city: '' })).status, 400);
+    assert.equal((await post({ name: 'A', email: 'not-an-email', city: 'Utrecht' })).status, 400);
+    assert.equal((await post({ name: 'A', phone: '06', city: 'Utrecht', party_size: 'many' })).status, 400);
+    assert.equal((await post({ name: 'A', email: 'A@Example.com', city: 'Utrecht' })).status, 201);
+  });
+
+  test('marking as told, and removing — but never an ordinary contact message; viewers may do neither', async () => {
+    const env = BASE_ENV(testDb);
+    const cookie = await cookieHeaderFor({ uid: null, role: 'staff', email: 's@example.com' });
+    const { inquiry } = await (await worker.fetch(req('POST', '/admin/api/waitlist', { cookie, body: { name: 'Roos', phone: '06', city: 'Utrecht' } }), env, CTX)).json();
+
+    const told = await worker.fetch(req('POST', `/admin/api/inquiries/${inquiry.id}/status`, { cookie, body: { status: 'closed' } }), env, CTX);
+    assert.equal((await told.json()).inquiry.status, 'closed');
+    assert.equal((await worker.fetch(req('POST', `/admin/api/inquiries/${inquiry.id}/status`, { cookie, body: { status: 'nonsense' } }), env, CTX)).status, 400);
+
+    const contact = await db.createInquiry(testDb, { id: 'inq_plain', kind: 'contact', name: 'X', email: 'x@example.com', message: 'Just a question' });
+    assert.equal((await worker.fetch(req('DELETE', `/admin/api/inquiries/${contact.id}`, { cookie }), env, CTX)).status, 400);
+    assert.ok(await db.getInquiry(testDb, 'inq_plain'));
+
+    const viewer = await cookieHeaderFor({ uid: null, role: 'viewer', email: 'v@example.com' });
+    assert.equal((await worker.fetch(req('DELETE', `/admin/api/inquiries/${inquiry.id}`, { cookie: viewer }), env, CTX)).status, 403);
+    assert.equal((await worker.fetch(req('POST', '/admin/api/waitlist', { cookie: viewer, body: { name: 'A', phone: '06', city: 'Utrecht' } }), env, CTX)).status, 403);
+
+    assert.equal((await worker.fetch(req('DELETE', `/admin/api/inquiries/${inquiry.id}`, { cookie }), env, CTX)).status, 200);
+    assert.equal(await db.getInquiry(testDb, inquiry.id), null);
+  });
+});

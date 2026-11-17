@@ -300,6 +300,9 @@ export const ROUTE_ROLES = {
   'GET /admin/api/gift-cards': 'staff',
   'POST /admin/api/gift-cards/:code/void': 'staff',
   'GET /admin/api/inquiries': 'staff',
+  'POST /admin/api/waitlist': 'staff',
+  'POST /admin/api/inquiries/:id/status': 'staff',
+  'DELETE /admin/api/inquiries/:id': 'staff',
   'GET /admin/api/subscribers': 'staff',
 
   'POST /admin/api/routes': 'owner',
@@ -1862,6 +1865,88 @@ export async function handleListGiftCards(request, env) {
 export async function handleListInquiries(request, env) {
   const inquiries = await db.listInquiries(env.DB);
   return json({ inquiries });
+}
+
+// ---------------------------------------------------------------------------
+// Waiting list by hand (17 Nov 2026). Guests who ask by WhatsApp, phone or
+// mail to be told when a closed walk reopens are added here by the team, so
+// the dashboard holds the ONE complete list (website-form sign-ups land in
+// the same table by themselves). Deliberately sends NOTHING: no mail to the
+// guest (they were already answered personally), no owner mail, no push.
+// A waitlist row is an `inquiries` row whose message starts with
+// "[<City> waitlist]" — the same marker the website form writes.
+// ---------------------------------------------------------------------------
+const WAITLIST_MAX = { name: 120, email: 200, phone: 40, city: 40, date: 80, note: 1000 };
+
+/** POST /admin/api/waitlist (staff+). Email is optional; a phone number
+ * alone is enough. */
+export async function handleAddWaitlistEntry(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  let body;
+  try { body = await request.json(); } catch { return errorJson('bad_request', 'invalid JSON', 400); }
+  const str = (v, max) => stripHtmlTags(typeof v === 'string' ? v : '', max).trim();
+  const name = str(body && body.name, WAITLIST_MAX.name) || 'Name unknown';
+  const email = str(body && body.email, WAITLIST_MAX.email).toLowerCase();
+  const phone = str(body && body.phone, WAITLIST_MAX.phone);
+  const city = str(body && body.city, WAITLIST_MAX.city);
+  const date = str(body && body.date, WAITLIST_MAX.date);
+  const note = str(body && body.note, WAITLIST_MAX.note);
+  if (!city || /[\[\]]/.test(city)) return errorJson('bad_request', 'choose a city', 400);
+  if (!email && !phone) return errorJson('bad_request', 'fill in a phone number or an email address, so we can reach this guest', 400);
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return errorJson('bad_request', 'that email address does not look right', 400);
+  let partySize = null;
+  if (body && body.party_size != null && body.party_size !== '') {
+    partySize = Number(body.party_size);
+    if (!Number.isInteger(partySize) || partySize < 1 || partySize > 200) {
+      return errorJson('bad_request', 'guests must be a whole number', 400);
+    }
+  }
+  const session = request.adminSession;
+  const actor = session && session.email ? session.email : 'token';
+  const inquiry = await db.createInquiry(env.DB, {
+    id: `inq_${crypto.randomUUID()}`,
+    kind: 'contact',
+    name,
+    email, // '' when the guest only gave a phone number (the column is NOT NULL)
+    phone: phone || null,
+    city,
+    date: date || null,
+    party_size: partySize,
+    message: `[${city} waitlist]\n\nAdded by hand (${actor})${note ? '\n' + note : ''}`,
+    locale: body && body.locale === 'en' ? 'en' : 'nl',
+  });
+  await audit(env, request, 'waitlist.add', 'inquiry', inquiry.id, { city, by_hand: true });
+  return json({ inquiry }, 201);
+}
+
+/** POST /admin/api/inquiries/:id/status (staff+) — body `{ status }`. Used
+ * by the waiting list to tick someone off once they have been told. */
+export async function handleSetInquiryStatus(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  let body;
+  try { body = await request.json(); } catch { return errorJson('bad_request', 'invalid JSON', 400); }
+  const status = body && body.status;
+  if (!['new', 'read', 'replied', 'closed'].includes(status)) return errorJson('bad_request', 'unknown status', 400);
+  const existing = await db.getInquiry(env.DB, params.id);
+  if (!existing) return errorJson('not_found', 'not found', 404);
+  const inquiry = await db.updateInquiryStatus(env.DB, params.id, status);
+  await audit(env, request, 'inquiry.status', 'inquiry', params.id, { status });
+  return json({ inquiry });
+}
+
+/** DELETE /admin/api/inquiries/:id (staff+) — ONLY for waiting-list rows
+ * (a mistake, or a guest who no longer wants to be on it). Ordinary contact
+ * and group messages are never deleted from here. */
+export async function handleDeleteWaitlistEntry(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  const existing = await db.getInquiry(env.DB, params.id);
+  if (!existing) return errorJson('not_found', 'not found', 404);
+  if (!/^\[.{2,40} waitlist\]/i.test(String(existing.message || ''))) {
+    return errorJson('bad_request', 'only waiting-list entries can be removed here', 400);
+  }
+  await db.deleteInquiry(env.DB, params.id);
+  await audit(env, request, 'waitlist.remove', 'inquiry', params.id, { city: existing.city });
+  return json({ ok: true });
 }
 
 /** POST /admin/api/gift-cards/:code/void — owner cancels an active card (e.g.

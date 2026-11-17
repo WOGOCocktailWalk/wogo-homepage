@@ -325,6 +325,7 @@
       customers: ["Customers", "Who books with you, how often, and what they spend"],
       hours: ["Participants per hour", "Who is arriving, and when — pick a date"],
       routes: ["Route manager", "Days, times, seats, bars and one-off date changes"],
+      waitlist: ["Waiting list", "Guests who want a message when a closed walk opens again"],
       giftcards: ["Gift cards", "Every card sold, its balance, and who it's for"],
       subscribers: ["Subscribers", "The newsletter list — signups, booking opt-ins, and imports"],
       blog: ["Blog", "Write, preview and publish posts to the website"],
@@ -343,6 +344,7 @@
     else if (view === "customers") renderCustomers(target);
     else if (view === "hours") renderHours(target);
     else if (view === "routes") renderRoutes(target);
+    else if (view === "waitlist") renderWaitlist(target);
     else if (view === "giftcards") renderGiftCards(target);
     else if (view === "subscribers") renderSubscribers(target);
     else if (view === "blog") renderBlog(target);
@@ -2468,6 +2470,184 @@
     return el("span", { class: "badge " + cls, text: label });
   }
 
+  /* ======================================================================
+     WAITING LIST (17 Nov 2026) — one complete list of guests who want a
+     message when a closed walk reopens. Website-form sign-ups arrive here by
+     themselves; guests who asked by WhatsApp/phone/mail are added by hand.
+     Adding by hand sends NOTHING to the guest.
+     ====================================================================== */
+  const WAITLIST_CITIES = ["Utrecht", "Amsterdam", "Rotterdam", "Delft", "Groningen"];
+  let waitlistRows = null;
+
+  function waitlistCityOf(q) {
+    const m = /^\[(.{2,40}) waitlist\]/i.exec(String((q && q.message) || ""));
+    return m ? m[1] : null;
+  }
+  function waitlistNote(q) {
+    return String(q.message || "")
+      .replace(/^\[.{2,40} waitlist\]\s*/i, "")
+      .replace(/^Added by hand \([^)]*\)\s*/i, "")
+      .replace(/\n+/g, " · ")
+      .trim();
+  }
+  function waLink(phone) {
+    const digits = String(phone || "").replace(/[^0-9]/g, "").replace(/^0(?=6)/, "31");
+    return digits ? "https://wa.me/" + digits : null;
+  }
+
+  function renderWaitlist(root) {
+    clear(root);
+    root.appendChild(el("div", { id: "wl-holder" }));
+    loadWaitlist();
+  }
+
+  async function loadWaitlist() {
+    const holder = $("#wl-holder");
+    if (!holder) return;
+    clear(holder);
+    holder.appendChild(skeletonCard());
+    try {
+      const data = await api("/admin/api/inquiries");
+      waitlistRows = (data.inquiries || []).filter((q) => waitlistCityOf(q));
+      paintWaitlist();
+    } catch (e) {
+      if (e.message !== "unauthenticated") { clear(holder); holder.appendChild(errorCard(e.message, loadWaitlist)); }
+    }
+  }
+
+  function paintWaitlist() {
+    const holder = $("#wl-holder");
+    if (!holder) return;
+    clear(holder);
+    const canWrite = S.me && S.me.role !== "viewer";
+    const list = waitlistRows || [];
+    const waiting = list.filter((q) => q.status !== "closed");
+    const guests = waiting.reduce((a, q) => a + (q.party_size || 0), 0);
+
+    const card = el("div", { class: "card" });
+    const head = [
+      el("h2", { text: "Waiting list" }),
+      el("span", { class: "count-badge", text: waiting.length + " waiting · " + guests + " guests" }),
+      el("div", { class: "grow" })
+    ];
+    if (canWrite) head.push(el("button", { class: "btn btn-primary btn-sm", text: "+ Add someone", onclick: openWaitlistForm }));
+    card.appendChild(el("div", { class: "card-head" }, head));
+
+    if (list.length === 0) {
+      card.appendChild(el("div", { class: "empty" }, [
+        el("div", { class: "big", text: "⏳" }),
+        el("div", { text: "Nobody is waiting. Sign-ups from the website appear here by themselves; add WhatsApp and phone requests with “Add someone”." })
+      ]));
+      holder.appendChild(card);
+      return;
+    }
+
+    const scroll = el("div", { class: "table-scroll" });
+    const t = el("table", { class: "data" });
+    t.appendChild(el("thead", {}, el("tr", {}, [
+      th("Name"), th("Contact"), th("City"), th("Wants"), th("Guests", "metric"), th("Note"), th("Added"), th("Status"), th("")
+    ])));
+    const tb = el("tbody");
+    // Still waiting first, then the people already told; newest on top within each.
+    list.slice().sort((a, b) => (a.status === "closed") - (b.status === "closed")).forEach((q) => {
+      const done = q.status === "closed";
+      const contact = el("td", { class: "td-sub" });
+      if (q.phone) {
+        const wa = waLink(q.phone);
+        contact.appendChild(wa ? el("a", { href: wa, target: "_blank", rel: "noopener", text: q.phone }) : el("span", { text: q.phone }));
+      }
+      if (q.phone && q.email) contact.appendChild(el("br"));
+      if (q.email) contact.appendChild(el("a", { href: "mailto:" + q.email, text: q.email }));
+      const actions = el("td", { class: "wl-actions" });
+      if (canWrite) {
+        actions.appendChild(el("button", {
+          class: "btn btn-quiet btn-sm",
+          text: done ? "Back to waiting" : "Mark as told",
+          onclick: () => setWaitlistStatus(q, done ? "new" : "closed")
+        }));
+        actions.appendChild(el("button", { class: "btn btn-quiet btn-sm", text: "Remove", onclick: () => removeWaitlist(q) }));
+      }
+      tb.appendChild(el("tr", { class: done ? "wl-done" : null }, [
+        el("td", { class: "td-name", text: q.name }),
+        contact,
+        el("td", { class: "td-sub", text: waitlistCityOf(q) }),
+        el("td", { class: "td-sub", text: q.date || "no date yet" }),
+        el("td", { class: "metric", text: q.party_size != null ? String(q.party_size) : "—" }),
+        el("td", { class: "td-sub wl-note", text: waitlistNote(q) || "—" }),
+        el("td", { class: "td-sub", text: String(q.created_at || "").slice(0, 10) }),
+        el("td", {}, el("span", { class: "badge " + (done ? "confirmed" : "hold"), text: done ? "Told" : "Waiting" })),
+        actions
+      ]));
+    });
+    t.appendChild(tb);
+    scroll.appendChild(t);
+    card.appendChild(scroll);
+    card.appendChild(el("div", { class: "card-body wl-foot", text: "Adding someone here sends them nothing. Tap a phone number to open WhatsApp, or an email address to write to them. “Mark as told” once you have let them know the walk is open again." }));
+    holder.appendChild(card);
+  }
+
+  async function setWaitlistStatus(q, status) {
+    try {
+      await api("/admin/api/inquiries/" + q.id + "/status", { method: "POST", body: { status } });
+      q.status = status;
+      paintWaitlist();
+    } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+  }
+  async function removeWaitlist(q) {
+    if (!confirm("Remove " + q.name + " from the waiting list? This cannot be undone.")) return;
+    try {
+      await api("/admin/api/inquiries/" + q.id, { method: "DELETE" });
+      waitlistRows = (waitlistRows || []).filter((x) => x.id !== q.id);
+      toast("Removed from the waiting list", "ok");
+      paintWaitlist();
+    } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+  }
+
+  function openWaitlistForm() {
+    $("#drawer-title").textContent = "Add to the waiting list";
+    const body = $("#drawer-body");
+    clear(body);
+    const name = el("input", { type: "text", placeholder: "Leave empty if you don't know the name" });
+    const phone = el("input", { type: "tel", placeholder: "+31 6 12345678" });
+    const email = el("input", { type: "email", placeholder: "Optional" });
+    const city = el("select", {}, WAITLIST_CITIES.map((c) => el("option", { value: c, text: c })));
+    const date = el("input", { type: "text", placeholder: "e.g. Sat 16 Jan 2027, or “29 or 30 Jan”" });
+    const guests = el("input", { type: "number", min: "1", max: "200", inputmode: "numeric", placeholder: "2" });
+    const lang = el("select", {}, [el("option", { value: "nl", text: "Dutch" }), el("option", { value: "en", text: "English" })]);
+    const note = el("textarea", { rows: "3", placeholder: "Optional — e.g. gift for a friend, asked via WhatsApp" });
+    body.appendChild(el("p", { class: "td-sub", text: "For guests who asked by WhatsApp, phone or email. Nothing is sent to them." }));
+    body.appendChild(field("Name", name));
+    body.appendChild(field("Phone / WhatsApp", phone));
+    body.appendChild(field("Email", email));
+    body.appendChild(field("City", city));
+    body.appendChild(field("Preferred date", date));
+    body.appendChild(field("Guests", guests));
+    body.appendChild(field("Language", lang));
+    body.appendChild(field("Note", note));
+    const foot = $("#drawer-foot");
+    clear(foot);
+    const save = el("button", { class: "btn btn-primary", text: "Add to waiting list" });
+    save.addEventListener("click", async () => {
+      save.disabled = true;
+      try {
+        const data = await api("/admin/api/waitlist", { method: "POST", body: {
+          name: name.value, phone: phone.value, email: email.value, city: city.value,
+          date: date.value, party_size: guests.value, locale: lang.value, note: note.value
+        } });
+        waitlistRows = [data.inquiry].concat(waitlistRows || []);
+        toast("Added to the waiting list", "ok");
+        closeDrawer();
+        paintWaitlist();
+      } catch (e) {
+        save.disabled = false;
+        if (e.message !== "unauthenticated") toast(e.message, "err");
+      }
+    });
+    foot.appendChild(save);
+    foot.appendChild(el("button", { class: "btn btn-ghost", text: "Cancel", onclick: closeDrawer }));
+    showDrawer();
+  }
+
   function renderGiftCards(root) {
     clear(root);
     root.appendChild(el("div", { class: "stat-row", id: "gc-stats" }));
@@ -4591,7 +4771,7 @@
     [
       ["Type", q.kind === "group" ? "Group booking" : "Contact"],
       ["Name", q.name],
-      ["Email", q.email],
+      ["Email", q.email || "—"],
       ["Phone", q.phone || "—"],
       ["City", q.city || "—"],
       ["Date", q.date || "—"],
@@ -4605,7 +4785,8 @@
     body.appendChild(kv);
     const foot = $("#drawer-foot");
     clear(foot);
-    foot.appendChild(el("a", { class: "btn btn-primary", href: "mailto:" + q.email, text: "Reply by email" }));
+    if (q.email) foot.appendChild(el("a", { class: "btn btn-primary", href: "mailto:" + q.email, text: "Reply by email" }));
+    else if (q.phone && waLink(q.phone)) foot.appendChild(el("a", { class: "btn btn-primary", href: waLink(q.phone), target: "_blank", rel: "noopener", text: "Open WhatsApp" }));
     foot.appendChild(el("button", { class: "btn btn-ghost", text: "Close", onclick: closeDrawer }));
     showDrawer();
   }
