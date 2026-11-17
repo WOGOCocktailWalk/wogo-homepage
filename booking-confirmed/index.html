@@ -707,6 +707,12 @@
       <a href="../#cities" class="conf-ghost" data-i18n="conf_cta_more">Explore more cities</a>
     </div>
   </div>
+  <div id="conf-slotfull" hidden>
+    <div class="conf-emoji">💌</div>
+    <h2 id="conf-slotfull-h"></h2>
+    <p id="conf-slotfull-p"></p>
+    <div class="conf-cta"><a href="../" class="w-nav-cta" data-i18n="conf_cta_home">Back to home</a></div>
+  </div>
   <div id="conf-fallback" hidden>
     <div class="conf-emoji">✅</div>
     <h2 data-i18n="conf_fb_h">Thank you — your payment went through</h2>
@@ -2132,7 +2138,7 @@
   var API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
   var PIXEL_ID = "317282807557294";
   function $(id){ return document.getElementById(id); }
-  function show(which){ ['conf-loading','conf-ok','conf-fallback'].forEach(function(id){ var el=$(id); if(el) el.hidden=(id!==which); }); }
+  function show(which){ ['conf-loading','conf-ok','conf-slotfull','conf-fallback'].forEach(function(id){ var el=$(id); if(el) el.hidden=(id!==which); }); }
   function lang(){ return document.documentElement.lang === 'nl' ? 'nl' : 'en'; }
   var LABELS = { en:{exp:'Experience',date:'Date',time:'Start time',guests:'Guests',gift:'Gift card',total:'Total paid',g1:'guest',gN:'guests'},
                  nl:{exp:'Ervaring',date:'Datum',time:'Starttijd',guests:'Gasten',gift:'Cadeaubon',total:'Totaal betaald',g1:'gast',gN:'gasten'} };
@@ -2171,7 +2177,17 @@
   function trackPurchase(b){ var run=function(c){ if(c&&c.marketing) firePixel(b); };
     if(window.wogoOnConsent) window.wogoOnConsent(run); else run(window.wogoConsent||{});
     try{ fireGa4Purchase(b); }catch(e){} }
+  function renderSlotFull(b){
+    // Paid, but the start time turned out to be full: say so honestly, no
+    // "you're booked", no purchase tracking. Promises nothing about money.
+    var nl=(b.locale==='nl'); try{ if(b.locale && window.__wogoSetLang) window.__wogoSetLang(nl?'nl':'en'); }catch(e){}
+    var h=$('conf-slotfull-h'), p=$('conf-slotfull-p');
+    if(h) h.textContent = nl ? 'Bedankt — we hebben je betaling ontvangen' : 'Thank you — we received your payment';
+    if(p) p.textContent = nl ? 'De gekozen starttijd bleek vol te zitten. Een van ons neemt binnen één werkdag persoonlijk contact met je op om een nieuwe tijd te regelen. Je hoeft nu niets te doen en komt dus nog niet op de gekozen tijd. Check ook je e-mail.' : 'The start time you chose turned out to be full. One of us will contact you personally within one working day to arrange a new time. There is nothing you need to do right now, and please don’t come at the time you chose. Check your email too.';
+    show('conf-slotfull');
+  }
   function render(b){
+    if(b.status==='slot_full'){ renderSlotFull(b); return; }
     show('conf-ok');  // reveal the booked view FIRST — details always appear, never stuck loading
     // Show the page in the CUSTOMER's booked language (nl/en), overriding the browser default.
     try{ if(b.locale && window.__wogoSetLang) window.__wogoSetLang(b.locale==='nl'?'nl':'en'); }catch(e){}

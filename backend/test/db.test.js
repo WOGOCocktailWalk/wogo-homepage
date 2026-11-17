@@ -708,3 +708,81 @@ describe('test adapter enforces real-D1 positional-only binding', () => {
     assert.equal(allRes.results.length, 1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Late payment: a hold must outlive the Stripe payment page, and a
+// payment that still arrives for a lapsed hold must re-check the seats.
+// ---------------------------------------------------------------------------
+describe('late payment — hold lifetime and seat re-check at confirm time', async () => {
+  const { HOLD_MINUTES, STRIPE_EXPIRES_MINUTES } = await import('../src/config.js');
+  const PAST = '2000-01-01 00:00:00';
+  const confirmedSeats = (database, slot = '18:00') =>
+    database.prepare(
+      `SELECT COALESCE(SUM(party),0) AS n FROM bookings WHERE route_id='testroute' AND date='2026-08-06' AND slot=?1 AND status='confirmed'`
+    ).bind(slot).first().n;
+
+  test('the hold lasts longer than the Stripe payment page (so a payment cannot arrive for released seats)', () => {
+    assert.ok(HOLD_MINUTES > STRIPE_EXPIRES_MINUTES, `hold ${HOLD_MINUTES} min must exceed Stripe session ${STRIPE_EXPIRES_MINUTES} min`);
+    assert.ok(HOLD_MINUTES - STRIPE_EXPIRES_MINUTES >= 5, 'at least a 5-minute margin');
+  });
+
+  test('REGRESSION late payment (capacity 4, 8 seats sold): a lapsed-but-unswept hold can no longer be confirmed on top of a new buyer', async () => {
+    seedRoute(db, { capacity: 4, max_party: 6 });
+    // A holds all 4 seats, then A's hold runs out (status still 'hold': the
+    // 5-minute sweep has not run yet) — exactly the audit's reproduction.
+    const a = await createHold(db, makeHoldParams({ id: 'b_a', party: 4 }));
+    assert.ok(a.created);
+    exec(db, `UPDATE bookings SET hold_expires = :p WHERE id = 'b_a'`, { p: PAST });
+    // B takes the 4 seats the lapsed hold gave back, and pays in time.
+    const b = await createHold(db, makeHoldParams({ id: 'b_b', party: 4, email: 'b@example.com' }));
+    assert.ok(b.created);
+    assert.equal((await confirmBooking(db, 'b_b', 'cs_b', 'pi_b')).status, 'confirmed');
+    // A's late payment arrives: must NOT become a second confirmed party.
+    const late = await confirmBooking(db, 'b_a', 'cs_a', 'pi_a');
+    assert.equal(late.status, 'confirmed_conflict');
+    assert.equal(confirmedSeats(db), 4, 'never more confirmed seats than capacity');
+  });
+
+  test('same race after the sweep already ran (status expired) also ends in conflict, capacity intact', async () => {
+    seedRoute(db, { capacity: 4, max_party: 6 });
+    await createHold(db, makeHoldParams({ id: 'b_a', party: 4 }));
+    exec(db, `UPDATE bookings SET hold_expires = :p WHERE id = 'b_a'`, { p: PAST });
+    await expireHolds(db);
+    await createHold(db, makeHoldParams({ id: 'b_b', party: 4, email: 'b@example.com' }));
+    await confirmBooking(db, 'b_b', 'cs_b', 'pi_b');
+    assert.equal((await confirmBooking(db, 'b_a', 'cs_a', 'pi_a')).status, 'confirmed_conflict');
+    assert.equal(confirmedSeats(db), 4);
+  });
+
+  test('a lapsed-but-unswept hold whose seats are STILL FREE is confirmed normally', async () => {
+    seedRoute(db, { capacity: 4, max_party: 6 });
+    await createHold(db, makeHoldParams({ id: 'b_a', party: 3 }));
+    exec(db, `UPDATE bookings SET hold_expires = :p WHERE id = 'b_a'`, { p: PAST });
+    const r = await confirmBooking(db, 'b_a', 'cs_a', 'pi_a');
+    assert.equal(r.status, 'confirmed');
+    assert.equal(r.booking.hold_expires, null);
+  });
+
+  test('a lapsed hold that only fits partly is a conflict (seat count, not just "any room")', async () => {
+    seedRoute(db, { capacity: 4, max_party: 6 });
+    await createHold(db, makeHoldParams({ id: 'b_a', party: 3 }));
+    exec(db, `UPDATE bookings SET hold_expires = :p WHERE id = 'b_a'`, { p: PAST });
+    await createHold(db, makeHoldParams({ id: 'b_b', party: 2, email: 'b@example.com' }));
+    await confirmBooking(db, 'b_b', 'cs_b', 'pi_b');
+    assert.equal((await confirmBooking(db, 'b_a', 'cs_a', 'pi_a')).status, 'confirmed_conflict');
+    assert.equal(confirmedSeats(db), 2);
+  });
+
+  test('a live hold is confirmed without competing with other live holds on the same slot (unchanged happy path)', async () => {
+    seedRoute(db, { capacity: 4, max_party: 6 });
+    await createHold(db, makeHoldParams({ id: 'b_a', party: 4, hold_expires: computeHoldExpiry(HOLD_MINUTES) }));
+    assert.equal((await confirmBooking(db, 'b_a', 'cs_a', 'pi_a')).status, 'confirmed');
+  });
+
+  test('a booking confirmed twice (webhook redelivery) stays confirmed and does not flip to conflict', async () => {
+    seedRoute(db, { capacity: 4, max_party: 6 });
+    await createHold(db, makeHoldParams({ id: 'b_a', party: 4 }));
+    await confirmBooking(db, 'b_a', 'cs_a', 'pi_a');
+    assert.equal((await confirmBooking(db, 'b_a', 'cs_a', 'pi_a')).status, 'confirmed');
+  });
+});

@@ -492,9 +492,13 @@ export async function confirmBooking(db, bookingId, sessionId, paymentIntentId) 
     db,
     `UPDATE bookings
        SET status = 'confirmed', stripe_session = :session_id, stripe_payment_intent = :pi_id, hold_expires = NULL, ip = NULL
-     WHERE id = :id AND status = 'hold'`,
+     WHERE id = :id AND status = 'hold' AND hold_expires > datetime('now')`,
     { id: bookingId, session_id: sessionId, pi_id: paymentIntentId }
   );
+  // Only a hold that is STILL ALIVE is confirmed without a seat check: its
+  // seats were reserved for it the whole time. A hold whose time has run out
+  // (even if the 5-minute sweep has not renamed it 'expired' yet) has already
+  // given its seats back to the pool, so it takes the re-check path below.
   if (normal.meta.changes === 1) {
     const booking = await first(db, `SELECT * FROM bookings WHERE id = :id`, { id: bookingId });
     return { status: 'confirmed', booking };
@@ -506,7 +510,9 @@ export async function confirmBooking(db, bookingId, sessionId, paymentIntentId) 
     return { status: existing.status, booking: existing };
   }
 
-  // conflict-recovery path (§6.4): only meaningful if the row is 'expired'.
+  // conflict-recovery path (§6.4): for a row whose hold is gone — 'expired',
+  // or still labelled 'hold' with a hold_expires in the past (sweep has not
+  // run yet).
   // Capacity guard uses the exact same per-timeslot precedence as
   // CREATE_HOLD_SQL (effectiveCapacitySql) — route/date/slot are derived via
   // subqueries on :id since only the booking id is bound here.
@@ -514,7 +520,7 @@ export async function confirmBooking(db, bookingId, sessionId, paymentIntentId) 
     db,
     `UPDATE bookings
        SET status = 'confirmed', stripe_session = :session_id, stripe_payment_intent = :pi_id, hold_expires = NULL, ip = NULL
-     WHERE id = :id AND status = 'expired'
+     WHERE id = :id AND status IN ('expired', 'hold')
        AND (
          (SELECT COALESCE(SUM(party), 0) FROM bookings
            WHERE route_id = (SELECT route_id FROM bookings WHERE id = :id)
