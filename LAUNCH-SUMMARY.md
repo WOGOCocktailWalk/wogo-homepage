@@ -18,7 +18,7 @@
 
 ## Safety net
 - Wix stays paid + domain-connected 30 days after launch; DNS rollback ≈ 10 min (Cloudflare, TTL 60 s).
-- `BOOKING_FALLBACK_URL` flag: all Book buttons → old Wix calendar in 5 min if the engine misbehaves.
+- ~~`BOOKING_FALLBACK_URL` flag~~ was never built. Current emergency steps: `backend/DR.md`.
 - Launch test: one real €29,95 booking within 30 min of the flip → payment, admin row, guest email, bar email, Meta Purchase, GA4 purchase. All six or we switch back.
 - Hard rule: bookings < 50% of baseline at 24 h with no known cause → full rollback before Thursday.
 

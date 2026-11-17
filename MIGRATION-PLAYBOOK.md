@@ -594,6 +594,8 @@ Run all of it on the `github.io` URL before launch and once more on the real dom
 
 ## 12. Rollback plan
 
+> **Superseded after launch (17 Nov 2026):** the `BOOKING_FALLBACK_URL` switch and the "Wix book now button" fallback described below were never built. The current emergency steps are in `backend/DR.md`.
+
 ### Tiers
 
 | Tier | What | Time | When |

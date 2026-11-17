@@ -1,2 +1,7 @@
 .claude/
 .DS_Store
+
+# Backup files and local restore rehearsals contain guest data
+backend/backup*.json
+backend/restore*.json
+backend/restored*.sqlite

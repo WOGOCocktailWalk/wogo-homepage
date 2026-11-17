@@ -127,7 +127,10 @@ itself every 5 minutes) can catch "my database died" but can never catch
 DNS/network failure from the inside. UptimeRobot is a second, independent
 set of eyes, watching from outside.
 
-Already fully documented: **`SETUP.md` §14**. Two monitors, ~5 minutes,
+**Update 17 Nov 2026:** a free GitHub Actions check now does this
+(`.github/workflows/uptime-check.yml`, see `SETUP.md` §14); only the
+one-time GitHub notification setting remains. UptimeRobot is an optional extra
+for phone alerts. Original note: documented in **`SETUP.md` §14**. Two monitors, ~5 minutes,
 free tier is plenty (5-minute checks). If you did §1's custom-domain step,
 point both monitors at the new domain instead of `workers.dev`.
 
@@ -224,8 +227,8 @@ booking volume won't get near that):
 3. `npx wrangler deploy`.
 
 Confirm it actually ran: after tomorrow's 3am UTC daily cron,
-`npx wrangler r2 object list wogo-backups --prefix daily/` should show
-today's date. If it's empty a day later, something's wrong — the cron
+the Cloudflare dashboard (R2, wogo-backups, Objects) should show
+today's date. (The old `wrangler r2 object list` command does not exist in v4.) If it's empty a day later, something's wrong — the cron
 step is designed to fail silently into a no-op rather than break bookings,
 so it won't page you; check `GET /admin/api/error-log` for
 `no_r2_binding` or similar.

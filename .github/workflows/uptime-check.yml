@@ -1,0 +1,80 @@
+# Outside uptime check, EUR 0, no account beyond GitHub.
+#
+# Every ~15 minutes GitHub starts a fresh machine, loads three public pages
+# and FAILS the run if any of them is down or looks wrong. A failed scheduled
+# run makes GitHub email the person who last edited this schedule line.
+#
+# Checks (all public GET requests, nothing is written, no secrets are used):
+#   1. the homepage
+#   2. one booking page
+#   3. the booking backend's public endpoint /api/routes. There is no
+#      dedicated public "health" URL; /api/routes reads the database, so a 200
+#      with a routes list means the Worker and D1 are both answering.
+#
+# HONEST LIMITS
+#   - GitHub's scheduler is best-effort: runs can start 5-30 minutes late and
+#     occasionally get skipped when GitHub is busy. This is a safety net, not
+#     a 24/7 pager.
+#   - The alert is an email from GitHub (and the GitHub mobile app if
+#     installed). No SMS, no phone call. Each failed run sends one email, so
+#     a long outage means one email per run.
+#   - GitHub switches scheduled workflows OFF in a public repository after 60
+#     days without any repository activity (a commit is enough). It sends a
+#     warning email first; re-enable under the Actions tab.
+#   - It runs from GitHub's network: it cannot see problems that only affect
+#     one country or one provider, and a GitHub Actions outage silences it.
+#   - It does not complete a real booking or payment. Stripe/Brevo problems
+#     are covered by the in-app alerts, not by this check.
+#
+# One-time setup by hand: GitHub, Settings, Notifications, Actions: tick
+# "Send notifications for failed workflows only" and email.
+
+name: Uptime check
+
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: uptime-check
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check site and backend
+        shell: bash
+        run: |
+          set -u
+          fail=0
+
+          # check <label> <url> <text that must appear in the body>
+          # Three tries, 20 s apart, so one network blip does not wake anyone.
+          check() {
+            label="$1"; url="$2"; needle="$3"
+            for attempt in 1 2 3; do
+              code=$(curl -sS -L --max-time 20 -o body.txt -w '%{http_code}' "$url" || echo "000")
+              if [ "$code" = "200" ] && grep -q -- "$needle" body.txt; then
+                echo "OK    $label ($url)"
+                return 0
+              fi
+              echo "retry $label attempt $attempt: HTTP $code"
+              sleep 20
+            done
+            echo "::error title=DOWN: $label::$url answered HTTP $code or did not contain '$needle'"
+            fail=1
+          }
+
+          check "homepage"     "https://www.wogococktailwalk.com/"                     "WOGO"
+          check "booking page" "https://www.wogococktailwalk.com/rotterdam/route-1/book/" "wogo-calendar"
+          check "backend"      "https://wogo-booking-backend.purple-glitter-720e.workers.dev/api/routes" '"routes"'
+
+          if [ "$fail" -ne 0 ]; then
+            echo "One or more checks failed. See the errors above."
+            exit 1
+          fi

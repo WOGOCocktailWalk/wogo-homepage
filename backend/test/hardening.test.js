@@ -7,7 +7,7 @@
 
 import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -374,21 +374,19 @@ describe('exportBackupToR2', () => {
       list: async () => ({ objects: [{ key: 'daily/2000-01-01.json' }, { key: `daily/${todayKey}.json` }], truncated: false }),
       delete: async (keys) => { deletes.push(...keys); },
     };
-    const fakeDb = {
-      listAllRoutesForBackup: async () => [{ id: 'amsterdam' }],
-      listAllBarsForBackup: async () => [{ id: 1 }],
-      listAllDateOverridesForBackup: async () => [],
-      listAllBookingsForBackup: async () => [{ id: 'b_1' }, { id: 'b_2' }],
-    };
-    const result = await exportBackupToR2({ DB: {}, BACKUP_BUCKET: bucket }, { database: fakeDb });
+    const db = makeTestDb(readdirSync(path.join(__dirname, '../migrations')).filter((f) => /^\d+.*\.sql$/.test(f)).sort().map(migration).join('\n'));
+    exec(db, `INSERT INTO routes (id, name, city, price_cents, capacity, max_party, open_days, slots, slot_capacity, map_url, active)
+              VALUES ('r1','R1','City',1000,10,6,'[1]','["18:00"]','{}',NULL,1)`);
+    const result = await exportBackupToR2({ DB: db, BACKUP_BUCKET: bucket });
 
     assert.equal(result.ok, true);
     assert.equal(puts.length, 1);
     assert.equal(puts[0].key, `daily/${todayKey}.json`);
     assert.equal(puts[0].opts.httpMetadata.contentType, 'application/json');
     const parsed = JSON.parse(puts[0].value);
-    assert.equal(parsed.tables.routes.length, 1);
-    assert.equal(parsed.tables.bookings.length, 2);
+    assert.ok(parsed.tables.routes.some((r) => r.id === 'r1'));
+    assert.equal(parsed.tables.bookings.length, 0);
+    assert.ok('gift_cards' in parsed.tables && 'subscribers' in parsed.tables && 'admin_users' in parsed.tables, 'business tables beyond the original four are included');
     assert.deepEqual(deletes, ['daily/2000-01-01.json'], 'only the ancient snapshot is pruned; today\'s survives');
   });
 

@@ -32,3 +32,4 @@ exclude:
   - ANALYTICS-SNIPPET.html
   - CNAME.example
   - .claude/
+  - .github/            # workflows (Jekyll skips dot-folders already; explicit on purpose)
