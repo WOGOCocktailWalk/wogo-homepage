@@ -71,7 +71,7 @@ Changing cookie preferences later (footer → "Cookie settings") sends a fresh
 | Step | GA4 event | Meta event | Where it fires |
 |---|---|---|---|
 | Saw a route | `view_item` | `ViewContent` | Route pages and `/book/` pages, from `window.WOGO_PAGE` |
-| Saw a list of routes | `view_item_list` | — | Homepage, `/rotterdam/`, `/london/` |
+| Saw a list of routes | `view_item_list` | — | Homepage, `/rotterdam/`, `/london/`, and the four occasion pages (`/date-night/`, `/bachelorette/`, `/birthday/`, `/company-outing/`, list ids `occasion_…`) |
 | Clicked "Continue to secure payment" | `begin_checkout` | `InitiateCheckout` | Booking widget |
 | Paid | `purchase` | `Purchase` (fired separately, see below) | `/booking-confirmed/` |
 
