@@ -133,6 +133,7 @@ export function wixEmailLink(url) {
     const b64 = w.slice(w.indexOf('.') + 1).replace(/-/g, '+').replace(/_/g, '/');
     const bytes = Uint8Array.from(atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4)), (c) => c.charCodeAt(0));
     const dest = new URL(JSON.parse(new TextDecoder().decode(bytes)).u);
+    if (dest.protocol === 'mailto:' && /@wogo(amsterdam|cocktailwalk)\.com$/i.test(decodeURIComponent(dest.pathname))) return dest.href;
     if (dest.protocol !== 'https:' && dest.protocol !== 'http:') return SITE + '/';
     if (WIX_FILE_HOSTS.test(dest.hostname)) { dest.protocol = 'https:'; return dest.href; }
     if (OWN_HOSTS.test(dest.hostname) && !dest.pathname.toLowerCase().startsWith('/so/')) {
