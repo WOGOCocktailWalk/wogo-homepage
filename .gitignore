@@ -1,2 +1,11 @@
 .claude/
 .DS_Store
+
+# local tooling / secrets
+backend/.wrangler/
+.wrangler/
+.dev.vars
+backend/.dev.vars
+.env
+.env.*
+node_modules/

@@ -3059,6 +3059,12 @@ export async function deletePushSubscriptionByEndpoint(db, endpoint) {
   return result.meta.changes > 0;
 }
 
+/** Removes every push device registered by one user (used when that user is disabled). */
+export async function deletePushSubscriptionsForUser(db, userId) {
+  const result = await run(db, `DELETE FROM push_subscriptions WHERE user_id = :user_id`, { user_id: userId });
+  return result.meta.changes;
+}
+
 export async function listPushSubscriptionsForUser(db, userId) {
   return all(db, `SELECT * FROM push_subscriptions WHERE user_id = :user_id ORDER BY created_at DESC`, { user_id: userId });
 }
