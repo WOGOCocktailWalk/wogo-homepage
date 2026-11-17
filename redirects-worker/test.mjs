@@ -5,6 +5,7 @@ import worker, { target, wixEmailLink } from './worker.js';
 
 const SITE = 'https://www.wogococktailwalk.com';
 let failed = 0, n = 0;
+const NONE = { slugs: new Set(), index: false }; // "no Dutch articles exist"
 function eq(what, got, want) {
   n++;
   if (got !== want) { failed++; console.error('FAIL ' + what + '\n     got:  ' + got + '\n     want: ' + want); }
@@ -72,8 +73,8 @@ goes('/nl/booking-calendar/utrecht-cocktail-walk?utm_campaign=old', '/nl/utrecht
 goes('/nl/booking-calendar/something-else', '/nl/');
 goes('/nl/service-page/delft-cocktail-walk', '/nl/delft/');
 goes('/nl/product-page/gift-card', '/nl/gift-cards/');
-goes('/nl/post/de-beste-bars-in-groningen', '/blog/best-bars-in-groningen/');
-goes('/nl/post/beste-bars-in-amsterdam', '/blog/best-bars-in-amsterdam/'); // the article itself is on the new blog since 17 Nov 2026
+goes('/nl/post/de-beste-bars-in-groningen', '/blog/best-bars-in-groningen/', NONE);
+goes('/nl/post/beste-bars-in-amsterdam', '/blog/best-bars-in-amsterdam/', NONE); // the article itself is on the new blog since 17 Nov 2026
 goes('/nl/something-nobody-knows', '/nl/');
 // The Dutch blog is written by the dashboard, so /nl/blog/... is handed through
 // (the website answers; fetch() below turns a "not found" into the English page).
@@ -84,11 +85,11 @@ goes('/nl/blog', '/nl/blog/');
 goes('/nl/blog/top-7-bars-utrecht', '/nl/blog/top-7-bars-utrecht/');
 goes('/NL/Blog/Top-7-Bars-Utrecht', '/nl/blog/top-7-bars-utrecht/');
 goes('/nl/blog/top-7-bars-utrecht/cover.jpg', null);
-// Old Dutch Wix addresses: with NO Dutch article (the list is empty) they go to the English article
-goes('/nl/post/de-7-beste-bars-in-utrecht-voor-een-fantastische-avond-uit', '/blog/top-7-bars-utrecht/');
-goes('/nl/post/best-cocktail-bars-in-rotterdam', '/blog/best-cocktail-bars-in-rotterdam/');
-goes('/nl/post/an-article-we-never-rebuilt', '/blog/');
-goes('/nl/blog-feed.xml', '/blog/');
+// Old Dutch Wix addresses: with NO Dutch article (an explicitly empty list) they go to the English article
+goes('/nl/post/de-7-beste-bars-in-utrecht-voor-een-fantastische-avond-uit', '/blog/top-7-bars-utrecht/', NONE);
+goes('/nl/post/best-cocktail-bars-in-rotterdam', '/blog/best-cocktail-bars-in-rotterdam/', NONE);
+goes('/nl/post/an-article-we-never-rebuilt', '/blog/', NONE);
+goes('/nl/blog-feed.xml', '/blog/', NONE);
 // ...and WITH a Dutch article (the list says it exists) to the Dutch article
 const NLB = { slugs: new Set(['top-7-bars-utrecht', 'vodka-or-gin']), index: true };
 goes('/nl/post/de-7-beste-bars-in-utrecht-voor-een-fantastische-avond-uit', '/nl/blog/top-7-bars-utrecht/', NLB);
