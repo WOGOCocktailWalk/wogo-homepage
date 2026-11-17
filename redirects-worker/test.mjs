@@ -10,9 +10,9 @@ function eq(what, got, want) {
   if (got !== want) { failed++; console.error('FAIL ' + what + '\n     got:  ' + got + '\n     want: ' + want); }
 }
 // `want` is a path on the new site, or null for "left alone / served as it is".
-function goes(from, want) {
+function goes(from, want, nlBlog) {
   const url = from.startsWith('http') ? from : SITE + from;
-  const got = target(url);
+  const got = target(url, nlBlog);
   const shown = got === null || got === url ? null : got.replace(SITE, '');
   eq(from, shown, want);
 }
@@ -75,13 +75,31 @@ goes('/nl/product-page/gift-card', '/nl/gift-cards/');
 goes('/nl/post/de-beste-bars-in-groningen', '/blog/best-bars-in-groningen/');
 goes('/nl/post/beste-bars-in-amsterdam', '/blog/best-bars-in-amsterdam/'); // the article itself is on the new blog since 17 Nov 2026
 goes('/nl/something-nobody-knows', '/nl/');
-// no Dutch blog yet: Dutch article addresses go to the (English) article
+// The Dutch blog is written by the dashboard, so /nl/blog/... is handed through
+// (the website answers; fetch() below turns a "not found" into the English page).
+goes('/nl/blog/', null);
+goes('/nl/blog/top-7-bars-utrecht/', null);
+goes('/nl/blog/top-7-bars-utrecht/?utm_source=x', null);
+goes('/nl/blog', '/nl/blog/');
+goes('/nl/blog/top-7-bars-utrecht', '/nl/blog/top-7-bars-utrecht/');
+goes('/NL/Blog/Top-7-Bars-Utrecht', '/nl/blog/top-7-bars-utrecht/');
+goes('/nl/blog/top-7-bars-utrecht/cover.jpg', null);
+// Old Dutch Wix addresses: with NO Dutch article (the list is empty) they go to the English article
 goes('/nl/post/de-7-beste-bars-in-utrecht-voor-een-fantastische-avond-uit', '/blog/top-7-bars-utrecht/');
 goes('/nl/post/best-cocktail-bars-in-rotterdam', '/blog/best-cocktail-bars-in-rotterdam/');
 goes('/nl/post/an-article-we-never-rebuilt', '/blog/');
-goes('/nl/blog', '/blog/');
-goes('/nl/blog/top-7-bars-utrecht', '/blog/top-7-bars-utrecht/');
 goes('/nl/blog-feed.xml', '/blog/');
+// ...and WITH a Dutch article (the list says it exists) to the Dutch article
+const NLB = { slugs: new Set(['top-7-bars-utrecht', 'vodka-or-gin']), index: true };
+goes('/nl/post/de-7-beste-bars-in-utrecht-voor-een-fantastische-avond-uit', '/nl/blog/top-7-bars-utrecht/', NLB);
+goes('/nl/post/wodka-of-gin', '/nl/blog/vodka-or-gin/', NLB);
+goes('/nl/post/vodka-or-gin', '/nl/blog/vodka-or-gin/', NLB);
+goes('/nl/post/best-cocktail-bars-in-rotterdam', '/blog/best-cocktail-bars-in-rotterdam/', NLB);   // no Dutch text for that one: English article
+goes('/nl/post/an-article-we-never-rebuilt', '/nl/blog/', NLB);                                    // the Dutch blog index exists now
+goes('/nl/blog-feed.xml', '/nl/blog/', NLB);
+goes('/nl/blog/top-7-bars-utrecht/', null, NLB);
+// English old addresses never change language
+goes('/post/vodka-or-gin', '/blog/vodka-or-gin/', NLB);
 // anything else under /nl goes to the Dutch homepage
 goes('/nl/london', '/nl/');
 
@@ -111,6 +129,18 @@ goes('https://en.wogococktailwalk.com/groupbookings', '/groups/');
     seen.length = 0;
     res = await worker.fetch(new Request(SITE + '/maps/rotterdam.pdf'));
     eq('route map: noindex header kept', res.headers.get('X-Robots-Tag'), 'noindex, nofollow');
+    seen.length = 0;
+    res = await worker.fetch(new Request(SITE + '/nl/blog/vodka-or-gin/'));
+    eq('Dutch blog article that exists: handed through', res.status + ' ' + seen.join(','), '200 ' + SITE + '/nl/blog/vodka-or-gin/');
+    seen.length = 0;
+    globalThis.fetch = async (req) => { seen.push(typeof req === 'string' ? req : req.url); return new Response('not found', { status: 404 }); };
+    res = await worker.fetch(new Request(SITE + '/nl/blog/no-dutch-text-here/?utm_source=x'));
+    eq('Dutch blog article that does not exist: English article', res.status + ' ' + res.headers.get('Location'), '302 ' + SITE + '/blog/no-dutch-text-here/?utm_source=x');
+    res = await worker.fetch(new Request(SITE + '/nl/blog/'));
+    eq('Dutch blog index that does not exist yet: English index', res.status + ' ' + res.headers.get('Location'), '302 ' + SITE + '/blog/');
+    res = await worker.fetch(new Request(SITE + '/nl/faq/'));
+    eq('another Dutch page answering 404 is NOT redirected by the blog rule', res.status, 404);
+    globalThis.fetch = async (req) => { seen.push(typeof req === 'string' ? req : req.url); return new Response('page', { status: 200 }); };
     res = await worker.fetch(new Request('http://www.wogococktailwalk.com/nl/faq/'));
     eq('plain http Dutch page goes to https', res.status + ' ' + res.headers.get('Location'), '301 ' + SITE + '/nl/faq/');
   } finally { globalThis.fetch = realFetch; }

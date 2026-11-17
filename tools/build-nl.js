@@ -35,9 +35,21 @@
        line. Note: it cannot judge wording. If you reword an English sentence,
        remember to reword its Dutch line in the same page too.
 
+   THE BLOG
+     Blog posts are written by the dashboard (the Worker, backend/src/blog_render.js),
+     not by this script. What this script makes for the blog are the four page
+     TEMPLATES the Worker fills in, in blog/_template/generated/:
+       post.en.html / index.en.html   English (one language only, real language-menu links)
+       post.nl.html / index.nl.html   Dutch (same chrome as the Dutch site pages)
+     They are built from the hand-edited blog/_template/post.html and index.html
+     with the SAME Dutch dictionary and nav/footer wording as every other page.
+     After this script, run in backend/:  node scripts/build_blog_templates.mjs
+     The finished Dutch posts (nl/blog/...) are committed by the Worker on publish;
+     this script leaves them alone, except that it writes the list of them into
+     redirects-worker/worker.js (the "nl-blog" block) and checks their sitemap lines.
+
    WHAT IT NEVER TOUCHES
-     The blog (blog/ is written by the dashboard), London, admin and the
-     thank-you pages. Those stay English-address-only for now.
+     London, admin and the thank-you pages. Those stay English-address-only for now.
 
    OTHER OPTIONS
      --todo     list English texts that still miss a Dutch line in nl-strings.json
@@ -241,6 +253,7 @@ function makeTranslator(page, enToNl) {
     if (en == null) return en;
     const key = String(en);
     if (!/[A-Za-zÀ-ÿ]/.test(key)) return key;                 // nothing to translate (symbols, numbers)
+    if (/\{\{[A-Z0-9_]+\}\}/.test(key)) return key;           // blog template placeholder: filled in by the Worker
     const hit = enToNl.get(norm(key));                        // the page's own dictionary wins
     if (hit != null) return hit;
     if (Object.prototype.hasOwnProperty.call(MANUAL, key)) { usedManual.add(key); return MANUAL[key]; }
@@ -254,10 +267,13 @@ function makeTranslator(page, enToNl) {
 /* ---------- addresses ---------- */
 let PAGES = [];
 let PAGESET = new Set();
+/* The blog index also exists in both languages (/blog/ and /nl/blog/), but it is
+   written by the Worker, so it is not in PAGES. Links to it follow the language. */
+const TWIN_EXTRA = new Set(['blog/']);
 const isTwinPath = (pathname) => {
   let p = pathname.replace(/index\.html$/, '');
   if (!p.endsWith('/')) p += '/';
-  return PAGESET.has(p.slice(1));
+  return PAGESET.has(p.slice(1)) || TWIN_EXTRA.has(p.slice(1));
 };
 const depthOf = (page) => page.split('/').filter(Boolean).length;
 /* A link written on English page `page`, as it must read on that page's Dutch twin
@@ -267,6 +283,7 @@ const depthOf = (page) => page.split('/').filter(Boolean).length;
    shared copy in the site root. */
 function nlUrl(raw, page) {
   const t = raw.trim();
+  if (t.includes('{{')) return raw;                           // blog template placeholder
   if (!t || t[0] === '#' || t.startsWith('//') || /^(data|mailto|tel|javascript|sms|whatsapp|blob|about):/i.test(t)) return raw;
   if (/^[a-z][a-z0-9+.-]*:/i.test(t)) {
     if (!t.startsWith(ORIGIN + '/')) return raw;
@@ -307,20 +324,21 @@ const LANG_LABEL = { en: 'English', nl: 'Nederlands' };
 const enAbs = (page) => ORIGIN + '/' + page;
 const nlAbs = (page) => ORIGIN + '/nl/' + page;
 /* the same page in the other language, as a relative link from `here` */
-function altHrefs(page, here) {
+function altHrefs(page, here, opts) {
   const d = depthOf(page);
-  if (here === 'en') return { en: './', nl: '../'.repeat(d) + 'nl/' + page };
+  if (here === 'en') return { en: './', nl: (opts && opts.nlHref) || '../'.repeat(d) + 'nl/' + page };
   return { en: '../'.repeat(d + 1) + page, nl: './' };
 }
-function altBlock(page) {
+function altBlock(page, opts) {
+  if (opts && opts.altToken) return M_ALT[0] + '\n' + opts.altToken + '\n' + M_ALT[1];
   return M_ALT[0] + '\n' +
     '<link rel="alternate" hreflang="en" href="' + enAbs(page) + '">\n' +
     '<link rel="alternate" hreflang="nl" href="' + nlAbs(page) + '">\n' +
     '<link rel="alternate" hreflang="x-default" href="' + enAbs(page) + '">\n' +
     M_ALT[1];
 }
-function menuItems(page, here) {
-  const alt = altHrefs(page, here);
+function menuItems(page, here, opts) {
+  const alt = altHrefs(page, here, opts);
   return ['en', 'nl'].map((l) =>
     '<li role="presentation"><a class="w-lang-opt" role="option" tabindex="-1" data-lang="' + l + '" hreflang="' + l + '" lang="' + l + '" href="' + alt[l] + '" aria-selected="' + (l === here) + '"><span class="w-lang-opt-code" aria-hidden="true">' + l.toUpperCase() + '</span>' + LANG_LABEL[l] + '</a></li>'
   ).join('');
@@ -328,11 +346,11 @@ function menuItems(page, here) {
 /* The little script that turns the language menu into real links, and keeps a
    Dutch reader on Dutch addresses. Same code on every page; only the first
    lines (which page am I, where is my twin) differ. */
-function switchBlock(page, here) {
-  const alt = altHrefs(page, here);
+function switchBlock(page, here, opts) {
+  const alt = altHrefs(page, here, opts);
   const toRoot = '../'.repeat(depthOf(page)) || './';
   const cfg = here === 'en'
-    ? 'var HERE = "en", ALT = ' + JSON.stringify(alt) + ', TO_ROOT = ' + JSON.stringify(toRoot) + ',\n      NL_PAGES = ' + JSON.stringify(PAGES) + ';'
+    ? 'var HERE = "en", ALT = ' + JSON.stringify(alt) + ', TO_ROOT = ' + JSON.stringify(toRoot) + ',\n      NL_PAGES = ' + JSON.stringify(PAGES.concat([...TWIN_EXTRA])) + ';'
     : 'var HERE = "nl", ALT = ' + JSON.stringify(alt) + ', TO_ROOT = "", NL_PAGES = [];';
   return M_SW[0] + `
 <style>.w-lang-menu li{list-style:none;margin:0;padding:0}.w-lang-menu a.w-lang-opt{color:var(--wogo-ink);text-decoration:none}</style>
@@ -430,17 +448,17 @@ function stripGenerated(html) {
   return out;
 }
 /* add the generated blocks for one language version of a page */
-function decorate(html, page, here) {
+function decorate(html, page, here, opts) {
   let out = html;
   const canon = /<link rel="canonical" href="[^"]*">\n?/.exec(out);
   if (!canon) throw new Error((page || '/') + ': no canonical link found');
   const at = canon.index + canon[0].length;
-  out = out.slice(0, at) + (canon[0].endsWith('\n') ? '' : '\n') + altBlock(page) + '\n' + out.slice(at);
+  out = out.slice(0, at) + (canon[0].endsWith('\n') ? '' : '\n') + altBlock(page, opts) + '\n' + out.slice(at);
   if (!MENU_RE.test(out)) throw new Error((page || '/') + ': language menu (<ul class="w-lang-menu">) not found');
-  out = out.replace(MENU_RE, (m, a, label, c, inner, e) => a + label + c + menuItems(page, here) + e);
+  out = out.replace(MENU_RE, (m, a, label, c, inner, e) => a + label + c + menuItems(page, here, opts) + e);
   const body = out.lastIndexOf('</body>');
   if (body === -1) throw new Error((page || '/') + ': no </body>');
-  out = out.slice(0, body) + switchBlock(page, here) + '\n' + out.slice(body);
+  out = out.slice(0, body) + switchBlock(page, here, opts) + '\n' + out.slice(body);
   return out;
 }
 
@@ -477,6 +495,7 @@ function ldWalk(node, tr, keepUrl, top) {
   return out;
 }
 function ldToDutch(jsonText, tr, page) {
+  if (jsonText.includes('{{')) return null;            // blog template placeholder: the Worker writes this block
   let data;
   try { data = JSON.parse(jsonText); } catch (e) { throw new Error((page || '/') + ': structured data is not valid JSON — ' + e.message); }
   const out = ldWalk(data, tr, false, true);
@@ -513,12 +532,14 @@ function buildSiteDict(sources) {
 const reportLines = [];
 const priceIssues = [];
 const euros = (text) => (text.match(/€\s?\d+(?:[.,]\d{1,2})?/g) || []).map((x) => x.replace(/\s/g, '').replace('.', ',')).sort().join(' ');
-function toDutch(base, page) {
+function toDutch(base, page, opts) {
+  opts = opts || {};
   const tag = page || '/';
   const dict = dictionaries(base, page);
   const borrowed = [];
   const NLGET = (k) => {
     if (dict.NL[k] != null) return dict.NL[k];
+    if (opts.noBorrow && opts.noBorrow.has(k)) return null;
     if (SITE_NL && SITE_NL[k] != null) { borrowed.push(k); return SITE_NL[k]; }
     return null;
   };
@@ -646,7 +667,7 @@ function toDutch(base, page) {
       }
     } else if (t.name === 'script' && /ld\+json/i.test(attrVal(t, 'type') || '')) {
       const rawTok = tokens[k + 1];
-      if (rawTok && rawTok.t === 'raw') e2.push({ s: rawTok.s, e: rawTok.e, v: ldToDutch(out.slice(rawTok.s, rawTok.e), tr, page) });
+      if (rawTok && rawTok.t === 'raw') { const ld = ldToDutch(out.slice(rawTok.s, rawTok.e), tr, page); if (ld != null) e2.push({ s: rawTok.s, e: rawTok.e, v: ld }); }
     }
   }
   if (!sawLang || !sawTitle || !sawCanon || !sawDesc) throw new Error(tag + ': head is missing one of <html lang>, <title>, canonical, meta description');
@@ -702,7 +723,7 @@ function toDutch(base, page) {
   }
 
   out = decorate(out, page, 'nl');
-  out = out.replace(/<!DOCTYPE html>\n?/i, (m) => m + '<!-- MADE BY tools/build-nl.js from /' + page + 'index.html — do not edit this file; edit the English page (or tools/nl-strings.json) and run: node tools/build-nl.js -->\n');
+  out = out.replace(/<!DOCTYPE html>\n?/i, (m) => m + '<!-- MADE BY tools/build-nl.js from ' + (opts.label || '/' + page + 'index.html') + ' — do not edit this file; edit the English page (or tools/nl-strings.json) and run: node tools/build-nl.js -->\n');
 
   if (REPORT) {
     const uniq = [...new Set(untranslatedText)];
@@ -714,8 +735,13 @@ function toDutch(base, page) {
 /* =============================================================================
    sitemap.xml and the redirect helper
    ========================================================================== */
+/* The blog lines of sitemap.xml (/blog/... and /nl/blog/...) belong to the Worker
+   (backend/src/blog_render.js writes them on publish/unpublish). This script never
+   edits them: they are set aside while the page lines are rebuilt, then put back. */
+const BLOG_URL_RE = /[ \t]*<url>\s*<loc>https:\/\/www\.wogococktailwalk\.com\/(?:nl\/)?blog\/[^<]*<\/loc>[\s\S]*?<\/url>\n/g;
 function buildSitemap(xml) {
-  let out = xml;
+  const kept = [];
+  let out = xml.replace(BLOG_URL_RE, (m) => { kept.push(m); return '@@BLOG' + (kept.length - 1) + '@@\n'; });
   /* start clean: drop what an earlier run added */
   out = out.replace(/[ \t]*<xhtml:link\b[^>]*\/>\n/g, '');
   out = out.replace(/[ \t]*<url>\s*<loc>https:\/\/www\.wogococktailwalk\.com\/nl\/[\s\S]*?<\/url>\n/g, '');
@@ -733,15 +759,73 @@ function buildSitemap(xml) {
     return block(enAbs(page)) + block(nlAbs(page));
   });
   if (seen !== PAGES.length) throw new Error('sitemap.xml: expected to find ' + PAGES.length + ' page entries, found ' + seen + ' (unusual layout?)');
-  return out;
+  return out.replace(/@@BLOG(\d+)@@\n/g, (m, i) => kept[Number(i)]);
+}
+/* sanity check of the Worker-written blog lines: every Dutch blog address in the
+   sitemap must have its page, and its English twin line must point at it */
+function blogSitemapProblems(xml) {
+  const problems = [];
+  const blocks = xml.match(BLOG_URL_RE) || [];
+  const loc = (b) => /<loc>([^<]+)<\/loc>/.exec(b)[1];
+  const nlSlugs = blocks.map(loc).filter((l) => /\/nl\/blog\/[^/]+\/$/.test(l)).map((l) => /\/nl\/blog\/([^/]+)\/$/.exec(l)[1]);
+  for (const slug of nlSlugs) {
+    if (!exists('nl/blog/' + slug + '/index.html')) problems.push('sitemap.xml lists /nl/blog/' + slug + '/ but nl/blog/' + slug + '/index.html does not exist');
+    const en = blocks.find((b) => loc(b) === ORIGIN + '/blog/' + slug + '/');
+    if (!en || !en.includes('hreflang="nl"')) problems.push('sitemap.xml: /blog/' + slug + '/ has no hreflang line for its Dutch page');
+  }
+  return problems;
+}
+/* the Dutch blog pages the Worker has committed: the redirect helper needs to know them */
+function nlBlogSlugs() {
+  const dir = path.join(ROOT, 'nl/blog');
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir, { withFileTypes: true }).filter((f) => f.isDirectory() && exists('nl/blog/' + f.name + '/index.html')).map((f) => f.name).sort();
 }
 const M_WK = ['// nl-pages:start (made by tools/build-nl.js; do not edit)', '// nl-pages:end'];
+const M_BL = ['// nl-blog:start (made by tools/build-nl.js; do not edit)', '// nl-blog:end'];
 function buildWorker(js) {
   const i = js.indexOf(M_WK[0]);
   const j = js.indexOf(M_WK[1]);
   if (i === -1 || j === -1) throw new Error('redirects-worker/worker.js: the nl-pages markers are missing');
   const list = PAGES.map((p) => JSON.stringify('/' + p)).join(', ');
-  return js.slice(0, i) + M_WK[0] + '\nconst NL_PAGES = new Set([' + list + ']);\n' + js.slice(j);
+  let out = js.slice(0, i) + M_WK[0] + '\nconst NL_PAGES = new Set([' + list + ']);\n' + js.slice(j);
+  const a = out.indexOf(M_BL[0]);
+  const b = out.indexOf(M_BL[1]);
+  if (a === -1 || b === -1) throw new Error('redirects-worker/worker.js: the nl-blog markers are missing');
+  const slugs = nlBlogSlugs().map((x) => JSON.stringify(x)).join(', ');
+  return out.slice(0, a) + M_BL[0] + '\nconst NL_BLOG = new Set([' + slugs + ']);\nconst NL_BLOG_INDEX = ' + exists('nl/blog/index.html') + ';\n' + out.slice(b);
+}
+
+/* =============================================================================
+   The blog page templates (what the Worker fills in on publish)
+   ========================================================================== */
+const BLOG_DIR = 'blog/_template/generated/';
+/* the same patches as PATCHES, but the English template becomes English-only */
+const PATCHES_EN = [
+  { what: 'the anti-flicker script in <head> (English blog pages stay English)', count: 1, re: PATCHES[0].re, to: '' },
+  { what: 'the start-up language choice (an English blog address is always English)', count: 1,
+    re: /setLang\(saved \|\| \(auto \? 'nl' : 'en'\)\);/g,
+    to: "setLang('en');   /* English blog address: always English (made by tools/build-nl.js) */" },
+  { what: 'the saved-language lookups in the newsletter and cookie blocks', count: 2, re: PATCHES[2].re,
+    to: '/* English blog address: the page language decides (made by tools/build-nl.js) */\n' },
+];
+function blogTemplates() {
+  const out = new Map();
+  const nlTokens = (html) => html.replace(/\{\{([A-Z0-9_]+)_EN\}\}/g, '{{$1_NL}}');
+  const noBorrow = new Set(['hero_h1', 'hero_sub', 'hero_eyebrow', 'post_cat', 'post_hook', 'crumb_post']);
+  for (const [name, page, label] of [['post', 'blog/{{SLUG}}/', 'blog/_template/post.html'], ['index', 'blog/', 'blog/_template/index.html']]) {
+    const base = stripGenerated(read(label));
+    let en = decorate(base, page, 'en', { nlHref: '{{NL_SWITCH_HREF}}', altToken: '{{BLOG_ALT_LINKS}}' });
+    for (const p of PATCHES_EN) {
+      const found = (en.match(p.re) || []).length;
+      if (found !== p.count) throw new Error(label + ': expected ' + p.count + '× ' + p.what + ' but found ' + found + '. The page script changed; tools/build-nl.js (PATCHES_EN) needs a matching update.');
+      en = en.replace(p.re, p.to);
+    }
+    out.set(BLOG_DIR + name + '.en.html', en);
+    const nl = toDutch(nlTokens(base), page, { label: label + ' (blog template)', noBorrow });
+    out.set(BLOG_DIR + name + '.nl.html', nl.html);
+  }
+  return out;
 }
 
 /* =============================================================================
@@ -761,6 +845,7 @@ function main() {
     if (nl.noKey.length) notes.push((page || '/') + ': no Dutch for ' + nl.noKey.join(', ') + ' (left as written)');
     if (nl.borrowed.length) notes.push((page || '/') + ': Dutch for ' + nl.borrowed.join(', ') + ' taken from other pages (missing in this page\'s own dictionary)');
   }
+  for (const [rel, content] of blogTemplates()) want.set(rel, content);
   want.set('sitemap.xml', buildSitemap(read('sitemap.xml')));
   want.set('redirects-worker/worker.js', buildWorker(read('redirects-worker/worker.js')));
 
@@ -786,7 +871,7 @@ function main() {
 
   /* files under nl/ that no longer have an English source */
   const stale = [];
-  const walk = (dir) => { for (const f of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) { const rel = dir + '/' + f.name; if (f.isDirectory()) walk(rel); else if (!want.has(rel)) stale.push(rel); } };
+  const walk = (dir) => { for (const f of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) { const rel = dir + '/' + f.name; if (rel === 'nl/blog') continue; /* written by the Worker */ if (f.isDirectory()) walk(rel); else if (!want.has(rel)) stale.push(rel); } };
   if (exists('nl')) walk('nl');
 
   const changed = [];
@@ -808,7 +893,9 @@ function main() {
     return;
   }
   if (CHECK) {
-    if (!changed.length && !stale.length) { console.log('OK — ' + PAGES.length + ' Dutch pages, sitemap.xml and the redirect list are all up to date.'); return; }
+    const blogProblems = blogSitemapProblems(read('sitemap.xml'));
+    for (const x of blogProblems) console.error('  blog sitemap: ' + x);
+    if (!changed.length && !stale.length && !blogProblems.length) { console.log('OK — ' + PAGES.length + ' Dutch pages, sitemap.xml and the redirect list are all up to date.'); return; }
     console.error('OUT OF DATE — run "node tools/build-nl.js" and commit the result:');
     for (const f of changed) console.error('  needs rebuilding: ' + f);
     for (const f of stale) console.error('  left over (no English page any more): ' + f);

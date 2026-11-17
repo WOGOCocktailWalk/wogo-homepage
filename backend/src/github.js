@@ -155,6 +155,60 @@ export async function deleteFile(env, path, message, opts = {}) {
   return { deleted: true, commit_sha: result.json.commit && result.json.commit.sha };
 }
 
+/**
+ * Commits SEVERAL file changes (writes and deletes) as ONE commit on `branch`,
+ * through the Git Data API (ref -> commit -> tree -> new commit -> move the ref).
+ * The live site rebuilds on every commit, so a blog publish that touches five
+ * files must be one commit, not five.
+ *
+ * `compute(read)` is called with a `read(path)` helper that returns
+ * `{ sha, content } | null` for that path AS OF THE COMMIT THE NEW ONE BUILDS
+ * ON, and returns the list of changes:
+ *   { path, content }          write (UTF-8 text)
+ *   { path, delete: true }     remove — only list files that exist (use `read`)
+ * It is called again from scratch if another commit lands on the branch in the
+ * meantime (the ref move is refused as "not a fast-forward"; we retry once), so
+ * a read-modify-write of a shared file such as sitemap.xml never loses an update.
+ * Nothing is committed when the result would equal the current tree:
+ * returns `{ commit_sha: <current head>, changed: false }`.
+ * Otherwise `{ commit_sha, changed: true }`.
+ */
+export async function commitFiles(env, compute, message, opts = {}) {
+  const branch = opts.branch || GITHUB_COMMIT_BRANCH_DEFAULT;
+  const refPath = `/git/ref/heads/${encodeGithubPath(branch)}`;
+  let lastErr = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const ref = await gitRefRequest(env, 'GET', refPath);
+    if (!ref.ok) throw githubError('GET', `git/ref/heads/${branch}`, ref.status, ref.json);
+    const baseCommitSha = ref.json.object.sha;
+    const baseCommit = await gitRefRequest(env, 'GET', `/git/commits/${baseCommitSha}`);
+    if (!baseCommit.ok) throw githubError('GET', `git/commits/${baseCommitSha}`, baseCommit.status, baseCommit.json);
+    const baseTreeSha = baseCommit.json.tree.sha;
+
+    const changes = await compute((path) => getFile(env, path, baseCommitSha));
+    if (!changes.length) return { commit_sha: baseCommitSha, changed: false };
+
+    const tree = changes.map((c) => (c.delete
+      ? { path: c.path, mode: '100644', type: 'blob', sha: null }
+      : { path: c.path, mode: '100644', type: 'blob', content: c.content }));
+    const newTree = await gitRefRequest(env, 'POST', '/git/trees', { base_tree: baseTreeSha, tree });
+    if (!newTree.ok) throw githubError('POST', 'git/trees', newTree.status, newTree.json);
+    if (newTree.json.sha === baseTreeSha) return { commit_sha: baseCommitSha, changed: false };
+
+    const commit = await gitRefRequest(env, 'POST', '/git/commits', {
+      message, tree: newTree.json.sha, parents: [baseCommitSha],
+      author: GITHUB_COMMIT_AUTHOR, committer: GITHUB_COMMIT_AUTHOR,
+    });
+    if (!commit.ok) throw githubError('POST', 'git/commits', commit.status, commit.json);
+
+    const move = await gitRefRequest(env, 'PATCH', `/git/refs/heads/${encodeGithubPath(branch)}`, { sha: commit.json.sha, force: false });
+    if (move.ok) return { commit_sha: commit.json.sha, changed: true };
+    lastErr = githubError('PATCH', `git/refs/heads/${branch}`, move.status, move.json);
+    if (move.status !== 422 && move.status !== 409) throw lastErr; // only "someone else committed first" is retried
+  }
+  throw lastErr;
+}
+
 // Git-refs requests (branch create/delete/lookup) hit a different URL shape
 // than the Contents API (`/git/refs/...` vs `/contents/...`) — this tiny
 // sibling to githubRequest() hits the repo root directly rather than

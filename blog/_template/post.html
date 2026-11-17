@@ -444,22 +444,17 @@
 </section>
 
 <!-- ============================================================
-     SECTION: ARTICLE BODY (light band). Body copy is rendered TWICE (one
-     div per language, the other `hidden`) rather than per-paragraph
-     data-i18n keys — the admin editor produces one HTML blob per language,
-     not individually-keyed paragraphs, so this is the simplest faithful
-     mapping. setLang() (foot script, below) toggles which div is visible;
-     see that script's own comment for why.
+     SECTION: ARTICLE BODY (light band). ONE language per page: the English
+     page carries only the English text, the Dutch page (nl/blog/<slug>/) is
+     generated from this same template by tools/build-nl.js and carries only
+     the Dutch text, so search engines read the right language at each address.
      ============================================================ -->
 <section class="w-section w-pad">
   <div class="bl-post-meta wg-reveal"><span class="bl-post-cat" data-i18n="post_cat">{{CATEGORY_EN}}</span><span aria-hidden="true">·</span><span data-i18n="post_time">{{READ_MINUTES}} min read</span></div>
   <p class="bl-hook wg-reveal" data-i18n="post_hook">{{EXCERPT_EN}}</p>
 
-  <div class="bl-post-body" data-lang="en">
+  <div class="bl-post-body">
     <article class="bl-post wg-reveal">{{BODY_EN}}</article>
-  </div>
-  <div class="bl-post-body" data-lang="nl" hidden>
-    <article class="bl-post wg-reveal">{{BODY_NL}}</article>
   </div>
 
   <div class="bl-cta-band wg-reveal">
@@ -824,13 +819,8 @@
      keep the site's exact NL text so the dictionaries stay in sync. Because
      this is a long-form post, the whole body is translated, not just labels. ===== */
   var NL = {
-    crumb_home: "Home", crumb_blog: "Blog", crumb_post: "{{TITLE_NL}}",
-    hero_eyebrow: "{{CATEGORY_NL}}",
-    hero_h1: "{{TITLE_NL}}",
-    hero_sub: "{{EXCERPT_NL}}",
-    post_cat: "{{CATEGORY_NL}}", post_time: "{{READ_MINUTES}} min lezen",
-    post_hook: "{{EXCERPT_NL}}",
-    cover_alt: "{{COVER_ALT_NL}}",
+    crumb_home: "Home", crumb_blog: "Blog",
+    post_time: "{{READ_MINUTES}} min lezen",
     post_cta_p: "Ervaar het zelf: vind de cocktailwandeling in jouw stad, vanaf €29,95.",
     post_cta_btn: "Boek je walk",
     post_back: "← Terug naar het journal",

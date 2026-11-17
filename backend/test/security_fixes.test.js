@@ -17,6 +17,7 @@ import { BLOG_POST_TEMPLATE } from '../src/blog_templates_data.js';
 import { computeReminderUnsubscribeToken, verifyReminderUnsubscribeToken } from '../src/reminder_optout.js';
 import { hmacSign, b64urlEncode, createSessionCookieValue, getSession, COOKIE_NAME } from '../src/auth.js';
 import { makeTestDb } from './sqlite-d1-adapter.js';
+import { makeGithubFetchMock } from './github_mock.js';
 import worker from '../src/index.js';
 import * as db from '../src/db.js';
 
@@ -120,7 +121,9 @@ describe('blog page rendering hardening', () => {
 
   test('a stored body from before a sanitiser fix is cleaned when rendered', () => {
     const html = renderPostPage(BLOG_POST_TEMPLATE, post({ body_en: href('java&#115;cript:x') }), { siteNoindex: true, preview: false });
-    assert.ok(!/java(&#115;|s)cript:/i.test(html.slice(html.indexOf('<article'))));
+    const article = html.slice(html.indexOf('<article'), html.indexOf('</article>'));
+    assert.ok(article.includes('<p>') || article.includes('<a'), 'article found');
+    assert.ok(!/java(&#115;|s)cript:/i.test(article)); // (the page's own script legitimately mentions javascript: elsewhere)
   });
 
   test('preview adds a tightening CSP (no network, no forms, no nested frames) and hides the cookie banner', () => {
@@ -198,19 +201,18 @@ const schemaSql = [
 ].map(migration).join('\n');
 const SECRET = 'test-session-secret';
 const CTX = { waitUntil: () => {} };
-let testDb; let realFetch; let putBranches;
+let testDb; let realFetch; let gh;
 beforeEach(() => {
   testDb = makeTestDb(schemaSql);
-  putBranches = [];
+  gh = makeGithubFetchMock();
+  gh.createBranch('blog-publish-test');
+  gh.createBranch('attacker-branch');
   realFetch = global.fetch;
-  global.fetch = async (url, opts = {}) => {
-    const method = (opts && opts.method) || 'GET';
-    if (method === 'PUT') { putBranches.push(JSON.parse(opts.body).branch); return new Response(JSON.stringify({ content: { sha: 's' }, commit: { sha: 'c' } }), { status: 200 }); }
-    if (method === 'DELETE') return new Response(JSON.stringify({ commit: { sha: 'c' } }), { status: 200 });
-    return new Response('{"message":"Not Found"}', { status: 404 });
-  };
+  global.fetch = gh.fetchMock;
 });
 afterEach(() => { global.fetch = realFetch; });
+// which branches did the code try to move (the commit lands there)
+const movedBranches = () => gh.calls.filter((c) => c.method === 'PATCH').map((c) => decodeURIComponent(c.url.split('/git/refs/heads/')[1]));
 
 const env = () => ({ DB: testDb, ADMIN_SESSION_SECRET: SECRET, ADMIN_TOKEN: 't', ENVIRONMENT: 'production', GITHUB_TOKEN: 'x', GITHUB_REPO: 'o/r' });
 const cookieFor = async (role) => `${COOKIE_NAME}=${await createSessionCookieValue(SECRET, { uid: null, role, email: `${role}@example.com` })}`;
@@ -233,8 +235,8 @@ describe('blog commit branch', () => {
     const post = await readyPost(c);
     const res = await call('POST', `/admin/api/blog/${post.id}/publish`, c, { branch: 'attacker-branch' });
     assert.equal(res.status, 200);
-    assert.ok(putBranches.length > 0);
-    assert.ok(putBranches.every((b) => b === 'main'), JSON.stringify(putBranches));
+    assert.deepEqual(movedBranches(), ['main']);
+    assert.equal(gh.commitCount(), 1);
   });
 
   test('the owner can still use a scratch branch; a malformed branch name is refused', async () => {
@@ -242,12 +244,13 @@ describe('blog commit branch', () => {
     const post = await readyPost(c);
     const ok = await call('POST', `/admin/api/blog/${post.id}/publish`, c, { branch: 'blog-publish-test' });
     assert.equal(ok.status, 200);
-    assert.ok(putBranches.every((b) => b === 'blog-publish-test'));
-    putBranches.length = 0;
+    assert.deepEqual(movedBranches(), ['blog-publish-test']);
+    assert.equal(gh.filesOn('main').size, 0, 'main untouched');
+    gh.calls.length = 0;
     for (const bad of ['../main', 'a b', 'x..y', 'ends/', '-lead', 'a;b']) {
       const r = await call('POST', `/admin/api/blog/${post.id}/publish`, c, { branch: bad });
       assert.equal(r.status, 400, bad);
     }
-    assert.equal(putBranches.length, 0);
+    assert.equal(gh.calls.filter((c) => c.method !== 'GET').length, 0);
   });
 });
