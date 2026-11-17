@@ -409,11 +409,6 @@
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
-  <url>
-    <loc>https://www.wogococktailwalk.com/blog/new-bars-rotterdam-night-out/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
 
   <!-- Legal (all six match the footer legal links and resolve on disk) -->
   <url>
@@ -819,6 +814,22 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/utrecht-night-out-cocktails/"/>
     <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/utrecht-night-out-cocktails/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/utrecht-night-out-cocktails/"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/blog/new-bars-rotterdam-night-out/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/new-bars-rotterdam-night-out/"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/new-bars-rotterdam-night-out/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/new-bars-rotterdam-night-out/"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/nl/blog/new-bars-rotterdam-night-out/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/new-bars-rotterdam-night-out/"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/new-bars-rotterdam-night-out/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/new-bars-rotterdam-night-out/"/>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
