@@ -307,3 +307,25 @@ describe('POST /api/contact — dashboard notification', () => {
     assert.equal(notifs.filter((row) => row.kind === 'enquiry').length, 1);
   });
 });
+
+describe('POST /api/contact — per-address cap on the guest acknowledgement', () => {
+  test('after 3 messages naming the same address in a day, no further acknowledgement goes to it (rotating IPs)', async () => {
+    const env = { DB: db, BREVO_API_KEY: 'key_x' };
+    for (let i = 0; i < 6; i++) {
+      const res = await handleContact(
+        contactRequest(validContactBody({ email: 'victim@example.com' }), { 'CF-Connecting-IP': `10.77.0.${i + 1}` }), env
+      );
+      assert.equal(res.status, 200); // the sender sees no difference
+    }
+    const toVictim = sent.filter((s) => s.body.to[0].email === 'victim@example.com');
+    assert.equal(toVictim.length, 3);
+    // messages are still stored and the owner is still told
+    assert.equal(sent.filter((s) => s.body.to[0].email === 'info@wogoamsterdam.com').length, 6);
+  });
+
+  test('addresses containing quote/brace characters are refused', async () => {
+    const env = { DB: db, BREVO_API_KEY: 'key_x' };
+    const res = await handleContact(contactRequest(validContactBody({ email: '{"role":"owner"}@x.co' })), env);
+    assert.equal(res.status, 400);
+  });
+});

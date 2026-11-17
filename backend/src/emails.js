@@ -778,9 +778,12 @@ export function renderOwnerConflict(booking, route) {
   const content = `
     ${detailPanel(rows, '#8a3f6b')}
     <p style="margin:0;font-size:14px;line-height:1.55;color:${C.brown};">
-      This guest completed payment, but the seat had already been resold in the short window
-      after their hold expired. <strong>Action needed:</strong> offer them an alternate slot,
-      or refund via the Stripe dashboard.
+      This guest completed payment, but this start time had no seats left by the time the
+      payment arrived. The bars have <strong>not</strong> been told about this booking. The
+      guest has been emailed that we received the payment and that someone will contact them
+      personally within one working day.
+      <strong>Action needed:</strong> contact them within one working day and offer another
+      time, or decide what to do about the payment. Nothing has been refunded automatically.
     </p>`;
   return {
     // Subject is plain text (no HTML entities decoded by a mail client's
@@ -790,8 +793,80 @@ export function renderOwnerConflict(booking, route) {
       preheader: 'A paid booking could not be seated — resolve by hand.',
       hero: { badge: 'Action needed', title: 'Double-booked', chip: `${route.city} · ${booking.date} ${booking.slot}` },
       heading: 'Double-booked — action needed',
-      intro: 'A guest paid but their seat was gone. Please resolve this one personally.',
+      intro: 'A guest paid but their start time was full. Please resolve this one personally, within one working day.',
       contentHtml: content,
+    }),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 4b. GUEST "paid, but this start time turned out to be full" (EN/NL). Sent
+//    INSTEAD of the normal confirmation when a payment arrives for seats that
+//    are no longer free (src/db.js:confirmBooking -> 'confirmed_conflict').
+//    Honest and short: payment received, this time is not possible, a person
+//    will be in touch within one working day. Deliberately promises NOTHING
+//    about money (tickets are non-refundable; the owner decides each case) and
+//    never says "booked"/"confirmed" — the guest must not turn up.
+// ---------------------------------------------------------------------------
+
+const SLOT_FULL_STRINGS = {
+  en: {
+    subject: (r) => `We received your payment — we’re sorting your start time · ${r.city} Cocktail Walk`,
+    preheader: 'Your payment arrived, but this start time is full. We’ll be in touch personally within one working day.',
+    chip: (r) => `${r.city} · Self-guided cocktail walk`,
+    heading: (n) => `Thank you${n ? ', ' + n : ''} — we’re sorting your time`,
+    intro: (slot, date) => `We’ve received your payment, and we’re so sorry: the ${slot} start on ${date} turned out to be full by the time it came through, so we can’t seat you at that time.`,
+    labels: { route: 'Experience', date: 'Date you chose', time: 'Start time you chose', party: 'Guests', ref: 'Booking ref' },
+    noteTitle: 'What happens next',
+    note: 'One of us will contact you personally within one working day to find a new time that suits you. There’s nothing you need to do right now. Please don’t come at the time above, as we can’t seat you then.',
+    footer: 'Questions in the meantime? Just reply to this email — we read every one.',
+  },
+  nl: {
+    subject: (r) => `We hebben je betaling ontvangen — we regelen je starttijd · ${r.city} Cocktail Walk`,
+    preheader: 'Je betaling is binnen, maar deze starttijd zit vol. We nemen binnen één werkdag persoonlijk contact met je op.',
+    chip: (r) => `${r.city} · Zelfgeleide cocktail walk`,
+    heading: (n) => `Bedankt${n ? ', ' + n : ''} — we regelen je tijd`,
+    intro: (slot, date) => `We hebben je betaling ontvangen en het spijt ons enorm: de starttijd van ${slot} op ${date} bleek vol te zitten op het moment dat de betaling binnenkwam, dus we kunnen je op dat tijdstip geen plek geven.`,
+    labels: { route: 'Ervaring', date: 'Gekozen datum', time: 'Gekozen starttijd', party: 'Gasten', ref: 'Boekingsnr.' },
+    noteTitle: 'Hoe nu verder',
+    note: 'Een van ons neemt binnen één werkdag persoonlijk contact met je op om samen een nieuwe tijd te vinden die jou uitkomt. Je hoeft nu niets te doen. Kom alsjeblieft niet op het tijdstip hierboven, want dan kunnen we je geen plek geven.',
+    footer: 'Vragen in de tussentijd? Beantwoord gewoon deze e-mail — we lezen ze allemaal.',
+  },
+};
+
+export function renderGuestPaymentSlotFull(booking, route, opts = {}) {
+  const lang = loc(opts.locale || booking.locale);
+  const t = SLOT_FULL_STRINGS[lang];
+  const gt = GUEST_STRINGS[lang];
+  const firstName = booking.name ? String(booking.name).trim().split(/\s+/)[0] : '';
+  const longDate = formatLongDate(booking.date, lang);
+  const rows = [
+    [t.labels.route, escapeHtml(route.name)],
+    [t.labels.date, escapeHtml(longDate)],
+    [t.labels.time, escapeHtml(booking.slot)],
+    [t.labels.party, escapeHtml(gt.guests(booking.party))],
+    [t.labels.ref, `<span style="font-family:ui-monospace,Menlo,monospace;font-size:12px;color:${C.muted};">${escapeHtml(booking.id)}</span>`],
+  ];
+  const content = `
+    ${detailPanel(rows, '#8a3f6b')}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.blush};border-radius:12px;margin:0 0 8px;">
+      <tr><td style="padding:14px 16px;font-size:14px;line-height:1.55;color:${C.brown};">
+        <strong>${escapeHtml(t.noteTitle)}</strong><br>${escapeHtml(t.note)}
+      </td></tr>
+    </table>`;
+  return {
+    subject: t.subject(route),
+    html: layout({
+      preheader: t.preheader,
+      hero: { chip: t.chip(route) },
+      // Quiet still life (same as the cancellation mail) — a party photo
+      // would be tone-deaf here, and the route poster reads as "your ticket".
+      imageKind: 'cancellation',
+      posterRoute: route,
+      heading: t.heading(firstName),
+      intro: t.intro(booking.slot, longDate),
+      contentHtml: content,
+      footerHtml: `<p style="margin:0;font-size:13px;line-height:1.5;color:${C.brown};">${escapeHtml(t.footer)}</p>`,
     }),
   };
 }

@@ -4,7 +4,7 @@
 
 import * as db from './db.js';
 import {
-  toCsv, aggregateCustomers, computeLoginLockout, nowSqlite, sqliteMinutesAgo, sqliteMinutesFromNow,
+  toCsv, maskEmail, aggregateCustomers, computeLoginLockout, nowSqlite, sqliteMinutesAgo, sqliteMinutesFromNow,
   validateNotes, isValidCurrencyCode, isValidIanaTimeZone, buildBookingAnalytics, addDaysToDateStr,
   buildHighlightsSales, computePctDelta, pageViewsByCity,
   validateBlogSlug, validateBlogCategory, sanitizeBlogHtml, stripHtmlTags,
@@ -114,7 +114,10 @@ async function audit(env, request, action, entity_type, entity_id, detail) {
 }
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Rejects whitespace and the characters that have no place in a mailbox
+// (quotes, braces, angle brackets, backslash) so an address can never double
+// as structured text (for example JSON) anywhere it is later embedded.
+const EMAIL_RE = /^[^\s@"{}<>\\]+@[^\s@"{}<>\\]+\.[^\s@"{}<>\\]+$/;
 
 function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -475,7 +478,7 @@ async function sendLoginLinkEmail(request, env, user, opts) {
       { database: db, sendTransactional, kind: opts.invite ? 'admin_invite' : 'admin_login_link' }
     );
   } catch (err) {
-    console.error('admin_login_link_send_failed', user.email, err);
+    console.error('admin_login_link_send_failed', maskEmail(user.email), maskEmail(String(err && err.message ? err.message : err)));
   }
 }
 
@@ -662,6 +665,8 @@ export async function handleUpdateUser(request, env, params) {
   }
 
   const updated = await db.updateAdminUser(env.DB, params.id, patch);
+  // A disabled person's phones must stop receiving anything from the dashboard.
+  if (patch.status === 'disabled') await db.deletePushSubscriptionsForUser(env.DB, params.id);
   await audit(env, request, 'admin_user.update', 'admin_user', params.id, patch);
   return json({ user: updated });
 }
@@ -2710,7 +2715,9 @@ export async function handleGetBlogPost(request, env, params) {
   const post = await db.getBlogPost(env.DB, params.id);
   if (!post) return errorJson('not_found', 'post not found', 404);
   const scheduledAt = post.status === 'published' ? null : await db.getSetting(env.DB, BLOG_SCHEDULE_PREFIX + post.id);
-  return json({ post: { ...withCoverUrl(post), scheduled_at: scheduledAt || null } });
+  // Bodies are re-sanitised on the way out too (older rows predate sanitizer fixes).
+  const clean = { ...post, body_en: post.body_en ? sanitizeBlogHtml(post.body_en) : post.body_en, body_nl: post.body_nl ? sanitizeBlogHtml(post.body_nl) : post.body_nl };
+  return json({ post: { ...withCoverUrl(clean), scheduled_at: scheduledAt || null } });
 }
 
 /**
@@ -3070,6 +3077,21 @@ export async function handlePreviewBlogPost(request, env, params) {
   return json({ html, lang });
 }
 
+/** Which git branch a blog commit goes to. Only the owner may name a branch
+ * (the scratch-branch rehearsal in SETUP.md); everyone else always commits to
+ * the default one, whatever the request says. A name must look like a plain
+ * branch name; an invalid one returns null (the caller must refuse). */
+function resolveBlogBranch(request, requested) {
+  const session = request.adminSession;
+  if (!session || session.role !== 'owner') return GITHUB_COMMIT_BRANCH_DEFAULT;
+  const name = typeof requested === 'string' ? requested.trim() : '';
+  if (!name) return GITHUB_COMMIT_BRANCH_DEFAULT;
+  if (!/^[A-Za-z0-9][A-Za-z0-9._\/-]{0,99}$/.test(name) || name.includes('..') || name.endsWith('/') || name.endsWith('.lock')) {
+    return null; // caller answers 400; never fall back to the live branch for a mistyped scratch name
+  }
+  return name;
+}
+
 /** Rebuilds blog/index.html from the CURRENT list of published posts
  * (newest-first by published_at) and commits it. Shared by publish and
  * unpublish — both end with "the post list changed, regenerate the index." */
@@ -3132,7 +3154,8 @@ export async function handlePublishBlogPost(request, env, params) {
   } catch {
     body = {};
   }
-  const branch = body.branch || GITHUB_COMMIT_BRANCH_DEFAULT;
+  const branch = resolveBlogBranch(request, body.branch);
+  if (branch === null) return errorJson('bad_request', 'invalid branch name', 400);
 
   const readyCheck = checkPublishReady(existing);
   if (!readyCheck.ok) return errorJson('not_ready', readyCheck.message, 400);
@@ -3186,7 +3209,8 @@ export async function handleUnpublishBlogPost(request, env, params) {
   } catch {
     body = {};
   }
-  const branch = body.branch || GITHUB_COMMIT_BRANCH_DEFAULT;
+  const branch = resolveBlogBranch(request, body.branch);
+  if (branch === null) return errorJson('bad_request', 'invalid branch name', 400);
 
   await deleteFile(env, `blog/${existing.slug}/index.html`, `Unpublish blog post: ${existing.title_en}`, { branch });
 
@@ -3252,7 +3276,8 @@ export async function handleUploadBlogAsset(request, env, params) {
   if (file.size > BLOG_ASSET_MAX_BYTES) {
     return errorJson('bad_request', `images must be ${Math.round(BLOG_ASSET_MAX_BYTES / 1024 / 1024 * 10) / 10}MB or smaller`, 400);
   }
-  const branch = (form.get('branch') || GITHUB_COMMIT_BRANCH_DEFAULT).toString();
+  const branch = resolveBlogBranch(request, form.get('branch'));
+  if (branch === null) return errorJson('bad_request', 'invalid branch name', 400);
 
   const filename = buildAssetFilename(file.name, ext);
   const path = `blog/${existing.slug}/${filename}`;
@@ -3421,6 +3446,8 @@ export async function handleNotificationsPending(request, env) {
   return json({ notifications });
 }
 
+const PUSH_PENDING_PER_10_MIN = 60;
+
 /** POST /admin/push/pending — same answer as handleNotificationsPending,
  * but authenticated by the DEVICE instead of a login session: the service
  * worker sends its own push subscription's endpoint + auth secret (both
@@ -3434,8 +3461,19 @@ export async function handlePushPending(request, env) {
   const endpoint = body && typeof body.endpoint === 'string' ? body.endpoint : '';
   const auth = body && typeof body.auth === 'string' ? body.auth : '';
   if (!endpoint || !auth || endpoint.length > 2000) return errorJson('unauthorized', null, 401);
+  // Unauthenticated by design (device secret only), so cap it per IP: a normal
+  // phone calls this once per push, far below the cap.
+  const pushIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+  await db.recordRateEvent(env.DB, 'push_pending_ip', pushIp);
+  const pushTries = await db.countRateEventsSince(env.DB, 'push_pending_ip', pushIp, sqliteMinutesAgo(10));
+  if (pushTries > PUSH_PENDING_PER_10_MIN) return errorJson('rate_limited', 'too many requests', 429);
   const sub = await db.getPushSubscriptionByEndpoint(env.DB, endpoint);
   if (!sub || !sub.auth || !constantTimeEqual(String(sub.auth), auth)) return errorJson('unauthorized', null, 401);
+  // A disabled (or deleted) person's old devices must stop receiving content.
+  if (sub.user_id) {
+    const owner = await db.getAdminUserById(env.DB, sub.user_id);
+    if (!owner || owner.status !== 'active') return errorJson('unauthorized', null, 401);
+  }
   const notifications = await db.listNotifications(env.DB, { userId: sub.user_id || null, unreadOnly: true, limit: 5 });
   return json({ notifications });
 }

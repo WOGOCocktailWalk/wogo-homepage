@@ -61,7 +61,7 @@ Legend: **Likelihood / Severity** as HIGH · MEDIUM · LOW. "Test" = how to prov
 | Capacity wrong: Wix bookings for future dates not imported → overbooking | HIGH | HIGH | Export Wix Bookings → manual bookings in admin (blocks seats, no emails) | Admin week grid shows Wix bookings | Manual outreach to bars/guests |
 | Gift cards sold on Wix not redeemable | HIGH | HIGH | Export Wix gift-card balances → Stripe promo codes (same code, same amount, one-use) | Redeem one test code | Honour by hand: manual booking + refund/discount |
 | iDEAL/Klarna/Apple Pay not enabled in live Stripe | MEDIUM | HIGH | Enable in Stripe → Payment methods before launch | Checkout shows iDEAL first on NL IP | Enable; no rollback needed |
-| Hold expiry (15 min) too short on slow mobile → "seat gone" errors | LOW | MEDIUM | Keep 15; monitor `holds_expired` vs completions | Slow-3G test | Raise to 20 |
+| Hold expiry (35 min since Nov 2026, = Stripe page 30 min + 5) on slow mobile → "seat gone" errors | LOW | MEDIUM | Keep 15; monitor `holds_expired` vs completions | Slow-3G test | Raise to 20 |
 | Guest closes Stripe tab, returns → hold gone, confusing message | MEDIUM | LOW | Clear "start again" message in widget | Test | Copy fix |
 | Duplicate submissions (double-click) | LOW | MEDIUM | Idempotent hold + Stripe session dedupe (built) | Double-click test | Refund duplicate |
 
@@ -593,6 +593,8 @@ Run all of it on the `github.io` URL before launch and once more on the real dom
 ---
 
 ## 12. Rollback plan
+
+> **Superseded after launch (17 Nov 2026):** the `BOOKING_FALLBACK_URL` switch and the "Wix book now button" fallback described below were never built. The current emergency steps are in `backend/DR.md`.
 
 ### Tiers
 

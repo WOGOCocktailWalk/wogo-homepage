@@ -34,3 +34,4 @@ exclude:
   - .claude/
   - tools/            # build scripts (tools/build-nl.js makes the Dutch pages under /nl/)
   - redirects-worker/ # the old-address forwarding helper (runs on Cloudflare, not part of the site)
+  - .github/            # workflows (Jekyll skips dot-folders already; explicit on purpose)

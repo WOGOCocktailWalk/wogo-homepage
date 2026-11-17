@@ -1,2 +1,15 @@
 .claude/
 .DS_Store
+
+# Backup files and local restore rehearsals contain guest data
+backend/backup*.json
+backend/restore*.json
+backend/restored*.sqlite
+# local tooling / secrets
+backend/.wrangler/
+.wrangler/
+.dev.vars
+backend/.dev.vars
+.env
+.env.*
+node_modules/

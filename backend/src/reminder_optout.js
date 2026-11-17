@@ -14,6 +14,16 @@
 import { hmacSign, b64urlEncode, b64urlDecode } from './auth.js';
 import { constantTimeEqual } from './logic.js';
 
+// Domain separation: this token must never be valid under the key that signs
+// admin session cookies. The signing key is derived from the shared secret
+// with a context label, so a token minted here can not double as a cookie.
+// Tokens already sent in earlier emails were signed with the raw secret; they
+// stay accepted for VERIFY only (nothing new is ever signed that way), so
+// existing unsubscribe links keep working.
+async function reminderKey(env) {
+  return hmacSign(env.ADMIN_SESSION_SECRET, 'wogo:reminder-unsub:v1');
+}
+
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
@@ -29,7 +39,7 @@ export async function buildReminderUnsubscribeUrl(env, baseUrl, email) {
 export async function computeReminderUnsubscribeToken(env, email) {
   const normalized = normalizeEmail(email);
   const payloadB64 = b64urlEncode(new TextEncoder().encode(normalized));
-  const sig = await hmacSign(env.ADMIN_SESSION_SECRET, payloadB64);
+  const sig = await hmacSign(await reminderKey(env), payloadB64);
   return `${payloadB64}.${sig}`;
 }
 
@@ -44,10 +54,16 @@ export async function verifyReminderUnsubscribeToken(env, token) {
     if (dot === -1) return null;
     const payloadB64 = token.slice(0, dot);
     const sig = token.slice(dot + 1);
-    const expectedSig = await hmacSign(env.ADMIN_SESSION_SECRET, payloadB64);
-    if (!constantTimeEqual(sig, expectedSig)) return null;
+    const expectedSig = await hmacSign(await reminderKey(env), payloadB64);
+    const legacySig = await hmacSign(env.ADMIN_SESSION_SECRET, payloadB64);
+    const okNew = constantTimeEqual(sig, expectedSig);
+    const okLegacy = constantTimeEqual(sig, legacySig);
+    if (!okNew && !okLegacy) return null;
     const email = new TextDecoder().decode(b64urlDecode(payloadB64));
-    return email || null;
+    // Only something shaped like a mailbox is ever accepted; a signed blob of
+    // any other kind (for example a session cookie) is not an opt-out token.
+    if (!email || !/^[^\s@"{}<>\\]+@[^\s@"{}<>\\]+$/.test(email)) return null;
+    return email;
   } catch {
     return null;
   }

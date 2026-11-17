@@ -210,8 +210,15 @@ export const DEFAULT_MAX_PARTY = 6;
 // kept only because it's the original audit item's constant.
 export const SAME_DAY_CUTOFF_MINUTES = 60;
 
-export const HOLD_MINUTES = 15;
 export const STRIPE_EXPIRES_MINUTES = 30; // Stripe's minimum for Checkout Session expires_at
+// The seat hold must outlive the Stripe payment page. Stripe lets a guest keep
+// paying for STRIPE_EXPIRES_MINUTES, so a shorter hold would release the seats
+// while the guest can still pay for them (the old 15-minute hold did exactly
+// that). The margin covers the seconds between creating the hold and creating
+// the Stripe session, a slow clock, and a webhook that arrives a little late.
+// Derived, not typed twice, so the two can never drift apart again.
+export const HOLD_MARGIN_MINUTES = 5;
+export const HOLD_MINUTES = STRIPE_EXPIRES_MINUTES + HOLD_MARGIN_MINUTES;
 export const BOOKING_HORIZON_DAYS = 90;
 export const WEBHOOK_TOLERANCE_SECONDS = 300;
 
@@ -247,6 +254,10 @@ export const ADMIN_EMAIL_MAX_LENGTH = 200;            // sanity cap on a submitt
 
 // Retention for the two security tables — pruned by the 5-minute cron sweep.
 export const RATE_EVENTS_RETENTION_MINUTES = 24 * 60;      // 24h
+// Per-RECIPIENT cap on mails a public form may trigger to one address within
+// RATE_EVENTS_RETENTION_MINUTES (the per-IP limit alone does not stop a
+// rotating-IP sender from mailing one person repeatedly).
+export const FORM_MAILS_PER_ADDRESS_PER_DAY = 3;
 export const AUTH_EVENTS_RETENTION_MINUTES = 30 * 24 * 60; // 30 days (audit log)
 
 // --- Production hardening (2026-07, SETUP.md "Production hardening" section) ---
@@ -592,6 +603,9 @@ export const NOTIFICATION_KIND_PREFERENCE_GROUP = {
   giftcard_sold: 'gift_card',
   enquiry: 'enquiry',
   problem: 'problems',
+  // A paid guest with no seat: ALWAYS delivered (no preference group, like
+  // 'test') — a teammate who muted "problems" must still see this one.
+  booking_conflict: null,
   test: null,
 };
 export const NOTIFICATION_DEFAULT_PREFERENCES = {

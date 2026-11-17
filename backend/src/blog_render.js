@@ -17,6 +17,7 @@
 // other page on the site (see those files' own head comments).
 
 import { BLOG_CANONICAL_BASE, SITE_ASSET_BASE } from './config.js';
+import { sanitizeBlogHtml } from './logic.js';
 
 const CATEGORY_NL = {
   'City guide': 'Stadsgids',
@@ -31,6 +32,14 @@ const CATEGORY_NL = {
  * broken <img>. Absolute (see module doc comment on why every blog image
  * reference, cover or in-body, is an absolute URL rather than relative). */
 const FALLBACK_COVER_PATH = 'how-it-works/how-it-works-hero.jpg';
+
+/** JSON for a <script type="application/ld+json"> block. Plain JSON.stringify
+ * leaves "<" alone, so a title containing a closing script tag would end the
+ * block early. Escaping < > & (as \\uXXXX) keeps the JSON identical for
+ * parsers while making it impossible to break out of the script element. */
+function safeJsonLd(obj) {
+  return JSON.stringify(obj).replace(/[<>&\u2028\u2029]/g, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'));
+}
 
 function escHtml(value) {
   return String(value == null ? '' : value).replace(/[&<>"']/g, (c) => (
@@ -125,7 +134,7 @@ export function renderPostPage(template, post, opts = {}) {
   const datePublished = dateOnly(post.published_at || post.created_at);
   const dateModified = dateOnly(post.updated_at || post.published_at || post.created_at);
 
-  const jsonLdBlogPosting = JSON.stringify({
+  const jsonLdBlogPosting = safeJsonLd({
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: f.titleEn,
@@ -141,7 +150,7 @@ export function renderPostPage(template, post, opts = {}) {
     },
     mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
   });
-  const jsonLdBreadcrumb = JSON.stringify({
+  const jsonLdBreadcrumb = safeJsonLd({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
@@ -160,14 +169,25 @@ export function renderPostPage(template, post, opts = {}) {
     JSONLD_BLOGPOSTING: jsonLdBlogPosting,
     JSONLD_BREADCRUMBLIST: jsonLdBreadcrumb,
     ROBOTS_META_TAG: opts.siteNoindex ? '<meta name="robots" content="noindex">' : '',
-    PREVIEW_BASE_TAG: opts.preview ? `<base href="${escHtml(`${SITE_ASSET_BASE}/blog/${post.slug}/`)}">` : '',
+    PREVIEW_BASE_TAG: opts.preview
+      // The dashboard shows this inside a sandboxed frame. The meta policy adds
+      // a second lock: nothing in the preview may call out, submit a form,
+      // nest another frame or load plugins (it intersects with the policy the
+      // frame inherits from the dashboard, it can only tighten it).
+      ? `<meta http-equiv="Content-Security-Policy" content="connect-src 'none'; form-action 'none'; frame-src 'none'; object-src 'none'">` +
+        // A sandboxed frame has no stored consent choice, so keep the cookie banner out of the preview.
+        `<style>#wogoCcBanner{display:none!important}</style>` +
+        `<base href="${escHtml(`${SITE_ASSET_BASE}/blog/${post.slug}/`)}">`
+      : '',
     TITLE_EN: escHtml(f.titleEn),
     CATEGORY_EN: escHtml(categoryLabel(post.category, 'en')),
     EXCERPT_EN: escHtml(f.excerptEn),
     COVER_ALT_EN: escHtml(f.coverAltEn),
     READ_MINUTES: String(post.read_minutes || 5),
-    BODY_EN: post.body_en || '',
-    BODY_NL: post.body_nl || post.body_en || '',
+    // Sanitised again at render time: bodies stored before a sanitizer fix must
+    // not reach a page unchecked. Re-running it on clean HTML changes nothing.
+    BODY_EN: sanitizeBlogHtml(post.body_en || ''),
+    BODY_NL: sanitizeBlogHtml(post.body_nl || post.body_en || ''),
     TITLE_NL: toNlDictLiteral(f.titleNl),
     CATEGORY_NL: toNlDictLiteral(categoryLabel(post.category, 'nl')),
     EXCERPT_NL: toNlDictLiteral(f.excerptNl),
@@ -208,7 +228,7 @@ export function renderIndexPage(template, publishedPosts, opts = {}) {
   const cardsEn = publishedPosts.map((p) => buildCard(p, 'en')).join('\n');
   const cardsNl = publishedPosts.map((p) => buildCard(p, 'nl')).join('\n');
   const jsonLdPosts = publishedPosts
-    .map((p) => JSON.stringify({
+    .map((p) => safeJsonLd({
       '@type': 'BlogPosting',
       headline: p.title_en,
       url: `${BLOG_CANONICAL_BASE}/blog/${p.slug}/`,

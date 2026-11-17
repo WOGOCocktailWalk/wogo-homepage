@@ -5,11 +5,13 @@ import { sendTransactional } from './brevo.js';
 import { sendPurchaseEvent } from './meta.js';
 import { computeBarArrivals, extractDiscount, analyticsRevenueCents, formatNotificationDate, formatEuros, summarizeAddonsForNotification } from './logic.js';
 import { notifyAdmins } from './notifications.js';
+import { reportPaymentProblem } from './payment_alerts.js';
 import {
   renderGuestConfirmation,
   renderOwnerNotification,
   renderBarNotification,
   renderOwnerConflict,
+  renderGuestPaymentSlotFull,
   renderGuestReschedule,
   renderBarReschedule,
   renderGuestCancellation,
@@ -46,6 +48,7 @@ export async function handleWebhook(request, env, deps = {}) {
   // crypto, before any DB touch.
   const sig = request.headers.get('stripe-signature');
   if (!sig || !env.STRIPE_WEBHOOK_SECRET) {
+    if (sig) await reportPaymentProblem(env, 'webhook_rejected', 'STRIPE_WEBHOOK_SECRET is not set', { reason: 'no_secret' }, { database: deps.db, sendTransactional: brevoSend });
     return json({ error: 'invalid_signature' }, 400);
   }
 
@@ -57,6 +60,7 @@ export async function handleWebhook(request, env, deps = {}) {
     // Deliberately no detail in the response (why it failed is logged, not
     // leaked — a prober shouldn't learn which check tripped).
     console.warn('stripe_signature_rejected', String(err && err.message ? err.message : err));
+    await reportPaymentProblem(env, 'webhook_rejected', err, { reason: 'bad_signature' }, { database: deps.db, sendTransactional: brevoSend });
     return json({ error: 'invalid_signature' }, 400);
   }
 
@@ -118,7 +122,13 @@ export async function handleWebhook(request, env, deps = {}) {
 
         const route = await database.getRoute(env.DB, booking.route_id);
 
-        if (route) {
+        if (result.status === 'confirmed_conflict') {
+          // Paid, but the seats are gone. Nothing below this branch runs for
+          // it: no bar mails, no "you're booked" mail, no owner "new booking"
+          // copy, no Meta Purchase event, no newsletter opt-in. See
+          // handlePaidButSlotFull for what DOES happen.
+          await handlePaidButSlotFull(env, booking, route, session, { database, sendTransactional: brevoSend });
+        } else if (route) {
           // Add-ons (migrations/0033) — fetched ONCE here and threaded into
           // every one of this booking's confirmation-moment emails below
           // (guest, every bar, owner) — [] for the overwhelming majority of
@@ -135,23 +145,15 @@ export async function handleWebhook(request, env, deps = {}) {
 
           const arrivals = await notifyBars(env, booking, route, { database, computeBarArrivals: computeBars, sendTransactional: brevoSend, addons: addonLines });
 
-          if (result.status === 'confirmed') {
-            // Owner/internal "new booking" copy (Dashboard v2 §8.4).
-            const mail = renderOwnerNotification(booking, route, { arrivals, addons: addonLines });
-            await sendWithRetry(env, { to: OWNER_NOTIFY_EMAIL, subject: mail.subject, htmlContent: mail.html }, { database, sendTransactional: brevoSend, kind: 'owner_notification' });
-          }
-
-          if (result.status === 'confirmed_conflict') {
-            const mail = renderOwnerConflict(booking, route);
-            await sendWithRetry(env, { to: OWNER_ALERT_EMAIL, subject: mail.subject, htmlContent: mail.html }, { database, sendTransactional: brevoSend, kind: 'owner_conflict' });
-          }
+          // Owner/internal "new booking" copy (Dashboard v2 §8.4).
+          const mail = renderOwnerNotification(booking, route, { arrivals, addons: addonLines });
+          await sendWithRetry(env, { to: OWNER_NOTIFY_EMAIL, subject: mail.subject, htmlContent: mail.html }, { database, sendTransactional: brevoSend, kind: 'owner_notification' });
 
           // Gift-card redemption (migrations/0018/0019) — the Stripe charge
           // was ALREADY reduced by gift_applied_cents at checkout time (the
           // one-time coupon in src/stripe.js); this is the step that actually
-          // deducts it from the card's D1 balance. Runs for BOTH 'confirmed'
-          // and 'confirmed_conflict' — the guest paid the reduced amount
-          // either way, so the card must be charged either way.
+          // deducts it from the card's D1 balance. (A paid-but-slot-full
+          // booking redeems its card too — see handlePaidButSlotFull.)
           if (booking.gift_code) {
             await applyGiftCardRedemption(env, booking, { database, sendTransactional: brevoSend });
           }
@@ -213,6 +215,67 @@ export async function handleWebhook(request, env, deps = {}) {
   await database.finishWebhookProcessing(env.DB, event.id);
 
   return json({ received: true }, 200);
+}
+
+/**
+ * A guest PAID, but by the time the payment arrived the start time had no
+ * seats left (db.confirmBooking returned 'confirmed_conflict'). With the hold
+ * now outlasting the Stripe payment page this should be very rare (a webhook
+ * that arrives very late); this is the safety net. What happens:
+ *   1. The owner is alerted FIRST, by push and by email, each independent of
+ *      the other (and of the guest mail) — push does not need Brevo at all.
+ *   2. The guest gets an honest "payment received, this time is full, we will
+ *      contact you within one working day" mail. NOT a confirmation.
+ *   3. The bars are NOT told anything (they never get a reservation for it).
+ *   4. A gift card used on this checkout is still deducted — the guest paid
+ *      the reduced amount either way.
+ *   5. No automatic refund and no promise of one; the owner decides.
+ * Every step is isolated so one failure cannot stop the next. The route may
+ * be missing (deleted route); the alert still goes out.
+ */
+async function handlePaidButSlotFull(env, booking, route, session, deps = {}) {
+  const database = deps.database || db;
+  const brevoSend = deps.sendTransactional || sendTransactional;
+  const routeForMail = route || { id: booking.route_id, name: booking.route_id, city: '' };
+
+  // 1a. Push first: works even if Brevo is down.
+  try {
+    await notifyAdmins(env, {
+      kind: 'booking_conflict',
+      title: `⚠️ Betaald, maar tijd zit vol · ${booking.name}`,
+      body: `${booking.party} ${booking.party === 1 ? 'gast' : 'gasten'} · ${routeForMail.name} · ${formatNotificationDate(booking.date)} ${booking.slot} · neem binnen 1 werkdag contact op, er is niets terugbetaald`,
+      url: `/admin/#/bookings/${booking.id}`,
+      booking_id: booking.id,
+    }, { database });
+  } catch (err) {
+    console.error('slot_full_push_failed', booking.id, err);
+  }
+
+  // 1b. Owner alert email.
+  try {
+    const mail = renderOwnerConflict(booking, routeForMail);
+    await sendWithRetry(env, { to: OWNER_ALERT_EMAIL, subject: mail.subject, htmlContent: mail.html }, { database, sendTransactional: brevoSend, kind: 'owner_conflict' });
+  } catch (err) {
+    console.error('slot_full_owner_mail_failed', booking.id, err);
+  }
+
+  // 2. The guest.
+  try {
+    const locale = booking.locale === 'nl' ? 'nl' : 'en';
+    const mail = renderGuestPaymentSlotFull(booking, routeForMail, { locale });
+    await sendWithRetry(env, { to: booking.email, subject: mail.subject, htmlContent: mail.html }, { database, sendTransactional: brevoSend, kind: 'guest_payment_slot_full' });
+  } catch (err) {
+    console.error('slot_full_guest_mail_failed', booking.id, err);
+  }
+
+  // 4. Gift card.
+  if (booking.gift_code) {
+    try {
+      await applyGiftCardRedemption(env, booking, { database, sendTransactional: brevoSend });
+    } catch (err) {
+      console.error('slot_full_gift_redeem_failed', booking.id, err);
+    }
+  }
 }
 
 async function safe(fn) {

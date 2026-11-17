@@ -88,11 +88,11 @@ describe('GET /api/booking (post-payment confirmation lookup)', () => {
     assert.equal(body.route_name, 'Rotterdam Route 1');
   });
 
-  test('a confirmed_conflict booking still reports confirmed', async () => {
+  test('a confirmed_conflict booking reports slot_full, never confirmed', async () => {
     seedRoute(db);
     seedBooking(db, { status: 'confirmed_conflict', stripe_session: 'cs_test_conflict' });
     const body = await (await lookup(db, 'cs_test_conflict')).json();
-    assert.equal(body.status, 'confirmed');
+    assert.equal(body.status, 'slot_full');
   });
 
   test('an unknown session id returns 404', async () => {
