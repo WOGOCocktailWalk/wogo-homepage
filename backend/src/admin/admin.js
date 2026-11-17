@@ -2410,6 +2410,67 @@
       grid.appendChild(card);
     });
     root.appendChild(grid);
+    root.appendChild(missingPagesCard());
+  }
+
+  /* ---------- Tools: addresses that do not exist but still get visits -----
+     Fed by the beacon in the website's 404 page (Worker: src/missing_pages.js).
+     Only the address is saved: no names, no IP numbers. */
+  function missingPagesCard() {
+    const card = el("div", { class: "card", style: "margin-top:18px" });
+    card.appendChild(el("div", { class: "card-head" }, [el("h2", { text: "Addresses that don't exist (but people still visit)" })]));
+    const body = el("div", { style: "padding:0 18px 18px" });
+    body.appendChild(el("p", { class: "capacity-hint", text: "When someone opens a link that doesn't exist on the website, they are sent to the homepage. This list shows which missing links people tried, so you can ask for a forward. Only the address is saved: no names, no IP numbers. A row disappears by itself after 90 days without a visit." }));
+    const holder = el("div");
+    body.appendChild(holder);
+    card.appendChild(body);
+
+    async function load() {
+      clear(holder);
+      holder.appendChild(skeletonRows(3));
+      let data;
+      try { data = await api("/admin/api/missing-pages"); }
+      catch (e) {
+        if (e.message === "unauthenticated") return;
+        clear(holder);
+        holder.appendChild(el("p", { class: "capacity-hint", text: "The list could not be loaded (" + e.message + ")." }));
+        return;
+      }
+      clear(holder);
+      const list = data.pages || [];
+      if (list.length === 0) {
+        holder.appendChild(el("div", { class: "empty" }, el("div", { text: "No missing addresses recorded yet." })));
+        return;
+      }
+      const scroll = el("div", { class: "table-scroll" });
+      const t = el("table", { class: "data" });
+      t.appendChild(el("thead", {}, el("tr", {}, [th("Address"), th("Visits", "metric"), th("Last visit"), th("")])));
+      const tb = el("tbody");
+      list.forEach((r) => {
+        tb.appendChild(el("tr", {}, [
+          el("td", { class: "td-name", style: "font-family:ui-monospace,Menlo,monospace;font-size:12.5px;word-break:break-all", text: r.path }),
+          el("td", { class: "num td-name metric", text: String(r.hits) }),
+          el("td", { class: "td-sub num", text: r.last_seen ? prettyDate(String(r.last_seen).slice(0, 10)) : "—" }),
+          el("td", {}, el("button", {
+            class: "btn btn-quiet btn-sm", text: "Forget",
+            onclick: async (ev) => {
+              const btn = ev.currentTarget; btn.disabled = true;
+              try {
+                await api("/admin/api/missing-pages/forget", { method: "POST", body: { path: r.path } });
+                toast("Forgotten. It comes back only if someone visits it again.", "ok");
+              } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+              load();
+            }
+          }))
+        ]));
+      });
+      t.appendChild(tb);
+      scroll.appendChild(t);
+      holder.appendChild(scroll);
+      if (list.length >= (data.max_pages || 500)) holder.appendChild(el("p", { class: "capacity-hint", text: "The list is full, so new missing addresses are not added until older ones are forgotten or expire." }));
+    }
+    load();
+    return card;
   }
 
   function renderExport(root) {

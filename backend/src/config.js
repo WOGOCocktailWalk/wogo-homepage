@@ -674,3 +674,12 @@ export const MAP_BY_DATE = {
 export const SCHEDULED_PROMO_ACTIVATIONS = [
   { code: 'BLACKFRIDAY15', activate_at: '2026-11-26T23:00:00Z' },
 ];
+
+// --- Missing-page log (src/missing_pages.js) -------------------------------
+// The website's 404 page tells the Worker which address did not exist, so the
+// owner can see which missing addresses get real visits and add a forward.
+export const MISSING_PAGE_MAX_DISTINCT = 500;        // most different paths kept at once
+export const MISSING_PAGE_RETENTION_DAYS = 90;       // a path not visited for this long is forgotten
+export const MISSING_PAGE_HITS_PER_WINDOW = 10;      // per visitor (hashed IP)...
+export const MISSING_PAGE_WINDOW_MINUTES = 10;       // ...per sliding window of this many minutes
+export const MISSING_PAGE_MAX_LENGTH = 120;          // a longer path is ignored, not cut short

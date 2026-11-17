@@ -3228,3 +3228,82 @@ export async function countConfirmedBookingsForRouteSince(db, routeId, sinceStr)
   );
   return row ? Number(row.n) || 0 : 0;
 }
+
+// ---------------------------------------------------------------------------
+// Missing-page log (public POST /api/missing-page, src/missing_pages.js).
+//
+// Which addresses on the website do not exist but still get visits? Stored in
+// the existing generic `settings` k/v table, NO new table: one row per
+// normalised path, key `notfound:<path>`, value a small JSON object
+// {"hits":N,"first":"<utc>","last":"<utc>"}. Only the path is stored: no
+// query string, IP, cookie or user agent.
+//
+// Why this cannot corrupt counts under concurrent writes: a hit is ONE SQL
+// statement that increments inside the database (json_set on the stored
+// value), never "read the row in JS, add one, write it back". D1 runs each
+// statement atomically, so two simultaneous hits give +2, not +1.
+// The distinct-path cap is checked inside the same INSERT statement. Two
+// brand-new paths racing at the very limit can overshoot the cap by a handful
+// of rows, which is harmless; counts of existing paths stay exact.
+// ---------------------------------------------------------------------------
+
+export const MISSING_PAGE_KEY_PREFIX = 'notfound:';
+// Keys are matched with a range (`k >= 'notfound:' AND k < 'notfound;'`,
+// ';' is the character after ':'), which uses the primary-key index and,
+// unlike LIKE, has no wildcard characters to escape.
+const MISSING_PAGE_RANGE = { lo: MISSING_PAGE_KEY_PREFIX, hi: 'notfound;' };
+
+const MISSING_PAGE_BUMP_SQL = `json_set(settings.v, '$.hits', COALESCE(json_extract(settings.v, '$.hits'), 0) + 1, '$.last', datetime('now'))`;
+
+/** Counts one visit to a missing path. Returns 'counted', or 'full' when the
+ * path is new and the cap on distinct paths is reached (nothing is stored). */
+export async function recordMissingPageHit(db, path, cap) {
+  const k = MISSING_PAGE_KEY_PREFIX + path;
+  // 1) The common case: the path is already known, bump it in place.
+  const bumped = await run(
+    db,
+    `UPDATE settings SET v = ${MISSING_PAGE_BUMP_SQL} WHERE k = :k`,
+    { k }
+  );
+  if (bumped.meta.changes > 0) return 'counted';
+  // 2) New path: insert only while under the cap. ON CONFLICT covers the case
+  // where another request inserted the same path between step 1 and now.
+  const inserted = await run(
+    db,
+    `INSERT INTO settings (k, v)
+       SELECT :k, json_object('hits', 1, 'first', datetime('now'), 'last', datetime('now'))
+        WHERE (SELECT COUNT(*) FROM settings WHERE k >= :lo AND k < :hi) < :cap
+     ON CONFLICT(k) DO UPDATE SET v = ${MISSING_PAGE_BUMP_SQL}`,
+    { k, lo: MISSING_PAGE_RANGE.lo, hi: MISSING_PAGE_RANGE.hi, cap }
+  );
+  return inserted.meta.changes > 0 ? 'counted' : 'full';
+}
+
+/** Missing paths, most-visited first. */
+export async function listMissingPages(db, limit = 500) {
+  const list = await all(
+    db,
+    `SELECT k, json_extract(v, '$.hits') AS hits, json_extract(v, '$.first') AS first_seen, json_extract(v, '$.last') AS last_seen
+       FROM settings WHERE k >= :lo AND k < :hi
+      ORDER BY hits DESC, last_seen DESC LIMIT :limit`,
+    { lo: MISSING_PAGE_RANGE.lo, hi: MISSING_PAGE_RANGE.hi, limit }
+  );
+  return list.map((r) => ({ path: r.k.slice(MISSING_PAGE_KEY_PREFIX.length), hits: Number(r.hits) || 0, first_seen: r.first_seen, last_seen: r.last_seen }));
+}
+
+/** "Forget" one path. The key is always built here from the fixed prefix, so
+ * this can never delete any other settings row. Returns true if it existed. */
+export async function deleteMissingPage(db, path) {
+  const res = await run(db, `DELETE FROM settings WHERE k = :k`, { k: MISSING_PAGE_KEY_PREFIX + path });
+  return res.meta.changes > 0;
+}
+
+/** Daily housekeeping: drop paths not visited since `beforeStr`. */
+export async function pruneMissingPages(db, beforeStr) {
+  const res = await run(
+    db,
+    `DELETE FROM settings WHERE k >= :lo AND k < :hi AND json_extract(v, '$.last') < :before`,
+    { lo: MISSING_PAGE_RANGE.lo, hi: MISSING_PAGE_RANGE.hi, before: beforeStr }
+  );
+  return res.meta.changes;
+}
