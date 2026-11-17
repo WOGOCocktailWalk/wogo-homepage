@@ -310,6 +310,9 @@ export const ROUTE_ROLES = {
   // Missing-page log (Tools screen): which addresses that do not exist still get visits.
   'GET /admin/api/missing-pages': 'staff',
   'POST /admin/api/missing-pages/forget': 'staff',
+  // Export or erase one person's data (privacy requests): OWNER only.
+  'POST /admin/api/privacy/export': 'owner',
+  'POST /admin/api/privacy/erase': 'owner',
 
   'POST /admin/api/routes': 'owner',
   'PUT /admin/api/routes/:id': 'owner',

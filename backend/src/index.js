@@ -6,6 +6,7 @@ import { createRouter } from './router.js';
 import * as guestApi from './guest_api.js';
 import * as adminApi from './admin_api.js';
 import * as missingPages from './missing_pages.js';
+import * as privacyTools from './privacy_tools.js';
 import { handleWebhook } from './webhook.js';
 import { roleAtLeast } from './auth.js';
 import {
@@ -178,6 +179,10 @@ router.post('/admin/api/gift-cards/:code/void', adminApi.handleVoidGiftCard);
 // -- Missing-page log (public beacon above; dashboard list + forget here) ---
 router.get('/admin/api/missing-pages', missingPages.handleListMissingPages);
 router.post('/admin/api/missing-pages/forget', missingPages.handleForgetMissingPage);
+
+// -- Export / erase one person's data (owner only, src/privacy_tools.js) ----
+router.post('/admin/api/privacy/export', privacyTools.handlePrivacyExport);
+router.post('/admin/api/privacy/erase', privacyTools.handlePrivacyErase);
 
 // -- Contact + group-booking inquiries (migrations/0021) ---------------------
 router.get('/admin/api/inquiries', adminApi.handleListInquiries);
