@@ -301,6 +301,13 @@ export const HEALTH_CHECK_BASE_URL_VAR = 'HEALTH_CHECK_BASE_URL';
 // than this many months. Default 24 (owner's stated default).
 export const GDPR_RETENTION_MONTHS = 24;
 
+// Enquiries, group requests and waiting-list entries (the `inquiries` table):
+// the privacy page promises they are kept up to 2 years after the last
+// contact. The table has no "last contact" column, so the age is measured
+// from created_at (the first message): a little stricter than the promise,
+// never looser. Deleted by the nightly job (src/retention.js).
+export const INQUIRY_RETENTION_MONTHS = 24;
+
 // Daily D1 -> R2 export (src/backup.js): how many days of daily snapshots to
 // keep in the bucket before the cron prunes older ones. R2's free tier is
 // 10GB storage — at WOGO's volume (a few thousand bookings) this retention
@@ -667,3 +674,12 @@ export const MAP_BY_DATE = {
 export const SCHEDULED_PROMO_ACTIVATIONS = [
   { code: 'BLACKFRIDAY15', activate_at: '2026-11-26T23:00:00Z' },
 ];
+
+// --- Missing-page log (src/missing_pages.js) -------------------------------
+// The website's 404 page tells the Worker which address did not exist, so the
+// owner can see which missing addresses get real visits and add a forward.
+export const MISSING_PAGE_MAX_DISTINCT = 500;        // most different paths kept at once
+export const MISSING_PAGE_RETENTION_DAYS = 90;       // a path not visited for this long is forgotten
+export const MISSING_PAGE_HITS_PER_WINDOW = 10;      // per visitor (hashed IP)...
+export const MISSING_PAGE_WINDOW_MINUTES = 10;       // ...per sliding window of this many minutes
+export const MISSING_PAGE_MAX_LENGTH = 120;          // a longer path is ignored, not cut short
