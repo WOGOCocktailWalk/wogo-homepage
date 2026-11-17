@@ -399,11 +399,6 @@
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
-  <url>
-    <loc>https://www.wogococktailwalk.com/blog/best-cocktail-bars-in-rotterdam/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
 
   <!-- Legal (all six match the footer legal links and resolve on disk) -->
   <url>
@@ -841,6 +836,22 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/what-is-a-self-guided-cocktail-walk/"/>
     <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/what-is-a-self-guided-cocktail-walk/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/what-is-a-self-guided-cocktail-walk/"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/blog/best-cocktail-bars-in-rotterdam/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/best-cocktail-bars-in-rotterdam/"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/best-cocktail-bars-in-rotterdam/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/best-cocktail-bars-in-rotterdam/"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/nl/blog/best-cocktail-bars-in-rotterdam/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/best-cocktail-bars-in-rotterdam/"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/best-cocktail-bars-in-rotterdam/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/best-cocktail-bars-in-rotterdam/"/>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
