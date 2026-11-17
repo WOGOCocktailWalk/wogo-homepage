@@ -2165,6 +2165,13 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
     { id: "sub_5", email: "gone@example.com", first_name: "Lotte", locale: "nl", city: null, source: "site_footer", status: "unsubscribed", created_at: day(-60), confirmed_at: day(-59), unsubscribed_at: day(-5) }
   ];
 
+  /* ---- missing addresses people still visit (Tools screen) ---- */
+  const missingPages = [
+    { path: "/amsterdam-cocktail-walk", hits: 14, first_seen: day(-40) + " 10:00:00", last_seen: day(-1) + " 18:20:00" },
+    { path: "/nl/boeken", hits: 6, first_seen: day(-20) + " 09:00:00", last_seen: day(-3) + " 12:05:00" },
+    { path: "/gift-card", hits: 2, first_seen: day(-9) + " 21:40:00", last_seen: day(-9) + " 21:40:00" }
+  ];
+
   /* ---- customers: derived from bookings (mirrors logic.js:aggregateCustomers) ---- */
   function bookingSpendCents(b) {
     if (!(b.status === "confirmed" || b.status === "confirmed_conflict")) return 0;
@@ -2488,6 +2495,28 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
     }
     if ((m = match(path, /^\/admin\/api\/date-overrides\/(\d+)$/)) && method === "DELETE") {
       const id = +m[1]; for (const k in overrides) overrides[k] = overrides[k].filter((o) => o.id !== id); return json({ ok: true });
+    }
+
+    // missing-page log (Tools screen)
+    if (path === "/admin/api/missing-pages" && method === "GET") {
+      return json({ pages: missingPages.slice(), max_pages: 500, forget_after_days: 90 });
+    }
+    if (path === "/admin/api/missing-pages/forget" && method === "POST") {
+      const i = missingPages.findIndex((p) => p.path === bodyObj.path);
+      if (i < 0) return json({ error: "not_found", message: "that address is already gone from the list" }, 404);
+      missingPages.splice(i, 1);
+      return json({ ok: true });
+    }
+
+    // export / erase one person (owner tool) — canned demo answers
+    if (path === "/admin/api/privacy/export" && method === "POST") {
+      const email = String(bodyObj.email || "").trim().toLowerCase();
+      const own = bookings.filter((b) => String(b.email || "").toLowerCase() === email);
+      const summary = { bookings: own.length, first_walk: own.length ? own[0].date : null, last_walk: own.length ? own[own.length - 1].date : null, upcoming_walks: [], gift_cards_total: 0, gift_cards_bought: 0, gift_cards_received: 0, gift_cards_with_balance: [], enquiries: 0, waiting_list_entries: 0, newsletter: null, reminder_opt_out: false, queued_sync_items: 0, queued_mail_copies: 0 };
+      return json({ email, reference: "demo", empty: own.length === 0, summary, export: { email, bookings: own } });
+    }
+    if (path === "/admin/api/privacy/erase" && method === "POST") {
+      return json({ ok: true, reference: "demo", audit_logged: true, done: { bookings_anonymised: 0, gift_cards_cleaned: 0, enquiries_and_waiting_list_deleted: 0, newsletter_subscription_deleted: 0, queued_sync_items_deleted: 0, queued_mail_copies_deleted: 0 }, gift_cards_with_balance: [], kept: ["(demo) nothing was changed"], do_by_hand: ["(demo) Stripe, Brevo, Gmail"] });
     }
 
     // customers (CRM) — derived from bookings, same as the Worker
@@ -5126,6 +5155,67 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
       grid.appendChild(card);
     });
     root.appendChild(grid);
+    root.appendChild(missingPagesCard());
+  }
+
+  /* ---------- Tools: addresses that do not exist but still get visits -----
+     Fed by the beacon in the website's 404 page (Worker: src/missing_pages.js).
+     Only the address is saved: no names, no IP numbers. */
+  function missingPagesCard() {
+    const card = el("div", { class: "card", style: "margin-top:18px" });
+    card.appendChild(el("div", { class: "card-head" }, [el("h2", { text: "Addresses that don't exist (but people still visit)" })]));
+    const body = el("div", { style: "padding:0 18px 18px" });
+    body.appendChild(el("p", { class: "capacity-hint", text: "When someone opens a link that doesn't exist on the website, they are sent to the homepage. This list shows which missing links people tried, so you can ask for a forward. Only the address is saved: no names, no IP numbers. A row disappears by itself after 90 days without a visit." }));
+    const holder = el("div");
+    body.appendChild(holder);
+    card.appendChild(body);
+
+    async function load() {
+      clear(holder);
+      holder.appendChild(skeletonRows(3));
+      let data;
+      try { data = await api("/admin/api/missing-pages"); }
+      catch (e) {
+        if (e.message === "unauthenticated") return;
+        clear(holder);
+        holder.appendChild(el("p", { class: "capacity-hint", text: "The list could not be loaded (" + e.message + ")." }));
+        return;
+      }
+      clear(holder);
+      const list = data.pages || [];
+      if (list.length === 0) {
+        holder.appendChild(el("div", { class: "empty" }, el("div", { text: "No missing addresses recorded yet." })));
+        return;
+      }
+      const scroll = el("div", { class: "table-scroll" });
+      const t = el("table", { class: "data" });
+      t.appendChild(el("thead", {}, el("tr", {}, [th("Address"), th("Visits", "metric"), th("Last visit"), th("")])));
+      const tb = el("tbody");
+      list.forEach((r) => {
+        tb.appendChild(el("tr", {}, [
+          el("td", { class: "td-name", style: "font-family:ui-monospace,Menlo,monospace;font-size:12.5px;word-break:break-all", text: r.path }),
+          el("td", { class: "num td-name metric", text: String(r.hits) }),
+          el("td", { class: "td-sub num", text: r.last_seen ? prettyDate(String(r.last_seen).slice(0, 10)) : "—" }),
+          el("td", {}, el("button", {
+            class: "btn btn-quiet btn-sm", text: "Forget",
+            onclick: async (ev) => {
+              const btn = ev.currentTarget; btn.disabled = true;
+              try {
+                await api("/admin/api/missing-pages/forget", { method: "POST", body: { path: r.path } });
+                toast("Forgotten. It comes back only if someone visits it again.", "ok");
+              } catch (e) { if (e.message !== "unauthenticated") toast(e.message, "err"); }
+              load();
+            }
+          }))
+        ]));
+      });
+      t.appendChild(tb);
+      scroll.appendChild(t);
+      holder.appendChild(scroll);
+      if (list.length >= (data.max_pages || 500)) holder.appendChild(el("p", { class: "capacity-hint", text: "The list is full, so new missing addresses are not added until older ones are forgotten or expire." }));
+    }
+    load();
+    return card;
   }
 
   function renderExport(root) {
@@ -6526,9 +6616,133 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
 
     root.appendChild(el("div", { class: "stat-row", id: "cust-stats" }));
     root.appendChild(el("div", { id: "cust-holder" }));
+    if (S.me && S.me.role === "owner") root.appendChild(privacyToolCard());
 
     if (S.customers.loaded) paintCustomers();
     else loadCustomers();
+  }
+
+  /* ---------- Customers: export or erase ONE person's data (owner only) ---
+     Worker: src/privacy_tools.js. The server enforces the owner role, the
+     typed word and the extra confirmation for upcoming walks; this card only
+     guides the owner through it. */
+  function privacyToolCard() {
+    const card = el("div", { class: "card", style: "margin-top:22px" });
+    card.appendChild(el("div", { class: "card-head" }, [el("h2", { text: "Export or erase one person's data" })]));
+    const body = el("div", { style: "padding:0 18px 18px" });
+    card.appendChild(body);
+    body.appendChild(el("p", { class: "capacity-hint", text: "For privacy requests such as \"send me everything you have on me\" or \"delete my data\". Type the person's email address. You see what is stored first; nothing changes until you erase." }));
+    const emailI = el("input", { type: "email", placeholder: "name@example.com", autocomplete: "off", inputmode: "email", autocapitalize: "off" });
+    const err = el("div", { class: "form-error", role: "alert" });
+    const out = el("div", { style: "margin-top:16px" });
+    const lookupBtn = el("button", { class: "btn btn-primary", text: "Look up", onclick: lookup });
+    emailI.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); lookup(); } });
+    body.appendChild(err);
+    body.appendChild(el("div", { style: "display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end" }, [
+      el("div", { class: "field", style: "flex:1;min-width:220px;margin:0" }, [el("label", { text: "Email address" }), emailI]),
+      lookupBtn
+    ]));
+    body.appendChild(out);
+
+    function line(k, v) { return el("div", { class: "td-sub", style: "padding:3px 0" }, [el("b", { text: k + ": " }), v]); }
+
+    async function lookup() {
+      err.classList.remove("show"); clear(out);
+      const email = emailI.value.trim();
+      if (!email) { err.textContent = "Type an email address first."; err.classList.add("show"); return; }
+      lookupBtn.disabled = true;
+      try {
+        const res = await api("/admin/api/privacy/export", { method: "POST", body: { email } });
+        paintResult(res);
+      } catch (e) {
+        if (e.message !== "unauthenticated") { err.textContent = e.message; err.classList.add("show"); }
+      }
+      lookupBtn.disabled = false;
+    }
+
+    function paintResult(res) {
+      clear(out);
+      const s = res.summary;
+      if (res.empty) {
+        out.appendChild(el("p", { class: "capacity-hint", text: "Nothing is stored for " + res.email + "." }));
+        return;
+      }
+      out.appendChild(el("div", { class: "subhead", style: "margin-top:0", text: "What is stored for " + res.email }));
+      out.appendChild(line("Bookings", s.bookings + (s.first_walk ? " (walks from " + s.first_walk + " to " + s.last_walk + ")" : "")));
+      if (s.upcoming_walks.length) out.appendChild(line("Upcoming walks", s.upcoming_walks.map((w) => w.date + " " + w.slot + ", " + w.party + " guest" + (w.party === 1 ? "" : "s")).join("; ")));
+      out.appendChild(line("Gift cards", s.gift_cards_bought + " bought, " + s.gift_cards_received + " received"));
+      out.appendChild(line("Enquiries", String(s.enquiries)));
+      out.appendChild(line("Waiting-list entries", String(s.waiting_list_entries)));
+      out.appendChild(line("Newsletter", s.newsletter ? s.newsletter : "not subscribed"));
+      out.appendChild(line("Reminder emails switched off", s.reminder_opt_out ? "yes" : "no"));
+      out.appendChild(line("Waiting contact updates for Brevo", String(s.queued_sync_items)));
+      out.appendChild(line("Copies of emails waiting to be re-sent", String(s.queued_mail_copies)));
+
+      const actions = el("div", { style: "display:flex;gap:10px;flex-wrap:wrap;margin-top:16px" });
+      actions.appendChild(el("button", { class: "btn btn-quiet", text: "Download everything (one file)", onclick: () => {
+        const blob = new Blob([JSON.stringify(res.export, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = el("a", { href: url, download: "wogo-data-" + todayStr() + ".json" });
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+        toast("File downloaded. It holds personal data: send it safely and delete your copy.", "ok");
+      } }));
+      const erasePanel = el("div", { style: "display:none;margin-top:16px;padding:14px;border:1px solid var(--cancel-bg, #e6b8b8);border-radius:10px" });
+      actions.appendChild(el("button", { class: "btn btn-danger", text: "Erase this person…", onclick: () => { erasePanel.style.display = "block"; wordI.focus(); } }));
+      out.appendChild(actions);
+
+      const wordI = el("input", { type: "text", autocomplete: "off", autocapitalize: "characters", placeholder: "ERASE" });
+      const upCb = el("input", { type: "checkbox" });
+      const eraseErr = el("div", { class: "form-error", role: "alert" });
+      const goBtn = el("button", { class: "btn btn-danger", text: "Erase for good", disabled: true, onclick: erase });
+      function sync() { goBtn.disabled = wordI.value.trim() !== "ERASE" || (s.upcoming_walks.length > 0 && !upCb.checked); }
+      wordI.addEventListener("input", sync); upCb.addEventListener("change", sync);
+      erasePanel.appendChild(el("p", { style: "margin:0 0 8px;font-weight:600", text: "This cannot be undone." }));
+      erasePanel.appendChild(el("p", { class: "capacity-hint", text: "Bookings become anonymous (date, route, group size and amounts stay, because tax law requires it). Gift cards keep their code and balance but lose names, emails and the message. Enquiries, waiting-list entries and the newsletter subscription are deleted." }));
+      if (s.upcoming_walks.length) {
+        erasePanel.appendChild(el("label", { style: "display:flex;gap:8px;align-items:flex-start;margin:10px 0" }, [upCb, el("span", { text: "This person has " + s.upcoming_walks.length + " upcoming walk" + (s.upcoming_walks.length === 1 ? "" : "s") + ". Erase " + (s.upcoming_walks.length === 1 ? "that booking" : "those bookings") + " too. You will no longer be able to contact them about it." })]));
+      }
+      erasePanel.appendChild(eraseErr);
+      erasePanel.appendChild(el("div", { class: "field" }, [el("label", { text: "Type ERASE to confirm" }), wordI]));
+      erasePanel.appendChild(el("div", { style: "display:flex;gap:10px" }, [goBtn, el("button", { class: "btn btn-ghost", text: "Cancel", onclick: () => { erasePanel.style.display = "none"; wordI.value = ""; upCb.checked = false; sync(); } })]));
+      out.appendChild(erasePanel);
+
+      async function erase() {
+        eraseErr.classList.remove("show"); goBtn.disabled = true;
+        try {
+          const rep = await api("/admin/api/privacy/erase", { method: "POST", body: { email: res.email, confirm: "ERASE", include_future: upCb.checked } });
+          paintReport(rep);
+          S.customers.loaded = false; S.customers.codesLoaded = false; S.bookings.list = [];
+        } catch (e) {
+          if (e.message === "unauthenticated") return;
+          eraseErr.textContent = e.message; eraseErr.classList.add("show"); sync();
+        }
+      }
+    }
+
+    function paintReport(r) {
+      clear(out);
+      const d = r.done;
+      const rep = el("div", { class: "cust-edit show" });
+      rep.appendChild(el("div", { class: "subhead", style: "margin-top:0", text: "Done. Reference " + r.reference }));
+      [
+        "Bookings made anonymous: " + d.bookings_anonymised,
+        "Gift cards cleaned: " + d.gift_cards_cleaned,
+        "Enquiries and waiting-list entries deleted: " + d.enquiries_and_waiting_list_deleted,
+        "Newsletter subscription deleted: " + d.newsletter_subscription_deleted,
+        "Waiting contact updates for Brevo deleted: " + d.queued_sync_items_deleted,
+        "Copies of emails waiting to be re-sent deleted: " + d.queued_mail_copies_deleted
+      ].forEach((t) => rep.appendChild(el("div", { class: "td-sub", style: "padding:3px 0", text: "✓ " + t })));
+      if (!r.audit_logged) rep.appendChild(el("p", { class: "form-error show", text: "The erase worked, but writing it to the activity log failed. Please note the date and reference yourself." }));
+      if (r.gift_cards_with_balance.length) rep.appendChild(el("p", { class: "capacity-hint", text: "Still working with their code: " + r.gift_cards_with_balance.map((g) => g.code + " (" + euros(g.balance_cents) + ")").join(", ") + "." }));
+      rep.appendChild(el("div", { class: "subhead", text: "Not changed by this tool" }));
+      r.kept.forEach((t) => rep.appendChild(el("div", { class: "td-sub", style: "padding:3px 0", text: "• " + t })));
+      rep.appendChild(el("div", { class: "subhead", text: "You still need to do this by hand" }));
+      r.do_by_hand.forEach((t) => rep.appendChild(el("div", { class: "td-sub", style: "padding:3px 0", text: "☐ " + t })));
+      out.appendChild(rep);
+      emailI.value = "";
+    }
+    return card;
   }
 
   async function loadCustomers() {

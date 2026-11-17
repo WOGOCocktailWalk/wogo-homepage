@@ -567,6 +567,17 @@
       return json({ ok: true });
     }
 
+    // export / erase one person (owner tool) — canned demo answers
+    if (path === "/admin/api/privacy/export" && method === "POST") {
+      const email = String(bodyObj.email || "").trim().toLowerCase();
+      const own = bookings.filter((b) => String(b.email || "").toLowerCase() === email);
+      const summary = { bookings: own.length, first_walk: own.length ? own[0].date : null, last_walk: own.length ? own[own.length - 1].date : null, upcoming_walks: [], gift_cards_total: 0, gift_cards_bought: 0, gift_cards_received: 0, gift_cards_with_balance: [], enquiries: 0, waiting_list_entries: 0, newsletter: null, reminder_opt_out: false, queued_sync_items: 0, queued_mail_copies: 0 };
+      return json({ email, reference: "demo", empty: own.length === 0, summary, export: { email, bookings: own } });
+    }
+    if (path === "/admin/api/privacy/erase" && method === "POST") {
+      return json({ ok: true, reference: "demo", audit_logged: true, done: { bookings_anonymised: 0, gift_cards_cleaned: 0, enquiries_and_waiting_list_deleted: 0, newsletter_subscription_deleted: 0, queued_sync_items_deleted: 0, queued_mail_copies_deleted: 0 }, gift_cards_with_balance: [], kept: ["(demo) nothing was changed"], do_by_hand: ["(demo) Stripe, Brevo, Gmail"] });
+    }
+
     // customers (CRM) — derived from bookings, same as the Worker
     if (path === "/admin/api/customers" && method === "GET") {
       return json({ customers: aggregateCustomers(bookings, q.get("q")) });
