@@ -362,6 +362,16 @@ export default {
  * nobody's looking at an HTTP response for it.
  */
 async function runScheduled(event, env) {
+  // The nightly backup goes FIRST and on its own: it now reads every business
+  // table, and Cloudflare's free plan allows a limited number of database
+  // reads per run. Run first, it can never be starved by the other chores,
+  // and a problem in it can never stop them either.
+  if (event.cron === DAILY_CRON) {
+    try { await exportBackupToR2(env); } catch (err) {
+      console.error('backup_error', err);
+      await captureError(env, err, { cron: event.cron, step: 'backup' });
+    }
+  }
   try {
     // Every trigger fire (currently every 5 minutes): expired-hold sweep
     // (§6.5, correctness does NOT depend on this cadence — see SPEC.md §7.2),
@@ -399,7 +409,6 @@ async function runScheduled(event, env) {
       // (no value in pruning these every 5 minutes given their multi-month
       // retention windows).
       await runGdprRetention(env);
-      await exportBackupToR2(env);
       await pruneErrorLog(env.DB, sqliteMinutesAgo(ERROR_LOG_RETENTION_MINUTES));
       await pruneAdminAudit(env.DB, sqliteMinutesAgo(ADMIN_AUDIT_RETENTION_MINUTES));
       await pruneResolvedFailedEmails(env.DB, sqliteMinutesAgo(FAILED_EMAIL_RESOLVED_RETENTION_MINUTES));

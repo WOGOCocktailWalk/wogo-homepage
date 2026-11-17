@@ -7,6 +7,8 @@ import {
   MAX_ACTIVE_HOLDS_PER_EMAIL,
   MAX_ACTIVE_HOLDS_PER_IP,
   HOLD_ATTEMPTS_PER_WINDOW,
+  RATE_EVENTS_RETENTION_MINUTES,
+  FORM_MAILS_PER_ADDRESS_PER_DAY,
   HOLD_ATTEMPT_WINDOW_MINUTES,
   SAME_DAY_CUTOFF_MINUTES,
   posterUrlFor,
@@ -56,7 +58,10 @@ import { verifyReminderUnsubscribeToken } from './reminder_optout.js';
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH_RE = /^\d{4}-\d{2}$/;
 const SLOT_RE = /^\d{2}:\d{2}$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Rejects whitespace and the characters that have no place in a mailbox
+// (quotes, braces, angle brackets, backslash) so an address can never double
+// as structured text (for example JSON) anywhere it is later embedded.
+const EMAIL_RE = /^[^\s@"{}<>\\]+@[^\s@"{}<>\\]+\.[^\s@"{}<>\\]+$/;
 // 'WOGO-XXXX-XXXX' shape (src/logic.js:generateGiftCardCode) — loose enough
 // that a legacy/manually-issued code still passes this shape check; the real
 // validation is the DB lookup that follows.
@@ -814,6 +819,16 @@ export async function handleGiftCardCheckout(request, env) {
 
 const CONTACT_KINDS = new Set(['contact', 'group']);
 
+/** Records one "mail to this address" event and says whether the address is
+ * already over FORM_MAILS_PER_ADDRESS_PER_DAY. Uses the existing rate_events
+ * table (no schema change); identity is the lowercased address. */
+async function formMailCapReached(env, kind, email) {
+  const identity = String(email || '').trim().toLowerCase();
+  await db.recordRateEvent(env.DB, kind, identity);
+  const n = await db.countRateEventsSince(env.DB, kind, identity, sqliteMinutesAgo(RATE_EVENTS_RETENTION_MINUTES));
+  return n > FORM_MAILS_PER_ADDRESS_PER_DAY;
+}
+
 /** SHA-256 hex of the submitter's IP — never the raw IP (migrations/0021's
  * doc comment / migrations/0005's IP-minimization posture). Web Crypto only
  * (Workers-safe, no Node `crypto` — PORTABILITY.md), same primitive
@@ -938,6 +953,9 @@ export async function handleContact(request, env) {
     console.error('inquiry_owner_email_failed', err);
   }
   try {
+    // The acknowledgement goes to an address the sender typed; cap it per
+    // address so the form can not be used to mail someone repeatedly.
+    if (await formMailCapReached(env, 'contact_email', inquiry.email)) return json({ ok: true, id: inquiry.id }, 200, request);
     const ackMail = renderInquiryAutoAck(inquiry);
     await sendTransactional(env, { to: inquiry.email, subject: ackMail.subject, htmlContent: ackMail.html });
   } catch (err) {
@@ -1021,6 +1039,12 @@ export async function handleSubscribe(request, env) {
     const oldest = await db.oldestRateEventSince(env.DB, 'subscribe', ip, since);
     const retryAfterSeconds = computeRateLimitRetryAfterSeconds(oldest, HOLD_ATTEMPT_WINDOW_MINUTES, nowSqlite());
     return rateLimitedJson(retryAfterSeconds, 'too many attempts — please try again in a few minutes', request);
+  }
+
+  // Per-address cap: a rotating-IP sender must not be able to mail one
+  // person's inbox over and over. Over the cap = same "ok" answer, nothing sent.
+  if (await formMailCapReached(env, 'subscribe_email', email)) {
+    return json({ ok: true }, 200, request);
   }
 
   const normalizedLocale = locale === 'nl' ? 'nl' : 'en';

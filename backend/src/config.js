@@ -254,6 +254,10 @@ export const ADMIN_EMAIL_MAX_LENGTH = 200;            // sanity cap on a submitt
 
 // Retention for the two security tables — pruned by the 5-minute cron sweep.
 export const RATE_EVENTS_RETENTION_MINUTES = 24 * 60;      // 24h
+// Per-RECIPIENT cap on mails a public form may trigger to one address within
+// RATE_EVENTS_RETENTION_MINUTES (the per-IP limit alone does not stop a
+// rotating-IP sender from mailing one person repeatedly).
+export const FORM_MAILS_PER_ADDRESS_PER_DAY = 3;
 export const AUTH_EVENTS_RETENTION_MINUTES = 30 * 24 * 60; // 30 days (audit log)
 
 // --- Production hardening (2026-07, SETUP.md "Production hardening" section) ---

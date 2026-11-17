@@ -827,3 +827,17 @@ describe('retryBrevoSyncQueue', () => {
     assert.ok(alertMail, 'an owner alert should have been sent');
   });
 });
+
+describe('POST /api/subscribe — per-address cap', () => {
+  test('one address gets at most 3 confirmation mails a day, even from rotating IPs; the answer never changes', async () => {
+    const env = BASE_ENV();
+    for (let i = 0; i < 6; i++) {
+      const res = await handleSubscribe(
+        subscribeRequest({ email: 'victim@example.com', locale: 'en', source: 'site_footer' }, { 'CF-Connecting-IP': `10.88.0.${i + 1}` }), env
+      );
+      assert.equal(res.status, 200);
+      assert.equal((await res.json()).ok, true);
+    }
+    assert.equal(mock.state.sent.filter((m) => JSON.stringify(m).includes('victim@example.com')).length, 3);
+  });
+});

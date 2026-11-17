@@ -5,3 +5,11 @@
 backend/backup*.json
 backend/restore*.json
 backend/restored*.sqlite
+# local tooling / secrets
+backend/.wrangler/
+.wrangler/
+.dev.vars
+backend/.dev.vars
+.env
+.env.*
+node_modules/

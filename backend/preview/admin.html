@@ -7252,13 +7252,14 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
         $("#drawer-title").textContent = "Preview — " + lang.toUpperCase();
         const body = $("#drawer-body");
         clear(body);
-        // allow-scripts+allow-same-origin: the shared nav/consent/analytics
-        // chrome needs to actually run for a faithful preview (language
-        // switcher, scroll-reveal, etc.). Safe here because the only
-        // author-controlled content, body_en/body_nl, already went through
-        // sanitizeBlogHtml server-side (script tags stripped) before this
-        // HTML was ever built — nothing user-authored can reach this iframe.
-        body.appendChild(el("iframe", { class: "blog-preview-frame", srcdoc: data.html, sandbox: "allow-scripts allow-same-origin" }));
+        // The preview runs in a locked-down frame: sandbox="allow-scripts" and
+        // NOTHING else. Without allow-same-origin the page gets an opaque
+        // origin of its own, so it can not read the dashboard, use its cookies
+        // or call its API, whatever the post body contains. The shared
+        // nav/language chrome still runs (it only needs scripts); its storage
+        // reads are already wrapped in try/catch and simply find nothing.
+        // Never add allow-same-origin, allow-popups or allow-top-navigation here.
+        body.appendChild(el("iframe", { class: "blog-preview-frame", srcdoc: data.html, sandbox: "allow-scripts", referrerpolicy: "no-referrer" }));
         const foot = $("#drawer-foot");
         clear(foot);
         foot.appendChild(el("button", { class: "btn btn-quiet", text: "Close", onclick: closeDrawer }));

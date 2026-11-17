@@ -14,7 +14,7 @@ import { sendTransactional } from './brevo.js';
 import * as db from './db.js';
 import { alertOwnerThrottled } from './alerts.js';
 import { escapeHtml } from './emails.js';
-import { nowSqlite, sqliteMinutesFromNow } from './logic.js';
+import { nowSqlite, sqliteMinutesFromNow, maskEmail } from './logic.js';
 import {
   FAILED_EMAIL_MAX_ATTEMPTS,
   FAILED_EMAIL_RETRY_BACKOFF_MINUTES,
@@ -35,7 +35,7 @@ export async function sendWithRetry(env, msg, opts = {}) {
     return { sent: true };
   } catch (err) {
     const lastError = String(err && err.message ? err.message : err);
-    console.error('email_send_failed_queuing_retry', msg.to, lastError);
+    console.error('email_send_failed_queuing_retry', maskEmail(msg.to), maskEmail(lastError));
     try {
       await database.queueFailedEmail(env.DB, {
         to_email: msg.to,
