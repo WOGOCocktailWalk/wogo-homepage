@@ -342,7 +342,7 @@ The one write call the widget makes. Internally does hold-creation *and* Stripe 
   - `404 {error:"route_not_found"}`.
   - `409 {error:"sold_out", seats_left:N}` — the atomic capacity guard rejected the hold (see §6). Widget re-fetches `/api/slots` to refresh the displayed numbers and shows "sorry, only N left" or "sold out."
   - `409 {error:"route_closed"}` — date has a `closed` override or falls outside `open_days`.
-  - `502 {error:"payment_setup_failed"}` — the D1 hold was created but the Stripe API call failed. The hold still exists and will silently expire in 15 minutes freeing the seat; widget shows a generic "something went wrong, try again" and the guest can retry (a fresh hold attempt).
+  - `502 {error:"payment_setup_failed"}` — the D1 hold was created but the Stripe API call failed. The hold still exists and will silently expire (HOLD_MINUTES, 35 min) freeing the seat; widget shows a generic "something went wrong, try again" and the guest can retry (a fresh hold attempt).
 
 ### 5.5 Internal server-side sequencing of `POST /api/book`
 
@@ -403,7 +403,7 @@ WHERE
 
 `db.js` runs this via `env.DB.prepare(SQL).bind(...).run()` and checks `result.meta.changes`. `changes === 1` → hold created, return the booking row. `changes === 0` → nothing was written (the whole point); `db.js` then runs three cheap read-only queries to figure out *which* guard clause failed, purely to return a helpful error code — this diagnostic path only runs on the rare "someone just took the last seat" case, so it costs nothing on the hot path.
 
-`hold_expires` is computed by the caller as `new Date(Date.now() + 15*60*1000).toISOString()` (15 minutes — owner requirement #7) and passed in as a bound parameter; `db.js` itself has no clock logic, keeping it trivially testable.
+`hold_expires` is computed by the caller as `computeHoldExpiry(HOLD_MINUTES)` (HOLD_MINUTES = 35: the 30-minute Stripe payment page plus a 5-minute margin, so a seat is never released while the guest can still pay for it) and passed in as a bound parameter; `db.js` itself has no clock logic, keeping it trivially testable.
 
 ### 6.3 Confirming a hold (`db.js: confirmBooking`, called from the webhook)
 

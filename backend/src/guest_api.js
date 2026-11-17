@@ -343,12 +343,15 @@ export async function handleBookingLookup(request, env) {
     (route.price_cents || 0) * (booking.party || 0) - (booking.discount_cents || 0) - (booking.gift_applied_cents || 0)
   );
   const firstName = booking.name ? String(booking.name).trim().split(/\s+/)[0] : '';
-  const confirmed = booking.status === 'confirmed' || booking.status === 'confirmed_conflict';
+  // A paid-but-seat-gone booking must NOT tell the guest "you're booked" (the
+  // email they get says the start time is full and we will be in touch).
+  const slotFull = booking.status === 'confirmed_conflict';
+  const confirmed = booking.status === 'confirmed';
 
   return json(
     {
       id: booking.id,
-      status: confirmed ? 'confirmed' : 'pending',
+      status: slotFull ? 'slot_full' : (confirmed ? 'confirmed' : 'pending'),
       route_name: route.name,
       city: route.city,
       date: booking.date,
