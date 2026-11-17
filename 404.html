@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- An address that does not exist goes straight to the homepage (owner's
+     choice, 17 Nov 2026), keeping any ad/tracking tags on the link. Dutch
+     addresses go to the Dutch homepage. The page below only shows for a
+     moment, or when JavaScript is off. -->
+<script>
+(function () {
+  try {
+    var nl = /^\/nl(\/|$)/i.test(location.pathname);
+    location.replace((nl ? '/nl/' : '/') + location.search);
+  } catch (e) {}
+})();
+</script>
 <!-- ============================================================================
      WOGO 404 PAGE — copied from the content-page template (/how-it-works/).
      THE ONE DELIBERATE EXCEPTION to the folder-per-page rule: GitHub Pages
