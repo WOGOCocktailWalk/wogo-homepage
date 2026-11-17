@@ -245,6 +245,32 @@ async function findPromotionCodeByCode(env, code) {
   return (json.data && json.data[0]) || null;
 }
 
+/** Read-only payout overview for the dashboard: the payout schedule, what
+ * is on its way, and the latest payouts. Each part is fetched separately so
+ * a key that may not read one of them still returns the others. */
+export async function getPayoutOverview(env) {
+  const get = async (path) => {
+    const res = await fetch(`https://api.stripe.com/v1/${path}`, { headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` } });
+    if (!res.ok) return { error: res.status };
+    return res.json();
+  };
+  const [account, balance, payouts] = await Promise.all([get('account'), get('balance'), get('payouts?limit=8')]);
+  const sum = (list) => (Array.isArray(list) ? list.reduce((a, x) => a + (x.currency === 'eur' ? x.amount : 0), 0) : null);
+  return {
+    schedule: account && account.settings && account.settings.payouts ? account.settings.payouts.schedule : null,
+    payouts_enabled: account ? account.payouts_enabled ?? null : null,
+    available_cents: balance.error ? null : sum(balance.available),
+    pending_cents: balance.error ? null : sum(balance.pending),
+    payouts: payouts.error ? null : (payouts.data || []).map((p) => ({
+      amount_cents: p.amount, currency: p.currency, status: p.status,
+      created: new Date(p.created * 1000).toISOString(),
+      arrival_date: new Date(p.arrival_date * 1000).toISOString().slice(0, 10),
+      automatic: p.automatic,
+    })),
+    errors: { account: account.error || null, balance: balance.error || null, payouts: payouts.error || null },
+  };
+}
+
 /** Switches an existing promotion code on or off (Stripe allows both ways).
  * Returns { code, id, active } or throws if the code does not exist. */
 export async function setPromotionCodeActive(env, code, active) {

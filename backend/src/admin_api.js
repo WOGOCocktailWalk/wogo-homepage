@@ -44,7 +44,7 @@ import { constantTimeEqual } from './logic.js';
 import { verifyTurnstile } from './turnstile.js';
 import { runHealthCheck } from './healthcheck.js';
 import { ensureContactFolder, ensureContactList, ensureContactAttribute, sendTransactional } from './brevo.js';
-import { ensureWelcomePromotionCode, setPromotionCodeActive, ensureImportedPromotionCode } from './stripe.js';
+import { ensureWelcomePromotionCode, setPromotionCodeActive, ensureImportedPromotionCode, getPayoutOverview } from './stripe.js';
 import { importSubscribers, handleConfirmedBookingOptIn } from './subscribers.js';
 import { sendWithRetry } from './email_retry.js';
 import { renderAdminLoginLink } from './emails.js';
@@ -322,6 +322,7 @@ export const ROUTE_ROLES = {
   'POST /admin/api/brevo/push-reference-templates': 'owner',
   'POST /admin/api/stripe/ensure-welcome-code': 'owner',
   'POST /admin/api/stripe/promo-code': 'owner',
+  'GET /admin/api/stripe/payouts': 'owner',
   'GET /admin/api/subscribers.csv': 'owner',
   'POST /admin/api/subscribers/import': 'owner',
   'GET /admin/api/subscribers/sync-queue': 'owner',
@@ -2049,6 +2050,11 @@ export async function handleBrevoPushReferenceTemplates(request, env) {
 
 /** POST /admin/api/stripe/promo-code — body { code, active }: switch one
  * existing Stripe promotion code on or off. Owner only. */
+/** GET /admin/api/stripe/payouts (owner) — read-only: when Stripe pays out. */
+export async function handleStripePayouts(request, env) {
+  return json(await getPayoutOverview(env));
+}
+
 export async function handleSetPromoCodeActive(request, env) {
   if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
   let body;
