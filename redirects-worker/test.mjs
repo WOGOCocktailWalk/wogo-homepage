@@ -72,8 +72,8 @@ goes('/nl/booking-calendar/utrecht-cocktail-walk?utm_campaign=old', '/nl/utrecht
 goes('/nl/booking-calendar/something-else', '/nl/');
 goes('/nl/service-page/delft-cocktail-walk', '/nl/delft/');
 goes('/nl/product-page/gift-card', '/nl/gift-cards/');
-goes('/nl/post/de-beste-bars-in-groningen', '/nl/groningen/');
-goes('/nl/post/beste-bars-in-amsterdam', '/nl/amsterdam/');
+goes('/nl/post/de-beste-bars-in-groningen', '/blog/best-bars-in-groningen/');
+goes('/nl/post/beste-bars-in-amsterdam', '/blog/best-bars-in-amsterdam/'); // the article itself is on the new blog since 17 Nov 2026
 goes('/nl/something-nobody-knows', '/nl/');
 // no Dutch blog yet: Dutch article addresses go to the (English) article
 goes('/nl/post/de-7-beste-bars-in-utrecht-voor-een-fantastische-avond-uit', '/blog/top-7-bars-utrecht/');
