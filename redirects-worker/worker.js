@@ -152,11 +152,11 @@ const NL_POSTS = {
   "/privacy-policy": "/privacy/",
   "/blog-feed.xml": "/blog/",
 };
-const NEW_SECTIONS = new Set(['about', 'accessibility', 'amsterdam', 'blog', 'complaints', 'contact', 'cookies', 'delft', 'disclaimer', 'faq', 'for-bars', 'gift-cards', 'groningen', 'groups', 'how-it-works', 'privacy', 'rotterdam', 'terms', 'utrecht']);
+const NEW_SECTIONS = new Set(['about', 'accessibility', 'amsterdam', 'bachelorette', 'birthday', 'blog', 'company-outing', 'complaints', 'contact', 'cookies', 'date-night', 'delft', 'disclaimer', 'faq', 'for-bars', 'gift-cards', 'groningen', 'groups', 'how-it-works', 'privacy', 'rotterdam', 'terms', 'utrecht']);
 // The pages that exist in Dutch under /nl/. This list is written by
 // tools/build-nl.js (it reads sitemap.xml), so it always matches the site.
 // nl-pages:start (made by tools/build-nl.js; do not edit)
-const NL_PAGES = new Set(["/", "/rotterdam/", "/utrecht/", "/amsterdam/", "/groningen/", "/delft/", "/rotterdam/route-1/", "/rotterdam/route-2/", "/rotterdam/route-3-premium/", "/rotterdam/route-1/book/", "/rotterdam/route-2/book/", "/rotterdam/route-3-premium/book/", "/amsterdam/book/", "/delft/book/", "/groningen/book/", "/utrecht/book/", "/how-it-works/", "/groups/", "/gift-cards/", "/about/", "/contact/", "/faq/", "/for-bars/", "/privacy/", "/cookies/", "/terms/", "/disclaimer/", "/accessibility/", "/complaints/"]);
+const NL_PAGES = new Set(["/", "/rotterdam/", "/utrecht/", "/amsterdam/", "/groningen/", "/delft/", "/rotterdam/route-1/", "/rotterdam/route-2/", "/rotterdam/route-3-premium/", "/rotterdam/route-1/book/", "/rotterdam/route-2/book/", "/rotterdam/route-3-premium/book/", "/amsterdam/book/", "/delft/book/", "/groningen/book/", "/utrecht/book/", "/how-it-works/", "/groups/", "/date-night/", "/bachelorette/", "/birthday/", "/company-outing/", "/gift-cards/", "/about/", "/contact/", "/faq/", "/for-bars/", "/privacy/", "/cookies/", "/terms/", "/disclaimer/", "/accessibility/", "/complaints/"]);
 // nl-pages:end
 // The Dutch blog articles the dashboard has published (nl/blog/<slug>/), and
 // whether the Dutch blog index exists. Also written by tools/build-nl.js, from
