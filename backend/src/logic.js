@@ -691,9 +691,22 @@ export function buildHourBars(participantsPerHourRows) {
 // 9.6 toCsv
 // ---------------------------------------------------------------------------
 
+/** "jane.doe@example.com" -> "j***@example.com" — for log lines, so server logs
+ * never carry a full guest address. Also masks any address inside free text. */
+export function maskEmail(text) {
+  const str = typeof text === 'string' ? text : (text == null ? '' : (() => { try { return JSON.stringify(text); } catch { return String(text); } })());
+  return str.replace(/([^\s@<>",;]{1})[^\s@<>",;]*@([^\s@<>",;]+)/g, '$1***@$2');
+}
+
 function csvEscape(value) {
   if (value === null || value === undefined) return '';
-  const s = String(value);
+  let s = String(value);
+  // Spreadsheet formula neutralisation: a text cell starting with = + - @ (or a
+  // tab/CR) is read as a formula by Excel/Sheets. Prefix a single quote. Real
+  // numbers and phone-like values (+31 6 1234 5678, -12.5) are left alone.
+  if (typeof value === 'string' && /^[=+\-@\t\r]/.test(s) && !/^[+-]?[\d\s().-]+$/.test(s)) {
+    s = `'${s}`;
+  }
   if (/[",\r\n]/.test(s)) {
     return `"${s.replace(/"/g, '""')}"`;
   }
@@ -1331,16 +1344,73 @@ const BLOG_ALLOWED_TAGS = {
   img: ['src', 'alt'],
 };
 const BLOG_SELF_CLOSING_TAGS = new Set(['br', 'hr', 'img']);
-const BLOG_DANGEROUS_URL_SCHEME_RE = /^\s*(javascript|data|vbscript|file)\s*:/i;
+// URL schemes a blog link/image may use. An ALLOWLIST: anything that is not on
+// it (including schemes nobody has thought of yet) is dropped.
+const BLOG_SAFE_SCHEMES = {
+  href: new Set(['http', 'https', 'mailto', 'tel']),
+  src: new Set(['http', 'https']),
+};
 
-function isSafeBlogUrl(value) {
-  return !BLOG_DANGEROUS_URL_SCHEME_RE.test(String(value || ''));
+const HTML_NAMED_ENTITIES = {
+  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", colon: ':', tab: '\t', newline: '\n',
+  nbsp: ' ', sol: '/', bsol: '\\', lpar: '(', rpar: ')', period: '.', comma: ',',
+  excl: '!', num: '#', quest: '?', semi: ';', equals: '=', plus: '+', percnt: '%',
+};
+
+/** Decodes HTML character references the way a browser would for an attribute
+ * value: numeric ones (decimal/hex, trailing `;` optional) and a small set of
+ * named ones. One pass only, matching the browser (`&amp;#58;` stays `&#58;`). */
+function decodeHtmlEntities(str) {
+  return String(str).replace(/&(?:#[xX]([0-9a-fA-F]{1,6});?|#([0-9]{1,7});?|([a-zA-Z][a-zA-Z0-9]{1,31});?)/g, (whole, hex, dec, name) => {
+    if (hex !== undefined || dec !== undefined) {
+      const cp = hex !== undefined ? parseInt(hex, 16) : parseInt(dec, 10);
+      if (!Number.isFinite(cp) || cp <= 0 || cp > 0x10ffff || (cp >= 0xd800 && cp <= 0xdfff)) return '�';
+      return String.fromCodePoint(cp);
+    }
+    const key = Object.prototype.hasOwnProperty.call(HTML_NAMED_ENTITIES, name.toLowerCase()) ? name.toLowerCase() : null;
+    return key !== null ? HTML_NAMED_ENTITIES[key] : whole;
+  });
 }
 
+// Control characters, every kind of whitespace and invisible/zero-width
+// characters. Browsers ignore some of these inside a URL, so a scheme can be
+// split with them; we remove ALL before looking at the scheme.
+const URL_STRIP_RE = /[\u0000-\u0020\u007f-\u00a0\u1680\u180e\u2000-\u200f\u2028-\u202f\u205f-\u2064\u3000\ufeff]/g;
+
+function blogUrlIsSafe(decoded, attrName) {
+  const allowed = BLOG_SAFE_SCHEMES[attrName] || BLOG_SAFE_SCHEMES.src;
+  const check = (v) => {
+    const n = v.replace(URL_STRIP_RE, '');
+    if (n === '') return false;
+    const colon = n.search(/[:/?#\\]/);
+    const head = colon === -1 ? n : n.slice(0, colon);
+    // Leftover '&' before the first delimiter = a character reference we could
+    // not decode; do not guess what the browser will make of it.
+    if (head.includes('&')) return false;
+    if (colon !== -1 && n[colon] === ':') {
+      return /^[a-zA-Z][a-zA-Z0-9+.-]*$/.test(head) && allowed.has(head.toLowerCase());
+    }
+    // No scheme => relative URL. Refuse protocol-relative ("//host", "\\host"):
+    // they point at another site while looking like a local path.
+    if (/^[/\\]{2}/.test(n)) return false;
+    return true;
+  };
+  if (!check(decoded)) return false;
+  // Belt and braces: also judge the percent-decoded form.
+  try { if (!check(decodeURIComponent(decoded))) return false; } catch { /* malformed escapes: leave as is */ }
+  return true;
+}
+
+function isSafeBlogUrl(value, attrName = 'src') {
+  return blogUrlIsSafe(decodeHtmlEntities(value), attrName);
+}
+
+/** Escapes a DECODED attribute value for output inside double quotes. */
 function escapeBlogAttrValue(value) {
   return String(value)
-    .replace(/&(?!amp;|lt;|gt;|quot;|#39;|apos;|#\d+;|#x[0-9a-fA-F]+;)/g, '&amp;')
+    .replace(/&/g, '&amp;')
     .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
@@ -1418,10 +1488,14 @@ export function sanitizeBlogHtml(html) {
     for (const [name, value] of attrs) {
       const nameLower = name.toLowerCase();
       if (!allowedAttrs.includes(nameLower)) continue;
-      if ((nameLower === 'href' || nameLower === 'src') && !isSafeBlogUrl(value)) continue;
+      // Decode first, judge the decoded text, and write the decoded text back
+      // re-escaped: what we checked is exactly what the browser will see.
+      const decodedValue = decodeHtmlEntities(value);
+      if ((nameLower === 'href' || nameLower === 'src') && !blogUrlIsSafe(decodedValue, nameLower)) continue;
+      if (nameLower === 'target' && !/^_(blank|self)$/.test(decodedValue)) continue;
       if (nameLower === 'target') hasTarget = true;
       if (nameLower === 'rel') hasRel = true;
-      keep.push(`${nameLower}="${escapeBlogAttrValue(value)}"`);
+      keep.push(`${nameLower}="${escapeBlogAttrValue(decodedValue)}"`);
     }
     if (tagLower === 'a' && hasTarget && !hasRel) keep.push('rel="noopener"');
 
