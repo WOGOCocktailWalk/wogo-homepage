@@ -40,7 +40,7 @@ const EXACT = {
   "/post/discover-rotterdam-s-new-premium-cocktail-walk-in-rotterdam-with-bobby-s-gin": "/blog/rotterdam-premium-gin-walk-launch/",
   "/post/discover-the-route-1-of-wogo-cocktail-walk-in-amsterdam": "/amsterdam/",
   "/post/new-bars-in-rotterdam-to-add-to-your-night-out": "/blog/new-bars-rotterdam-night-out/",
-  "/post/summer-cocktail-recipes": "/blog/summer-cocktail-recipes/",
+  "/post/summer-cocktail-recipes": "/blog/",
   "/post/top-5-cocktail-bars-in-rotterdam-on-the-wogo-cocktail-walk": "/blog/best-cocktail-bars-in-rotterdam/",
   "/post/top-7-bars-in-amsterdam": "/amsterdam/",
   "/post/top-7-bars-in-utrecht-to-visit-for-a-great-night-out": "/blog/top-7-bars-utrecht/",
@@ -104,10 +104,48 @@ const PREFIX = [
   ]
 ];
 
+// Old Dutch addresses (/nl/...) mirrored the English ones on Wix. Send each to
+// the page that matches, instead of all to the homepage: first a few Dutch
+// article names, then the same lookup as English, then the same section name.
+const NL_POSTS = {
+  "/post/de-7-beste-bars-in-utrecht-voor-een-fantastische-avond-uit": "/blog/top-7-bars-utrecht/",
+  "/post/ontdek-rotterdams-nieuwe-premium-cocktailroute-met-bobby-s-gin": "/blog/rotterdam-premium-gin-walk-launch/",
+  "/post/amsterdam-cocktailweek-bars": "/blog/amsterdam-cocktail-week-bars/",
+  "/post/amsterdamse-cocktailweek": "/amsterdam/",
+  "/post/de-beste-bars-in-groningen": "/groningen/",
+  "/post/the-bobby-s-cocktail-walk-groningen": "/groningen/",
+  "/post/top-7-bars-in-amsterdam-1": "/amsterdam/",
+  "/post/beste-bars-in-amsterdam": "/amsterdam/",
+  "/post/5-beste-cocktailbars-in-amsterdam-om-deze-zomer-te-bezoeken": "/amsterdam/",
+  "/privacy-policy": "/privacy/",
+};
+const NEW_SECTIONS = new Set(['about', 'amsterdam', 'blog', 'contact', 'cookies', 'delft', 'faq', 'for-bars', 'gift-cards', 'groningen', 'groups', 'how-it-works', 'privacy', 'rotterdam', 'terms', 'utrecht']);
+function lookup(path) {
+  let to = EXACT[path];
+  if (to === undefined) {
+    const withSlash = path + '/';
+    const hit = PREFIX.find(([p]) => p !== '/nl/' && withSlash.startsWith(p));
+    if (hit) to = hit[1];
+  }
+  return to;
+}
+function dutchTarget(path) {
+  if (path !== '/nl' && !path.startsWith('/nl/')) return undefined;
+  const rest = path.slice(3) || '/';
+  if (rest === '/') return '/';
+  if (NL_POSTS[rest]) return NL_POSTS[rest];
+  const mapped = lookup(rest);
+  if (mapped !== undefined) return mapped;
+  const first = rest.split('/')[1];
+  if (NEW_SECTIONS.has(first)) return rest.endsWith('/') ? rest : rest + '/';
+  return '/';
+}
+
 export function target(url) {
   const u = new URL(url);
   const path = u.pathname.toLowerCase().replace(/\/+$/, '') || '/';
-  let to = EXACT[path];
+  let to = dutchTarget(path);
+  if (to === undefined) to = EXACT[path];
   if (to === undefined) {
     const withSlash = path + '/';
     const hit = PREFIX.find(([p]) => withSlash.startsWith(p));
