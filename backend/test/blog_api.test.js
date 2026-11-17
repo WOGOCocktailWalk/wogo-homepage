@@ -1,8 +1,8 @@
 // test/blog_api.test.js — /admin/api/blog/* end-to-end through the real
 // worker.fetch (BUILD §21): role matrix, validation errors (plain English),
 // slug immutability after first publish, GitHub publish/unpublish with a
-// mocked fetch (one commit per file via the Contents API, a 409/sha-refresh
-// retry), asset upload validation, and the owner-only "seed as published"
+// mocked fetch (ONE commit per publish via the Git Data API, a refused ref
+// move retried once), asset upload validation, and the owner-only "seed as published"
 // import path.
 
 import { test, describe, beforeEach, afterEach } from 'node:test';
@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 import { makeTestDb } from './sqlite-d1-adapter.js';
+import { makeGithubFetchMock } from './github_mock.js';
 import worker from '../src/index.js';
 import * as db from '../src/db.js';
 import { createSessionCookieValue, COOKIE_NAME } from '../src/auth.js';
@@ -54,55 +55,6 @@ function req(method, pathAndQuery, { cookie, body, formData } = {}) {
     headers,
     body: formData !== undefined ? formData : (body !== undefined ? JSON.stringify(body) : undefined),
   });
-}
-
-/** A minimal stateful fake of GitHub's Contents API (GET/PUT/DELETE on
- * /repos/:owner/:repo/contents/:path, plus the plain-404-until-written
- * semantics real GitHub has). `conflictOnce` lets a test force exactly one
- * 409 on the NEXT PUT to a given path, to exercise putFile's sha-refresh
- * retry (src/github.js). */
-function makeGithubFetchMock() {
-  const files = new Map(); // path -> { sha, content (base64) }
-  const calls = [];
-  const conflictOnce = new Set();
-  let shaCounter = 0;
-  const api = {
-    calls,
-    files,
-    forceConflictOnce(filePath) { conflictOnce.add(filePath); },
-    fetchMock: async (url, opts = {}) => {
-      const method = (opts && opts.method) || 'GET';
-      calls.push({ url: String(url), method });
-      const u = new URL(String(url));
-      const m = /\/repos\/[^/]+\/[^/]+\/contents\/(.+)$/.exec(u.pathname);
-      if (!m) return new Response(JSON.stringify({ message: 'not found' }), { status: 404 });
-      const filePath = decodeURIComponent(m[1]);
-
-      if (method === 'GET') {
-        const existing = files.get(filePath);
-        if (!existing) return new Response(JSON.stringify({ message: 'Not Found' }), { status: 404 });
-        return new Response(JSON.stringify({ sha: existing.sha, content: existing.content }), { status: 200 });
-      }
-      if (method === 'PUT') {
-        if (conflictOnce.has(filePath)) {
-          conflictOnce.delete(filePath);
-          return new Response(JSON.stringify({ message: 'conflict' }), { status: 409 });
-        }
-        const body = JSON.parse(opts.body);
-        shaCounter += 1;
-        const sha = `filesha${shaCounter}`;
-        files.set(filePath, { sha, content: body.content });
-        return new Response(JSON.stringify({ content: { sha }, commit: { sha: `commitsha${shaCounter}` } }), { status: 200 });
-      }
-      if (method === 'DELETE') {
-        files.delete(filePath);
-        shaCounter += 1;
-        return new Response(JSON.stringify({ commit: { sha: `commitsha${shaCounter}` } }), { status: 200 });
-      }
-      return new Response(JSON.stringify({ message: 'method not mocked' }), { status: 400 });
-    },
-  };
-  return api;
 }
 
 let testDb;
@@ -348,102 +300,250 @@ function readyPostBody(overrides = {}) {
   });
 }
 
-describe('publish / unpublish — GitHub Contents API', () => {
-  async function createReadyPost(env, cookie) {
-    const res = await worker.fetch(req('POST', '/admin/api/blog', { cookie, body: readyPostBody() }), env, CTX);
+describe('publish / unpublish — one commit through the GitHub Git Data API', () => {
+  async function createReadyPost(env, cookie, overrides = {}) {
+    const slug = overrides.slug || 'ready-post';
+    const res = await worker.fetch(req('POST', '/admin/api/blog', { cookie, body: readyPostBody(overrides) }), env, CTX);
     const { post } = await res.json();
-    await db.updateBlogPost(testDb, post.id, { cover_image_path: 'blog/ready-post/cover.jpg' });
+    await db.updateBlogPost(testDb, post.id, { cover_image_path: `blog/${slug}/cover.jpg` });
     return db.getBlogPost(testDb, post.id);
   }
+  const staff = () => cookieHeaderFor({ uid: null, role: 'staff', email: 's@example.com' });
+  const publish = (env, cookie, post, body = {}) => worker.fetch(req('POST', `/admin/api/blog/${post.id}/publish`, { cookie, body }), env, CTX);
+  const unpublish = (env, cookie, post) => worker.fetch(req('POST', `/admin/api/blog/${post.id}/unpublish`, { cookie, body: {} }), env, CTX);
+  const SITEMAP = '<?xml version="1.0"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n  <url>\n    <loc>https://www.wogococktailwalk.com/blog/</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.6</priority>\n  </url>\n</urlset>\n';
+  const DUTCH = { title_nl: 'Een klaar bericht', excerpt_nl: 'Korte tekst', body_nl: '<p>Hier is de Nederlandse tekst</p>' };
+  const sitemapLocs = () => [...gh.text('sitemap.xml').matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1].replace('https://www.wogococktailwalk.com', ''));
 
-  test('publish commits the post page + regenerates the index, sets status/published_at/last_published_commit', async () => {
+  test('publish of a post WITHOUT Dutch text: English page + English index + sitemap line in ONE commit, no Dutch files', async () => {
+    gh.seed('sitemap.xml', SITEMAP);
+    const base = gh.commitCount();
     const env = BASE_ENV(testDb);
-    const cookie = await cookieHeaderFor({ uid: null, role: 'staff', email: 's@example.com' });
+    const cookie = await staff();
     const post = await createReadyPost(env, cookie);
 
-    const res = await worker.fetch(req('POST', `/admin/api/blog/${post.id}/publish`, { cookie, body: {} }), env, CTX);
+    const res = await publish(env, cookie, post);
     assert.equal(res.status, 200);
     const j = await res.json();
     assert.equal(j.post.status, 'published');
     assert.ok(j.post.published_at);
-    assert.ok(j.post.last_published_commit);
+    assert.equal(j.post.last_published_commit, gh.head());
+    assert.equal(j.commit_sha, gh.head());
 
-    assert.ok(gh.files.has('blog/ready-post/index.html'));
-    assert.ok(gh.files.has('blog/index.html'));
-    // Site is live (SITE_NOINDEX false since 17 Nov 2026): a publish must
-    // also add the post to sitemap.xml so search engines find it.
+    assert.equal(gh.commitCount() - base, 1, 'one commit for the whole publish');
+    assert.deepEqual([...gh.files.keys()].sort(), ['blog/index.html', 'blog/ready-post/index.html', 'sitemap.xml']);
+    assert.ok(!gh.files.has('nl/blog/ready-post/index.html') && !gh.files.has('nl/blog/index.html'));
+    // Site is live (SITE_NOINDEX false since 17 Nov 2026): sitemap gets the post, without Dutch lines
     assert.equal(SITE_NOINDEX, false);
-    assert.ok([...gh.calls].some((c) => c.url.includes('sitemap.xml')));
-
-    const stored = await db.getBlogPost(testDb, post.id);
-    assert.equal(stored.status, 'published');
+    assert.deepEqual(sitemapLocs(), ['/blog/', '/blog/ready-post/']);
+    assert.ok(!gh.text('blog/ready-post/index.html').includes('rel="alternate"'));
+    assert.equal((await db.getBlogPost(testDb, post.id)).status, 'published');
   });
 
-  test('re-publishing does not move published_at, but DOES update last_published_commit', async () => {
+  test('publish of a post WITH Dutch text also commits the Dutch page, the Dutch index and the hreflang sitemap lines — still ONE commit', async () => {
+    gh.seed('sitemap.xml', SITEMAP);
+    const base = gh.commitCount();
     const env = BASE_ENV(testDb);
-    const cookie = await cookieHeaderFor({ uid: null, role: 'staff', email: 's@example.com' });
+    const cookie = await staff();
+    const post = await createReadyPost(env, cookie, DUTCH);
+
+    assert.equal((await publish(env, cookie, post)).status, 200);
+    assert.equal(gh.commitCount() - base, 1);
+    assert.deepEqual([...gh.files.keys()].sort(), ['blog/index.html', 'blog/ready-post/index.html', 'nl/blog/index.html', 'nl/blog/ready-post/index.html', 'sitemap.xml']);
+    const nl = gh.text('nl/blog/ready-post/index.html');
+    assert.match(nl, /<html lang="nl">/);
+    assert.ok(nl.includes('Hier is de Nederlandse tekst') && nl.includes('<title>Een klaar bericht | WOGO</title>'));
+    assert.ok(!nl.includes('Body text'));
+    const en = gh.text('blog/ready-post/index.html');
+    assert.ok(en.includes('<link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/ready-post/">'));
+    assert.ok(!en.includes('Hier is de Nederlandse tekst'));
+    assert.ok(gh.text('nl/blog/index.html').includes('href="ready-post/"'));
+    assert.deepEqual(sitemapLocs(), ['/blog/', '/nl/blog/', '/blog/ready-post/', '/nl/blog/ready-post/']);
+  });
+
+  test('a post that LOSES its Dutch text on re-publish gets its Dutch page, Dutch index and Dutch sitemap lines removed', async () => {
+    gh.seed('sitemap.xml', SITEMAP);
+    const env = BASE_ENV(testDb);
+    const cookie = await staff();
+    const post = await createReadyPost(env, cookie, DUTCH);
+    await publish(env, cookie, post);
+    assert.ok(gh.files.has('nl/blog/ready-post/index.html'));
+
+    await db.updateBlogPost(testDb, post.id, { body_nl: null });
+    const before = gh.commitCount();
+    assert.equal((await publish(env, cookie, post)).status, 200);
+    assert.equal(gh.commitCount() - before, 1);
+    assert.ok(!gh.files.has('nl/blog/ready-post/index.html'));
+    assert.ok(!gh.files.has('nl/blog/index.html'));
+    assert.deepEqual(sitemapLocs(), ['/blog/', '/blog/ready-post/']);
+    assert.ok(!gh.text('blog/ready-post/index.html').includes('rel="alternate"'));
+  });
+
+  test('the Dutch index lists only posts with Dutch text; the English index lists all', async () => {
+    gh.seed('sitemap.xml', SITEMAP);
+    const env = BASE_ENV(testDb);
+    const cookie = await staff();
+    const a = await createReadyPost(env, cookie, { slug: 'post-with-nl', ...DUTCH });
+    const b = await createReadyPost(env, cookie, { slug: 'post-english-only' });
+    await publish(env, cookie, a);
+    await publish(env, cookie, b);
+    const en = gh.text('blog/index.html');
+    const nl = gh.text('nl/blog/index.html');
+    assert.ok(en.includes('href="post-with-nl/"') && en.includes('href="post-english-only/"'));
+    assert.ok(nl.includes('href="post-with-nl/"') && !nl.includes('post-english-only'));
+    assert.ok(!gh.files.has('nl/blog/post-english-only/index.html'));
+  });
+
+  test('re-publishing with nothing changed makes no commit and keeps published_at and last_published_commit', async () => {
+    gh.seed('sitemap.xml', SITEMAP);
+    const env = BASE_ENV(testDb);
+    const cookie = await staff();
+    const post = await createReadyPost(env, cookie, DUTCH);
+    const first = await (await publish(env, cookie, post)).json();
+    const commits = gh.commitCount();
+    const second = await (await publish(env, cookie, post)).json();
+    assert.equal(gh.commitCount(), commits, 'no empty commit');
+    assert.equal(second.post.published_at, first.post.published_at);
+    assert.equal(second.post.last_published_commit, first.post.last_published_commit);
+  });
+
+  test('re-publishing after an edit does not move published_at, but DOES update last_published_commit', async () => {
+    gh.seed('sitemap.xml', SITEMAP);
+    const env = BASE_ENV(testDb);
+    const cookie = await staff();
     const post = await createReadyPost(env, cookie);
-
-    const first = await (await worker.fetch(req('POST', `/admin/api/blog/${post.id}/publish`, { cookie, body: {} }), env, CTX)).json();
-    const secondRes = await worker.fetch(req('POST', `/admin/api/blog/${post.id}/publish`, { cookie, body: {} }), env, CTX);
-    const second = await secondRes.json();
-
+    const first = await (await publish(env, cookie, post)).json();
+    await db.updateBlogPost(testDb, post.id, { body_en: '<p>Edited</p>' });
+    const second = await (await publish(env, cookie, post)).json();
     assert.equal(second.post.published_at, first.post.published_at);
     assert.notEqual(second.post.last_published_commit, first.post.last_published_commit);
+    assert.ok(gh.text('blog/ready-post/index.html').includes('Edited'));
   });
 
-  test('a 409 conflict on the commit is retried once after refetching the sha, and succeeds', async () => {
+  test('if another commit lands on the branch meanwhile (ref move refused), the publish is rebuilt on top of it and succeeds', async () => {
+    gh.seed('sitemap.xml', SITEMAP);
     const env = BASE_ENV(testDb);
-    const cookie = await cookieHeaderFor({ uid: null, role: 'staff', email: 's@example.com' });
+    const cookie = await staff();
     const post = await createReadyPost(env, cookie);
-
-    gh.forceConflictOnce('blog/ready-post/index.html');
-    const res = await worker.fetch(req('POST', `/admin/api/blog/${post.id}/publish`, { cookie, body: {} }), env, CTX);
+    gh.forceRefConflictOnce();
+    const res = await publish(env, cookie, post);
     assert.equal(res.status, 200);
     assert.ok(gh.files.has('blog/ready-post/index.html'));
-    // One failed PUT (409) + a GET refetch + a second successful PUT, at minimum.
-    const putCallsForPost = gh.calls.filter((c) => c.method === 'PUT' && c.url.includes('blog/ready-post/index.html'));
-    assert.ok(putCallsForPost.length >= 2);
+    assert.equal(gh.calls.filter((c) => c.method === 'PATCH').length, 2);
   });
 
-  test('unpublish removes the committed post page and the index card, and flips status back to draft', async () => {
+  test('a failed GitHub write leaves the post a draft in D1 (nothing is marked live that is not)', async () => {
     const env = BASE_ENV(testDb);
-    const cookie = await cookieHeaderFor({ uid: null, role: 'staff', email: 's@example.com' });
+    const cookie = await staff();
     const post = await createReadyPost(env, cookie);
-    await worker.fetch(req('POST', `/admin/api/blog/${post.id}/publish`, { cookie, body: {} }), env, CTX);
-    assert.ok(gh.files.has('blog/ready-post/index.html'));
+    const failing = gh.fetchMock;
+    let patches = 0;
+    global.fetch = async (url, opts = {}) => {
+      if (opts.method === 'PATCH') { patches += 1; return new Response('{"message":"boom"}', { status: 500 }); }
+      return failing(url, opts);
+    };
+    const res = await publish(env, cookie, post);
+    assert.ok(res.status >= 500);
+    assert.equal(patches, 1);
+    assert.equal((await db.getBlogPost(testDb, post.id)).status, 'draft');
+    assert.equal(gh.files.size, 0);
+  });
 
-    const unpubRes = await worker.fetch(req('POST', `/admin/api/blog/${post.id}/unpublish`, { cookie, body: {} }), env, CTX);
+  test('unpublish removes the English AND the Dutch page, both index cards and the sitemap lines in ONE commit, and flips status back to draft', async () => {
+    gh.seed('sitemap.xml', SITEMAP);
+    const env = BASE_ENV(testDb);
+    const cookie = await staff();
+    const post = await createReadyPost(env, cookie, DUTCH);
+    await publish(env, cookie, post);
+    assert.ok(gh.files.has('blog/ready-post/index.html') && gh.files.has('nl/blog/ready-post/index.html'));
+
+    const before = gh.commitCount();
+    const unpubRes = await unpublish(env, cookie, post);
     assert.equal(unpubRes.status, 200);
+    assert.equal(gh.commitCount() - before, 1);
     const j = await unpubRes.json();
     assert.equal(j.post.status, 'draft');
     assert.ok(!gh.files.has('blog/ready-post/index.html'));
+    assert.ok(!gh.files.has('nl/blog/ready-post/index.html'));
+    assert.ok(!gh.files.has('nl/blog/index.html'), 'no Dutch posts left: no Dutch index');
+    assert.ok(!gh.text('blog/index.html').includes('ready-post'));
+    assert.deepEqual(sitemapLocs(), ['/blog/']);
     // published_at/last_published_commit are kept as history, not cleared.
     assert.ok(j.post.published_at);
     assert.ok(j.post.last_published_commit);
+  });
 
-    const indexFile = gh.files.get('blog/index.html');
-    assert.ok(indexFile && !indexFile.content.includes('ready-post'));
+  test('unpublishing one post keeps the Dutch index for the other Dutch posts', async () => {
+    gh.seed('sitemap.xml', SITEMAP);
+    const env = BASE_ENV(testDb);
+    const cookie = await staff();
+    const a = await createReadyPost(env, cookie, { slug: 'nl-one', ...DUTCH });
+    const b = await createReadyPost(env, cookie, { slug: 'nl-two', ...DUTCH });
+    await publish(env, cookie, a);
+    await publish(env, cookie, b);
+    await unpublish(env, cookie, a);
+    assert.ok(gh.files.has('nl/blog/nl-two/index.html') && !gh.files.has('nl/blog/nl-one/index.html'));
+    const nlIdx = gh.text('nl/blog/index.html');
+    assert.ok(nlIdx.includes('href="nl-two/"') && !nlIdx.includes('nl-one'));
+    assert.deepEqual(sitemapLocs(), ['/blog/', '/nl/blog/', '/blog/nl-two/', '/nl/blog/nl-two/']);
   });
 
   test('unpublishing a post that is not published is rejected', async () => {
     const env = BASE_ENV(testDb);
-    const cookie = await cookieHeaderFor({ uid: null, role: 'staff', email: 's@example.com' });
+    const cookie = await staff();
     const post = await createReadyPost(env, cookie);
-    const res = await worker.fetch(req('POST', `/admin/api/blog/${post.id}/unpublish`, { cookie, body: {} }), env, CTX);
-    assert.equal(res.status, 400);
+    assert.equal((await unpublish(env, cookie, post)).status, 400);
   });
 
   test('a scratch branch is honored end to end (publish never touches main)', async () => {
+    gh.createBranch('blog-publish-test');
+    const env = BASE_ENV(testDb);
+    const cookie = await cookieHeaderFor({ uid: null, role: 'owner', email: 'o@example.com' });
+    const post = await createReadyPost(env, cookie, DUTCH);
+    const res = await publish(env, cookie, post, { branch: 'blog-publish-test' });
+    assert.equal(res.status, 200);
+    assert.equal(gh.files.size, 0, 'main untouched');
+    assert.ok(gh.filesOn('blog-publish-test').has('nl/blog/ready-post/index.html'));
+    assert.ok(gh.calls.filter((c) => c.method === 'PATCH').every((c) => c.url.endsWith('/git/refs/heads/blog-publish-test')));
+  });
+});
+
+describe('preview of the Dutch page', () => {
+  async function ownerAndPost(overrides = {}) {
     const env = BASE_ENV(testDb);
     const cookie = await cookieHeaderFor({ uid: null, role: 'staff', email: 's@example.com' });
-    const post = await createReadyPost(env, cookie);
-    const res = await worker.fetch(
-      req('POST', `/admin/api/blog/${post.id}/publish`, { cookie, body: { branch: 'blog-publish-test' } }), env, CTX
-    );
-    assert.equal(res.status, 200);
-    assert.ok(gh.calls.every((c) => !c.url.includes('ref=main') || c.url.includes('blog-publish-test') === false));
-    assert.ok(gh.calls.some((c) => c.url.includes('branch') || true)); // branch is in the PUT body, not the URL — sanity no-op
+    const res = await worker.fetch(req('POST', '/admin/api/blog', { cookie, body: readyPostBody(overrides) }), env, CTX);
+    const { post } = await res.json();
+    return { env, cookie, post };
+  }
+  const preview = (env, cookie, post, body) => worker.fetch(req('POST', `/admin/api/blog/${post.id}/preview`, { cookie, body }), env, CTX).then((r) => r.json());
+
+  test('Preview NL is the real Dutch page (lang nl, Dutch text, canonical under /nl/blog/), with unsaved overrides', async () => {
+    const { env, cookie, post } = await ownerAndPost({ body_nl: '<p>Opgeslagen tekst</p>' });
+    const j = await preview(env, cookie, post, { lang: 'nl', overrides: { body_nl: '<p>Nog niet opgeslagen</p>', title_nl: 'Nieuwe titel' } });
+    assert.equal(j.lang, 'nl');
+    assert.equal(j.exists, true);
+    assert.match(j.html, /<html lang="nl">/);
+    assert.ok(j.html.includes('Nog niet opgeslagen') && j.html.includes('Nieuwe titel'));
+    assert.ok(!j.html.includes('Opgeslagen tekst'));
+    assert.ok(j.html.includes('rel="canonical" href="https://www.wogococktailwalk.com/nl/blog/ready-post/"'));
+    assert.ok(j.html.includes('<base href="https://www.wogococktailwalk.com/nl/blog/ready-post/">'));
+  });
+
+  test('Preview NL of a post with no Dutch text says there will be no Dutch page, instead of showing English', async () => {
+    const { env, cookie, post } = await ownerAndPost();
+    const j = await preview(env, cookie, post, { lang: 'nl' });
+    assert.equal(j.exists, false);
+    assert.match(j.html, /no Dutch page/i);
+    assert.ok(!j.html.includes('Body text'));
+  });
+
+  test('Preview EN is the English page and ignores the Dutch text', async () => {
+    const { env, cookie, post } = await ownerAndPost({ body_nl: '<p>Nederlandse tekst</p>' });
+    const j = await preview(env, cookie, post, { lang: 'en' });
+    assert.equal(j.exists, true);
+    assert.match(j.html, /<html lang="en">/);
+    assert.ok(!j.html.includes('Nederlandse tekst'));
   });
 });
 

@@ -129,6 +129,11 @@ const PREFIX = [
 // few Dutch article names, then the same lookup as English, then the same
 // section name. Where no Dutch page exists yet (the blog) the English page is
 // used. The Dutch pages themselves (/nl/faq/ and so on) are left alone.
+// The Dutch BLOG (/nl/blog/ and /nl/blog/<article>/) is written by the dashboard
+// whenever an article has Dutch text, so this helper cannot know which of those
+// exist: it hands them through, and only if the website answers "not found" does
+// it send the visitor to the English article (see fetch below). Old Wix addresses
+// go to the Dutch article when NL_BLOG (below) lists it, else to the English one.
 const NL_POSTS = {
   "/post/cocktailrecepten-met-een-winter-en-kerstthema": "/blog/winter-christmas-cocktail-recipes/",
   "/post/wodka-of-gin": "/blog/vodka-or-gin/",
@@ -153,6 +158,15 @@ const NEW_SECTIONS = new Set(['about', 'accessibility', 'amsterdam', 'blog', 'co
 // nl-pages:start (made by tools/build-nl.js; do not edit)
 const NL_PAGES = new Set(["/", "/rotterdam/", "/utrecht/", "/amsterdam/", "/groningen/", "/delft/", "/rotterdam/route-1/", "/rotterdam/route-2/", "/rotterdam/route-3-premium/", "/rotterdam/route-1/book/", "/rotterdam/route-2/book/", "/rotterdam/route-3-premium/book/", "/amsterdam/book/", "/delft/book/", "/groningen/book/", "/utrecht/book/", "/how-it-works/", "/groups/", "/gift-cards/", "/about/", "/contact/", "/faq/", "/for-bars/", "/privacy/", "/cookies/", "/terms/", "/disclaimer/", "/accessibility/", "/complaints/"]);
 // nl-pages:end
+// The Dutch blog articles the dashboard has published (nl/blog/<slug>/), and
+// whether the Dutch blog index exists. Also written by tools/build-nl.js, from
+// the nl/blog/ folder, so it is only as fresh as the last run of that script.
+// It is used ONLY to send old Wix addresses to a Dutch article when there is
+// one; the Dutch pages themselves are always handed through (see fetch below).
+// nl-blog:start (made by tools/build-nl.js; do not edit)
+const NL_BLOG = new Set([]);
+const NL_BLOG_INDEX = false;
+// nl-blog:end
 function lookup(path) {
   let to = EXACT[path];
   if (to === undefined) {
@@ -162,8 +176,19 @@ function lookup(path) {
   }
   return to;
 }
-function dutchTarget(path) {
+const isNlBlogPath = (path) => path === '/nl/blog' || path.startsWith('/nl/blog/');
+// English address -> Dutch address, where the Dutch page really exists
+function inDutchIfExists(to, nlBlog) {
+  if (NL_PAGES.has(to)) return '/nl' + to;
+  if (to === '/blog/') return nlBlog.index ? '/nl/blog/' : to;
+  const m = /^\/blog\/([^/]+)\/$/.exec(to);
+  if (m && nlBlog.slugs.has(m[1])) return '/nl' + to;
+  return to;
+}
+function dutchTarget(path, nlBlog) {
   if (path !== '/nl' && !path.startsWith('/nl/')) return undefined;
+  // Real Dutch blog pages: keep the address (with the closing slash); the website serves them.
+  if (isNlBlogPath(path)) return /\.[a-z0-9]{2,5}$/.test(path) ? path : path + '/';
   const rest = path.slice(3) || '/';
   let to;
   if (rest === '/') to = '/';
@@ -175,13 +200,14 @@ function dutchTarget(path) {
       to = NEW_SECTIONS.has(first) ? rest + '/' : '/';
     }
   }
-  return NL_PAGES.has(to) ? '/nl' + to : to;
+  return inDutchIfExists(to, nlBlog);
 }
 
-export function target(url) {
+// `nlBlog` is only passed by the tests; in production it is the generated list.
+export function target(url, nlBlog = { slugs: NL_BLOG, index: NL_BLOG_INDEX }) {
   const u = new URL(url);
   const path = u.pathname.toLowerCase().replace(/\/+$/, '') || '/';
-  let to = dutchTarget(path);
+  let to = dutchTarget(path, nlBlog);
   if (to === undefined) to = EXACT[path];
   if (to === undefined) {
     const withSlash = path + '/';
@@ -241,7 +267,17 @@ export default {
     let to = target(request.url);
     // Plain http:// visits are sent to the secure address.
     if (!to && request.url.startsWith('http://')) to = 'https://' + request.url.slice(7);
-    if (!to || to === request.url) return fetch(request);
+    if (!to || to === request.url) {
+      const res = await fetch(request);
+      // A Dutch blog address the website does not have (no Dutch text for that
+      // article, or it is not published): the English page instead. 302, not 301:
+      // the Dutch page may well appear later.
+      if (res.status === 404) {
+        const p = new URL(request.url);
+        if (isNlBlogPath(p.pathname.toLowerCase().replace(/\/+$/, ''))) return Response.redirect(SITE + p.pathname.slice(3) + p.search, 302);
+      }
+      return res;
+    }
     return Response.redirect(to, 301);
   },
 };
