@@ -29,6 +29,11 @@ Tagline: Explore your city, one cocktail at a time.
 - Contact: info@wogoamsterdam.com, +31 20 210 1168, Monday to Friday 10:00 to 18:00.
 - Instagram and TikTok: @wogococktailwalk
 
+## Languages
+
+- English: https://www.wogococktailwalk.com/
+- Dutch (Nederlands): https://www.wogococktailwalk.com/nl/ — every page has a Dutch version at the same path under /nl/.
+
 ## Key pages
 
 - [Home](https://www.wogococktailwalk.com/): all cities and routes
