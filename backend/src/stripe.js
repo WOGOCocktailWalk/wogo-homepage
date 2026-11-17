@@ -259,6 +259,10 @@ export async function getPayoutOverview(env) {
   return {
     schedule: account && account.settings && account.settings.payouts ? account.settings.payouts.schedule : null,
     payouts_enabled: account ? account.payouts_enabled ?? null : null,
+    // Only the bank's name and the last 4 digits — never the full number.
+    bank_accounts: account && account.external_accounts && Array.isArray(account.external_accounts.data)
+      ? account.external_accounts.data.map((x) => ({ bank: x.bank_name || null, last4: x.last4 || null, currency: x.currency || null, default: !!x.default_for_currency }))
+      : null,
     available_cents: balance.error ? null : sum(balance.available),
     pending_cents: balance.error ? null : sum(balance.pending),
     payouts: payouts.error ? null : (payouts.data || []).map((p) => ({
