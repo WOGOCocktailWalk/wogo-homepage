@@ -224,6 +224,13 @@
     { id: "sub_5", email: "gone@example.com", first_name: "Lotte", locale: "nl", city: null, source: "site_footer", status: "unsubscribed", created_at: day(-60), confirmed_at: day(-59), unsubscribed_at: day(-5) }
   ];
 
+  /* ---- missing addresses people still visit (Tools screen) ---- */
+  const missingPages = [
+    { path: "/amsterdam-cocktail-walk", hits: 14, first_seen: day(-40) + " 10:00:00", last_seen: day(-1) + " 18:20:00" },
+    { path: "/nl/boeken", hits: 6, first_seen: day(-20) + " 09:00:00", last_seen: day(-3) + " 12:05:00" },
+    { path: "/gift-card", hits: 2, first_seen: day(-9) + " 21:40:00", last_seen: day(-9) + " 21:40:00" }
+  ];
+
   /* ---- customers: derived from bookings (mirrors logic.js:aggregateCustomers) ---- */
   function bookingSpendCents(b) {
     if (!(b.status === "confirmed" || b.status === "confirmed_conflict")) return 0;
@@ -547,6 +554,28 @@
     }
     if ((m = match(path, /^\/admin\/api\/date-overrides\/(\d+)$/)) && method === "DELETE") {
       const id = +m[1]; for (const k in overrides) overrides[k] = overrides[k].filter((o) => o.id !== id); return json({ ok: true });
+    }
+
+    // missing-page log (Tools screen)
+    if (path === "/admin/api/missing-pages" && method === "GET") {
+      return json({ pages: missingPages.slice(), max_pages: 500, forget_after_days: 90 });
+    }
+    if (path === "/admin/api/missing-pages/forget" && method === "POST") {
+      const i = missingPages.findIndex((p) => p.path === bodyObj.path);
+      if (i < 0) return json({ error: "not_found", message: "that address is already gone from the list" }, 404);
+      missingPages.splice(i, 1);
+      return json({ ok: true });
+    }
+
+    // export / erase one person (owner tool) — canned demo answers
+    if (path === "/admin/api/privacy/export" && method === "POST") {
+      const email = String(bodyObj.email || "").trim().toLowerCase();
+      const own = bookings.filter((b) => String(b.email || "").toLowerCase() === email);
+      const summary = { bookings: own.length, first_walk: own.length ? own[0].date : null, last_walk: own.length ? own[own.length - 1].date : null, upcoming_walks: [], gift_cards_total: 0, gift_cards_bought: 0, gift_cards_received: 0, gift_cards_with_balance: [], enquiries: 0, waiting_list_entries: 0, newsletter: null, reminder_opt_out: false, queued_sync_items: 0, queued_mail_copies: 0 };
+      return json({ email, reference: "demo", empty: own.length === 0, summary, export: { email, bookings: own } });
+    }
+    if (path === "/admin/api/privacy/erase" && method === "POST") {
+      return json({ ok: true, reference: "demo", audit_logged: true, done: { bookings_anonymised: 0, gift_cards_cleaned: 0, enquiries_and_waiting_list_deleted: 0, newsletter_subscription_deleted: 0, queued_sync_items_deleted: 0, queued_mail_copies_deleted: 0 }, gift_cards_with_balance: [], kept: ["(demo) nothing was changed"], do_by_hand: ["(demo) Stripe, Brevo, Gmail"] });
     }
 
     // customers (CRM) — derived from bookings, same as the Worker

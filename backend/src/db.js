@@ -9,7 +9,7 @@
 // No business-logic math lives here beyond what SQL itself expresses; pure
 // aggregation/formatting is delegated to src/logic.js.
 
-import { nowSqlite, sqliteMinutesAgo, buildSlotsForDate, isSlotPastCutoff, aggregateCustomers, generateGiftCardCode, normalizeGiftCardCode } from './logic.js';
+import { nowSqlite, sqliteMinutesAgo, todayInTimezone, buildSlotsForDate, isSlotPastCutoff, aggregateCustomers, generateGiftCardCode, normalizeGiftCardCode } from './logic.js';
 import {
   SAME_DAY_CUTOFF_MINUTES,
   ABANDONED_FIRST_EMAIL_MIN_MINUTES, ABANDONED_FOLLOWUP_MIN_MINUTES, ABANDONED_WINDOW_MAX_MINUTES,
@@ -2059,17 +2059,57 @@ export async function pingDb(db) {
 // ever touches rows it hasn't already anonymized.
 // ---------------------------------------------------------------------------
 
+/**
+ * THE one definition of "anonymise a booking", shared by the nightly 24-month
+ * job (anonymizeOldBookings below) and the owner's "erase one customer" tool
+ * (eraseCustomerData), so the two can never drift apart.
+ *
+ * Cleared: name, email (replaced by a unique unreachable placeholder), phone,
+ * notes AND addon_notes (allergy/dietary text, possibly health data), the
+ * transient hold ip, and the first-touch marketing fields (utm_*, referrer,
+ * landing_path; the dashboard's analytics never look back further than
+ * ANALYTICS_MAX_RANGE_DAYS = 400 days, so nothing reads them after 24 months).
+ *
+ * KEPT on purpose (financial / accounting facts, no free text): route, date,
+ * slot, party, status, price-related columns (discount_code/discount_cents,
+ * payment_status, gift_code/gift_applied_cents), stripe_session and
+ * stripe_payment_intent (needed to reconcile with Stripe), locale,
+ * marketing_opt_in, created_at, and the booking_addons rows (they only hold
+ * name snapshots, quantities and prices, no guest text).
+ */
+export const ANONYMIZE_BOOKING_SET_SQL = `name = '[deleted]', email = 'deleted-' || id || '@wogoamsterdam.invalid', phone = NULL,
+        notes = NULL, addon_notes = NULL, ip = NULL,
+        utm_source = NULL, utm_medium = NULL, utm_campaign = NULL, utm_content = NULL,
+        referrer = NULL, landing_path = NULL`;
+
+/** True when a booking row still carries something to scrub. Idempotence
+ * guard: after the UPDATE every one of these is empty, so a re-run touches
+ * nothing. It deliberately is NOT just `name != '[deleted]'`: rows that were
+ * anonymised by an older version of this job kept their add-on notes and
+ * marketing fields, and must still be cleaned. */
+export const BOOKING_NEEDS_SCRUB_SQL = `(name != '[deleted]' OR phone IS NOT NULL OR notes IS NOT NULL OR addon_notes IS NOT NULL
+        OR utm_source IS NOT NULL OR utm_medium IS NOT NULL OR utm_campaign IS NOT NULL OR utm_content IS NOT NULL
+        OR referrer IS NOT NULL OR landing_path IS NOT NULL)`;
+
 export async function anonymizeOldBookings(db, beforeStr) {
   const result = await run(
     db,
     `UPDATE bookings
-        SET name = '[deleted]', email = 'deleted-' || id || '@wogoamsterdam.invalid', phone = NULL, notes = NULL
+        SET ${ANONYMIZE_BOOKING_SET_SQL}
       WHERE created_at < :before
         AND status IN ('confirmed', 'confirmed_conflict', 'cancelled', 'expired')
-        AND name != '[deleted]'`,
+        AND ${BOOKING_NEEDS_SCRUB_SQL}`,
     { before: beforeStr }
   );
   return { anonymized: result.meta.changes };
+}
+
+/** Deletes enquiries (contact messages, group requests AND waiting-list
+ * entries, which are `inquiries` rows) created before `beforeStr`.
+ * There is no "last contact" column, so age is measured from created_at. */
+export async function deleteOldInquiries(db, beforeStr) {
+  const result = await run(db, `DELETE FROM inquiries WHERE created_at < :before`, { before: beforeStr });
+  return result.meta.changes;
 }
 
 // ---------------------------------------------------------------------------
@@ -3187,4 +3227,242 @@ export async function countConfirmedBookingsForRouteSince(db, routeId, sinceStr)
     { route_id: routeId, since: sinceStr }
   );
   return row ? Number(row.n) || 0 : 0;
+}
+
+// ---------------------------------------------------------------------------
+// Missing-page log (public POST /api/missing-page, src/missing_pages.js).
+//
+// Which addresses on the website do not exist but still get visits? Stored in
+// the existing generic `settings` k/v table, NO new table: one row per
+// normalised path, key `notfound:<path>`, value a small JSON object
+// {"hits":N,"first":"<utc>","last":"<utc>"}. Only the path is stored: no
+// query string, IP, cookie or user agent.
+//
+// Why this cannot corrupt counts under concurrent writes: a hit is ONE SQL
+// statement that increments inside the database (json_set on the stored
+// value), never "read the row in JS, add one, write it back". D1 runs each
+// statement atomically, so two simultaneous hits give +2, not +1.
+// The distinct-path cap is checked inside the same INSERT statement. Two
+// brand-new paths racing at the very limit can overshoot the cap by a handful
+// of rows, which is harmless; counts of existing paths stay exact.
+// ---------------------------------------------------------------------------
+
+export const MISSING_PAGE_KEY_PREFIX = 'notfound:';
+// Keys are matched with a range (`k >= 'notfound:' AND k < 'notfound;'`,
+// ';' is the character after ':'), which uses the primary-key index and,
+// unlike LIKE, has no wildcard characters to escape.
+const MISSING_PAGE_RANGE = { lo: MISSING_PAGE_KEY_PREFIX, hi: 'notfound;' };
+
+const MISSING_PAGE_BUMP_SQL = `json_set(settings.v, '$.hits', COALESCE(json_extract(settings.v, '$.hits'), 0) + 1, '$.last', datetime('now'))`;
+
+/** Counts one visit to a missing path. Returns 'counted', or 'full' when the
+ * path is new and the cap on distinct paths is reached (nothing is stored). */
+export async function recordMissingPageHit(db, path, cap) {
+  const k = MISSING_PAGE_KEY_PREFIX + path;
+  // 1) The common case: the path is already known, bump it in place.
+  const bumped = await run(
+    db,
+    `UPDATE settings SET v = ${MISSING_PAGE_BUMP_SQL} WHERE k = :k`,
+    { k }
+  );
+  if (bumped.meta.changes > 0) return 'counted';
+  // 2) New path: insert only while under the cap. ON CONFLICT covers the case
+  // where another request inserted the same path between step 1 and now.
+  const inserted = await run(
+    db,
+    `INSERT INTO settings (k, v)
+       SELECT :k, json_object('hits', 1, 'first', datetime('now'), 'last', datetime('now'))
+        WHERE (SELECT COUNT(*) FROM settings WHERE k >= :lo AND k < :hi) < :cap
+     ON CONFLICT(k) DO UPDATE SET v = ${MISSING_PAGE_BUMP_SQL}`,
+    { k, lo: MISSING_PAGE_RANGE.lo, hi: MISSING_PAGE_RANGE.hi, cap }
+  );
+  return inserted.meta.changes > 0 ? 'counted' : 'full';
+}
+
+/** Missing paths, most-visited first. */
+export async function listMissingPages(db, limit = 500) {
+  const list = await all(
+    db,
+    `SELECT k, json_extract(v, '$.hits') AS hits, json_extract(v, '$.first') AS first_seen, json_extract(v, '$.last') AS last_seen
+       FROM settings WHERE k >= :lo AND k < :hi
+      ORDER BY hits DESC, last_seen DESC LIMIT :limit`,
+    { lo: MISSING_PAGE_RANGE.lo, hi: MISSING_PAGE_RANGE.hi, limit }
+  );
+  return list.map((r) => ({ path: r.k.slice(MISSING_PAGE_KEY_PREFIX.length), hits: Number(r.hits) || 0, first_seen: r.first_seen, last_seen: r.last_seen }));
+}
+
+/** "Forget" one path. The key is always built here from the fixed prefix, so
+ * this can never delete any other settings row. Returns true if it existed. */
+export async function deleteMissingPage(db, path) {
+  const res = await run(db, `DELETE FROM settings WHERE k = :k`, { k: MISSING_PAGE_KEY_PREFIX + path });
+  return res.meta.changes > 0;
+}
+
+/** Daily housekeeping: drop paths not visited since `beforeStr`. */
+export async function pruneMissingPages(db, beforeStr) {
+  const res = await run(
+    db,
+    `DELETE FROM settings WHERE k >= :lo AND k < :hi AND json_extract(v, '$.last') < :before`,
+    { lo: MISSING_PAGE_RANGE.lo, hi: MISSING_PAGE_RANGE.hi, before: beforeStr }
+  );
+  return res.meta.changes;
+}
+
+// ---------------------------------------------------------------------------
+// Export / erase ONE customer (owner tool, src/privacy_tools.js).
+//
+// A person is identified by an email address (lower-cased). Matching is exact
+// on the whole address, never partial. Callers must reject an empty address
+// and the unreachable '@wogoamsterdam.invalid' placeholders before calling:
+// several tables store '' for "no email" (phone-only waiting-list rows, print
+// gift cards) and an empty match would hit all of them.
+//
+// FIELD-BY-FIELD DECISIONS FOR ERASE (table: what happens and why)
+//
+//  bookings            ANONYMISED, not deleted, with the very same SQL as the
+//                      nightly 24-month job (ANONYMIZE_BOOKING_SET_SQL):
+//                      name, email, phone, notes, add-on notes, ip and
+//                      first-touch marketing fields are cleared. Route, date,
+//                      slot, party, status, amounts, discount and Stripe ids
+//                      stay: tax law requires the financial record.
+//  booking_addons      untouched: only name snapshots, quantities, prices.
+//  gift_cards          Cards the person BOUGHT or RECEIVED: the matching side's
+//                      name and email become '[deleted]' / an unreachable
+//                      placeholder (the columns are NOT NULL), and the
+//                      personal `message` is cleared. KEPT: code, initial and
+//                      balance, status, currency, locale, stripe_session,
+//                      created_at. Redemption only looks the card up by code,
+//                      so the balance keeps working; nothing re-mails the
+//                      stored addresses after the purchase.
+//  gift_card_redemptions untouched: code, booking id, amount: no personal data.
+//  inquiries           DELETED (contact messages, group requests and waiting-
+//                      list entries): name, email, phone and free text, and
+//                      nothing financial in them.
+//  subscribers         DELETED (name, email, city, hashed ip, tokens).
+//  brevo_sync_queue    DELETED where the JSON payload carries this address
+//                      (queued contact updates; all statuses, a done row still
+//                      holds the email). A queued "unsubscribe" that never
+//                      runs is why the report tells the owner to delete the
+//                      contact in Brevo by hand.
+//  failed_email        DELETED where the address is the recipient, the
+//                      reply-to, or appears in the stored mail body: those
+//                      rows hold the full HTML of the mail, with names.
+//  reminder_optouts    KEPT on purpose: it only records "do not send reminder
+//                      mails to this address". Deleting it would make a later
+//                      booking send reminders again. Reported as an owner
+//                      decision.
+//  admin_audit, notifications, error_log, rate_events: NOT touched (expire on
+//                      their own: ~13 months, 180 days, 90 days, 24 hours).
+//  R2 backups, Stripe, Brevo, Gmail, Meta, GA4: outside this database.
+// ---------------------------------------------------------------------------
+
+/** Walks that have not happened yet (today counts as "not happened"; each
+ * route's own time zone decides what today is) and are still live: a
+ * confirmed booking, or an unexpired hold. Cancelled/expired ones are not. */
+export async function listCustomerFutureBookings(db, email, nowDate = new Date()) {
+  const candidates = await all(
+    db,
+    `SELECT b.id, b.date, b.slot, b.party, b.status, b.route_id, r.name AS route_name, r.timezone AS timezone
+       FROM bookings b LEFT JOIN routes r ON r.id = b.route_id
+      WHERE LOWER(b.email) = :email
+        AND (b.status IN ('confirmed', 'confirmed_conflict') OR (b.status = 'hold' AND b.hold_expires > datetime('now')))
+      ORDER BY b.date, b.slot`,
+    { email }
+  );
+  return candidates.filter((b) => b.date >= todayInTimezoneSafe(b.timezone, nowDate));
+}
+
+function todayInTimezoneSafe(tz, nowDate) {
+  try { return todayInTimezone(tz || undefined, nowDate); } catch { return todayInTimezone(undefined, nowDate); }
+}
+
+/** Everything stored about one email address, for the dashboard summary and
+ * the downloadable file. Secret one-time tokens are left out. */
+export async function getCustomerData(db, email, nowDate = new Date()) {
+  const bookings = await all(
+    db,
+    `SELECT b.*, r.name AS route_name, r.city AS route_city
+       FROM bookings b LEFT JOIN routes r ON r.id = b.route_id
+      WHERE LOWER(b.email) = :email ORDER BY b.date, b.slot`,
+    { email }
+  );
+  const addons = await all(
+    db,
+    `SELECT * FROM booking_addons WHERE booking_id IN (SELECT id FROM bookings WHERE LOWER(email) = :email) ORDER BY created_at`,
+    { email }
+  );
+  for (const b of bookings) {
+    delete b.ip; // transient hold ip, never meaningful after confirmation
+    b.addons = addons.filter((a) => a.booking_id === b.id);
+  }
+  const giftCards = await all(
+    db,
+    `SELECT *, CASE WHEN LOWER(buyer_email) = :email THEN 1 ELSE 0 END AS is_buyer,
+              CASE WHEN LOWER(recipient_email) = :email THEN 1 ELSE 0 END AS is_recipient
+       FROM gift_cards WHERE LOWER(buyer_email) = :email OR LOWER(recipient_email) = :email ORDER BY created_at`,
+    { email }
+  );
+  const redemptions = giftCards.length === 0 ? [] : await all(
+    db,
+    `SELECT * FROM gift_card_redemptions WHERE gift_card_code IN
+       (SELECT code FROM gift_cards WHERE LOWER(buyer_email) = :email OR LOWER(recipient_email) = :email) ORDER BY created_at`,
+    { email }
+  );
+  const inquiries = await all(db, `SELECT * FROM inquiries WHERE LOWER(email) = :email ORDER BY created_at`, { email });
+  const subscriber = await first(
+    db,
+    `SELECT id, email, first_name, locale, city, source, status, created_at, confirmed_at, unsubscribed_at, ip_hash
+       FROM subscribers WHERE LOWER(email) = :email`,
+    { email }
+  );
+  const reminderOptOut = await first(db, `SELECT email_lower, created_at FROM reminder_optouts WHERE email_lower = :email`, { email });
+  const syncItems = await all(
+    db,
+    `SELECT id, created_at, kind, status FROM brevo_sync_queue WHERE instr(LOWER(payload), '"' || :email || '"') > 0 ORDER BY id`,
+    { email }
+  );
+  const queuedMails = await all(
+    db,
+    `SELECT id, created_at, kind, subject, status FROM failed_email
+      WHERE LOWER(to_email) = :email OR LOWER(COALESCE(reply_to, '')) = :email OR instr(LOWER(html_content), :email) > 0 ORDER BY id`,
+    { email }
+  );
+  const future = await listCustomerFutureBookings(db, email, nowDate);
+  return { bookings, giftCards, redemptions, inquiries, subscriber: subscriber || null, reminderOptOut: reminderOptOut || null, syncItems, queuedMails, future };
+}
+
+/**
+ * Erases one customer as described above, in ONE atomic batch. Refuses (and
+ * writes nothing) when a walk that has not happened yet exists and
+ * `includeFuture` is not true: returns { blocked: [...] } instead.
+ * Returns { done: {...counts} } otherwise.
+ */
+export async function eraseCustomerData(db, email, { includeFuture = false, nowDate = new Date() } = {}) {
+  if (!includeFuture) {
+    const future = await listCustomerFutureBookings(db, email, nowDate);
+    if (future.length > 0) return { blocked: future };
+  }
+  const p = { email };
+  const placeholder = `'deleted-' || id || '@wogoamsterdam.invalid'`;
+  const res = await batchRun(db, [
+    { sql: `UPDATE bookings SET ${ANONYMIZE_BOOKING_SET_SQL} WHERE LOWER(email) = :email`, params: p },
+    { sql: `UPDATE gift_cards SET buyer_name = '[deleted]', buyer_email = ${placeholder}, message = NULL WHERE LOWER(buyer_email) = :email`, params: p },
+    { sql: `UPDATE gift_cards SET recipient_name = '[deleted]', recipient_email = ${placeholder}, message = NULL WHERE LOWER(recipient_email) = :email`, params: p },
+    { sql: `DELETE FROM inquiries WHERE LOWER(email) = :email`, params: p },
+    { sql: `DELETE FROM subscribers WHERE LOWER(email) = :email`, params: p },
+    { sql: `DELETE FROM brevo_sync_queue WHERE instr(LOWER(payload), '"' || :email || '"') > 0`, params: p },
+    { sql: `DELETE FROM failed_email WHERE LOWER(to_email) = :email OR LOWER(COALESCE(reply_to, '')) = :email OR instr(LOWER(html_content), :email) > 0`, params: p },
+  ]);
+  const n = (i) => (res[i] && res[i].meta ? res[i].meta.changes : 0) || 0;
+  return {
+    done: {
+      bookings_anonymised: n(0),
+      gift_cards_buyer_cleared: n(1),
+      gift_cards_recipient_cleared: n(2),
+      inquiries_deleted: n(3),
+      subscribers_deleted: n(4),
+      sync_items_deleted: n(5),
+      queued_mails_deleted: n(6),
+    },
+  };
 }

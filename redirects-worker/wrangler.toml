@@ -37,8 +37,9 @@ routes = [
   # Old Wix DUTCH addresses (/nl/<old name>). Only the old names are listed, so
   # the real Dutch pages of the new site (/nl/, /nl/faq/, /nl/rotterdam/... made
   # by tools/build-nl.js) are served straight by the website and never pass
-  # through this helper. /nl/blog* is here because there is no Dutch blog yet:
-  # it forwards to the English blog. Remove that one line when a Dutch blog exists.
+  # through this helper. The Dutch blog (/nl/blog/...) is real since the blog
+  # dashboard writes it; the catch-all below hands it through (worker.js), so it
+  # needs no line of its own.
   # Catch-all for Dutch addresses: real Dutch pages pass straight through; an
   # old Dutch address that matches nothing goes to the Dutch homepage instead
   # of a "page not found" (owner's choice, 17 Nov 2026).
@@ -48,7 +49,6 @@ routes = [
   { pattern = "*wogococktailwalk.com/nl/barcelona-cocktailwalk*", zone_name = "wogococktailwalk.com" },
   { pattern = "*wogococktailwalk.com/nl/bars", zone_name = "wogococktailwalk.com" },
   { pattern = "*wogococktailwalk.com/nl/bars/*", zone_name = "wogococktailwalk.com" },
-  { pattern = "*wogococktailwalk.com/nl/blog*", zone_name = "wogococktailwalk.com" },
   { pattern = "*wogococktailwalk.com/nl/book-online*", zone_name = "wogococktailwalk.com" },
   { pattern = "*wogococktailwalk.com/nl/booking-calendar*", zone_name = "wogococktailwalk.com" },
   { pattern = "*wogococktailwalk.com/nl/booking-form*", zone_name = "wogococktailwalk.com" },

@@ -1260,25 +1260,34 @@ not public user input.
 `blog/_template/post.html` / `blog/_template/index.html` were built by
 COPYING a real page and swapping only the post-specific content for
 `{{TOKEN}}` placeholders — the shared NAV/FOOTER/CONSENT/ANALYTICS chrome is
-byte-identical to every hand-built page of the same type (confirmed against
-two real posts before freezing the rule; a ROUTE page's NAV is NOT a valid
-comparison — its nav CTA legitimately targets a different anchor by page
-type). `scripts/build_blog_templates.mjs` embeds both template files into
-`src/blog_templates_data.js` at build time (re-run after any template edit,
-then redeploy) — the same "hand-edited source → generated module" pattern
-`src/admin/build.mjs` already uses, so preview/publish never need a live
-GitHub fetch just to render.
+byte-identical to every hand-built page of the same type. They are the
+hand-edited SOURCE. `tools/build-nl.js` (repo root) turns each into two
+GENERATED templates in `blog/_template/generated/` — `*.en.html` (English
+only, language menu = real links) and `*.nl.html` (the Dutch page, with the
+same Dutch nav/footer wording as every other `/nl/` page) — and
+`scripts/build_blog_templates.mjs` embeds those four into
+`src/blog_templates_data.js`. After ANY template edit: `node tools/build-nl.js`
+(repo root), `node scripts/build_blog_templates.mjs` (backend/), redeploy.
 
-i18n: the post body is rendered TWICE — `<div data-lang="en">`/`<div
-data-lang="nl" hidden>` — rather than per-paragraph `data-i18n` keys, since
-the editor produces one HTML blob per language, not individually-keyed
-paragraphs. The shared `setLang()` script (identical mechanism to every
-other page) gained two small, additive capabilities for this: toggling
-`hidden` on `[data-lang]` elements, and setting an `<img>`'s `alt` from
-`[data-i18n-alt]` (an attribute can't hold translated text as element
-content the way `data-i18n`'s `innerHTML` swap does). Every other post-
-specific string (title, excerpt, category, SEO fields) still uses the
-existing EN-in-DOM + NL-dictionary-override pattern.
+One language per page (Dutch search/AI visibility): the English page
+`blog/<slug>/` carries English text only; when the post has a Dutch body
+(`blog_render.js:hasDutchBody`) the Worker also writes a real Dutch page
+`nl/blog/<slug>/` (Dutch title/summary/body/meta baked in, `lang="nl"`, self
+canonical, hreflang en/nl/x-default on BOTH pages, `inLanguage` in the
+structured data). A post without Dutch text gets no Dutch page and no hreflang.
+`nl/blog/index.html` lists only the posts with a Dutch page (and is removed when
+there are none). The English page's language menu links to the twin, or to
+`/nl/blog/` (else `/nl/`) when there is none; no script ever switches an
+English blog address into Dutch. `{{X_EN}}` tokens of the source template
+become `{{X_NL}}` in the Dutch template.
+
+Publishing (`src/blog_publish.js`): ONE git commit per publish/unpublish
+(Git Data API, `github.js:commitFiles`) containing the English page, the
+Dutch page, both indexes and the `sitemap.xml` lines (`blog_render.js:
+updateBlogSitemap`, hreflang pairs in the format tools/build-nl.js writes).
+A publish that changes no file makes no commit. tools/build-nl.js never edits
+the `/blog/` and `/nl/blog/` lines of the sitemap (and only validates them).
+`scripts/republish_blog_posts.mjs` re-publishes every published post.
 
 Every blog image reference (cover AND in-body) is resolved through
 `assetUrl()` against `config.js:SITE_ASSET_BASE` (the functional,

@@ -63,9 +63,16 @@ import {
   BLOG_SEO_DESCRIPTION_MAX_LENGTH, BLOG_ALT_MAX_LENGTH, BLOG_BODY_MAX_LENGTH,
   GITHUB_COMMIT_BRANCH_DEFAULT,
 } from './config.js';
-import { putFile, deleteFile, getFile } from './github.js';
-import { renderPostPage, renderIndexPage, buildSitemapUrlEntry, assetUrl as blogAssetUrl } from './blog_render.js';
-import { BLOG_POST_TEMPLATE, BLOG_INDEX_TEMPLATE } from './blog_templates_data.js';
+import { putFile } from './github.js';
+import { renderPostPage, renderPostPageNl, assetUrl as blogAssetUrl } from './blog_render.js';
+import { commitBlogChange } from './blog_publish.js';
+import { BLOG_POST_TEMPLATE, BLOG_POST_TEMPLATE_NL, BLOG_INDEX_TEMPLATE, BLOG_INDEX_TEMPLATE_NL } from './blog_templates_data.js';
+
+/** The four generated page templates (English/Dutch post + index) the publish renders from. */
+const BLOG_TEMPLATES = {
+  postEn: BLOG_POST_TEMPLATE, postNl: BLOG_POST_TEMPLATE_NL,
+  indexEn: BLOG_INDEX_TEMPLATE, indexNl: BLOG_INDEX_TEMPLATE_NL,
+};
 import {
   notifyAdmins, getNotificationPreferences, setNotificationPreferences,
 } from './notifications.js';
@@ -97,7 +104,7 @@ import { isSlotPastCutoff } from './logic.js';
 // directly) simply has no `adminSession` — `actor` falls back to 'token',
 // matching this table's pre-0025 meaning (one shared ADMIN_TOKEN, no
 // per-user identity).
-async function audit(env, request, action, entity_type, entity_id, detail) {
+export async function audit(env, request, action, entity_type, entity_id, detail) {
   try {
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
     const session = request.adminSession;
@@ -307,6 +314,12 @@ export const ROUTE_ROLES = {
   'POST /admin/api/inquiries/:id/status': 'staff',
   'DELETE /admin/api/inquiries/:id': 'staff',
   'GET /admin/api/subscribers': 'staff',
+  // Missing-page log (Tools screen): which addresses that do not exist still get visits.
+  'GET /admin/api/missing-pages': 'staff',
+  'POST /admin/api/missing-pages/forget': 'staff',
+  // Export or erase one person's data (privacy requests): OWNER only.
+  'POST /admin/api/privacy/export': 'owner',
+  'POST /admin/api/privacy/erase': 'owner',
 
   'POST /admin/api/routes': 'owner',
   'PUT /admin/api/routes/:id': 'owner',
@@ -3040,6 +3053,12 @@ function checkPublishReady(post) {
   return { ok: true };
 }
 
+const NO_DUTCH_PAGE_NOTICE = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>' +
+  '<body style="font-family:system-ui,sans-serif;max-width:34em;margin:3em auto;padding:0 1em;line-height:1.5;color:#201611">' +
+  '<h2>There is no Dutch page for this post yet</h2>' +
+  '<p>A post only gets a Dutch page on the website when it has Dutch text. Fill in the Dutch text (body, and ideally title and summary) and this preview will show the page exactly as it will go live under <code>/nl/blog/</code>.</p>' +
+  '<p>Until then only the English page is published, and nothing Dutch is listed in the Dutch blog.</p></body></html>';
+
 /**
  * POST /admin/api/blog/:id/preview (viewer+ — read-only, renders but never
  * commits or writes anything). Body: `{ lang: 'en'|'nl', overrides?: {...} }`
@@ -3070,11 +3089,20 @@ export async function handlePreviewBlogPost(request, env, params) {
 
   let html;
   try {
-    html = renderPostPage(BLOG_POST_TEMPLATE, merged, { siteNoindex: SITE_NOINDEX, preview: true });
+    // The preview is the page as it will really be published: the Dutch one is
+    // the real Dutch page (nl/blog/<slug>/), and when the post has no Dutch text
+    // there will be no Dutch page at all — the preview says so instead of
+    // showing English under a Dutch label.
+    if (lang === 'nl') {
+      html = renderPostPageNl(BLOG_POST_TEMPLATE_NL, merged, { siteNoindex: SITE_NOINDEX, preview: true });
+      if (!html) html = NO_DUTCH_PAGE_NOTICE;
+    } else {
+      html = renderPostPage(BLOG_POST_TEMPLATE, merged, { siteNoindex: SITE_NOINDEX, preview: true });
+    }
   } catch (err) {
     return errorJson('render_failed', err.message, 500);
   }
-  return json({ html, lang });
+  return json({ html, lang, exists: !(lang === 'nl' && html === NO_DUTCH_PAGE_NOTICE) });
 }
 
 /** Which git branch a blog commit goes to. Only the owner may name a branch
@@ -3092,56 +3120,22 @@ function resolveBlogBranch(request, requested) {
   return name;
 }
 
-/** Rebuilds blog/index.html from the CURRENT list of published posts
- * (newest-first by published_at) and commits it. Shared by publish and
- * unpublish — both end with "the post list changed, regenerate the index." */
-async function republishBlogIndex(env, branch, actor) {
-  const published = (await db.listBlogPosts(env.DB, { status: 'published' })).sort(
-    (a, b) => String(b.published_at || '').localeCompare(String(a.published_at || ''))
-  );
-  const html = renderIndexPage(BLOG_INDEX_TEMPLATE, published, { siteNoindex: SITE_NOINDEX });
-  return putFile(env, 'blog/index.html', html, `Update blog index (${actor})`, { branch });
-}
-
-/**
- * Adds (if missing) or removes this post's `<url>` block in sitemap.xml —
- * a no-op while config.js:SITE_NOINDEX is true (BUILD §21's cutover rule:
- * "while noindex, don't add to sitemap"). Idempotent either direction, so
- * re-publishing an already-listed post or re-unpublishing an already-absent
- * one never duplicates or errors.
- */
-async function updateSitemapForPost(env, post, branch, { add }) {
-  if (SITE_NOINDEX) return { skipped: true };
-  const file = await getFile(env, 'sitemap.xml', branch);
-  if (!file) return { skipped: true }; // sitemap.xml doesn't exist on this branch — nothing to patch
-  const loc = `${post.slug}`;
-  const locTag = `<loc>https://www.wogococktailwalk.com/blog/${loc}/</loc>`;
-  const alreadyPresent = file.content.includes(locTag);
-
-  let next = file.content;
-  if (add && !alreadyPresent) {
-    const entry = buildSitemapUrlEntry(post);
-    next = file.content.replace('</urlset>', `${entry}\n</urlset>`);
-  } else if (!add && alreadyPresent) {
-    // Remove the whole <url>...</url> block containing this loc.
-    const blockRe = new RegExp(`\\s*<url>\\s*${locTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*?</url>`, 'm');
-    next = file.content.replace(blockRe, '');
-  } else {
-    return { skipped: true };
-  }
-  if (next === file.content) return { skipped: true };
-  return putFile(env, 'sitemap.xml', next, `${add ? 'Add' : 'Remove'} blog post from sitemap: ${post.slug}`, { branch, sha: file.sha });
+/** The OTHER published posts (everything the indexes and sitemap must keep listing). */
+async function otherPublishedPosts(env, postId) {
+  return (await db.listBlogPosts(env.DB, { status: 'published' })).filter((p) => p.id !== postId);
 }
 
 /**
  * POST /admin/api/blog/:id/publish (staff+). Body: `{ branch? }` — defaults
  * to GITHUB_COMMIT_BRANCH_DEFAULT ('main'); the scratch-branch end-to-end
  * test (SETUP.md) passes its own throwaway branch so a test run never
- * touches the live site. Renders the post, commits
- * blog/<slug>/index.html, regenerates blog/index.html, and (post-cutover
- * only) adds the sitemap.xml entry — then marks the row published in D1.
+ * touches the live site. Renders the English page (blog/<slug>/), the Dutch
+ * page (nl/blog/<slug>/, only when the post has a Dutch body), both indexes
+ * and the sitemap lines, commits them as ONE git commit (src/blog_publish.js),
+ * then marks the row published in D1. A re-publish that changes nothing makes
+ * no commit.
  * `published_at` is set ONLY the first time (never moved by a re-publish);
- * `last_published_commit` is always updated to the post page's own commit.
+ * `last_published_commit` is the commit the files went out in.
  */
 export async function handlePublishBlogPost(request, env, params) {
   if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
@@ -3160,28 +3154,33 @@ export async function handlePublishBlogPost(request, env, params) {
   const readyCheck = checkPublishReady(existing);
   if (!readyCheck.ok) return errorJson('not_ready', readyCheck.message, 400);
 
-  let html;
+  const session = request.adminSession;
+  const actor = session && session.email ? session.email : 'token';
+  const wasFirstPublish = existing.status !== 'published' && !existing.published_at;
+  const publishedAt = wasFirstPublish ? nowSqlite() : existing.published_at;
+
+  // ONE commit for everything this publish changes (English page, Dutch page
+  // when there is Dutch text, both indexes, sitemap) — see blog_publish.js.
+  // Nothing is written to D1 unless the commit succeeded.
+  let postResult;
   try {
-    html = renderPostPage(BLOG_POST_TEMPLATE, existing, { siteNoindex: SITE_NOINDEX, preview: false });
+    postResult = await commitBlogChange(env, {
+      templates: BLOG_TEMPLATES, post: { ...existing, status: 'published', published_at: publishedAt },
+      others: await otherPublishedPosts(env, params.id), mode: 'publish', siteNoindex: SITE_NOINDEX,
+    }, `Publish blog post: ${existing.title_en}`, branch);
   } catch (err) {
+    if (err && /^github_api_failed/.test(String(err.message))) throw err;
     return errorJson('render_failed', err.message, 500);
   }
 
-  const session = request.adminSession;
-  const actor = session && session.email ? session.email : 'token';
-  const postResult = await putFile(env, `blog/${existing.slug}/index.html`, html, `Publish blog post: ${existing.title_en}`, { branch });
-
-  const wasFirstPublish = existing.status !== 'published' && !existing.published_at;
   const patch = {
     status: 'published',
-    last_published_commit: postResult.commit_sha || existing.last_published_commit,
+    // a re-publish that changed no file makes no commit: keep pointing at the one the page went out in
+    last_published_commit: (postResult.changed ? postResult.commit_sha : existing.last_published_commit) || postResult.commit_sha,
     updated_by: actor,
   };
-  if (wasFirstPublish) patch.published_at = nowSqlite();
+  if (wasFirstPublish) patch.published_at = publishedAt;
   const post = await db.updateBlogPost(env.DB, params.id, patch);
-
-  await republishBlogIndex(env, branch, actor);
-  await updateSitemapForPost(env, post, branch, { add: true });
 
   await db.deleteSetting(env.DB, BLOG_SCHEDULE_PREFIX + params.id); // it's live now: nothing left to plan
   await audit(env, request, 'blog.publish', 'blog_post', params.id, { slug: post.slug, branch, commit: postResult.commit_sha });
@@ -3190,9 +3189,9 @@ export async function handlePublishBlogPost(request, env, params) {
 
 /**
  * POST /admin/api/blog/:id/unpublish (staff+). Body: `{ branch? }`, same
- * default/override as publish. Removes blog/<slug>/index.html from the
- * site, regenerates blog/index.html without it, and (post-cutover) removes
- * its sitemap.xml entry. `published_at`/`last_published_commit` are left
+ * default/override as publish. Removes the English AND the Dutch page of the
+ * post, regenerates both indexes without it and removes its sitemap lines,
+ * all in one commit. `published_at`/`last_published_commit` are left
  * as history, not cleared — the migration's own doc comment says why.
  */
 export async function handleUnpublishBlogPost(request, env, params) {
@@ -3212,14 +3211,16 @@ export async function handleUnpublishBlogPost(request, env, params) {
   const branch = resolveBlogBranch(request, body.branch);
   if (branch === null) return errorJson('bad_request', 'invalid branch name', 400);
 
-  await deleteFile(env, `blog/${existing.slug}/index.html`, `Unpublish blog post: ${existing.title_en}`, { branch });
-
   const session = request.adminSession;
   const actor = session && session.email ? session.email : 'token';
-  const post = await db.updateBlogPost(env.DB, params.id, { status: 'draft', updated_by: actor });
 
-  await republishBlogIndex(env, branch, actor);
-  await updateSitemapForPost(env, existing, branch, { add: false });
+  // One commit: both post pages go, the indexes and the sitemap are rewritten.
+  await commitBlogChange(env, {
+    templates: BLOG_TEMPLATES, post: existing,
+    others: await otherPublishedPosts(env, params.id), mode: 'unpublish', siteNoindex: SITE_NOINDEX,
+  }, `Unpublish blog post: ${existing.title_en}`, branch);
+
+  const post = await db.updateBlogPost(env.DB, params.id, { status: 'draft', updated_by: actor });
 
   await audit(env, request, 'blog.unpublish', 'blog_post', params.id, { slug: post.slug, branch });
   return json({ post: withCoverUrl(post) });

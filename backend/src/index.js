@@ -5,18 +5,21 @@
 import { createRouter } from './router.js';
 import * as guestApi from './guest_api.js';
 import * as adminApi from './admin_api.js';
+import * as missingPages from './missing_pages.js';
+import * as privacyTools from './privacy_tools.js';
 import { handleWebhook } from './webhook.js';
 import { roleAtLeast } from './auth.js';
 import {
   expireHolds, pruneRateEvents, pruneAuthEvents,
   pruneErrorLog, pruneAdminAudit, pruneResolvedFailedEmails,
-  pruneResolvedBrevoSyncItems,
+  pruneResolvedBrevoSyncItems, pruneMissingPages,
 } from './db.js';
 import { constantTimeEqual, sqliteMinutesAgo } from './logic.js';
 import {
   RATE_EVENTS_RETENTION_MINUTES, AUTH_EVENTS_RETENTION_MINUTES,
   ERROR_LOG_RETENTION_MINUTES, ADMIN_AUDIT_RETENTION_MINUTES,
   FAILED_EMAIL_RESOLVED_RETENTION_MINUTES, BREVO_SYNC_RESOLVED_RETENTION_MINUTES,
+  MISSING_PAGE_RETENTION_DAYS,
 } from './config.js';
 import { adminResponse } from './admin/assets.js';
 import { manifestResponse, serviceWorkerResponse, iconResponse } from './admin/pwa.js';
@@ -26,7 +29,7 @@ import { runHealthCheck } from './healthcheck.js';
 import { setPromotionCodeActive } from './stripe.js';
 import { SCHEDULED_PROMO_ACTIVATIONS } from './config.js';
 import { retryFailedEmails } from './email_retry.js';
-import { runGdprRetention } from './retention.js';
+import { runGdprRetention, runInquiryRetention } from './retention.js';
 import { exportBackupToR2 } from './backup.js';
 import { retryBrevoSyncQueue } from './brevo_sync.js';
 import { sendDailyReviewRequests } from './reviews.js';
@@ -68,6 +71,8 @@ router.post('/api/subscribe', guestApi.handleSubscribe);
 router.get('/api/subscribe/confirm', guestApi.handleSubscribeConfirm);
 router.get('/api/unsubscribe', guestApi.handleUnsubscribe);
 router.get('/api/reminders/unsubscribe', guestApi.handleReminderUnsubscribe);
+// Beacon from the website's 404 page: records the missing PATH only (src/missing_pages.js).
+router.post('/api/missing-page', missingPages.handleMissingPageHit);
 
 // -- Webhook ------------------------------------------------------------------
 router.post('/webhooks/stripe', (request, env) => handleWebhook(request, env));
@@ -170,6 +175,14 @@ router.get('/admin/api/health', adminApi.handleHealthCheck);
 // -- Gift cards (migrations/0018/0019) ---------------------------------------
 router.get('/admin/api/gift-cards', adminApi.handleListGiftCards);
 router.post('/admin/api/gift-cards/:code/void', adminApi.handleVoidGiftCard);
+
+// -- Missing-page log (public beacon above; dashboard list + forget here) ---
+router.get('/admin/api/missing-pages', missingPages.handleListMissingPages);
+router.post('/admin/api/missing-pages/forget', missingPages.handleForgetMissingPage);
+
+// -- Export / erase one person's data (owner only, src/privacy_tools.js) ----
+router.post('/admin/api/privacy/export', privacyTools.handlePrivacyExport);
+router.post('/admin/api/privacy/erase', privacyTools.handlePrivacyErase);
 
 // -- Contact + group-booking inquiries (migrations/0021) ---------------------
 router.get('/admin/api/inquiries', adminApi.handleListInquiries);
@@ -409,10 +422,13 @@ async function runScheduled(event, env) {
       // (no value in pruning these every 5 minutes given their multi-month
       // retention windows).
       await runGdprRetention(env);
+      await runInquiryRetention(env);
       await pruneErrorLog(env.DB, sqliteMinutesAgo(ERROR_LOG_RETENTION_MINUTES));
       await pruneAdminAudit(env.DB, sqliteMinutesAgo(ADMIN_AUDIT_RETENTION_MINUTES));
       await pruneResolvedFailedEmails(env.DB, sqliteMinutesAgo(FAILED_EMAIL_RESOLVED_RETENTION_MINUTES));
       await pruneResolvedBrevoSyncItems(env.DB, sqliteMinutesAgo(BREVO_SYNC_RESOLVED_RETENTION_MINUTES));
+      // Missing addresses nobody visited for 90 days drop off the dashboard list.
+      await pruneMissingPages(env.DB, sqliteMinutesAgo(MISSING_PAGE_RETENTION_DAYS * 24 * 60));
       // Notifications feed housekeeping (migrations/0032) — read rows prune
       // sooner than unread ones; see config.js for both windows.
       await pruneOldNotifications(env);
