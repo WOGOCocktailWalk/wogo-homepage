@@ -104,7 +104,7 @@ import { isSlotPastCutoff } from './logic.js';
 // directly) simply has no `adminSession` — `actor` falls back to 'token',
 // matching this table's pre-0025 meaning (one shared ADMIN_TOKEN, no
 // per-user identity).
-async function audit(env, request, action, entity_type, entity_id, detail) {
+export async function audit(env, request, action, entity_type, entity_id, detail) {
   try {
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
     const session = request.adminSession;
@@ -314,6 +314,12 @@ export const ROUTE_ROLES = {
   'POST /admin/api/inquiries/:id/status': 'staff',
   'DELETE /admin/api/inquiries/:id': 'staff',
   'GET /admin/api/subscribers': 'staff',
+  // Missing-page log (Tools screen): which addresses that do not exist still get visits.
+  'GET /admin/api/missing-pages': 'staff',
+  'POST /admin/api/missing-pages/forget': 'staff',
+  // Export or erase one person's data (privacy requests): OWNER only.
+  'POST /admin/api/privacy/export': 'owner',
+  'POST /admin/api/privacy/erase': 'owner',
 
   'POST /admin/api/routes': 'owner',
   'PUT /admin/api/routes/:id': 'owner',

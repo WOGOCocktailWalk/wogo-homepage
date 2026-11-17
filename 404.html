@@ -7,6 +7,17 @@
      moment, or when JavaScript is off. -->
 <script>
 (function () {
+  /* 1) Tell the owner which address was missing, so real visits to old or
+     mistyped links can get a forward. Only the PATH is sent (no query string,
+     no cookies). Fire-and-forget: nothing waits for it, and it sits in its own
+     try so a failure here can never stop the forward below. */
+  try {
+    var u = "https://wogo-booking-backend.purple-glitter-720e.workers.dev/api/missing-page";
+    var p = location.pathname;
+    var sent = navigator.sendBeacon && navigator.sendBeacon(u, new Blob([p], { type: "text/plain" }));
+    if (!sent) fetch(u, { method: "POST", body: p, keepalive: true, mode: "no-cors", credentials: "omit", headers: { "Content-Type": "text/plain" } }).catch(function () {});
+  } catch (e) {}
+  /* 2) The forward itself. */
   try {
     var nl = /^\/nl(\/|$)/i.test(location.pathname);
     location.replace((nl ? '/nl/' : '/') + location.search);
