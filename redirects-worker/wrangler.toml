@@ -4,6 +4,7 @@ compatibility_date = "2026-01-01"
 workers_dev = false
 
 routes = [
+  { pattern = "*wogococktailwalk.com/so/*", zone_name = "wogococktailwalk.com" },
   { pattern = "*wogococktailwalk.com/maps/*", zone_name = "wogococktailwalk.com" },
   { pattern = "http://*wogococktailwalk.com/*", zone_name = "wogococktailwalk.com" },
   { pattern = "*wogococktailwalk.com/amsterdam-cocktail*", zone_name = "wogococktailwalk.com" },

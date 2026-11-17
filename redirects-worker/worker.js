@@ -118,6 +118,31 @@ export function target(url) {
   return SITE + to + u.search;
 }
 
+// Old Wix emails (map download, confirmations) wrap every button in a click
+// counter on our own domain: /so/tr/<id>/c?w=<signature>.<base64url JSON>,
+// where JSON.u is the real destination. Wix no longer answers on this domain,
+// so we unpack the destination ourselves. Only known hosts are followed, so
+// this can never be abused to forward people to a stranger's website.
+const WIX_FILE_HOSTS = /(^|\.)(usrfiles\.com|filesusr\.com|wixstatic\.com)$/;
+const OWN_HOSTS = /(^|\.)(wogococktailwalk\.com|wogoamsterdam\.com|wogorotterdam\.com|wogo\.city)$/;
+export function wixEmailLink(url) {
+  const u = new URL(url);
+  if (!u.pathname.toLowerCase().startsWith('/so/')) return null;
+  try {
+    const w = u.searchParams.get('w') || '';
+    const b64 = w.slice(w.indexOf('.') + 1).replace(/-/g, '+').replace(/_/g, '/');
+    const bytes = Uint8Array.from(atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4)), (c) => c.charCodeAt(0));
+    const dest = new URL(JSON.parse(new TextDecoder().decode(bytes)).u);
+    if (dest.protocol !== 'https:' && dest.protocol !== 'http:') return SITE + '/';
+    if (WIX_FILE_HOSTS.test(dest.hostname)) { dest.protocol = 'https:'; return dest.href; }
+    if (OWN_HOSTS.test(dest.hostname) && !dest.pathname.toLowerCase().startsWith('/so/')) {
+      if (/(^|\.)wogococktailwalk\.com$/.test(dest.hostname)) return target(dest.href) || (SITE + dest.pathname + dest.search);
+      dest.protocol = 'https:'; return dest.href;
+    }
+  } catch (e) { /* unreadable link: fall back to the homepage */ }
+  return SITE + '/';
+}
+
 export default {
   async fetch(request) {
     // Route maps (/maps/*.pdf) stay reachable for anyone with the link (the
@@ -132,6 +157,8 @@ export default {
         return out;
       }
     } catch (e) { /* fall through to the normal handling */ }
+    const mail = wixEmailLink(request.url);
+    if (mail) return Response.redirect(mail, 302);
     let to = target(request.url);
     // Plain http:// visits are sent to the secure address.
     if (!to && request.url.startsWith('http://')) to = 'https://' + request.url.slice(7);
