@@ -45,6 +45,7 @@ import {
 import * as db from './db.js';
 import { notifyAdmins } from './notifications.js';
 import { createCheckoutSession, createGiftCardCheckoutSession } from './stripe.js';
+import { reportPaymentProblem } from './payment_alerts.js';
 import { readTracking, sendInitiateCheckoutEvent } from './meta.js';
 import { sendTransactional } from './brevo.js';
 import { sendWithRetry } from './email_retry.js';
@@ -692,6 +693,7 @@ export async function handleBook(request, env, params, ctx) {
     session = await createCheckoutSession(env, holdResult.booking, route, resolvedAddons);
   } catch (err) {
     console.error('stripe_checkout_failed', err);
+    await reportPaymentProblem(env, 'checkout_failed', err, { route: route.id });
     // Hold stays as-is; it will silently expire in HOLD_MINUTES and free the seat.
     return errorJson('payment_setup_failed', 'something went wrong, please try again', 502, request);
   }
@@ -791,6 +793,7 @@ export async function handleGiftCardCheckout(request, env) {
     });
   } catch (err) {
     console.error('giftcard_checkout_failed', err);
+    await reportPaymentProblem(env, 'giftcard_checkout_failed', err);
     return errorJson('payment_setup_failed', 'something went wrong, please try again', 502, request);
   }
 

@@ -5,6 +5,7 @@ import { sendTransactional } from './brevo.js';
 import { sendPurchaseEvent } from './meta.js';
 import { computeBarArrivals, extractDiscount, analyticsRevenueCents, formatNotificationDate, formatEuros, summarizeAddonsForNotification } from './logic.js';
 import { notifyAdmins } from './notifications.js';
+import { reportPaymentProblem } from './payment_alerts.js';
 import {
   renderGuestConfirmation,
   renderOwnerNotification,
@@ -47,6 +48,7 @@ export async function handleWebhook(request, env, deps = {}) {
   // crypto, before any DB touch.
   const sig = request.headers.get('stripe-signature');
   if (!sig || !env.STRIPE_WEBHOOK_SECRET) {
+    if (sig) await reportPaymentProblem(env, 'webhook_rejected', 'STRIPE_WEBHOOK_SECRET is not set', { reason: 'no_secret' }, { database: deps.db, sendTransactional: brevoSend });
     return json({ error: 'invalid_signature' }, 400);
   }
 
@@ -58,6 +60,7 @@ export async function handleWebhook(request, env, deps = {}) {
     // Deliberately no detail in the response (why it failed is logged, not
     // leaked — a prober shouldn't learn which check tripped).
     console.warn('stripe_signature_rejected', String(err && err.message ? err.message : err));
+    await reportPaymentProblem(env, 'webhook_rejected', err, { reason: 'bad_signature' }, { database: deps.db, sendTransactional: brevoSend });
     return json({ error: 'invalid_signature' }, 400);
   }
 

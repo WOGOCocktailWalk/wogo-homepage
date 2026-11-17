@@ -11,13 +11,9 @@ binding = "DB"
 database_name = "wogo-bookings"
 database_id = "e0d64847-0183-4ec3-8401-fe6e3a02f475"
 
-# Daily D1 -> R2 export (src/backup.js, owner audit item #4). INERT until you:
-#   1. wrangler r2 bucket create wogo-backups
-#   2. uncomment this block
-#   3. wrangler deploy
-# Until then env.BACKUP_BUCKET is undefined and the daily cron's export step
-# is a harmless no-op — see SETUP.md "Backups & disaster recovery" for the
-# full walkthrough and the restore command.
+# Daily D1 -> R2 export (src/backup.js, owner audit item #4). LIVE since Oct 2026
+# (bucket wogo-backups). Without this binding the export step is a silent no-op.
+# See DR.md for the restore procedure and the local rehearsal script.
 [[r2_buckets]]
 binding = "BACKUP_BUCKET"
 bucket_name = "wogo-backups"

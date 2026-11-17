@@ -276,10 +276,9 @@ existing booking button (the big "Book your walk" button in the booking
 section, the sticky bar at the bottom on mobile, and the "Book your walk"
 button in the top menu) so that tapping it glides the guest down to the
 new calendar on the same page instead of leaving for the old Wix
-calendar. Gift-card and group links are never touched. And because the
-buttons themselves are never edited in the page files, rollback is still
-one line: set `WOGO_API = ""` again and every button points back at Wix
-exactly as before.
+calendar. Gift-card and group links are never touched. (Historical note from the pre-launch setup: setting `WOGO_API = ""`
+used to hand the buttons back to Wix. That is no longer true after the
+16 Nov 2026 launch; see `DR.md`.)
 
 Commit and push this change (and everything else in `backend/`) the normal
 way, then let GitHub Pages finish deploying, same as any other site change.
@@ -402,25 +401,20 @@ outside what this deploy guide covers.
 
 ## 11. Rollback — if something goes wrong
 
-Three levels, cheapest first:
+The site is live (since 16 Nov 2026) and the old Wix site is no longer a
+quick fallback. The full, current, step-by-step emergency guide is
+[`DR.md`](./DR.md). In short:
 
-1. **Turn the calendar back off, instantly:** set
-   `WOGO_API = ""` in `backend/widget/wogo-calendar.js` and push. Every
-   route page falls straight back to its Wix "Book now" button — nothing
-   else changes, no data is lost, guests never notice anything happened.
-2. **Roll back the Worker code** to the previous deploy, without touching
-   any booking data (D1 is separate from the Worker code and is never
-   affected by this):
-   ```bash
-   npx wrangler deployments list
-   npx wrangler rollback <deployment-id-from-the-list-above>
-   ```
-3. **Full teardown** (only if truly abandoning this for good — this is
-   the one irreversible step in this whole guide):
-   ```bash
-   npx wrangler d1 delete wogo-bookings
-   ```
-   Don't run this unless you mean it.
+1. **Stop new bookings only:** dashboard, Routes, set the route to Hidden.
+2. **Bad Worker deploy:** `npx wrangler rollback <deployment-id>`
+   (list them with `npx wrangler deployments list`). Booking data is never
+   affected.
+3. **Bad website push:** `git revert <commit>` and push.
+4. **Back to Wix** (last resort, only until the Wix subscription ends,
+   about 16 Dec 2026): DR.md section 5.
+
+Do NOT set `WOGO_API = ""` in the widget: there is no Wix button behind it
+any more, the calendar would simply disappear.
 
 ---
 
@@ -537,7 +531,14 @@ Two layers, both free:
    can't catch "the whole domain is unreachable from the outside" — a
    Worker can't observe its own DNS/network failures, only external
    monitoring can.
-2. **External uptime — UptimeRobot (free, ~5 minutes to set up).**
+2. **External uptime — GitHub Actions check (already in the repo).**
+   `.github/workflows/uptime-check.yml` loads the homepage, a booking page
+   and `/api/routes` roughly every 15 minutes from GitHub's network and
+   fails (GitHub emails you) when one is down. One-time: GitHub, Settings,
+   Notifications, Actions, tick "Send notifications for failed workflows
+   only". Limits: GitHub's scheduler can run late, alerts are email only,
+   and GitHub pauses scheduled runs after 60 days without any commit.
+   Optional extra, if you want phone alerts too — UptimeRobot (free, ~5 minutes to set up):
    1. Create a free account at uptimerobot.com.
    2. Add a monitor: type "HTTP(s)", URL = your Worker's `/api/routes`
       endpoint (e.g. `https://wogo-booking-backend.<your-subdomain>.workers.dev/api/routes`),
@@ -572,21 +573,18 @@ scenario). The short version:
    ```
    This is genuinely a full restore — test it on a quiet day so you know
    the command works before you ever need it under pressure.
-2. **Daily offsite export to R2 (optional, free, off until you set it up).**
-   Beyond Time Travel's 30-day window, a daily job can also copy your core
-   business tables (routes, bars, date overrides, bookings) to Cloudflare
-   R2 as a plain JSON file — useful for "I need last quarter's numbers back"
+2. **Daily offsite export to R2 (on since Oct 2026).**
+   Beyond Time Travel's 30-day window, a nightly job (03:00 UTC) copies 17
+   business tables (see the list at the top of `src/backup.js`: bookings,
+   gift cards, subscribers, admin users, blog, settings and more) to
+   Cloudflare R2 as one plain JSON file per day — useful for "I need last quarter's numbers back"
    or extra peace of mind beyond Time Travel. R2's free tier is 10GB, which
-   at WOGO's volume is effectively unlimited. To turn it on:
+   at WOGO's volume is effectively unlimited. It is already on (bucket
+   `wogo-backups`, bound in `wrangler.toml`). To fetch one day's file and
+   rehearse a restore on your Mac (nothing online is touched):
    ```bash
-   npx wrangler r2 bucket create wogo-backups
-   ```
-   then uncomment the `[[r2_buckets]]` block already sitting (commented) in
-   `wrangler.toml`, and redeploy. Until you do both of those, this is a
-   harmless no-op — nothing breaks, nothing is exported. Once it's on, you
-   can see what's in the bucket any time:
-   ```bash
-   npx wrangler r2 object get wogo-backups/daily/2026-07-30.json --file=./restore.json
+   npx wrangler r2 object get wogo-backups/daily/2026-07-30.json --file=./backup.json --remote
+   node scripts/restore_backup.mjs ./backup.json --out ./restored.sqlite
    ```
    Snapshots older than 60 days are pruned automatically.
 
