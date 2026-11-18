@@ -579,22 +579,6 @@
   </url>
 
   <url>
-    <loc>https://www.wogococktailwalk.com/blog/amsterdam-cocktail-week-bars/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/amsterdam-cocktail-week-bars/"/>
-    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/amsterdam-cocktail-week-bars/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/amsterdam-cocktail-week-bars/"/>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://www.wogococktailwalk.com/nl/blog/amsterdam-cocktail-week-bars/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/amsterdam-cocktail-week-bars/"/>
-    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/amsterdam-cocktail-week-bars/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/amsterdam-cocktail-week-bars/"/>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://www.wogococktailwalk.com/blog/rotterdam-premium-gin-walk-launch/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/rotterdam-premium-gin-walk-launch/"/>
     <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/rotterdam-premium-gin-walk-launch/"/>
@@ -949,6 +933,22 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/spring-cocktail-recipes/"/>
     <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/spring-cocktail-recipes/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/spring-cocktail-recipes/"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/blog/amsterdam-cocktail-week-bars/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/amsterdam-cocktail-week-bars/"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/amsterdam-cocktail-week-bars/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/amsterdam-cocktail-week-bars/"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/nl/blog/amsterdam-cocktail-week-bars/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/amsterdam-cocktail-week-bars/"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/amsterdam-cocktail-week-bars/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/amsterdam-cocktail-week-bars/"/>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
