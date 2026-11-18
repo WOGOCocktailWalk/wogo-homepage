@@ -66,7 +66,7 @@
      name ("Utrecht City Centre"); "alternateName" carries the theme. Offer.url =
      the EXISTING Wix booking calendar. Route pages carry NO review node. -->
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"TouristTrip","name":"Delft City Centre","alternateName":"Hidden Gems Cocktail Walk","description":"Self-guided cocktail walk through Delft's historic centre: three hidden-gem cocktail bars, three signature cocktails or mocktails, tables reserved at every stop. Bookable 7 days a week, around 1 hour between stops.","url":"https://www.wogococktailwalk.com/delft/","image":"https://www.wogococktailwalk.com/delft/delft-hero-cocktail.jpg","touristType":["Couples","Friends","Colleagues"],"itinerary":{"@type":"ItemList","numberOfItems":3,"itemListElement":[{"@type":"ListItem","position":1,"name":"A characterful bar in the heart of historic Delft"},{"@type":"ListItem","position":2,"name":"A botanical cocktail bar tucked off the canals"},{"@type":"ListItem","position":3,"name":"A stylish waterside spot for the final round"}]},"provider":{"@type":"Organization","name":"WOGO Cocktail Walk","telephone":"+31202101168","email":"info@wogoamsterdam.com","url":"https://www.wogococktailwalk.com/"},"offers":{"@type":"Offer","price":"29.95","priceCurrency":"EUR","availability":"https://schema.org/InStock","url":"https://www.wogococktailwalk.com/delft/book/"}}
+{"@context":"https://schema.org","@type":"TouristTrip","name":"Delft City Centre","alternateName":"Hidden Gems Cocktail Walk","description":"Self-guided cocktail walk through Delft's historic centre: three hidden-gem cocktail bars, three signature cocktails or mocktails, tables reserved at every stop. Bookable 7 days a week, around 1 hour between stops.","url":"https://www.wogococktailwalk.com/delft/","image":"https://www.wogococktailwalk.com/delft/delft-hero-cocktail.jpg","touristType":["Couples","Friends","Colleagues"],"itinerary":{"@type":"ItemList","numberOfItems":3,"itemListElement":[{"@type":"ListItem","position":1,"name":"A characterful bar in the heart of historic Delft"},{"@type":"ListItem","position":2,"name":"A botanical cocktail bar tucked off the canals"},{"@type":"ListItem","position":3,"name":"A stylish waterside spot for the final round"}]},"provider":{"@type":"Organization","@id":"https://www.wogococktailwalk.com/#organization","name":"WOGO Cocktail Walk","telephone":"+31202101168","email":"info@wogoamsterdam.com","url":"https://www.wogococktailwalk.com/"},"offers":{"@type":"Offer","price":"29.95","priceCurrency":"EUR","availability":"https://schema.org/InStock","url":"https://www.wogococktailwalk.com/delft/book/"}}
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.wogococktailwalk.com/"},{"@type":"ListItem","position":2,"name":"Delft","item":"https://www.wogococktailwalk.com/delft/"}]}
@@ -614,6 +614,8 @@
 </style>
 </head>
 <body>
+<!-- Cloudflare: keep the contact email readable in the page source (no "[email protected]"). This pair switches its email scrambling off from here to the closing mark at the very end of the page. Keep both marks exactly as written. -->
+<!--email_off-->
 <a class="w-skip" href="#wMain">Skip to content</a>
 
 <script>document.documentElement.classList.add('wg-js');</script>
@@ -742,7 +744,7 @@
         <div class="w-ticket-price"><b>€29,95</b><small data-i18n="per_person">per person</small></div>
         <a href="book/" class="w-ticket-cta w-navlink" data-i18n="hero_cta">Book your walk →</a>
       </div>
-        <p class="w-ticket-trust" data-i18n="ticket_trust">★ 4.4 on Google · Trustpilot 4.2 · 100,000+ guests</p>
+        <p class="w-ticket-trust" data-i18n="ticket_trust">★ 4.4 on Google · 4.2 on Trustpilot · 100,000+ guests</p>
     </aside>
   </div>
 </section>
@@ -917,8 +919,8 @@
         <!-- Column 1: Routes -->
         <nav class="w-footer-col" aria-label="Routes">
           <h3 data-i18n="foot_c1_h">Routes</h3>
-          <!-- Populated from WOGO_ROUTES (see JS): city sub-headings + every route page -->
-          <div class="w-footer-routes" id="wFooterRoutes"></div>
+          <!-- The links below are also rebuilt from WOGO_ROUTES by the script (see JS). They are written out here too, so the route pages are linked for readers without JavaScript. When a route is added or removed, change BOTH this list and WOGO_ROUTES, on every page. -->
+          <div class="w-footer-routes" id="wFooterRoutes"><a href="../rotterdam/route-1/" class="w-navlink">Rotterdam Route 1</a><a href="../rotterdam/route-2/" class="w-navlink">Rotterdam Route 2</a><a href="../rotterdam/route-3-premium/" class="w-navlink">Rotterdam Premium</a><a href="../delft/" class="w-navlink">Delft</a><a href="../groningen/" class="w-navlink">Groningen</a><a href="../amsterdam/" class="w-navlink">Amsterdam</a><a href="../utrecht/" class="w-navlink">Utrecht</a></div>
         </nav>
         <!-- Column 2: Discover -->
         <nav class="w-footer-col" aria-label="Discover">
@@ -940,7 +942,7 @@
     </div>
 
     <!-- Trust / badge line -->
-    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.2 / 5<span class="w-sep-m"> · </span><br class="w-br-m">100,000+ guests · 18+</div>
+    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · 4.2 on Trustpilot<span class="w-sep-m"> · </span><br class="w-br-m">100,000+ guests · 18+</div>
 
     <!-- Socials -->
     <div class="w-footer-socials" role="group" aria-label="WOGO on social media">
@@ -1195,7 +1197,7 @@
      shared with the homepage and hubs (nav_*, foot_*, rc1_* and rc2_*
      cards) keep their exact NL text so the same words appear everywhere. ===== */
   var NL = {
-    ticket_trust: "★ 4.4 op Google · Trustpilot 4,2 · 100.000+ gasten",
+    ticket_trust: "★ 4,4 op Google · 4,2 op Trustpilot · 100.000+ gasten",
     /* --- nav --- */
     nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen 7+", nav_gift: "Cadeaukaarten", nav_faq: "FAQ", nav_about: "Over WOGO", nav_cta: "Boek je walk", gallery_h2: "Een voorproefje van de avond",
     /* --- hero + breadcrumbs --- */
@@ -1250,7 +1252,7 @@
     foot_bars: "Voor bars",
     foot_contact_link: "Contact",
     foot_hours: "Maandag – vrijdag<br>10:00 – 18:00",
-    foot_trust: "★ 4.4 op Google · Trustpilot 4,2 / 5<span class=\"w-sep-m\"> · </span><br class=\"w-br-m\">100.000+ gasten · 18+",
+    foot_trust: "★ 4,4 op Google · 4,2 op Trustpilot<span class=\"w-sep-m\"> · </span><br class=\"w-br-m\">100.000+ gasten · 18+",
     /* legal-link keys pre-stubbed: uncomment the footer legal links (see the
        bottom legal bar comment) when the privacy/cookie/terms pages ship */
     foot_privacy: "Privacybeleid", foot_cookie: "Cookiebeleid", foot_terms: "Algemene voorwaarden",
@@ -2310,6 +2312,7 @@
   } catch (e) {}
 })();
 </script>
+<!--/email_off-->
 <!-- i18n-switch:start (made by tools/build-nl.js; do not edit) -->
 <style>.w-lang-menu li{list-style:none;margin:0;padding:0}.w-lang-menu a.w-lang-opt{color:var(--wogo-ink);text-decoration:none}</style>
 <script>

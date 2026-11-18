@@ -37,7 +37,7 @@
 <meta name="twitter:description" content="Book the Delft cocktail walk with WOGO. Choose your date and time: three signature cocktails, three hidden-gem bars, a table reserved at every stop. €29,95 per person, 7 days a week.">
 <meta name="twitter:image" content="https://www.wogococktailwalk.com/delft/delft-hero.jpg">
 <script type="application/ld+json">
-{"@context": "https://schema.org", "@type": "WebPage", "name": "Book your Delft walk | WOGO", "url": "https://www.wogococktailwalk.com/delft/book/", "description": "Book the Delft cocktail walk with WOGO. Choose your date and time: three signature cocktails, three hidden-gem bars, a table reserved at every stop. €29,95 per person, 7 days a week.", "isPartOf": {"@type": "WebSite", "name": "WOGO Cocktail Walk", "url": "https://www.wogococktailwalk.com/"}, "mainEntity": {"@type": "TouristTrip", "name": "Delft", "provider": {"@type": "Organization", "name": "WOGO Cocktail Walk", "url": "https://www.wogococktailwalk.com/"}, "offers": {"@type": "Offer", "price": "29.95", "priceCurrency": "EUR", "availability": "https://schema.org/InStock", "url": "https://www.wogococktailwalk.com/delft/book/"}}}
+{"@context": "https://schema.org", "@type": "WebPage", "name": "Book your Delft walk | WOGO", "url": "https://www.wogococktailwalk.com/delft/book/", "description": "Book the Delft cocktail walk with WOGO. Choose your date and time: three signature cocktails, three hidden-gem bars, a table reserved at every stop. €29,95 per person, 7 days a week.", "isPartOf": {"@type": "WebSite", "name": "WOGO Cocktail Walk", "url": "https://www.wogococktailwalk.com/"}, "mainEntity": {"@type": "TouristTrip", "name": "Delft", "provider": {"@type": "Organization", "@id": "https://www.wogococktailwalk.com/#organization", "name": "WOGO Cocktail Walk", "url": "https://www.wogococktailwalk.com/"}, "offers": {"@type": "Offer", "price": "29.95", "priceCurrency": "EUR", "availability": "https://schema.org/InStock", "url": "https://www.wogococktailwalk.com/delft/book/"}}}
 </script>
 <script type="application/ld+json">
 {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.wogococktailwalk.com/"}, {"@type": "ListItem", "position": 2, "name": "Delft", "item": "https://www.wogococktailwalk.com/delft/"}, {"@type": "ListItem", "position": 3, "name": "Booking", "item": "https://www.wogococktailwalk.com/delft/book/"}]}
@@ -598,6 +598,8 @@
 </style>
 </head>
 <body>
+<!-- Cloudflare: keep the contact email readable in the page source (no "[email protected]"). This pair switches its email scrambling off from here to the closing mark at the very end of the page. Keep both marks exactly as written. -->
+<!--email_off-->
 <a class="w-skip" href="#wMain">Skip to content</a>
 
 <script>document.documentElement.classList.add('wg-js');</script>
@@ -774,8 +776,8 @@
         <!-- Column 1: Routes -->
         <nav class="w-footer-col" aria-label="Routes">
           <h3 data-i18n="foot_c1_h">Routes</h3>
-          <!-- Populated from WOGO_ROUTES (see JS): city sub-headings + every route page -->
-          <div class="w-footer-routes" id="wFooterRoutes"></div>
+          <!-- The links below are also rebuilt from WOGO_ROUTES by the script (see JS). They are written out here too, so the route pages are linked for readers without JavaScript. When a route is added or removed, change BOTH this list and WOGO_ROUTES, on every page. -->
+          <div class="w-footer-routes" id="wFooterRoutes"><a href="../../rotterdam/route-1/" class="w-navlink">Rotterdam Route 1</a><a href="../../rotterdam/route-2/" class="w-navlink">Rotterdam Route 2</a><a href="../../rotterdam/route-3-premium/" class="w-navlink">Rotterdam Premium</a><a href="../../delft/" class="w-navlink">Delft</a><a href="../../groningen/" class="w-navlink">Groningen</a><a href="../../amsterdam/" class="w-navlink">Amsterdam</a><a href="../../utrecht/" class="w-navlink">Utrecht</a></div>
         </nav>
         <!-- Column 2: Discover -->
         <nav class="w-footer-col" aria-label="Discover">
@@ -797,7 +799,7 @@
     </div>
 
     <!-- Trust / badge line -->
-    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.2 / 5<span class="w-sep-m"> · </span><br class="w-br-m">100,000+ guests · 18+</div>
+    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · 4.2 on Trustpilot<span class="w-sep-m"> · </span><br class="w-br-m">100,000+ guests · 18+</div>
 
     <!-- Socials -->
     <div class="w-footer-socials" role="group" aria-label="WOGO on social media">
@@ -1048,7 +1050,7 @@
      and city hub (hs_*, nav_*, foot_*, rc1_* and rc3_* cards) keep their
      exact NL text so the same words appear everywhere. ===== */
   var NL = {
-    "bt_trust": "★ 4.4 op Google · 100.000+ gasten · Veilig betalen · 18+",
+    "bt_trust": "★ 4,4 op Google · 100.000+ gasten · Veilig betalen · 18+",
     "bt_q1": "Lopen we op eigen houtje?",
     "bt_a1": "Ja. Je gaat zelfstandig op pad, in je eigen tempo en alleen met je eigen gezelschap. Je digitale routekaart wijst de weg en bij elke stop staat een tafel voor je klaar.",
     "bt_q2": "Wat is inbegrepen?",
@@ -1074,7 +1076,7 @@
     "foot_bars": "Voor bars",
     "foot_contact_link": "Contact",
     "foot_hours": "Maandag – vrijdag<br>10:00 – 18:00",
-    "foot_trust": "★ 4.4 op Google · Trustpilot 4,2 / 5<span class=\"w-sep-m\"> · </span><br class=\"w-br-m\">100.000+ gasten · 18+",
+    "foot_trust": "★ 4,4 op Google · 4,2 op Trustpilot<span class=\"w-sep-m\"> · </span><br class=\"w-br-m\">100.000+ gasten · 18+",
     "foot_privacy": "Privacybeleid",
     "foot_cookie": "Cookiebeleid",
     "foot_terms": "Algemene voorwaarden",
@@ -2143,6 +2145,7 @@
   } catch (e) {}
 })();
 </script>
+<!--/email_off-->
 <!-- i18n-switch:start (made by tools/build-nl.js; do not edit) -->
 <style>.w-lang-menu li{list-style:none;margin:0;padding:0}.w-lang-menu a.w-lang-opt{color:var(--wogo-ink);text-decoration:none}</style>
 <script>

@@ -56,10 +56,10 @@
      custom amount up to €500 is also offered on-page but not claimed here),
      plus the site-wide light Organization block shared by all content pages. -->
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Product","name":"WOGO Gift Card","description":"A WOGO Cocktail Walk gift card, redeemable on all WOGO self-guided cocktail walks in Amsterdam, Rotterdam, Utrecht and Groningen. Choose an amount, add a personalized message, delivered by email.","image":"https://www.wogococktailwalk.com/og/wogo-gift-cards.jpg","brand":{"@type":"Brand","name":"WOGO Cocktail Walk"},"offers":{"@type":"AggregateOffer","priceCurrency":"EUR","lowPrice":"30","highPrice":"100","offerCount":"3","availability":"https://schema.org/InStock","url":"https://www.wogococktailwalk.com/gift-cards"}}
+{"@context":"https://schema.org","@type":"Product","name":"WOGO Gift Card","description":"A WOGO Cocktail Walk gift card, redeemable on any WOGO self-guided cocktail walk in any city: Amsterdam, Rotterdam, Delft, Groningen and Utrecht. Choose an amount, add a personalized message, delivered by email.","image":"https://www.wogococktailwalk.com/og/wogo-gift-cards.jpg","brand":{"@type":"Brand","name":"WOGO Cocktail Walk"},"offers":{"@type":"AggregateOffer","priceCurrency":"EUR","lowPrice":"30","highPrice":"100","offerCount":"3","availability":"https://schema.org/InStock","url":"https://www.wogococktailwalk.com/gift-cards/"}}
 </script>
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Organization","name":"WOGO Cocktail Walk","url":"https://www.wogococktailwalk.com/","logo":"https://www.wogococktailwalk.com/wogo-logo.png","email":"info@wogoamsterdam.com","telephone":"+31202101168","address":{"@type":"PostalAddress","addressLocality":"Amsterdam","addressCountry":"NL"},"sameAs":["https://www.instagram.com/wogococktailwalk/","https://www.tiktok.com/@wogococktailwalk","https://www.facebook.com/wogoamsterdam/"]}
+{"@context":"https://schema.org","@type":"Organization","@id":"https://www.wogococktailwalk.com/#organization","name":"WOGO Cocktail Walk","url":"https://www.wogococktailwalk.com/","logo":"https://www.wogococktailwalk.com/wogo-logo.png","email":"info@wogoamsterdam.com","telephone":"+31202101168","address":{"@type":"PostalAddress","addressLocality":"Amsterdam","addressCountry":"NL"},"sameAs":["https://www.instagram.com/wogococktailwalk/","https://www.tiktok.com/@wogococktailwalk","https://www.facebook.com/wogoamsterdam/"]}
 </script>
 <!-- Anti-flicker for Dutch visitors: the page is authored in English and translated by
      the script at the foot of the body, so briefly hide the body ONLY when Dutch is about
@@ -585,6 +585,8 @@
 </style>
 </head>
 <body>
+<!-- Cloudflare: keep the contact email readable in the page source (no "[email protected]"). This pair switches its email scrambling off from here to the closing mark at the very end of the page. Keep both marks exactly as written. -->
+<!--email_off-->
 <a class="w-skip" href="#wMain">Skip to content</a>
 
 <script>document.documentElement.classList.add('wg-js');</script>
@@ -967,8 +969,8 @@
         <!-- Column 1: Routes -->
         <nav class="w-footer-col" aria-label="Routes">
           <h3 data-i18n="foot_c1_h">Routes</h3>
-          <!-- Populated from WOGO_ROUTES (see JS): city sub-headings + every route page -->
-          <div class="w-footer-routes" id="wFooterRoutes"></div>
+          <!-- The links below are also rebuilt from WOGO_ROUTES by the script (see JS). They are written out here too, so the route pages are linked for readers without JavaScript. When a route is added or removed, change BOTH this list and WOGO_ROUTES, on every page. -->
+          <div class="w-footer-routes" id="wFooterRoutes"><a href="../rotterdam/route-1/" class="w-navlink">Rotterdam Route 1</a><a href="../rotterdam/route-2/" class="w-navlink">Rotterdam Route 2</a><a href="../rotterdam/route-3-premium/" class="w-navlink">Rotterdam Premium</a><a href="../delft/" class="w-navlink">Delft</a><a href="../groningen/" class="w-navlink">Groningen</a><a href="../amsterdam/" class="w-navlink">Amsterdam</a><a href="../utrecht/" class="w-navlink">Utrecht</a></div>
         </nav>
         <!-- Column 2: Discover -->
         <nav class="w-footer-col" aria-label="Discover">
@@ -990,7 +992,7 @@
     </div>
 
     <!-- Trust / badge line -->
-    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.2 / 5<span class="w-sep-m"> · </span><br class="w-br-m">100,000+ guests · 18+</div>
+    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · 4.2 on Trustpilot<span class="w-sep-m"> · </span><br class="w-br-m">100,000+ guests · 18+</div>
 
     <!-- Socials -->
     <div class="w-footer-socials" role="group" aria-label="WOGO on social media">
@@ -1335,7 +1337,7 @@
     foot_bars: "Voor bars",
     foot_contact_link: "Contact",
     foot_hours: "Maandag – vrijdag<br>10:00 – 18:00",
-    foot_trust: "★ 4.4 op Google · Trustpilot 4,2 / 5<span class=\"w-sep-m\"> · </span><br class=\"w-br-m\">100.000+ gasten · 18+",
+    foot_trust: "★ 4,4 op Google · 4,2 op Trustpilot<span class=\"w-sep-m\"> · </span><br class=\"w-br-m\">100.000+ gasten · 18+",
     /* legal-link keys pre-stubbed: uncomment the footer legal links (see the
        bottom legal bar comment) when the privacy/cookie/terms pages ship */
     foot_privacy: "Privacybeleid", foot_cookie: "Cookiebeleid", foot_terms: "Algemene voorwaarden",
@@ -2503,6 +2505,7 @@
   apply();
 })();
 </script>
+<!--/email_off-->
 <!-- i18n-switch:start (made by tools/build-nl.js; do not edit) -->
 <style>.w-lang-menu li{list-style:none;margin:0;padding:0}.w-lang-menu a.w-lang-opt{color:var(--wogo-ink);text-decoration:none}</style>
 <script>
