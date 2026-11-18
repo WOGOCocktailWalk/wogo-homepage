@@ -155,6 +155,12 @@
   .bl-card-img { aspect-ratio:16/10; overflow:hidden; }
   .bl-card-img img { width:100%; height:100%; object-fit:cover; transition:transform .5s; }
   .bl-card-body { padding:18px 20px 22px; display:flex; flex-direction:column; gap:8px; }
+  .bl-filters { max-width:1000px; margin:0 auto 26px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+  .bl-filter { font:inherit; font-size:13.5px; font-weight:700; min-height:44px; padding:8px 18px; border-radius:999px; cursor:pointer;
+    border:1.5px solid rgba(63,43,33,0.22); background:transparent; color:var(--wogo-brown, #643e2b); transition:background .2s, color .2s, border-color .2s; }
+  .bl-filter:hover { border-color:var(--wogo-brown, #643e2b); }
+  .bl-filter[aria-pressed="true"] { background:var(--wogo-ink, #201611); border-color:var(--wogo-ink, #201611); color:#fff; }
+  .bl-card[hidden] { display:none; }
   .bl-cat { font-size:10.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--wogo-brown, #643e2b); }
   .bl-card h3 { font-size:19px; font-weight:900; color:var(--wogo-ink); line-height:1.2; }
   .bl-card p { font-size:14px; line-height:1.55; color:var(--wogo-espresso); font-weight:500; }
@@ -445,6 +451,9 @@
 <section class="w-section w-pad" id="blog">
   <div class="w-head wg-reveal"><div class="w-eyebrow" data-i18n="bl_eyebrow">Het WOGO journal</div>
     <h2 data-i18n="bl_h2">Verhalen, stadsgidsen &amp; cocktailweetjes</h2></div>
+  <!-- Category buttons: built by the small script below from the category
+       label on each card, so a new category appears here by itself. -->
+  <div class="bl-filters" id="blFilters" role="group" aria-label="Filter op categorie" hidden></div>
   <div class="bl-grid wg-stagger">
     <a class="bl-card" href="best-cocktail-bars-amsterdam/">
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900" src="https://www.wogococktailwalk.com/blog/best-cocktail-bars-amsterdam/amsterdam-cocktail-bars-cover-8c96bb69.jpg" alt="Bartender schenkt cocktails in twee glazen in een cocktailbar in Amsterdam"></div>
@@ -566,7 +575,7 @@
     <a class="bl-card" href="2026-cocktail-trends/">
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900" src="https://www.wogococktailwalk.com/blog/2026-cocktail-trends/cover-c9bc6357.jpg" alt="Cocktailtrends voor 2026 die je zeker eens moet uitproberen in de bar."></div>
       <div class="bl-card-body">
-        <span class="bl-cat">Uitgelegd</span>
+        <span class="bl-cat">Cocktailverhalen</span>
         <h3>Cocktailtrends voor 2026 die je zeker eens moet uitproberen in de bar</h3>
         <p>De cocktailcultuur is de afgelopen jaren aanzienlijk veranderd. Klanten gaan niet langer alleen uit om dronken te worden van een sterke drank, maar zoeken naar een beleving, entertainment, rijke smaken en een prachtige omgeving. In dit artikel vind je informatie over de voorspellingen voor cocktailtrends in 2026! Cocktailtrends en smaken voor 2026 De smaken die steeds populairder zullen worden…</p>
         <span class="bl-meta">2 min lezen</span>
@@ -575,7 +584,7 @@
     <a class="bl-card" href="mocktails-and-their-history/">
       <div class="bl-card-img"><img loading="lazy" decoding="async" width="1600" height="900" src="https://www.wogococktailwalk.com/blog/mocktails-and-their-history/cover-c1524848.jpg" alt="Mocktails en hun geschiedenis"></div>
       <div class="bl-card-body">
-        <span class="bl-cat">Uitgelegd</span>
+        <span class="bl-cat">Cocktailverhalen</span>
         <h3>Mocktails en hun geschiedenis</h3>
         <p>Mocktails zijn niet zomaar trendy alcoholvrije drankjes voor chauffeurs tijdens avondjes uit; het is een rebelse uitvinding, voortgekomen uit Amerika&#39;s wildste sociale experiment. Hier lees je hoe bartenders de drooglegging omtoverden tot een creatieve speeltuin. De wortels van de matigheid (19e eeuw) Mocktails vinden hun oorsprong in de 19e-eeuwse geheelonbeweging, toen religieuze groepen…</p>
         <span class="bl-meta">1 min lezen</span>
@@ -1953,6 +1962,39 @@
 @media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
 </style>
 <!-- ===== /WOGO WHATSAPP FLOAT ===== -->
+<script>
+/* Blog category buttons: "All" plus one button per category found on the cards.
+   Clicking one shows only that category. Works the same on the Dutch page. */
+(function () {
+  var host = document.getElementById('blFilters');
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.bl-grid .bl-card'));
+  if (!host || cards.length < 2) return;
+  var counts = {}, order = [];
+  cards.forEach(function (c) {
+    var el = c.querySelector('.bl-cat'); var name = el ? el.textContent.trim() : '';
+    c.setAttribute('data-cat', name);
+    if (!name) return;
+    if (!counts[name]) { counts[name] = 0; order.push(name); }
+    counts[name]++;
+  });
+  if (order.length < 2) return;
+  order.sort(function (a, b) { return counts[b] - counts[a]; });
+  var nl = document.documentElement.lang === 'nl';
+  function button(label, value) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'bl-filter'; b.textContent = label;
+    b.setAttribute('aria-pressed', value === '' ? 'true' : 'false');
+    b.addEventListener('click', function () {
+      Array.prototype.forEach.call(host.children, function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      cards.forEach(function (c) { c.hidden = value !== '' && c.getAttribute('data-cat') !== value; });
+    });
+    return b;
+  }
+  host.appendChild(button((nl ? 'Alles' : 'All') + ' (' + cards.length + ')', ''));
+  order.forEach(function (name) { host.appendChild(button(name + ' (' + counts[name] + ')', name)); });
+  host.hidden = false;
+})();
+</script>
 <!-- i18n-switch:start (made by tools/build-nl.js; do not edit) -->
 <style>.w-lang-menu li{list-style:none;margin:0;padding:0}.w-lang-menu a.w-lang-opt{color:var(--wogo-ink);text-decoration:none}</style>
 <script>
