@@ -486,3 +486,39 @@ export async function getMarketingTraffic(env, from, to, deps = {}) {
 }
 
 export { CACHE_TTL_SECONDS };
+
+
+// ---------------------------------------------------------------------------
+// Blog: page views per article (18 Nov 2026). Returns { configured, rows:
+// [{ path, views, visitors }] } for every address containing /blog/ or the
+// old Wix /post/ — admin_api.js folds those onto the articles (English page,
+// Dutch page and the article's old Wix address count as one).
+// ---------------------------------------------------------------------------
+export async function getBlogPageViews(env, from, to, deps = {}) {
+  const parsed = readCredentials(env);
+  if (!parsed) return { configured: false, rows: [] };
+  const { credentials, propertyId } = parsed;
+  const run = deps.runReport || runReport;
+  const getToken = deps.getAccessToken || getAccessToken;
+  let accessToken;
+  try {
+    accessToken = await getToken(credentials);
+  } catch (err) {
+    console.error('ga4_auth_failed', err);
+    return { configured: false, error: 'ga4_auth_failed', rows: [] };
+  }
+  const contains = (value) => ({ filter: { fieldName: 'pagePath', stringFilter: { matchType: 'CONTAINS', value } } });
+  try {
+    const report = await run(accessToken, propertyId, {
+      dateRanges: dateRange(from, to),
+      dimensions: [{ name: 'pagePath' }],
+      metrics: [{ name: 'screenPageViews' }, { name: 'totalUsers' }],
+      dimensionFilter: { orGroup: { expressions: [contains('/blog/'), contains('/post/'), { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'EXACT', value: '/blog' } } }, { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'EXACT', value: '/nl/blog' } } }] } },
+      limit: 1000,
+    });
+    return { configured: true, rows: rowsOf(report).map((r) => ({ path: dim(r, 0), views: metric(r, 0), visitors: metric(r, 1) })) };
+  } catch (err) {
+    console.error('ga4_report_failed', err);
+    return { configured: true, error: 'ga4_report_failed', rows: [] };
+  }
+}

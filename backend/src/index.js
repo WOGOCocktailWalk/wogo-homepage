@@ -204,6 +204,7 @@ router.get('/admin/api/subscribers/sync-queue', adminApi.handleBrevoSyncQueue);
 
 // -- Blog (migrations/0030_blog_posts.sql, BUILD §21) ------------------------
 router.get('/admin/api/blog', adminApi.handleListBlogPosts);
+router.get('/admin/api/blog-views', adminApi.handleBlogViews);
 router.get('/admin/api/blog/:id', adminApi.handleGetBlogPost);
 router.post('/admin/api/blog', adminApi.handleCreateBlogPost);
 router.put('/admin/api/blog/:id', adminApi.handleUpdateBlogPost);

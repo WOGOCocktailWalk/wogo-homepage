@@ -4490,23 +4490,51 @@
       S.blog.counts = data.counts || null;
       S.blog.loaded = true;
       paintBlogList();
+      loadBlogViews();
     } catch (e) {
       if (e.message !== "unauthenticated") { clear(holder); holder.appendChild(errorCard(e.message, loadBlogPosts)); }
     }
+  }
+
+  // How often each article was opened (Google Analytics), loaded after the
+  // list so a slow or missing answer never holds the list up.
+  async function loadBlogViews() {
+    try {
+      const days = S.blog.viewDays || 30;
+      const data = await api("/admin/api/blog-views?days=" + days);
+      S.blog.views = data;
+      if (S.view === "blog" && !S.blog.editing) paintBlogList();
+    } catch (e) { /* the list simply shows no numbers */ }
   }
 
   function paintBlogList() {
     const holder = $("#blog-holder");
     if (!holder) return;
     clear(holder);
-    const list = S.blog.list;
+    const views = S.blog.views && S.blog.views.configured ? S.blog.views : null;
+    const viewsOf = (p) => (views && views.by_slug[p.slug] ? views.by_slug[p.slug].views : 0);
+    // Most-read first once the numbers are in (drafts keep their place at the end).
+    const list = views && S.blog.sortByViews !== false
+      ? S.blog.list.slice().sort((a, b) => (b.status === "published") - (a.status === "published") || viewsOf(b) - viewsOf(a))
+      : S.blog.list;
     const counts = S.blog.counts;
 
     const card = el("div", { class: "card" });
     card.appendChild(el("div", { class: "card-head" }, [
       el("h2", { text: "Posts" }),
-      el("span", { class: "count-badge", text: list.length + (list.length === 1 ? " post" : " posts") + (counts ? " · " + counts.draft + " draft, " + counts.published + " published" : "") })
+      el("span", { class: "count-badge", text: list.length + (list.length === 1 ? " post" : " posts") + (counts ? " · " + counts.draft + " draft, " + counts.published + " published" : "") }),
+      el("span", { class: "grow" }),
+      (function () {
+        const sel = el("select", { "aria-label": "Views period", class: "blog-views-days" }, [[7, "Views: last 7 days"], [30, "Views: last 30 days"], [90, "Views: last 90 days"]].map((o) => el("option", { value: String(o[0]), text: o[1] })));
+        sel.value = String(S.blog.viewDays || 30);
+        sel.addEventListener("change", () => { S.blog.viewDays = Number(sel.value); S.blog.views = null; paintBlogList(); loadBlogViews(); });
+        return sel;
+      })()
     ]));
+    if (views) {
+      const total = Object.keys(views.by_slug).reduce((a, k) => a + views.by_slug[k].views, 0);
+      card.appendChild(el("div", { class: "blog-views-note", text: "Articles were opened " + total + " times in the last " + views.days + " days, and the blog overview page " + views.blog_overview_views + " times. Most-read first. English, Dutch and old Wix addresses are counted together. Only visitors who accepted cookies are counted, so real numbers are higher." }));
+    }
     if (list.length === 0) {
       card.appendChild(el("div", { class: "empty" }, [
         el("div", { class: "big", text: "📝" }),
@@ -4518,7 +4546,7 @@
     const scroll = el("div", { class: "table-scroll" });
     const t = el("table", { class: "data" });
     t.appendChild(el("thead", {}, el("tr", {}, [
-      th("Title"), th("Category"), th("Status"), th("Updated"), th("")
+      th("Title"), th("Views", "metric"), th("Category"), th("Status"), th("Updated"), th("")
     ])));
     const tb = el("tbody");
     list.forEach((p) => {
@@ -4527,6 +4555,7 @@
         : null;
       const row = el("tr", { style: "cursor:pointer", onclick: () => openBlogEditor(p.id) }, [
         el("td", { class: "td-name", text: p.title_en }),
+        el("td", { class: "metric", text: p.status !== "published" ? "—" : views ? String(viewsOf(p)) : "…" }),
         el("td", { class: "td-sub", text: p.category }),
         el("td", {}, blogStatusBadge(p.status, p.scheduled_at)),
         el("td", { class: "td-sub", text: (p.updated_by || "—") + (p.updated_at ? " · " + String(p.updated_at).slice(0, 16).replace("T", " ") : "") }),

@@ -51,8 +51,7 @@ import { renderAdminLoginLink } from './emails.js';
 import {
   getTrafficSummary, isGa4Configured, CACHE_TTL_SECONDS as GA4_CACHE_TTL_SECONDS,
   getRealtimeSummary, REALTIME_CACHE_TTL_SECONDS,
-  getHighlightsTraffic, getBehaviorSummary, getMarketingTraffic,
-} from './ga4.js';
+  getHighlightsTraffic, getBehaviorSummary, getMarketingTraffic, getBlogPageViews } from './ga4.js';
 import { sendReviewRequestForBooking } from './reviews.js';
 import { posterUrlFor, EMAIL_SENDER } from './config.js';
 import { upsertTransactionalTemplate } from './brevo.js';
@@ -357,6 +356,7 @@ export const ROUTE_ROLES = {
   // script's path) — is enforced inside handleCreateBlogPost itself, since
   // ROUTE_ROLES can't see into a request body.
   'GET /admin/api/blog': 'viewer',
+  'GET /admin/api/blog-views': 'viewer',
   'GET /admin/api/blog/:id': 'viewer',
   'POST /admin/api/blog/:id/preview': 'viewer',
   'POST /admin/api/blog': 'staff',
@@ -2765,6 +2765,45 @@ export async function handleListBlogPosts(request, env) {
   ]);
   const schedule = await blogScheduleMap(env);
   return json({ posts: posts.map(withCoverUrl).map((x) => ({ ...x, scheduled_at: schedule[x.id] || null })), counts });
+}
+
+/** GET /admin/api/blog-views?days=30 (viewer) — how often each article was
+ * opened, from Google Analytics. Counts the English page, the Dutch page and
+ * the article's old Wix address together. Only visitors who accepted
+ * analytics cookies are in these numbers. */
+export async function handleBlogViews(request, env) {
+  const daysParam = Number(new URL(request.url).searchParams.get('days'));
+  const days = [7, 30, 90].includes(daysParam) ? daysParam : 30;
+  const to = businessToday();
+  const from = addDaysToDateStr(to, -(days - 1));
+  const [ga, posts] = await Promise.all([getBlogPageViews(env, from, to), db.listBlogPosts(env.DB, {})]);
+  const bySlug = {};
+  const slugOfPath = {};
+  for (const p of posts) {
+    bySlug[p.slug] = { views: 0, visitors: 0 };
+    slugOfPath[`/blog/${p.slug}`] = p.slug;
+    slugOfPath[`/nl/blog/${p.slug}`] = p.slug;
+    if (p.old_wix_slug) {
+      try {
+        const old = decodeURIComponent(new URL(p.old_wix_slug).pathname).replace(/\/+$/, '').toLowerCase();
+        slugOfPath[old] = p.slug;
+      } catch { /* not a URL: ignore */ }
+    }
+  }
+  let overview = 0;
+  for (const row of ga.rows || []) {
+    let path = String(row.path || '');
+    try { path = decodeURIComponent(path); } catch { /* keep as is */ }
+    path = path.replace(/\/+$/, '').toLowerCase();
+    if (path === '/blog' || path === '/nl/blog') { overview += row.views; continue; }
+    const slug = slugOfPath[path];
+    if (!slug) continue;
+    bySlug[slug].views += row.views;
+    // Visitors of the English and Dutch page are added up; someone who read
+    // both counts twice. Good enough for "which articles are read".
+    bySlug[slug].visitors += row.visitors;
+  }
+  return json({ configured: !!ga.configured, error: ga.error || null, from, to, days, by_slug: bySlug, blog_overview_views: overview });
 }
 
 export async function handleGetBlogPost(request, env, params) {
