@@ -9,7 +9,7 @@ import {
   buildHighlightsSales, computePctDelta, pageViewsByCity,
   validateBlogSlug, validateBlogCategory, sanitizeBlogHtml, stripHtmlTags,
   analyticsRevenueCents, formatNotificationDate, formatEuros, summarizeAddonsForNotification,
-  computeBarArrivals,
+  computeBarArrivals, utcToBusinessTime, businessTimeToUtc, businessToday,
 } from './logic.js';
 import {
   LOGIN_FAIL_THRESHOLD,
@@ -2299,10 +2299,11 @@ export async function handleAnalytics(request, env) {
   }
   const groupParam = url.searchParams.get('group');
   const group = ANALYTICS_GROUPS.has(groupParam) ? groupParam : 'day';
-  const saleFrom = `${range.from} 00:00:00`;
-  const saleTo = `${range.to} 23:59:59`;
+  // The chosen days are Dutch days; the database clock is UTC.
+  const saleFrom = businessTimeToUtc(`${range.from} 00:00:00`);
+  const saleTo = businessTimeToUtc(`${range.to} 23:59:59`);
 
-  const [walkRows, saleRows, cancelled, upcoming, giftSales, giftRedeemedCents, giftOutstandingCents, inquiries, newSubs, subsByStatus] = await Promise.all([
+  const [walkRows, saleRowsUtc, cancelled, upcoming, giftSales, giftRedeemedCents, giftOutstandingCents, inquiries, newSubs, subsByStatus] = await Promise.all([
     db.listBookingsForAnalyticsByWalkDate(env.DB, range.from, range.to, analyticsChannel(request)),
     db.listBookingsForAnalyticsBySaleDate(env.DB, saleFrom, saleTo, analyticsChannel(request)),
     db.countCancelledBookingsByWalkDate(env.DB, range.from, range.to),
@@ -2315,6 +2316,7 @@ export async function handleAnalytics(request, env) {
     db.countSubscribersByStatus(env.DB),
   ]);
 
+  const saleRows = saleRowsUtc.map((r) => ({ ...r, created_at: utcToBusinessTime(r.created_at) }));
   const walkAnalytics = buildBookingAnalytics(walkRows, { group, dateField: 'date' });
   const saleAnalytics = buildBookingAnalytics(saleRows, { group, dateField: 'created_at' });
   const confirmedTotalRow = subsByStatus.find((r) => r.status === 'confirmed');
@@ -2333,6 +2335,16 @@ export async function handleAnalytics(request, env) {
     by_locale: walkAnalytics.by_locale,
     discount_usage: walkAnalytics.discount_usage,
     totals: walkAnalytics.totals,
+    // Everything BOOKED in this period (whenever the walk itself is) — what
+    // the Sales screen leads with. `totals` above counts walks TAKING PLACE
+    // in the period, which is a different question.
+    sales: {
+      totals: saleAnalytics.totals,
+      by_route: saleAnalytics.by_route,
+      by_city: saleAnalytics.by_city,
+      by_source: saleAnalytics.by_source,
+      discount_usage: saleAnalytics.discount_usage,
+    },
     cancellations: { count: cancelled.n, guests: cancelled.guests },
     gift_cards: {
       sold_count: giftSales.sold_count,
@@ -2386,15 +2398,15 @@ export async function handleAnalyticsAddons(request, env) {
  * }
  */
 export async function handleAnalyticsKpi(request, env) {
-  const today = nowSqlite().slice(0, 10);
+  const today = businessToday();
   const last7From = addDaysToDateStr(today, -6);
   const prev7To = addDaysToDateStr(today, -7);
   const prev7From = addDaysToDateStr(today, -13);
   const next14To = addDaysToDateStr(today, 14);
 
   async function windowKpi(fromDate, toDate) {
-    const fromDt = `${fromDate} 00:00:00`;
-    const toDt = `${toDate} 23:59:59`;
+    const fromDt = businessTimeToUtc(`${fromDate} 00:00:00`);
+    const toDt = businessTimeToUtc(`${toDate} 23:59:59`);
     const [rows, newSubs, giftSales] = await Promise.all([
       db.listBookingsForAnalyticsBySaleDate(env.DB, fromDt, toDt, analyticsChannel(request)),
       db.countNewConfirmedSubscribers(env.DB, fromDt, toDt),

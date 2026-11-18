@@ -1761,3 +1761,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
 tr.wl-done td { opacity: .55; }
 tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
 .wl-foot { font-size: 13px; opacity: .8; }
+
+/* Analytics: small heading that says what the tiles below it count */
+.an-section { margin: 22px 2px 10px; font-size: 13px; font-weight: 700; letter-spacing: .02em; color: var(--brown, #5a3d2e); }
+.an-section:first-child { margin-top: 4px; }

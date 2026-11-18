@@ -3140,7 +3140,8 @@
     const d = S.analytics.data, kpi = S.analytics.kpi, addonsData = S.analytics.addons;
     if (!d) return;
 
-    // KPI row (last 7 vs previous 7 days, sale date)
+    // KPI row (last 7 vs previous 7 days, sale date) — fixed, whatever range is picked
+    body.appendChild(el("div", { class: "an-section", text: "Last 7 days — bookings made (does not change with the dates above)" }));
     const stats = el("div", { class: "stat-row" });
     stats.appendChild(stat("Bookings (7d)", kpi.last_7_days.bookings, kpi.previous_7_days.bookings + " previous 7d"));
     stats.appendChild(stat("Guests (7d)", kpi.last_7_days.guests, kpi.previous_7_days.guests + " previous 7d"));
@@ -3150,18 +3151,30 @@
     stats.appendChild(stat("Gift cards sold (7d)", kpi.last_7_days.gift_cards_sold, kpi.previous_7_days.gift_cards_sold + " previous 7d"));
     body.appendChild(stats);
 
-    // Totals for the selected range
+    // Selected range, part 1: what was BOOKED in these days (the sale).
+    const periodTxt = d.from === d.to ? prettyDate(d.from) : prettyDate(d.from) + " → " + prettyDate(d.to);
+    const sold = (d.sales && d.sales.totals) || { bookings: 0, guests: 0, revenue_cents: 0 };
+    body.appendChild(el("div", { class: "an-section", text: "Booked in your chosen period (" + periodTxt + ") — sales made on these days" }));
+    const soldStats = el("div", { class: "stat-row" });
+    soldStats.appendChild(stat("Bookings made", sold.bookings, "paid on these days"));
+    soldStats.appendChild(stat("Guests", sold.guests, sold.bookings > 0 ? "avg party " + (sold.guests / sold.bookings).toFixed(1) : "—"));
+    soldStats.appendChild(stat("Revenue", euros(sold.revenue_cents), "net of discounts + gift cards"));
+    soldStats.appendChild(stat("Avg order", euros(sold.bookings > 0 ? Math.round(sold.revenue_cents / sold.bookings) : 0), "per booking"));
+    body.appendChild(soldStats);
+
+    // Selected range, part 2: the WALKS that take place in these days.
+    body.appendChild(el("div", { class: "an-section", text: "Walks taking place in your chosen period — whenever they were booked" }));
     const rangeStats = el("div", { class: "stat-row" });
-    rangeStats.appendChild(stat("Bookings", d.totals.bookings, d.from + " → " + d.to));
-    rangeStats.appendChild(stat("Guests", d.totals.guests, "avg party " + d.totals.avg_party.toFixed(1)));
-    rangeStats.appendChild(stat("Revenue", euros(d.totals.revenue_cents), "net of discounts + gift cards"));
+    rangeStats.appendChild(stat("Walks", d.totals.bookings, "bookings with a walk on these days"));
+    rangeStats.appendChild(stat("Guests walking", d.totals.guests, "avg party " + d.totals.avg_party.toFixed(1)));
+    rangeStats.appendChild(stat("Value of those walks", euros(d.totals.revenue_cents), "net of discounts + gift cards"));
     rangeStats.appendChild(stat("Cancellations", d.cancellations.count, d.cancellations.guests + " guests"));
     body.appendChild(rangeStats);
 
     // Period chart (guests per bucket) + CSV export of the by-route table
     const chartCard = el("div", { class: "card" });
     chartCard.appendChild(el("div", { class: "card-head" }, [
-      el("h2", { text: "Guests per " + S.analytics.group }),
+      el("h2", { text: "Guests walking per " + S.analytics.group }),
       el("span", { class: "grow" }),
       el("button", { class: "btn btn-quiet btn-sm", text: "⬇ CSV (by route)", onclick: () => downloadAnalyticsCsv(d) })
     ]));
@@ -3175,10 +3188,11 @@
         el("div", { class: "hour-count" }, [String(s.guests), el("small", { text: s.bookings + " bookings" })])
       ]));
     });
-    if (d.series_by_booking_date.length === 0) chartBody.appendChild(el("div", { class: "capacity-hint", text: "No confirmed bookings in this range." }));
+    if (d.series_by_booking_date.length === 0) chartBody.appendChild(el("div", { class: "capacity-hint", text: "No walks take place in this period." }));
     chartCard.appendChild(chartBody);
     body.appendChild(chartCard);
 
+    body.appendChild(el("div", { class: "an-section", text: "The tables below count walks taking place in your chosen period" }));
     body.appendChild(breakdownTable("By route", ["Route", "City", "Bookings", "Guests", "Revenue"], d.by_route.map((r) => [shortRoute(r.route_name), r.city, r.bookings, r.guests, euros(r.revenue_cents)])));
     body.appendChild(breakdownTable("By city", ["City", "Bookings", "Guests", "Revenue"], d.by_city.map((r) => [r.city, r.bookings, r.guests, euros(r.revenue_cents)])));
     body.appendChild(breakdownTable("By weekday", ["Day", "Bookings", "Guests", "Revenue"], d.by_weekday.map((r) => [r.label, r.bookings, r.guests, euros(r.revenue_cents)])));

@@ -35,6 +35,37 @@ export function computeHoldExpiry(minutes, nowDate = new Date()) {
 }
 
 /** Current time in the same comparable format used for hold_expires / datetime('now'). */
+// ---------------------------------------------------------------------------
+// Dutch clock for the sales numbers (18 Nov 2026). The database stores the
+// moment of a booking in UTC, but "today" and "this week" on the dashboard
+// mean Dutch days: a booking made at 00:30 Dutch time belongs to that day,
+// not to the day before.
+// ---------------------------------------------------------------------------
+const BUSINESS_TZ = 'Europe/Amsterdam';
+function businessOffsetMinutes(dateObj, timeZone = BUSINESS_TZ) {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(dateObj);
+  const g = (t) => Number(parts.find((x) => x.type === t).value);
+  const asUtc = Date.UTC(g('year'), g('month') - 1, g('day'), g('hour'), g('minute'), g('second'));
+  return Math.round((asUtc - dateObj.getTime()) / 60000);
+}
+/** 'YYYY-MM-DD HH:MM:SS' in UTC  ->  the same moment on the Dutch clock. */
+export function utcToBusinessTime(sqliteUtc) {
+  const d = new Date(String(sqliteUtc).replace(' ', 'T') + 'Z');
+  if (Number.isNaN(d.getTime())) return sqliteUtc;
+  return toSqliteDatetime(new Date(d.getTime() + businessOffsetMinutes(d) * 60000));
+}
+/** 'YYYY-MM-DD HH:MM:SS' on the Dutch clock  ->  UTC, for database queries. */
+export function businessTimeToUtc(sqliteLocal) {
+  const guess = new Date(String(sqliteLocal).replace(' ', 'T') + 'Z');
+  if (Number.isNaN(guess.getTime())) return sqliteLocal;
+  const off = businessOffsetMinutes(new Date(guess.getTime() - businessOffsetMinutes(guess) * 60000));
+  return toSqliteDatetime(new Date(guess.getTime() - off * 60000));
+}
+/** Today's date on the Dutch clock, 'YYYY-MM-DD'. */
+export function businessToday(nowDate = new Date()) {
+  return utcToBusinessTime(toSqliteDatetime(nowDate)).slice(0, 10);
+}
+
 export function nowSqlite(nowDate = new Date()) {
   return toSqliteDatetime(nowDate);
 }
