@@ -682,7 +682,7 @@
     <div class="wogo-calendar" data-route="groningen" data-hide-title="1"></div>
     <script src="../../backend/widget/wogo-calendar.js?v=0ca5d937" defer></script>
     <div class="w-book-trust">
-      <p class="w-book-trustline" data-i18n="bt_trust">★ Trusted by thousands of guests across the Netherlands · Secure payment · 18+</p>
+      <p class="w-book-trustline" data-i18n="bt_trust">★ 4.4 on Google · 100,000+ guests · Secure payment · 18+</p>
       <details class="w-book-faq">
         <summary data-i18n="bt_q1">Do we walk on our own?</summary>
         <p data-i18n="bt_a1">Yes. It is self-guided, at your own pace, just your own group. Your digital route map leads the way and a table is held for you at every stop.</p>
@@ -1044,7 +1044,7 @@
      and city hub (hs_*, nav_*, foot_*, rc1_* and rc3_* cards) keep their
      exact NL text so the same words appear everywhere. ===== */
   var NL = {
-    "bt_trust": "★ Vertrouwd door duizenden gasten in heel Nederland · Veilig betalen · 18+",
+    "bt_trust": "★ 4.4 op Google · 100.000+ gasten · Veilig betalen · 18+",
     "bt_q1": "Lopen we op eigen houtje?",
     "bt_a1": "Ja. Je gaat zelfstandig op pad, in je eigen tempo en alleen met je eigen gezelschap. Je digitale routekaart wijst de weg en bij elke stop staat een tafel voor je klaar.",
     "bt_q2": "Wat is inbegrepen?",
@@ -1550,6 +1550,14 @@
   .wogo-cc-switch input:disabled + .wogo-cc-slider{opacity:.6; cursor:not-allowed}
   .wogo-cc-switch input:focus-visible + .wogo-cc-slider{outline:3px solid var(--wogo-salmon-deep,#f2905c); outline-offset:2px}
   .wogo-cc-modal-actions{display:flex; flex-wrap:wrap; gap:10px}
+  /* Compact banner on phones (18 Nov 2026): no title, small text, Reject and Accept equal size side by side. */
+  @media (max-width:719px){
+    .wogo-cc-banner{padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px)); gap:10px}
+    .wogo-cc-banner .wogo-cc-h{display:none}
+    .wogo-cc-banner .wogo-cc-p{font-size:.8rem; line-height:1.4}
+    .wogo-cc-banner-actions{flex-wrap:nowrap; gap:8px}
+    .wogo-cc-banner .wogo-cc-btn{flex:1 1 0; padding:10px 6px; font-size:.82rem; white-space:nowrap}
+  }
 
   /* ---- visible focus everywhere (independent of page styles) ---- */
   .wogo-consent :focus-visible{outline:3px solid var(--wogo-salmon-deep,#f2905c); outline-offset:2px; border-radius:8px}

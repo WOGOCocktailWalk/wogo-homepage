@@ -1718,6 +1718,14 @@
   .wogo-cc-switch input:disabled + .wogo-cc-slider{opacity:.6; cursor:not-allowed}
   .wogo-cc-switch input:focus-visible + .wogo-cc-slider{outline:3px solid var(--wogo-salmon-deep,#f2905c); outline-offset:2px}
   .wogo-cc-modal-actions{display:flex; flex-wrap:wrap; gap:10px}
+  /* Compact banner on phones (18 Nov 2026): no title, small text, Reject and Accept equal size side by side. */
+  @media (max-width:719px){
+    .wogo-cc-banner{padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px)); gap:10px}
+    .wogo-cc-banner .wogo-cc-h{display:none}
+    .wogo-cc-banner .wogo-cc-p{font-size:.8rem; line-height:1.4}
+    .wogo-cc-banner-actions{flex-wrap:nowrap; gap:8px}
+    .wogo-cc-banner .wogo-cc-btn{flex:1 1 0; padding:10px 6px; font-size:.82rem; white-space:nowrap}
+  }
 
   /* ---- visible focus everywhere (independent of page styles) ---- */
   .wogo-consent :focus-visible{outline:3px solid var(--wogo-salmon-deep,#f2905c); outline-offset:2px; border-radius:8px}

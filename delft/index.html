@@ -587,6 +587,7 @@
   .w-ticket-cta { flex: 1 1 auto; text-align: center; background: var(--wogo-cta-bg); color: var(--wogo-cta-ink); text-decoration: none; padding: 15px 18px; border-radius: 999px; font-size: 13.5px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; box-shadow: var(--wogo-cta-shadow); transition: transform .2s, background .2s; }
   .w-ticket-cta:hover { background: var(--wogo-cta-bg-hover); color: var(--wogo-cta-ink); transform: translateY(-2px); }
   .w-ticket-cta:active { transform: scale(0.97); }
+  .w-ticket-trust { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid rgba(255,229,217,0.16); font-size: 12px; font-weight: 700; line-height: 1.5; text-align: center; color: rgba(255,229,217,0.88); }
 
   /* Description section — blush background brings the palette in (feedback #7) */
   .w-sec-blush { background: #ffe5d9; }
@@ -741,6 +742,7 @@
         <div class="w-ticket-price"><b>€29,95</b><small data-i18n="per_person">per person</small></div>
         <a href="book/" class="w-ticket-cta w-navlink" data-i18n="hero_cta">Book your walk →</a>
       </div>
+        <p class="w-ticket-trust" data-i18n="ticket_trust">★ 4.4 on Google · Trustpilot 4.2 · 100,000+ guests</p>
     </aside>
   </div>
 </section>
@@ -1193,6 +1195,7 @@
      shared with the homepage and hubs (nav_*, foot_*, rc1_* and rc2_*
      cards) keep their exact NL text so the same words appear everywhere. ===== */
   var NL = {
+    ticket_trust: "★ 4.4 op Google · Trustpilot 4,2 · 100.000+ gasten",
     /* --- nav --- */
     nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen 7+", nav_gift: "Cadeaukaarten", nav_faq: "FAQ", nav_about: "Over WOGO", nav_cta: "Boek je walk", gallery_h2: "Een voorproefje van de avond",
     /* --- hero + breadcrumbs --- */
@@ -1718,6 +1721,14 @@
   .wogo-cc-switch input:disabled + .wogo-cc-slider{opacity:.6; cursor:not-allowed}
   .wogo-cc-switch input:focus-visible + .wogo-cc-slider{outline:3px solid var(--wogo-salmon-deep,#f2905c); outline-offset:2px}
   .wogo-cc-modal-actions{display:flex; flex-wrap:wrap; gap:10px}
+  /* Compact banner on phones (18 Nov 2026): no title, small text, Reject and Accept equal size side by side. */
+  @media (max-width:719px){
+    .wogo-cc-banner{padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px)); gap:10px}
+    .wogo-cc-banner .wogo-cc-h{display:none}
+    .wogo-cc-banner .wogo-cc-p{font-size:.8rem; line-height:1.4}
+    .wogo-cc-banner-actions{flex-wrap:nowrap; gap:8px}
+    .wogo-cc-banner .wogo-cc-btn{flex:1 1 0; padding:10px 6px; font-size:.82rem; white-space:nowrap}
+  }
 
   /* ---- visible focus everywhere (independent of page styles) ---- */
   .wogo-consent :focus-visible{outline:3px solid var(--wogo-salmon-deep,#f2905c); outline-offset:2px; border-radius:8px}
