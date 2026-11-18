@@ -336,6 +336,7 @@ export const ROUTE_ROLES = {
   'GET /admin/api/health': 'owner',
   'POST /admin/api/brevo/setup': 'owner',
   'POST /admin/api/brevo/push-reference-templates': 'owner',
+  'POST /admin/api/brevo/upsert-template': 'owner',
   'POST /admin/api/stripe/ensure-welcome-code': 'owner',
   'POST /admin/api/stripe/promo-code': 'owner',
   'GET /admin/api/stripe/payouts': 'owner',
@@ -2064,6 +2065,35 @@ export async function handleBrevoPushReferenceTemplates(request, env) {
   const failed = results.filter((r) => r.error).length;
   await audit(env, request, 'brevo.push_reference_templates', null, null, { pushed, failed });
   return json({ pushed, failed, templates: results });
+}
+
+/**
+ * POST /admin/api/brevo/upsert-template (owner only) — body
+ * { name, subject, html }: saves ONE marketing/newsletter template into the
+ * Brevo account by exact name (update if it exists, create if not), so
+ * newsletter HTML built outside this codebase can be placed in Brevo
+ * without a second API key. Saves a template only — never sends anything.
+ */
+export async function handleBrevoUpsertTemplate(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  if (!env.BREVO_API_KEY) return errorJson('bad_request', 'BREVO_API_KEY is not configured', 400);
+  let body;
+  try { body = await request.json(); } catch { return errorJson('bad_request', 'invalid JSON', 400); }
+  const name = String((body && body.name) || '').trim();
+  const subject = String((body && body.subject) || '').trim();
+  const html = String((body && body.html) || '');
+  if (!name || !subject || !html) return errorJson('bad_request', 'name, subject and html are required', 400);
+  if (name.startsWith('[REFERENCE]')) return errorJson('bad_request', 'the [REFERENCE] names are reserved', 400);
+  if (html.length > 400000) return errorJson('bad_request', 'html is too large', 400);
+  try {
+    const result = await upsertTransactionalTemplate(env, {
+      templateName: name, subject, sender: EMAIL_SENDER, htmlContent: html, isActive: true,
+    });
+    await audit(env, request, 'brevo.upsert_template', null, null, { name, id: result.id, created: result.created });
+    return json({ name, id: result.id, created: result.created });
+  } catch (err) {
+    return errorJson('upstream_error', String(err && err.message ? err.message : err), 502);
+  }
 }
 
 /** POST /admin/api/stripe/promo-code — body { code, active }: switch one

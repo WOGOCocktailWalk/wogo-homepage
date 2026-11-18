@@ -193,6 +193,7 @@ router.delete('/admin/api/inquiries/:id', adminApi.handleDeleteWaitlistEntry);
 // -- Newsletter subscribers (migrations/0024, BUILD §17) ---------------------
 router.post('/admin/api/brevo/setup', adminApi.handleBrevoSetup);
 router.post('/admin/api/brevo/push-reference-templates', adminApi.handleBrevoPushReferenceTemplates);
+router.post('/admin/api/brevo/upsert-template', adminApi.handleBrevoUpsertTemplate);
 router.post('/admin/api/stripe/ensure-welcome-code', adminApi.handleEnsureWelcomeCode);
 router.post('/admin/api/stripe/promo-code', adminApi.handleSetPromoCodeActive);
 router.get('/admin/api/stripe/payouts', adminApi.handleStripePayouts);
