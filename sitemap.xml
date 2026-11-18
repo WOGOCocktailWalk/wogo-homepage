@@ -609,11 +609,6 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://www.wogococktailwalk.com/blog/pump-up-the-jam-cocktails/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://www.wogococktailwalk.com/blog/dark-n-stormy-recipe/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -949,6 +944,11 @@
   </url>
   <url>
     <loc>https://www.wogococktailwalk.com/blog/bartender-skills-sugar-syrup/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/blog/pump-up-the-jam-cocktails/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
