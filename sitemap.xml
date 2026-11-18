@@ -589,11 +589,6 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://www.wogococktailwalk.com/blog/dark-n-stormy-recipe/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://www.wogococktailwalk.com/blog/5-tips-for-a-successful-dry-january/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -949,6 +944,11 @@
   </url>
   <url>
     <loc>https://www.wogococktailwalk.com/blog/tips-for-perfect-ice-at-home/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/blog/dark-n-stormy-recipe/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
