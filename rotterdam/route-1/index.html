@@ -1120,6 +1120,34 @@
         }
       }
     } catch (e) {}
+    /* No outside site and no tags (typed address, or an app that hides where
+       the visitor came from): still remember the FIRST page of this visit. */
+    try {
+      if (!carry.wlp) {
+        var ownRef = false;
+        try { ownRef = !!document.referrer && /(^|\.)(wogococktailwalk\.com|stripe\.com)$/.test(new URL(document.referrer).hostname); } catch (e) {}
+        if (!ownRef) carry.wlp = window.location.pathname.slice(0, 80);
+      }
+    } catch (e) {}
+    /* Returning visitors, ONLY when they accepted analytics or marketing
+       cookies: remember for 30 days which ad or website first brought them
+       here, so a booking made on a later, direct visit is still credited to
+       it. Visitors who declined cookies get nothing stored. */
+    try {
+      var cs = JSON.parse(localStorage.getItem('wogoConsent.v1') || 'null');
+      if (cs && (cs.analytics || cs.marketing)) {
+        var FT = 'wogoFirstTouch.v1', nowT = Date.now(), saved = null;
+        try { saved = JSON.parse(localStorage.getItem(FT) || 'null'); } catch (e) {}
+        if (saved && (!saved.t || nowT - saved.t > 30 * 864e5)) saved = null;
+        var hasSource = carry.utm_source || carry.fbclid || carry.gclid || carry.msclkid || carry.wref;
+        if (hasSource) {
+          if (!saved) localStorage.setItem(FT, JSON.stringify({ t: nowT, c: carry }));
+        } else if (saved && saved.c && (saved.c.utm_source || saved.c.fbclid || saved.c.gclid || saved.c.wref)) {
+          ['utm_source', 'utm_campaign', 'utm_content', 'fbclid', 'gclid', 'wref', 'wlp'].forEach(function (k) { if (saved.c[k]) carry[k] = saved.c[k]; });
+          carry.utm_medium = ((saved.c.utm_medium || (saved.c.fbclid || saved.c.gclid ? 'click-id' : 'referral')) + ' (earlier visit)').slice(0, 60);
+        }
+      }
+    } catch (e) {}
     if (Object.keys(carry).length) {
       window.__wogoCarry = carry;
       /* Safety net: ANY link to another page of this site gets the tags at
