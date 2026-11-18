@@ -452,7 +452,7 @@ export const SITE_NOINDEX = false;
 // on every blog_posts write so a typo'd category can't silently create a
 // new, uncategorized bucket. Adding a category later is a one-line change
 // here, no migration needed (the column is plain TEXT).
-export const BLOG_CATEGORIES = ['City guide', 'New route', 'Explained', 'Recipes', 'News'];
+export const BLOG_CATEGORIES = ['City guide', 'New route', 'Explained', 'Recipes', 'Cocktail stories', 'Skills & equipment', 'News'];
 
 // Slug shape (BUILD §21.2) — lowercase letters/digits/hyphens, 3-80 chars,
 // immutable after a post's first publish — lives in src/logic.js as

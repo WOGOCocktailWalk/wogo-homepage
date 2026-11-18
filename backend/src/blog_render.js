@@ -28,6 +28,8 @@ import { sanitizeBlogHtml, stripHtmlTags } from './logic.js';
 
 const CATEGORY_NL = {
   'City guide': 'Stadsgids',
+  'Cocktail stories': 'Cocktailverhalen',
+  'Skills & equipment': 'Skills & materiaal',
   'New route': 'Nieuwe route',
   Explained: 'Uitgelegd',
   Recipes: 'Recepten',

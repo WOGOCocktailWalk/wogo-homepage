@@ -4408,7 +4408,7 @@
      dependencies, CSP-compliant (no external library, no inline event-
      handler attributes — every listener is addEventListener'd from JS).
      ====================================================================== */
-  const BLOG_CATEGORIES = ["City guide", "New route", "Explained", "Recipes", "News"];
+  const BLOG_CATEGORIES = ["City guide", "New route", "Explained", "Recipes", "Cocktail stories", "Skills & equipment", "News"];
   const BLOG_SITE_BASE = "https://www.wogococktailwalk.com"; // meta/canonical convention — see src/config.js:BLOG_CANONICAL_BASE
 
   function blogWhen(iso) {
