@@ -43,7 +43,7 @@
 <meta name="twitter:image" content="https://www.wogococktailwalk.com/blog/winter-christmas-cocktail-recipes/cover-3934078f.jpg">
 <!-- Structured data: BlogPosting + BreadcrumbList (Home > Blog > this post). -->
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","inLanguage":"en","headline":"Winter and Christmas Cocktail Recipes","description":"Discover different Christmas themed cocktails with a simple step by step recipes: Gluhwein, Manhattan, Eggnog, Irish Coffee and others","image":"https://www.wogococktailwalk.com/blog/winter-christmas-cocktail-recipes/cover-3934078f.jpg","datePublished":"2025-12-05","dateModified":"2026-11-17","author":{"@type":"Organization","name":"WOGO"},"publisher":{"@type":"Organization","name":"WOGO Cocktail Walk","logo":{"@type":"ImageObject","url":"https://www.wogococktailwalk.com/wogo-logo.png"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://www.wogococktailwalk.com/blog/winter-christmas-cocktail-recipes/"}}
+{"@context":"https://schema.org","@type":"BlogPosting","inLanguage":"en","headline":"Winter and Christmas Cocktail Recipes","description":"Discover different Christmas themed cocktails with a simple step by step recipes: Gluhwein, Manhattan, Eggnog, Irish Coffee and others","image":"https://www.wogococktailwalk.com/blog/winter-christmas-cocktail-recipes/cover-3934078f.jpg","datePublished":"2025-12-05","dateModified":"2026-11-18","author":{"@type":"Organization","name":"WOGO"},"publisher":{"@type":"Organization","name":"WOGO Cocktail Walk","logo":{"@type":"ImageObject","url":"https://www.wogococktailwalk.com/wogo-logo.png"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://www.wogococktailwalk.com/blog/winter-christmas-cocktail-recipes/"}}
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.wogococktailwalk.com/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://www.wogococktailwalk.com/blog/"},{"@type":"ListItem","position":3,"name":"Winter and Christmas Cocktail Recipes","item":"https://www.wogococktailwalk.com/blog/winter-christmas-cocktail-recipes/"}]}
@@ -1160,7 +1160,7 @@
     entries.forEach(function (e) {
       if (e.isIntersecting) { e.target.classList.add('wg-in'); io.unobserve(e.target); }
     });
-  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0 });
   for (var j = 0; j < targets.length; j++) io.observe(targets[j]);
 })();
 </script>
@@ -1818,6 +1818,21 @@
 @media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
 </style>
 <!-- ===== /WOGO WHATSAPP FLOAT ===== -->
+<script>
+/* Article view counter: tells the booking system that this article was opened,
+   so the dashboard can show how often each article is read (as Wix did). Sends
+   only the article's own name. No cookies, nothing about the reader. Never
+   delays the page, and stays silent in the dashboard preview. */
+(function () {
+  try {
+    var m = /^\/(?:nl\/)?blog\/([a-z0-9-]{3,80})\/?$/.exec(location.pathname);
+    if (!m || location.hostname.indexOf('wogococktailwalk.com') === -1) return;
+    var u = 'https://wogo-booking-backend.purple-glitter-720e.workers.dev/api/blog-view';
+    var sent = navigator.sendBeacon && navigator.sendBeacon(u, new Blob([m[1]], { type: 'text/plain' }));
+    if (!sent) fetch(u, { method: 'POST', body: m[1], keepalive: true, mode: 'no-cors', credentials: 'omit', headers: { 'Content-Type': 'text/plain' } }).catch(function () {});
+  } catch (e) {}
+})();
+</script>
 <!-- i18n-switch:start (made by tools/build-nl.js; do not edit) -->
 <style>.w-lang-menu li{list-style:none;margin:0;padding:0}.w-lang-menu a.w-lang-opt{color:var(--wogo-ink);text-decoration:none}</style>
 <script>
