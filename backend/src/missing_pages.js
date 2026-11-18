@@ -126,3 +126,36 @@ export async function handleForgetMissingPage(request, env) {
   await audit(env, request, 'missing_page.forget', 'missing_page', path, null);
   return json({ ok: true });
 }
+
+
+// ---------------------------------------------------------------------------
+// Article view counter (18 Nov 2026). Wix showed how often each blog article
+// was opened; this does the same for the new blog: every article page sends
+// its own slug once when it is opened. No cookies, no IP stored, nothing that
+// identifies the reader. One visitor counts once per article per half hour.
+// Stored in the generic settings table as `blogview:<slug>` = {views, wix},
+// where `wix` is the count carried over from Wix on 18 Nov 2026.
+// ---------------------------------------------------------------------------
+const BLOG_VIEW_SLUG_RE = /^[a-z0-9-]{3,80}$/;
+const BLOG_VIEW_REPEAT_MINUTES = 30;
+
+export async function handleBlogViewHit(request, env) {
+  const done = (status = 204) => new Response(null, { status, headers: corsHeaders(request) });
+  try {
+    const origin = request.headers.get('Origin');
+    if (!origin) return done();
+    if (!isAllowedOrigin(origin)) return done(403);
+    if (BOT_UA_RE.test(request.headers.get('User-Agent') || '')) return done();
+    const slug = (await request.text()).slice(0, 100).trim().toLowerCase();
+    if (!BLOG_VIEW_SLUG_RE.test(slug)) return done();
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const identity = (await sha256Hex(`blog-view|${slug}|${ip}`)).slice(0, 32);
+    await db.recordRateEvent(env.DB, 'blog_view', identity);
+    const n = await db.countRateEventsSince(env.DB, 'blog_view', identity, sqliteMinutesAgo(BLOG_VIEW_REPEAT_MINUTES));
+    if (n > 1) return done(); // same reader, same article, within half an hour
+    await db.recordBlogView(env.DB, slug);
+  } catch (err) {
+    console.error('blog_view_hit_failed', String(err && err.message ? err.message : err));
+  }
+  return done();
+}

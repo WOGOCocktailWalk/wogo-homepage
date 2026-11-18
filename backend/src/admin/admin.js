@@ -4511,8 +4511,11 @@
     const holder = $("#blog-holder");
     if (!holder) return;
     clear(holder);
-    const views = S.blog.views && S.blog.views.configured ? S.blog.views : null;
-    const viewsOf = (p) => (views && views.by_slug[p.slug] ? views.by_slug[p.slug].views : 0);
+    const views = S.blog.views && S.blog.views.by_slug ? S.blog.views : null;
+    // "All time" = every visit (the Wix count plus our own counter); the day
+    // periods come from Google Analytics (cookie-accepting visitors only).
+    const allTime = !S.blog.viewDays;
+    const viewsOf = (p) => { const v = views && views.by_slug[p.slug]; return v ? (allTime ? v.total : v.views) : 0; };
     // Most-read first once the numbers are in (drafts keep their place at the end).
     const list = views && S.blog.sortByViews !== false
       ? S.blog.list.slice().sort((a, b) => (b.status === "published") - (a.status === "published") || viewsOf(b) - viewsOf(a))
@@ -4525,15 +4528,17 @@
       el("span", { class: "count-badge", text: list.length + (list.length === 1 ? " post" : " posts") + (counts ? " · " + counts.draft + " draft, " + counts.published + " published" : "") }),
       el("span", { class: "grow" }),
       (function () {
-        const sel = el("select", { "aria-label": "Views period", class: "blog-views-days" }, [[7, "Views: last 7 days"], [30, "Views: last 30 days"], [90, "Views: last 90 days"]].map((o) => el("option", { value: String(o[0]), text: o[1] })));
-        sel.value = String(S.blog.viewDays || 30);
+        const sel = el("select", { "aria-label": "Views period", class: "blog-views-days" }, [[0, "Views: all time"], [7, "Views: last 7 days"], [30, "Views: last 30 days"], [90, "Views: last 90 days"]].map((o) => el("option", { value: String(o[0]), text: o[1] })));
+        sel.value = String(S.blog.viewDays || 0);
         sel.addEventListener("change", () => { S.blog.viewDays = Number(sel.value); S.blog.views = null; paintBlogList(); loadBlogViews(); });
         return sel;
       })()
     ]));
     if (views) {
-      const total = Object.keys(views.by_slug).reduce((a, k) => a + views.by_slug[k].views, 0);
-      card.appendChild(el("div", { class: "blog-views-note", text: "Articles were opened " + total + " times in the last " + views.days + " days, and the blog overview page " + views.blog_overview_views + " times. Most-read first. English, Dutch and old Wix addresses are counted together. Only visitors who accepted cookies are counted, so real numbers are higher." }));
+      const total = Object.keys(views.by_slug).reduce((a, k) => a + (allTime ? views.by_slug[k].total : views.by_slug[k].views), 0);
+      card.appendChild(el("div", { class: "blog-views-note", text: allTime
+        ? "Your articles have been opened " + total + " times in total. This is every visit: the count from Wix, plus every visit on the new site since 18 November 2026. Most-read first."
+        : "Articles were opened " + total + " times in the last " + views.days + " days according to Google Analytics, which only counts visitors who accepted cookies. Real numbers are higher. Most-read first." }));
     }
     if (list.length === 0) {
       card.appendChild(el("div", { class: "empty" }, [

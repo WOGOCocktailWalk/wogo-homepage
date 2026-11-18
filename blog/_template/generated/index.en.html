@@ -1122,7 +1122,7 @@
     entries.forEach(function (e) {
       if (e.isIntersecting) { e.target.classList.add('wg-in'); io.unobserve(e.target); }
     });
-  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0 });
   for (var j = 0; j < targets.length; j++) io.observe(targets[j]);
 })();
 </script>

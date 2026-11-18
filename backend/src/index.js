@@ -73,6 +73,7 @@ router.get('/api/unsubscribe', guestApi.handleUnsubscribe);
 router.get('/api/reminders/unsubscribe', guestApi.handleReminderUnsubscribe);
 // Beacon from the website's 404 page: records the missing PATH only (src/missing_pages.js).
 router.post('/api/missing-page', missingPages.handleMissingPageHit);
+router.post('/api/blog-view', missingPages.handleBlogViewHit);
 
 // -- Webhook ------------------------------------------------------------------
 router.post('/webhooks/stripe', (request, env) => handleWebhook(request, env));

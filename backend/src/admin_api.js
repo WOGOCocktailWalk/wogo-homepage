@@ -2776,11 +2776,15 @@ export async function handleBlogViews(request, env) {
   const days = [7, 30, 90].includes(daysParam) ? daysParam : 30;
   const to = businessToday();
   const from = addDaysToDateStr(to, -(days - 1));
-  const [ga, posts] = await Promise.all([getBlogPageViews(env, from, to), db.listBlogPosts(env.DB, {})]);
+  const [ga, posts, counted] = await Promise.all([getBlogPageViews(env, from, to), db.listBlogPosts(env.DB, {}), db.listBlogViewCounts(env.DB)]);
   const bySlug = {};
   const slugOfPath = {};
   for (const p of posts) {
-    bySlug[p.slug] = { views: 0, visitors: 0 };
+    // `total` = every visit ever: the count carried over from Wix plus our
+    // own counter since 18 Nov 2026. `views`/`visitors` = Google Analytics for
+    // the chosen days (cookie-accepting visitors only).
+    const c = counted[p.slug] || { views: 0, wix: 0 };
+    bySlug[p.slug] = { views: 0, visitors: 0, total: c.wix + c.views, wix: c.wix, since_move: c.views };
     slugOfPath[`/blog/${p.slug}`] = p.slug;
     slugOfPath[`/nl/blog/${p.slug}`] = p.slug;
     if (p.old_wix_slug) {

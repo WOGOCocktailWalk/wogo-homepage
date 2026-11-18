@@ -3466,3 +3466,39 @@ export async function eraseCustomerData(db, email, { includeFuture = false, nowD
     },
   };
 }
+
+
+// ---------------------------------------------------------------------------
+// Blog article view counter (src/missing_pages.js:handleBlogViewHit). One
+// settings row per article: k = 'blogview:<slug>', v = {"views": n, "wix": m}.
+// The bump happens inside the database in one statement, so two readers at
+// the same moment can never lose a count. A row is only created for an
+// article that is really published.
+// ---------------------------------------------------------------------------
+const BLOG_VIEW_PREFIX = 'blogview:';
+export async function recordBlogView(db, slug) {
+  const k = BLOG_VIEW_PREFIX + slug;
+  const bump = `json_set(v, '$.views', COALESCE(json_extract(v, '$.views'), 0) + 1, '$.last', datetime('now'))`;
+  const bumped = await run(db, `UPDATE settings SET v = ${bump} WHERE k = :k`, { k });
+  if (bumped.meta.changes > 0) return true;
+  const inserted = await run(
+    db,
+    `INSERT INTO settings (k, v)
+       SELECT :k, json_object('views', 1, 'wix', 0, 'last', datetime('now'))
+        WHERE EXISTS (SELECT 1 FROM blog_posts WHERE slug = :slug AND status = 'published')
+     ON CONFLICT(k) DO UPDATE SET v = ${bump}`,
+    { k, slug }
+  );
+  return inserted.meta.changes > 0;
+}
+export async function listBlogViewCounts(db) {
+  const rows = await all(
+    db,
+    `SELECT k, COALESCE(json_extract(v, '$.views'), 0) AS views, COALESCE(json_extract(v, '$.wix'), 0) AS wix
+       FROM settings WHERE k >= 'blogview:' AND k < 'blogview;'`,
+    {}
+  );
+  const out = {};
+  for (const r of rows) out[r.k.slice(BLOG_VIEW_PREFIX.length)] = { views: Number(r.views) || 0, wix: Number(r.wix) || 0 };
+  return out;
+}
