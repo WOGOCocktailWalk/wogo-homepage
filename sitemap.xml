@@ -912,11 +912,6 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://www.wogococktailwalk.com/blog/bartender-skills-sugar-syrup/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://www.wogococktailwalk.com/blog/vodka-or-gin/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/vodka-or-gin/"/>
     <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/vodka-or-gin/"/>
@@ -949,6 +944,11 @@
   </url>
   <url>
     <loc>https://www.wogococktailwalk.com/blog/pump-up-the-jam-cocktails/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/blog/bartender-skills-sugar-syrup/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
