@@ -46,7 +46,7 @@ const EXACT = {
   "/groningen-cocktail-walk": "/groningen/",
   "/groupbookings": "/groups/",
   "/plans-pricing": "/",
-  "/post/5-best-cocktail-bars-to-visit-in-amsterdam-this-summer": "/blog/5-best-cocktail-bars-amsterdam-summer/",
+  "/post/5-best-cocktail-bars-to-visit-in-amsterdam-this-summer": "/amsterdam/",
   "/post/amsterdam-cocktail-week": "/amsterdam/",
   "/post/best-cocktail-bars-amsterdam": "/blog/best-cocktail-bars-amsterdam/",
   "/post/5-unique-birthday-celebration-ideas-in-the-netherlands-that-aren-t-just-another-dinner": "/blog/birthday-celebration-ideas-netherlands/",
@@ -148,7 +148,7 @@ const NL_POSTS = {
   "/post/the-bobby-s-cocktail-walk-groningen": "/groningen/",
   "/post/top-7-bars-in-amsterdam-1": "/blog/top-7-bars-in-amsterdam/",
   "/post/beste-bars-in-amsterdam": "/blog/best-bars-in-amsterdam/",
-  "/post/5-beste-cocktailbars-in-amsterdam-om-deze-zomer-te-bezoeken": "/blog/5-best-cocktail-bars-amsterdam-summer/",
+  "/post/5-beste-cocktailbars-in-amsterdam-om-deze-zomer-te-bezoeken": "/amsterdam/",
   "/privacy-policy": "/privacy/",
   "/blog-feed.xml": "/blog/",
 };
@@ -164,7 +164,7 @@ const NL_PAGES = new Set(["/", "/rotterdam/", "/utrecht/", "/amsterdam/", "/gron
 // It is used ONLY to send old Wix addresses to a Dutch article when there is
 // one; the Dutch pages themselves are always handed through (see fetch below).
 // nl-blog:start (made by tools/build-nl.js; do not edit)
-const NL_BLOG = new Set(["2026-cocktail-trends", "5-best-cocktail-bars-amsterdam-summer", "amsterdam-cocktail-week-bars", "best-bars-in-amsterdam", "best-bars-in-groningen", "best-cocktail-bars-amsterdam", "best-cocktail-bars-in-rotterdam", "birthday-celebration-ideas-netherlands", "espresso-martini-recipe", "mocktails-and-their-history", "new-bars-rotterdam-night-out", "rotterdam-premium-gin-walk-launch", "spring-cocktail-recipes", "top-7-bars-in-amsterdam", "top-7-bars-utrecht", "utrecht-night-out-cocktails", "vodka-or-gin", "what-is-a-self-guided-cocktail-walk", "winter-christmas-cocktail-recipes"]);
+const NL_BLOG = new Set(["2026-cocktail-trends", "amsterdam-cocktail-week-bars", "best-bars-in-amsterdam", "best-bars-in-groningen", "best-cocktail-bars-amsterdam", "best-cocktail-bars-in-rotterdam", "birthday-celebration-ideas-netherlands", "espresso-martini-recipe", "mocktails-and-their-history", "new-bars-rotterdam-night-out", "rotterdam-premium-gin-walk-launch", "spring-cocktail-recipes", "summer-cocktail-recipes", "top-7-bars-in-amsterdam", "top-7-bars-utrecht", "utrecht-night-out-cocktails", "vodka-or-gin", "what-is-a-self-guided-cocktail-walk", "winter-christmas-cocktail-recipes"]);
 const NL_BLOG_INDEX = true;
 // nl-blog:end
 function lookup(path) {
