@@ -336,7 +336,7 @@ export const ROUTE_ROLES = {
   'GET /admin/api/health': 'owner',
   'POST /admin/api/brevo/setup': 'owner',
   'POST /admin/api/brevo/push-reference-templates': 'owner',
-  'POST /admin/api/brevo/upsert-template': 'owner',
+  'POST /admin/api/brevo/upsert-template': 'staff',
   'POST /admin/api/stripe/ensure-welcome-code': 'owner',
   'POST /admin/api/stripe/promo-code': 'owner',
   'GET /admin/api/stripe/payouts': 'owner',
@@ -2068,7 +2068,8 @@ export async function handleBrevoPushReferenceTemplates(request, env) {
 }
 
 /**
- * POST /admin/api/brevo/upsert-template (owner only) — body
+ * POST /admin/api/brevo/upsert-template (staff: the newsletter maker at
+ * /admin/newsletter uses it) — body
  * { name, subject, html }: saves ONE marketing/newsletter template into the
  * Brevo account by exact name (update if it exists, create if not), so
  * newsletter HTML built outside this codebase can be placed in Brevo
@@ -2083,7 +2084,7 @@ export async function handleBrevoUpsertTemplate(request, env) {
   const subject = String((body && body.subject) || '').trim();
   const html = String((body && body.html) || '');
   if (!name || !subject || !html) return errorJson('bad_request', 'name, subject and html are required', 400);
-  if (name.startsWith('[REFERENCE]')) return errorJson('bad_request', 'the [REFERENCE] names are reserved', 400);
+  if (name.startsWith('[REFERENCE]') || /MASTER/.test(name)) return errorJson('bad_request', 'That name is reserved. Pick another name.', 400);
   if (html.length > 400000) return errorJson('bad_request', 'html is too large', 400);
   try {
     const result = await upsertTransactionalTemplate(env, {

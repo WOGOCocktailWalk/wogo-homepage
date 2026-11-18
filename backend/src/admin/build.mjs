@@ -21,6 +21,9 @@ const css = readFileSync(join(here, "admin.css"), "utf8");
 const js = readFileSync(join(here, "admin.js"), "utf8");
 const mock = readFileSync(join(here, "mock.js"), "utf8");
 const sw = readFileSync(join(here, "sw.js"), "utf8");
+// Stand-alone newsletter maker page (GET /admin/newsletter) — one complete
+// HTML document, served as-is; it saves into Brevo through /admin/api/.
+const newsletter = readFileSync(join(here, "newsletter.html"), "utf8");
 
 // Prevent an accidental "</script>" inside JS from closing the tag early.
 const guard = (s) => s.replace(/<\/script/gi, "<\\/script");
@@ -75,6 +78,23 @@ export function adminResponse() {
       "content-type": "text/html; charset=utf-8",
       "cache-control": "no-store",
       "x-content-type-options": "nosniff"
+    }
+  });
+}
+
+export const NEWSLETTER_HTML = ${JSON.stringify(newsletter)};
+
+/** GET /admin/newsletter — the newsletter maker. Carries no data (saving goes
+ * through the session-gated /admin/api/brevo/upsert-template), so like the
+ * dashboard shell it needs no session to be served. Own CSP: the live mail
+ * preview needs Google Fonts and pictures from any https host. */
+export function newsletterResponse() {
+  return new Response(NEWSLETTER_HTML, {
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff",
+      "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'"
     }
   });
 }

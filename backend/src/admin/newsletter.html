@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>WOGO newsletter maker</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#201611;--espresso:#3f2b21;--brown:#643e2b;--muted:#8a6a58;--blush:#ffe5d9;--cream:#fffaf6;--page:#f4e6dc;--salmon:#ffaa81;--salmon-deep:#f2905c;--line:#e7d3c6;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--page);color:var(--espresso);font:15px/1.5 'Helvetica Neue',Helvetica,Arial,sans-serif;}
+  header{background:var(--ink);color:var(--blush);padding:14px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  header h1{font:800 17px/1 'Poppins',sans-serif;letter-spacing:.06em;margin:0;color:var(--salmon);}
+  header span{font-size:13px;opacity:.8;}
+  .layout{display:grid;grid-template-columns:minmax(320px,440px) 1fr;gap:20px;padding:20px;align-items:start;}
+  @media (max-width:900px){.layout{grid-template-columns:1fr;}}
+  .panel{background:var(--cream);border:1px solid var(--line);border-radius:16px;padding:18px;}
+  .panel h2{font:700 12px/1 'Poppins',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--salmon-deep);margin:22px 0 10px;}
+  .panel h2:first-child{margin-top:0;}
+  label{display:block;font-weight:600;font-size:13px;color:var(--ink);margin:12px 0 4px;}
+  label small{font-weight:400;color:var(--muted);}
+  input[type=text],textarea,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit;color:var(--ink);}
+  textarea{min-height:110px;resize:vertical;}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--salmon);border-color:var(--salmon);}
+  .check{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:var(--ink);margin:10px 0 0;}
+  .check input{width:18px;height:18px;accent-color:var(--salmon-deep);}
+  .pics{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;max-height:230px;overflow:auto;padding:2px;}
+  .pics button{padding:0;border:2px solid transparent;border-radius:8px;overflow:hidden;cursor:pointer;background:#eee;aspect-ratio:1;}
+  .pics button.on{border-color:var(--salmon-deep);}
+  .pics img{width:100%;height:100%;object-fit:cover;display:block;}
+  details summary{cursor:pointer;font-size:13px;color:var(--brown);margin-top:8px;}
+  .btn{border:0;border-radius:999px;padding:13px 22px;font:700 13px/1 'Poppins',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;background:var(--salmon);color:var(--ink);}
+  .btn.ghost{background:transparent;border:1.5px solid var(--brown);color:var(--brown);}
+  .btn:hover{background:var(--salmon-deep);} .btn.ghost:hover{background:var(--blush);}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+  .bar .grow{flex:1;}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff;}
+  .seg button{border:0;background:transparent;padding:9px 16px;font:600 13px/1 inherit;cursor:pointer;color:var(--brown);}
+  .seg button.on{background:var(--ink);color:var(--blush);}
+  .preview{position:sticky;top:14px;}
+  iframe{width:100%;height:calc(100vh - 150px);min-height:520px;border:1px solid var(--line);border-radius:16px;background:var(--page);display:block;margin:0 auto;}
+  iframe.mobile{width:390px;max-width:100%;}
+  .steps{background:var(--blush);border-radius:12px;padding:14px 16px;font-size:14px;margin-top:16px;}
+  .steps ol{margin:6px 0 0;padding-left:20px;} .steps li{margin:3px 0;}
+  .hint{font-size:12px;color:var(--muted);margin:4px 0 0;}
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--ink);color:var(--blush);padding:12px 20px;border-radius:999px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;}
+  #toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<header>
+  <h1>WOGO NEWSLETTER MAKER</h1>
+  <span>Fill in the boxes on the left. The mail on the right updates as you type.</span>
+  <a href="/admin" style="margin-left:auto;color:#ffe5d9;font-size:13px;">← Back to the dashboard</a>
+</header>
+
+<div class="layout">
+  <div class="panel" id="form">
+    <h2>Start from</h2>
+    <select id="preset">
+      <option value="">Choose an example to load…</option>
+      <option value="blank">Empty mail</option>
+      <option value="web_en">New website is live (English)</option>
+      <option value="web_nl">New website is live (Dutch)</option>
+    </select>
+    <p class="hint">Loading an example replaces what is in the boxes now.</p>
+
+    <h2>Inbox</h2>
+    <label>Language of the mail</label>
+    <select id="lang"><option value="en">English</option><option value="nl">Dutch</option></select>
+    <label>Subject <small>(saved with the mail)</small></label>
+    <input type="text" id="subject">
+    <label>Preview text <small>(grey line next to the subject, max ~90 characters)</small></label>
+    <input type="text" id="preheader">
+
+    <h2>Top of the mail</h2>
+    <label class="check"><input type="checkbox" id="logoBand"> Dark header with WOGO logo</label>
+    <p class="hint">Switch off when the picture already has the logo in it.</p>
+    <label class="check"><input type="checkbox" id="heroOn"> Big picture</label>
+    <label>Picture link <small>(must start with https://)</small></label>
+    <input type="text" id="heroSrc">
+    <details><summary>Pick one of the WOGO pictures</summary><div class="pics" id="pics"></div></details>
+    <label>What is in the picture <small>(for people who can't see pictures)</small></label>
+    <input type="text" id="heroAlt">
+
+    <h2>Text</h2>
+    <label>Small label above the title <small>(optional)</small></label>
+    <input type="text" id="eyebrow">
+    <label>Title</label>
+    <input type="text" id="title">
+    <label>Text before the button <small>(empty line = new paragraph, **word** = bold)</small></label>
+    <textarea id="body1"></textarea>
+
+    <h2>Highlights box</h2>
+    <label class="check"><input type="checkbox" id="boxOn"> Show the pink box</label>
+    <label>Box title</label>
+    <input type="text" id="boxTitle">
+    <label>Points <small>(one per line. Bold part | rest of the line)</small></label>
+    <textarea id="boxItems"></textarea>
+
+    <h2>Button</h2>
+    <label>Button text</label>
+    <input type="text" id="btnText">
+    <label>Link <small>(where the button and the big picture go)</small></label>
+    <input type="text" id="btnLink">
+
+    <h2>Two small pictures</h2>
+    <label class="check"><input type="checkbox" id="duoOn"> Show two pictures side by side</label>
+    <label>Picture 1 link</label><input type="text" id="duo1">
+    <label>Caption 1</label><input type="text" id="cap1">
+    <label>Picture 2 link</label><input type="text" id="duo2">
+    <label>Caption 2</label><input type="text" id="cap2">
+    <p class="hint">Use two pictures with the same shape (both wide or both tall).</p>
+
+    <h2>Ending</h2>
+    <label>Text after the button <small>(optional)</small></label>
+    <textarea id="body2" style="min-height:70px"></textarea>
+    <label>Sign-off</label>
+    <input type="text" id="signoff">
+  </div>
+
+  <div class="preview">
+    <div class="bar">
+      <div class="seg"><button id="vDesk" class="on">Computer</button><button id="vMob">Phone</button></div>
+      <div class="grow"></div>
+      <button class="btn ghost" id="copy">Copy code</button>
+      <input type="text" id="tplName" placeholder="Name in Brevo, e.g. December newsletter" style="max-width:290px;">
+      <button class="btn" id="save">Save to Brevo</button>
+    </div>
+    <iframe id="frame" title="Preview of the mail"></iframe>
+    <div class="steps">
+      <strong>How it works</strong>
+      <ol>
+        <li>Give the mail a name and click <b>Save to Brevo</b>. Saving never sends anything.</li>
+        <li>Changed something? Save again with the <b>same name</b> and Brevo gets the new version.</li>
+        <li>In Brevo, open <b>Templates</b>, find your mail and use <b>Preview &amp; Test</b> to send a test to yourself and to Maroussia.</li>
+        <li>Nothing goes to the subscriber list without Maroussia's OK.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+const SITE = 'https://www.wogococktailwalk.com';
+const IMG = SITE + '/email/';
+const FONT = "'Poppins','Helvetica Neue',Helvetica,Arial,sans-serif";
+const BODY = "'Helvetica Neue',Helvetica,Arial,sans-serif";
+const PICS = ['mail-golden-hour-toast','mail-candlelit-utrecht','mail-studio-cocktail','mail-lounge-friends','mail-neon-bar-night','mail-skybar-rotterdam','mail-gin-bar-friends','mail-bar-cheers-warm','mail-group-toast','mail-terrace-sun-utrecht','mail-calm-bar-rotterdam','mail-rooftop-cheers','mail-floral-coupes','mail-cocktail-bokeh','mail-golden-cheers','mail-dark-bar-pour','mail-bartender-garnish','mail-floral-toast','mail-cocktail-tray-sun','mail-flame-cocktail-delft','mail-calm-interior-delft','mail-bar-overhead-amsterdam','mail-new-website-laptop','banner'];
+const FIELDS = ['lang','subject','preheader','logoBand','heroOn','heroSrc','heroAlt','eyebrow','title','body1','boxOn','boxTitle','boxItems','btnText','btnLink','duoOn','duo1','cap1','duo2','cap2','body2','signoff'];
+const UTM = '?utm_source=newsletter&utm_medium=email&utm_campaign=new-website';
+
+const PRESETS = {
+  blank: {lang:'en',subject:'',preheader:'',logoBand:true,heroOn:true,heroSrc:IMG+'mail-golden-hour-toast.jpg',heroAlt:'Two cocktails raised in a toast',
+    eyebrow:'Small label',title:'Your headline goes here',
+    body1:'Hi there,\n\nStart with the news in one sentence. What is it, and why is it nice for the reader?\n\nSecond paragraph: one or two details that make it concrete. Use **bold** for the one thing they must remember.',
+    boxOn:true,boxTitle:'Good to know',boxItems:'First point. | A short explanation in one line.\nSecond point. | A short explanation in one line.\nThird point. | A short explanation in one line.',
+    btnText:'Button text',btnLink:SITE,duoOn:false,duo1:IMG+'mail-candlelit-utrecht.jpg',cap1:'',duo2:IMG+'mail-studio-cocktail.jpg',cap2:'',body2:'',signoff:'See you at the bar,'},
+  web_en: {lang:'en',subject:'Our new website is live 🍸',preheader:'Same WOGO. Brand new home. Come take a look around.',logoBand:false,heroOn:true,heroSrc:IMG+'mail-new-website-laptop.jpg',heroAlt:'Our new website is live. Same WOGO, brand new home.',
+    eyebrow:"It's here",title:'Come take a look around',
+    body1:"Hi there,\n\nWe've been quietly building something for months, and today we can finally show you: a brand new **wogococktailwalk.com**.\n\nThe Cocktail Walk itself hasn't changed. Three bars, three cocktails, zero planning. Finding your route and booking it just got a lot easier.",
+    boxOn:true,boxTitle:"What's new",boxItems:'Every route on one page. | Pick your city and compare routes, days and prices at a glance.\nBooked in a few taps. | Choose your date and start time, pay, done. Made for your phone.\nIn English and Dutch. | Switch language whenever you like.\nSomething to celebrate? | Birthdays, bachelorettes, date nights and company outings each have their own page. Gift cards too.',
+    btnText:'See the new website',btnLink:SITE+'/'+UTM,duoOn:false,duo1:IMG+'mail-candlelit-utrecht.jpg',cap1:'',duo2:IMG+'mail-studio-cocktail.jpg',cap2:'',
+    body2:'Already have a walk booked? Nothing changes for you. Your booking stays exactly as it is.',signoff:'See you at the bar,'},
+  web_nl: {lang:'nl',subject:'Onze nieuwe website is live 🍸',preheader:'Dezelfde WOGO, een gloednieuw thuis. Kom je even kijken?',logoBand:false,heroOn:true,heroSrc:IMG+'mail-new-website-laptop.jpg',heroAlt:'Onze nieuwe website is live. Dezelfde WOGO, een gloednieuw thuis.',
+    eyebrow:'Hij is er',title:'Kom je even binnen kijken?',
+    body1:'Hi,\n\nWe hebben er maandenlang in stilte aan gebouwd en nu mogen we hem eindelijk laten zien: een gloednieuwe **wogococktailwalk.com**.\n\nDe Cocktail Walk zelf is niet veranderd. Drie bars, drie cocktails, niets te regelen. Je route vinden en boeken is alleen een stuk makkelijker geworden.',
+    boxOn:true,boxTitle:'Wat is er nieuw',boxItems:'Alle routes op één pagina. | Kies je stad en vergelijk routes, dagen en prijzen in één oogopslag.\nGeboekt in een paar tikken. | Kies je datum en starttijd, betaal, klaar. Gemaakt voor je telefoon.\nIn het Nederlands en Engels. | Wissel van taal wanneer je wilt.\nIets te vieren? | Verjaardagen, vrijgezellenfeesten, date nights en bedrijfsuitjes hebben een eigen pagina. Cadeaubonnen ook.',
+    btnText:'Bekijk de nieuwe website',btnLink:SITE+'/nl/'+UTM,duoOn:false,duo1:IMG+'mail-candlelit-utrecht.jpg',cap1:'',duo2:IMG+'mail-studio-cocktail.jpg',cap2:'',
+    body2:'Heb je al een walk geboekt? Voor jou verandert er niets. Je boeking blijft precies zoals hij is.',signoff:'Tot snel aan de bar,'}
+};
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const rich = s => esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+const safeUrl = u => { u = String(u || '').trim(); return /^(https?:|mailto:)/i.test(u) ? esc(u) : esc(SITE); };
+
+function read(){ const d = {}; FIELDS.forEach(f => { const el = $(f); d[f] = el.type === 'checkbox' ? el.checked : el.value; }); return d; }
+function fill(d){ FIELDS.forEach(f => { const el = $(f); if (!(f in d)) return; if (el.type === 'checkbox') el.checked = !!d[f]; else el.value = d[f]; }); }
+
+function paras(text){
+  return String(text || '').split(/\n\s*\n/).map(t => t.trim()).filter(Boolean)
+    .map(t => `      <p style="margin:0 0 18px;font-family:${BODY};font-size:16px;line-height:1.65;color:#3f2b21;">${rich(t)}</p>`).join('\n');
+}
+
+function build(d){
+  const nl = d.lang === 'nl';
+  const link = safeUrl(d.btnLink);
+  let inner = '';
+  if (d.logoBand) inner += `
+    <tr><td align="center" style="background:#201611;padding:26px 24px 22px;">
+      <a href="${SITE}"><img src="${IMG}logo-salmon.png" width="60" height="60" alt="WOGO Cocktail Walk" style="margin:0 auto;width:60px;height:60px;"></a>
+      <div style="margin-top:10px;font-family:${FONT};font-weight:500;font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#d9bfb0;">Cocktail Walk</div>
+    </td></tr>`;
+  if (d.heroOn && d.heroSrc.trim()) inner += `
+    <tr><td align="center" style="background:#fffaf6;">
+      <a href="${link}"><img src="${safeUrl(d.heroSrc)}" width="600" alt="${esc(d.heroAlt)}" style="width:100%;max-width:600px;height:auto;"></a>
+    </td></tr>`;
+  inner += `
+    <tr><td class="px" style="padding:36px 44px 14px;">
+`;
+  if (d.eyebrow.trim()) inner += `      <div style="font-family:${FONT};font-weight:700;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#f2905c;padding-bottom:10px;">${esc(d.eyebrow)}</div>\n`;
+  if (d.title.trim()) inner += `      <h1 class="h1" style="margin:0 0 20px;font-family:${FONT};font-weight:800;font-size:28px;line-height:1.2;color:#201611;">${esc(d.title)}</h1>\n`;
+  inner += paras(d.body1) + '\n';
+  const items = String(d.boxItems || '').split('\n').map(l => l.trim()).filter(Boolean);
+  if (d.boxOn && items.length) {
+    const rows = items.map(l => { const i = l.indexOf('|'); const b = i > -1 ? l.slice(0,i).trim() : ''; const t = i > -1 ? l.slice(i+1).trim() : l;
+      return `          <tr>
+            <td width="26" valign="top" style="padding:7px 0;font-family:${BODY};font-size:16px;line-height:1.55;color:#f2905c;font-weight:800;">&#8226;</td>
+            <td valign="top" style="padding:7px 0;font-family:${BODY};font-size:15px;line-height:1.55;color:#3f2b21;">${b ? `<strong style="color:#201611;">${esc(b)}</strong> ` : ''}${rich(t)}</td>
+          </tr>`; }).join('\n');
+    inner += `      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffe5d9;border-radius:14px;margin:6px 0 26px;">
+        <tr><td style="padding:22px 24px 16px;">
+          ${d.boxTitle.trim() ? `<div style="font-family:${FONT};font-weight:700;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#643e2b;padding-bottom:8px;">${esc(d.boxTitle)}</div>` : ''}
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+${rows}
+          </table>
+        </td></tr>
+      </table>
+`;
+  }
+  if (d.btnText.trim()) inner += `      <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:10px auto 26px;">
+        <tr><td align="center" bgcolor="#ffaa81" style="background:#ffaa81;border-radius:999px;">
+          <a href="${link}" style="display:inline-block;padding:16px 38px;font-family:${FONT};font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:#201611;text-decoration:none;">${esc(d.btnText)}</a>
+        </td></tr>
+      </table>
+`;
+  if (d.duoOn && d.duo1.trim() && d.duo2.trim()) {
+    const cell = (src, cap, pad) => `          <td class="col" width="50%" valign="top" style="padding:${pad};">
+            <a href="${link}"><img src="${safeUrl(src)}" width="248" alt="${esc(cap)}" style="width:100%;height:auto;border-radius:12px;"></a>
+            ${cap.trim() ? `<p style="margin:10px 0 0;font-family:${BODY};font-size:14px;line-height:1.5;color:#643e2b;">${rich(cap)}</p>` : ''}
+          </td>`;
+    inner += `      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 22px;">
+        <tr>
+${cell(d.duo1, d.cap1, '0 8px 0 0')}
+${cell(d.duo2, d.cap2, '0 0 0 8px')}
+        </tr>
+      </table>
+`;
+  }
+  inner += paras(d.body2) + '\n';
+  inner += `      <p style="margin:0;font-family:${BODY};font-size:16px;line-height:1.65;color:#3f2b21;">${esc(d.signoff)}<br><strong>Team WOGO</strong></p>
+    </td></tr>
+    <tr><td style="padding:0 0 30px;"></td></tr>`;
+
+  return `<!doctype html>
+<html lang="${nl ? 'nl' : 'en'}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light">
+<title>${esc(d.subject || 'WOGO Cocktail Walk')}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&display=swap');
+  body{margin:0;padding:0;background:#f4e6dc;-webkit-text-size-adjust:100%;}
+  img{border:0;line-height:100%;outline:none;text-decoration:none;display:block;}
+  @media (max-width:620px){
+    .wrap{width:100% !important;}
+    .px{padding-left:24px !important;padding-right:24px !important;}
+    .h1{font-size:24px !important;}
+    .col{display:block !important;width:100% !important;padding:0 0 16px 0 !important;}
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background:#f4e6dc;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${esc(d.preheader)}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4e6dc;">
+<tr><td align="center" style="padding:20px 12px 28px;">
+  <p style="margin:0 0 12px;font-family:${BODY};font-size:12px;color:#8a6a58;"><a href="{{ mirror }}" style="color:#8a6a58;text-decoration:underline;">${nl ? 'Bekijk deze e-mail in je browser' : 'View this email in your browser'}</a></p>
+  <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:#fffaf6;border:1px solid #e7d3c6;border-radius:18px;overflow:hidden;">${inner}
+    <tr><td align="center" class="px" style="background:#201611;padding:30px 44px 32px;">
+      <a href="${SITE}"><img src="${IMG}logo-salmon.png" width="52" height="52" alt="WOGO" style="margin:0 auto 14px;width:52px;height:52px;"></a>
+      <p style="margin:0 0 16px;font-family:${FONT};font-weight:500;font-size:14px;line-height:1.5;color:#ffe5d9;">Explore your city, one cocktail at a time.</p>
+      <p style="margin:0 0 16px;font-family:${BODY};font-size:13px;line-height:1.7;color:#ffe5d9;">
+        <a href="${SITE}" style="color:#ffaa81;text-decoration:none;">wogococktailwalk.com</a> &nbsp;&middot;&nbsp;
+        <a href="https://www.instagram.com/wogococktailwalk/" style="color:#ffaa81;text-decoration:none;">Instagram</a> &nbsp;&middot;&nbsp;
+        <a href="mailto:info@wogoamsterdam.com" style="color:#ffaa81;text-decoration:none;">info@wogoamsterdam.com</a>
+      </p>
+      <p style="margin:0;font-family:${BODY};font-size:11px;line-height:1.7;color:#b89a88;">
+        ${nl ? 'Je ontvangt deze e-mail omdat je bent ingeschreven voor WOGO-nieuws.' : 'You receive this email because you subscribed to WOGO news.'}<br>
+        WOGO Amsterdam B.V. &middot; Amsterdam, Netherlands<br>
+        <a href="{{ unsubscribe }}" style="color:#b89a88;text-decoration:underline;">${nl ? 'Uitschrijven' : 'Unsubscribe'}</a>
+      </p>
+    </td></tr>
+  </table>
+</td></tr>
+</table>
+</body>
+</html>
+`;
+}
+
+let timer;
+function render(){
+  const d = read();
+  try { localStorage.setItem('wogo-newsletter-draft', JSON.stringify(d)); } catch (e) {}
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    const f = $('frame'); const y = f.contentWindow ? f.contentWindow.scrollY : 0;
+    f.srcdoc = build(d);
+    f.onload = () => { try { f.contentWindow.scrollTo(0, y); } catch (e) {} };
+  }, 150);
+  document.querySelectorAll('#pics button').forEach(b => b.classList.toggle('on', b.dataset.src === d.heroSrc));
+}
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); }
+
+$('pics').innerHTML = PICS.map(p => `<button type="button" data-src="${IMG}${p}.jpg" title="${p}"><img loading="lazy" src="${IMG}${p}.jpg" alt="${p}"></button>`).join('');
+$('pics').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; $('heroSrc').value = b.dataset.src; $('heroOn').checked = true; render(); });
+$('form').addEventListener('input', e => { if (e.target.id !== 'preset') render(); });
+$('form').addEventListener('change', e => { if (e.target.id !== 'preset') render(); });
+$('preset').addEventListener('change', e => { const p = PRESETS[e.target.value]; if (p) { fill(p); render(); } e.target.value = ''; });
+$('vDesk').onclick = () => { $('frame').classList.remove('mobile'); $('vDesk').classList.add('on'); $('vMob').classList.remove('on'); };
+$('vMob').onclick = () => { $('frame').classList.add('mobile'); $('vMob').classList.add('on'); $('vDesk').classList.remove('on'); };
+$('copy').onclick = async () => {
+  const html = build(read());
+  try { await navigator.clipboard.writeText(html); toast('Code copied.'); }
+  catch (e) { const ta = document.createElement('textarea'); ta.value = html; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Code copied.'); }
+};
+$('save').onclick = async () => {
+  const d = read();
+  const name = $('tplName').value.trim();
+  if (!name) { toast('First type a name for this mail.'); $('tplName').focus(); return; }
+  if (!d.subject.trim()) { toast('First fill in the subject.'); $('subject').focus(); return; }
+  const btn = $('save'); btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const res = await fetch('/admin/api/brevo/upsert-template', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'wogo-admin' },
+      body: JSON.stringify({ name: 'WOGO newsletter - ' + name, subject: d.subject.trim(), html: build(d) })
+    });
+    if (res.status === 401) toast('You are logged out. Open the dashboard, log in, then come back.');
+    else if (res.status === 403) toast('Your login is not allowed to save. Ask Maroussia.');
+    else if (!res.ok) { let m = ''; try { m = (await res.json()).message || ''; } catch (e) {} toast('Could not save. ' + m); }
+    else { const j = await res.json(); toast(j.created ? 'Saved in Brevo as a new template.' : 'Updated in Brevo.'); }
+  } catch (e) { toast('Could not reach the dashboard. Check your internet.'); }
+  btn.disabled = false; btn.textContent = 'Save to Brevo';
+};
+try { $('tplName').value = localStorage.getItem('wogo-newsletter-name') || ''; } catch (e) {}
+$('tplName').addEventListener('input', e => { try { localStorage.setItem('wogo-newsletter-name', e.target.value); } catch (er) {} });
+
+let start = PRESETS.blank;
+try { const saved = JSON.parse(localStorage.getItem('wogo-newsletter-draft')); if (saved && typeof saved === 'object') start = Object.assign({}, PRESETS.blank, saved); } catch (e) {}
+fill(start); render();
+</script>
+</body>
+</html>

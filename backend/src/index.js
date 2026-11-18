@@ -21,7 +21,7 @@ import {
   FAILED_EMAIL_RESOLVED_RETENTION_MINUTES, BREVO_SYNC_RESOLVED_RETENTION_MINUTES,
   MISSING_PAGE_RETENTION_DAYS,
 } from './config.js';
-import { adminResponse } from './admin/assets.js';
+import { adminResponse, newsletterResponse } from './admin/assets.js';
 import { manifestResponse, serviceWorkerResponse, iconResponse } from './admin/pwa.js';
 import { withSecurityHeaders } from './security_headers.js';
 import { captureError } from './errors.js';
@@ -269,6 +269,10 @@ export default {
         request.method === 'GET' && (pathname === '/admin' || pathname === '/admin/' || pathname === '/admin/login')
       ) {
         response = adminResponse();
+      } else if (request.method === 'GET' && pathname === '/admin/newsletter') {
+        // Newsletter maker: a data-free tool page, same reasoning as the shell
+        // above. Saving goes through the gated /admin/api/ route.
+        response = newsletterResponse();
       } else {
         // Matched ONCE, up front — both the role check below and the final
         // dispatch need the SAME match (its `pattern` is how ROUTE_ROLES is
