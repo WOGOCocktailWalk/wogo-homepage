@@ -12,8 +12,8 @@
 <!-- ============================================================
      PRE-PUBLISH FLAGS for Maroussia — resolve BEFORE cutover:
      1) MINIMUM GROUP SIZE — resolved 2026-07-06: every page sitewide now
-        says 6 to 30, matching the minimum the live Wix enquiry form accepts.
-     2) RATE — groups of 6 or more pay a flat €32,95 per person (owner,
+        says 7 to 30, matching the minimum the live Wix enquiry form accepts.
+     2) RATE — groups of 6 or more pay a flfrom €32,95 per person (owner,
         2026-11-05). Parties of 6 or fewer book instantly at €29,95.
      ============================================================ -->
 <meta charset="UTF-8">
@@ -31,18 +31,18 @@
 <link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/groups/">
 <link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/groups/">
 <!-- i18n-alt:end -->
-<meta name="description" content="Group cocktail walks for bachelorette parties, birthdays & team outings — 6–30 people, in every WOGO city. €32,95pp, quote within one working day.">
+<meta name="description" content="Group cocktail walks for bachelorette parties, birthdays & team outings — 7–30 people, in every WOGO city. From €32,95pp, quote within one working day.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="WOGO Cocktail Walk">
-<meta property="og:title" content="Cocktail Walks for Groups of 6–30 | WOGO">
-<meta property="og:description" content="Bachelorette, birthday or team outing: 3 reserved bars, 3 cocktails per person, personalized routes possible. €32,95pp in every WOGO city. Get your quote within one working day.">
+<meta property="og:title" content="Cocktail Walks for Groups of 7–30 | WOGO">
+<meta property="og:description" content="Bachelorette, birthday or team outing: 3 reserved bars, 3 cocktails per person, personalized routes possible. From €32,95pp in every WOGO city. Get your quote within one working day.">
 <meta property="og:url" content="https://www.wogococktailwalk.com/groups/">
 <meta property="og:image" content="https://www.wogococktailwalk.com/og/wogo-groups.jpg">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="nl_NL">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Cocktail Walks for Groups of 6–30 | WOGO">
-<meta name="twitter:description" content="3 reserved bars, 3 cocktails per person, personalized routes possible. €32,95pp in every WOGO city. Get your quote within one working day.">
+<meta name="twitter:title" content="Cocktail Walks for Groups of 7–30 | WOGO">
+<meta name="twitter:description" content="3 reserved bars, 3 cocktails per person, personalized routes possible. From €32,95pp in every WOGO city. Get your quote within one working day.">
 <meta name="twitter:image" content="https://www.wogococktailwalk.com/og/wogo-groups.jpg">
 <!-- PAGE-EDIT: structured data — content pages carry LIGHT Organization markup only.
      The FAQ page owns FAQPage markup; the mini FAQ below is a UI element, not
@@ -240,6 +240,12 @@
   .w-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .w-field { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--wogo-brown); }
   .w-field-wide { grid-column: 1 / -1; }
+/* Extras tick boxes in the group form */
+.w-checks { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-direction: row; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
+.w-checks legend { padding: 0; margin-bottom: 6px; width: 100%; font-size: 12.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--wogo-brown); }
+.w-check { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: 16px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--wogo-ink); cursor: pointer; }
+.w-check input { width: 20px; height: 20px; margin: 0; accent-color: var(--wogo-salmon-deep, #e8804f); flex: none; }
+.w-checks-hint { width: 100%; margin: 2px 0 0; font-size: 13.5px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--wogo-brown); opacity: .85; }
   .w-field input, .w-field select, .w-field textarea { font: inherit; font-size: 16px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--wogo-ink); background: var(--wogo-cream); border: 1.5px solid rgba(63,43,33,0.20); border-radius: 10px; padding: 12px 14px; min-height: 48px; }
   .w-field input:focus, .w-field select:focus, .w-field textarea:focus { outline: none; border-color: var(--wogo-salmon); box-shadow: 0 0 0 3px rgba(242,144,92,0.18); }
   .w-field textarea { min-height: 88px; resize: vertical; }
@@ -618,8 +624,8 @@
   <img class="w-hero-video" src="group-photo.jpg" alt="A group of friends toasting cocktails together on a WOGO group cocktail walk" fetchpriority="high" decoding="async" width="1600" height="900">
   <div class="w-hero-overlay"></div>
   <div class="w-hero-content wg-hero-anim">
-    <div class="w-hero-overline" data-i18n="hero_eyebrow">For groups of 6 to 30</div>
-    <div class="w-hero-price" data-i18n="hero_price">€32,95 per person</div>
+    <div class="w-hero-overline" data-i18n="hero_eyebrow">For groups of 7 to 30</div>
+    <div class="w-hero-price" data-i18n="hero_price">From €32,95 per person</div>
     <h1 data-i18n="hero_h1">Cocktail Walks<br>Built for Groups</h1>
     <p class="w-hero-sub" data-i18n="hero_sub">Bachelorettes, birthdays, team outings. <br class="w-br-m">We handle the bars.</p>
     <a href="#enquire" class="w-hero-cta w-scroll" data-i18n="hero_cta">Plan your group walk →</a>
@@ -656,7 +662,7 @@
      Real WOGO group photo (group-photo.jpg, self-hosted in this folder)
      on the left; the short "what's included" checklist on the right.
      The note carries the honesty limits (group size,
-     6–30) and the cancellation ceiling — never "free cancellation".
+     7–30) and the cancellation ceiling — never "free cancellation".
      ============================================================ -->
 <section class="w-section brown w-pad">
   <div class="w-group-wrap">
@@ -665,15 +671,15 @@
     </div>
     <div class="w-group-col">
       <div class="w-eyebrow" data-i18n="cont_eyebrow">What a group walk contains</div>
-      <h2 data-i18n="cont_h2">Everything sorted, <br class="w-br-m">€32,95 per person</h2>
+      <h2 data-i18n="cont_h2">Everything sorted, <br class="w-br-m">From €32,95 per person</h2>
       <ul class="w-incl-list wg-stagger">
         <li data-i18n="cont_1">3 signature cocktails each, one at every bar</li>
         <li data-i18n="cont_2">3 hand-picked bars, tables reserved for the whole group</li>
-        <li data-i18n="cont_3">Groups of 6 to 30, one contact person, one simple plan</li>
+        <li data-i18n="cont_3">Groups of 7 to 30, one contact person, one simple plan</li>
         <li data-i18n="cont_4">Self-guided, 3–4 relaxed hours at your own pace</li>
         <li data-i18n="cont_5">Mocktail option on every route · snacks addable</li>
       </ul>
-      <p class="w-box-note" data-i18n="cont_note">Group walks run in every WOGO city.<br>Fewer than 6 or more than 30? <a href="#enquire" class="w-scroll w-mail">Get in touch</a> and we'll see what's possible.</p>
+      <p class="w-box-note" data-i18n="cont_note">Group walks run in every WOGO city.<br>More than 30 people? <a href="#enquire" class="w-scroll w-mail">Get in touch</a> and we'll see what's possible.</p>
     </div>
   </div>
 </section>
@@ -725,7 +731,7 @@
           <option value="" data-i18n="form_city_ph">Choose a city</option>
           <option>Rotterdam</option><option>Amsterdam</option><option>Delft</option><option>Groningen</option><option>Utrecht</option>
         </select></label>
-      <label class="w-field"><span data-i18n="form_size">Group size</span><input type="number" min="6" name="size" placeholder="e.g. 12"></label>
+      <label class="w-field"><span data-i18n="form_size">Group size</span><input type="number" min="7" max="200" name="size" placeholder="e.g. 12"></label>
       <label class="w-field"><span data-i18n="form_date">Preferred date</span><input type="date" name="date"></label>
       <label class="w-field"><span data-i18n="form_occasion">Occasion</span>
         <select name="occasion">
@@ -737,6 +743,22 @@
           <option data-i18n="form_occ5">Graduation</option>
           <option data-i18n="form_occ6">Other</option>
         </select></label>
+      <label class="w-field"><span data-i18n="form_budget">Budget per person (indication)</span>
+        <select name="budget">
+          <option value="" data-i18n="form_budget_ph">Choose…</option>
+          <option data-i18n="form_budget1">Standard walk, from €32,95</option>
+          <option data-i18n="form_budget2">€35 to €50</option>
+          <option data-i18n="form_budget3">€50 to €75</option>
+          <option data-i18n="form_budget4">€75 or more</option>
+          <option data-i18n="form_budget5">Not sure yet</option>
+        </select></label>
+      <fieldset class="w-field w-field-wide w-checks">
+        <legend data-i18n="form_extras">Extras (optional)</legend>
+        <label class="w-check"><input type="checkbox" name="extra" value="Extra stop (a 4th bar)"><span data-i18n="form_extra1">Extra stop (a 4th bar)</span></label>
+        <label class="w-check"><input type="checkbox" name="extra" value="Dinner"><span data-i18n="form_extra2">Dinner</span></label>
+        <label class="w-check"><input type="checkbox" name="extra" value="Snacks or bites"><span data-i18n="form_extra3">Snacks or bites</span></label>
+        <p class="w-checks-hint" data-i18n="form_extras_hint">Tick what you'd like and we'll include it in your quote.</p>
+      </fieldset>
       <label class="w-field w-field-wide"><span data-i18n="form_notes">Special requests</span>
         <textarea name="notes" rows="3" placeholder="Dietary needs, timings, group splits…"></textarea></label>
     </div>
@@ -1138,8 +1160,8 @@
     time34: "🕐 3–4 uur",
 
     /* --- hero --- */
-    hero_eyebrow: "Voor groepen van 6 tot 30",
-    hero_price: "€32,95 per persoon",
+    hero_eyebrow: "Voor groepen van 7 tot 30",
+    hero_price: "Vanaf €32,95 per persoon",
     hero_h1: "Cocktail Walks<br>voor groepen",
     hero_sub: "Vrijgezellenfeesten, verjaardagen, teamuitjes. <br class=\"w-br-m\">Wij regelen de bars.",
     hero_cta: "Plan jullie groepswandeling →",
@@ -1156,13 +1178,13 @@
     occ_more: "Lees meer: <a href=\"../bachelorette/\" class=\"w-navlink\" style=\"color:inherit;font-weight:800;text-decoration:underline;text-underline-offset:3px;\">vrijgezellenfeesten</a> · <a href=\"../birthday/\" class=\"w-navlink\" style=\"color:inherit;font-weight:800;text-decoration:underline;text-underline-offset:3px;\">verjaardagen</a> · <a href=\"../company-outing/\" class=\"w-navlink\" style=\"color:inherit;font-weight:800;text-decoration:underline;text-underline-offset:3px;\">bedrijfsuitjes</a> · <a href=\"../date-night/\" class=\"w-navlink\" style=\"color:inherit;font-weight:800;text-decoration:underline;text-underline-offset:3px;\">date night</a>",
     /* --- what a group walk contains --- */
     cont_eyebrow: "Wat een groepswandeling bevat",
-    cont_h2: "Alles geregeld, <br class=\"w-br-m\">€32,95 per persoon",
+    cont_h2: "Alles geregeld, <br class=\"w-br-m\">Vanaf €32,95 per persoon",
     cont_1: "3 signature cocktails per persoon, één bij elke bar",
     cont_2: "3 zorgvuldig gekozen bars, tafels gereserveerd voor de hele groep",
-    cont_3: "Groepen van 6 tot 30, één contactpersoon, één simpel plan",
+    cont_3: "Groepen van 7 tot 30, één contactpersoon, één simpel plan",
     cont_4: "Zelfgeleid, 3–4 ontspannen uur in jullie eigen tempo",
     cont_5: "Mocktail-optie op elke route · snacks bij te boeken",
-    cont_note: "We lopen groepswandelingen in elke WOGO-stad.<br>Minder dan 6 of meer dan 30? <a href=\"#enquire\" class=\"w-scroll w-mail\">Neem contact op</a>, dan kijken we wat mogelijk is.",
+    cont_note: "We lopen groepswandelingen in elke WOGO-stad.<br>Met meer dan 30 personen? <a href=\"#enquire\" class=\"w-scroll w-mail\">Neem contact op</a>, dan kijken we wat mogelijk is.",
     /* --- extras (chips) --- */
     extra_eyebrow: "Maak het jullie eigen",
     extra_h2: "Optionele extra's voor jullie groep",
@@ -1192,7 +1214,7 @@
     form_occ4: "Bedrijfsevenement",
     form_occ5: "Diploma-uitreiking",
     form_occ6: "Anders",
-    form_notes: "Speciale wensen",
+    form_notes: "Speciale wensen", form_budget: "Budget per persoon (indicatie)", form_budget_ph: "Kies…", form_budget1: "Standaard walk, vanaf €32,95", form_budget2: "€35 tot €50", form_budget3: "€50 tot €75", form_budget4: "€75 of meer", form_budget5: "Weet ik nog niet", form_extras: "Extra's (optioneel)", form_extra1: "Extra stop (een 4e bar)", form_extra2: "Diner", form_extra3: "Snacks of borrelhapjes", form_extras_hint: "Vink aan wat je wilt, dan nemen we het mee in je offerte.",
     form_submit: "Vraag je offerte aan →",
     form_note: "",
     form_tiny: "Liever even overleggen? Bel of WhatsApp <a href=\"tel:+31202101168\" class=\"w-mail\">+31 20 210 1168</a> — op werkdagen 10:00–18:00.",
@@ -1490,6 +1512,11 @@
       // ride in the message — that is what the owner reads in the notification.
       var message = [
         f.occasion.value ? 'Occasion: ' + f.occasion.value : '',
+        f.budget && f.budget.value ? 'Budget per person (indication): ' + f.budget.value : '',
+        (function () {
+          var picked = Array.prototype.slice.call(wForm.querySelectorAll('input[name="extra"]:checked')).map(function (c) { return c.value; });
+          return picked.length ? 'Extras wanted: ' + picked.join(', ') : '';
+        })(),
         (f.notes.value || '').trim()
       ].filter(Boolean).join('\n\n') || 'Group booking request.';
 
