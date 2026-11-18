@@ -579,11 +579,6 @@
   </url>
 
   <url>
-    <loc>https://www.wogococktailwalk.com/blog/your-spring-fling-lillet/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://www.wogococktailwalk.com/blog/best-bars-in-amsterdam/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/best-bars-in-amsterdam/"/>
     <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/best-bars-in-amsterdam/"/>
@@ -949,6 +944,11 @@
   </url>
   <url>
     <loc>https://www.wogococktailwalk.com/blog/5-tips-for-a-successful-dry-january/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/blog/your-spring-fling-lillet/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
