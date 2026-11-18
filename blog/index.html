@@ -145,7 +145,7 @@
   .w-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #3f2b21; margin-bottom: 10px; text-align: center; }
 
   /* ===== BLOG INDEX GRID (DESIGN-V6-SPEC §4a) ===== */
-  .bl-grid { max-width:1000px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+  .bl-grid { max-width:1320px; margin:0 auto; display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:20px; }
   .bl-card { display:flex; flex-direction:column; background:var(--wogo-cream); border-radius:16px;
     overflow:hidden; text-decoration:none; box-shadow:0 4px 14px var(--wogo-line-soft); border:1px solid var(--wogo-line-soft);
     transition:transform .3s, box-shadow .3s; }
@@ -153,18 +153,21 @@
   .bl-card:hover .bl-card-img img { transform:scale(1.05); }
   .bl-card-img { aspect-ratio:16/10; overflow:hidden; }
   .bl-card-img img { width:100%; height:100%; object-fit:cover; transition:transform .5s; }
-  .bl-card-body { padding:18px 20px 22px; display:flex; flex-direction:column; gap:8px; }
-  .bl-filters { max-width:1000px; margin:0 auto 26px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+  .bl-card-body { padding:14px 16px 18px; display:flex; flex-direction:column; gap:7px; }
+  .bl-filters { max-width:1320px; margin:0 auto 26px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
   .bl-filter { font:inherit; font-size:13.5px; font-weight:700; min-height:44px; padding:8px 18px; border-radius:999px; cursor:pointer;
     border:1.5px solid rgba(63,43,33,0.22); background:transparent; color:var(--wogo-brown, #643e2b); transition:background .2s, color .2s, border-color .2s; }
   .bl-filter:hover { border-color:var(--wogo-brown, #643e2b); }
   .bl-filter[aria-pressed="true"] { background:var(--wogo-ink, #201611); border-color:var(--wogo-ink, #201611); color:#fff; }
   .bl-card[hidden] { display:none; }
   .bl-cat { font-size:10.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--wogo-brown, #643e2b); }
-  .bl-card h3 { font-size:19px; font-weight:900; color:var(--wogo-ink); line-height:1.2; }
-  .bl-card p { font-size:14px; line-height:1.55; color:var(--wogo-espresso); font-weight:500; }
+  .bl-card h3 { font-size:16.5px; font-weight:900; color:var(--wogo-ink); line-height:1.22; }
+  /* Four cards side by side: the summary is cut off neatly after three lines. */
+  .bl-card p { font-size:13.5px; line-height:1.5; color:var(--wogo-espresso); font-weight:500; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .bl-card .bl-meta { margin-top:auto; padding-top:4px; }
   .bl-meta { font-size:12px; font-weight:700; color:var(--wogo-brown-soft); margin-top:2px; }
-  @media (max-width:760px){ .bl-grid { grid-template-columns:1fr; } }
+  @media (max-width:1100px){ .bl-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); max-width:1000px; } .bl-card h3 { font-size:18px; } }
+  @media (max-width:760px){ .bl-grid { grid-template-columns:1fr; } .bl-card p { -webkit-line-clamp:4; } }
 
   .w-gift-wrap { max-width: 920px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; }
   .w-gift-text { flex: 1 1 340px; }
