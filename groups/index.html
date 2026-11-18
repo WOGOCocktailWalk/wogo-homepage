@@ -125,6 +125,8 @@
   .w-nav-overlay .w-lang-menu { right: auto; left: 0; }
   .w-hero-content { position: relative; z-index: 2; min-height: 440px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 104px 24px 56px; max-width: 920px; margin: 0 auto; }
   .w-hero-flat .w-hero-content { min-height: 360px; padding: 118px 24px 50px; }
+  .w-hero-small { display: inline-block; margin-top: 16px; color: var(--wogo-blush); font-size: 14px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; opacity: 0.92; }
+  .w-hero-small:hover { opacity: 1; }
   .w-hero-overline { font-size: 11.5px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--wogo-salmon); margin-bottom: 16px; }
   .w-hero h1 { font-size: clamp(28px, 4.6vw, 48px); font-weight: 900; line-height: 1.05; letter-spacing: -0.015em; margin-bottom: 14px; max-width: 20ch; text-shadow: 0 2px 16px rgba(0,0,0,0.45); }
   .w-hero p { font-size: clamp(14px, 1.3vw, 18px); font-weight: 500; line-height: 1.5; max-width: 560px; margin-bottom: 22px; opacity: 0.95; }
@@ -576,7 +578,7 @@
         <ul class="w-nav-menu" id="wNavMenu"></ul>
       </li>
       <li><a href="../how-it-works/" class="w-navlink" data-i18n="nav_how">How it works</a></li>
-      <li><a href="#occasions" class="w-scroll" data-i18n="nav_groups" aria-current="page">Groups</a></li>
+      <li><a href="#occasions" class="w-scroll" data-i18n="nav_groups" aria-current="page">Groups 7+</a></li>
       <li><a href="../gift-cards/" class="w-navlink" data-i18n="nav_gift">Gift cards</a></li>
       <li><a href="../faq/" class="w-navlink" data-i18n="nav_faq">FAQ</a></li>
     </ul>
@@ -600,7 +602,7 @@
       <!-- City chips populated from WOGO_ROUTES (see JS) -->
       <li class="w-nav-ov-cities" id="wNavOvCities"></li>
       <li><a href="../how-it-works/" class="w-navlink w-nav-ov-link" data-i18n="nav_how">How it works</a></li>
-      <li><a href="#occasions" class="w-scroll w-nav-ov-link" data-i18n="nav_groups">Groups</a></li>
+      <li><a href="#occasions" class="w-scroll w-nav-ov-link" data-i18n="nav_groups">Groups 7+</a></li>
       <li><a href="../gift-cards/" class="w-navlink w-nav-ov-link" data-i18n="nav_gift">Gift cards</a></li>
       <li><a href="../about/" class="w-navlink w-nav-ov-link" data-i18n="nav_about">About</a></li>
       <li><a href="../faq/" class="w-navlink w-nav-ov-link" data-i18n="foot_faq">FAQ</a></li>
@@ -629,6 +631,7 @@
     <h1 data-i18n="hero_h1">Cocktail Walks<br>Built for Groups</h1>
     <p class="w-hero-sub" data-i18n="hero_sub">Bachelorettes, birthdays, team outings. <br class="w-br-m">We handle the bars.</p>
     <a href="#enquire" class="w-hero-cta w-scroll" data-i18n="hero_cta">Plan your group walk →</a>
+    <a href="#cities" class="w-hero-small w-scroll" data-i18n="hero_small">6 or fewer? You book instantly, no quote needed → Pick your route</a>
   </div>
 </section>
 
@@ -1193,6 +1196,7 @@
     hero_h1: "Cocktail Walks<br>voor groepen",
     hero_sub: "Vrijgezellenfeesten, verjaardagen, teamuitjes. <br class=\"w-br-m\">Wij regelen de bars.",
     hero_cta: "Plan jullie groepswandeling →",
+    hero_small: "Met 6 of minder? Je boekt direct, zonder offerte → Kies je route",
     /* --- occasions (chips) --- */
     occ_eyebrow: "Elke reden is een goede",
     occ_h2: "Hoe jullie ook willen vieren",
@@ -1258,7 +1262,7 @@
     /* --- sticky mobile CTA --- */
     sticky_cta: "Plan jullie groepswandeling →",
     /* --- nav --- */
-    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen", nav_gift: "Cadeaukaarten", nav_faq: "FAQ", nav_about: "Over WOGO", nav_cta: "Bekijk routes",
+    nav_routes: "Routes", nav_how: "Hoe het werkt", nav_groups: "Groepen 7+", nav_gift: "Cadeaukaarten", nav_faq: "FAQ", nav_about: "Over WOGO", nav_cta: "Bekijk routes",
     /* --- footer --- */
     foot_tag: "Drie zorgvuldig gekozen bars.<br>Eén avond die je altijd bijblijft.",
     foot_c1_h: "Routes", foot_c2_h: "Ontdek",
