@@ -780,9 +780,9 @@ export function renderOwnerConflict(booking, route) {
     <p style="margin:0;font-size:14px;line-height:1.55;color:${C.brown};">
       This guest completed payment, but this start time had no seats left by the time the
       payment arrived. The bars have <strong>not</strong> been told about this booking. The
-      guest has been emailed that we received the payment and that someone will contact them
-      personally within one working day.
-      <strong>Action needed:</strong> contact them within one working day and offer another
+      guest has <strong>not</strong> received any email about this: the thank-you page told
+      them the time was full and that someone will be in touch.
+      <strong>Action needed:</strong> contact them yourself within one working day and offer another
       time, or decide what to do about the payment. Nothing has been refunded automatically.
     </p>`;
   return {

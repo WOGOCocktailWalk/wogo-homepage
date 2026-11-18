@@ -22,7 +22,7 @@ import {
   renderGiftCardRedemptionAlert,
 } from './emails.js';
 import * as db from './db.js';
-import { OWNER_NOTIFY_EMAIL, OWNER_ALERT_EMAIL, WEBHOOK_TOLERANCE_SECONDS, BAR_FORMAT_NOTICE_FIRST_N, BAR_FORMAT_NOTICE_COUNT_FROM } from './config.js';
+import { OWNER_NOTIFY_EMAIL, OWNER_ALERT_EMAIL, WEBHOOK_TOLERANCE_SECONDS, BAR_FORMAT_NOTICE_FIRST_N, BAR_FORMAT_NOTICE_COUNT_FROM, SEND_SLOT_FULL_GUEST_EMAIL } from './config.js';
 import { sendWithRetry } from './email_retry.js';
 import { giftCardPdfAttachment } from './giftcard_pdf.js';
 import { handleConfirmedBookingOptIn } from './subscribers.js';
@@ -259,8 +259,8 @@ async function handlePaidButSlotFull(env, booking, route, session, deps = {}) {
     console.error('slot_full_owner_mail_failed', booking.id, err);
   }
 
-  // 2. The guest.
-  try {
+  // 2. The guest — only when the automatic mail is switched on (config.js).
+  if (SEND_SLOT_FULL_GUEST_EMAIL) try {
     const locale = booking.locale === 'nl' ? 'nl' : 'en';
     const mail = renderGuestPaymentSlotFull(booking, routeForMail, { locale });
     await sendWithRetry(env, { to: booking.email, subject: mail.subject, htmlContent: mail.html }, { database, sendTransactional: brevoSend, kind: 'guest_payment_slot_full' });

@@ -683,3 +683,9 @@ export const MISSING_PAGE_RETENTION_DAYS = 90;       // a path not visited for t
 export const MISSING_PAGE_HITS_PER_WINDOW = 10;      // per visitor (hashed IP)...
 export const MISSING_PAGE_WINDOW_MINUTES = 10;       // ...per sliding window of this many minutes
 export const MISSING_PAGE_MAX_LENGTH = 120;          // a longer path is ignored, not cut short
+
+// A guest paid for a start time that turned out to be full (rare, see
+// webhook.js:handlePaidButSlotFull). The owner chose (18 Nov 2026) NOT to send
+// that guest an automatic "your time was full" mail: she contacts them
+// herself after the phone alert. Set to true to send the automatic mail again.
+export const SEND_SLOT_FULL_GUEST_EMAIL = false;

@@ -87,7 +87,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       includes_head: "Tickets include",
       inc_cocktails: "3 cocktails", inc_bars: "3 hand-picked bars",
       inc_map: "Digital route map", inc_tables: "Tables reserved",
-      seats_left: "%n seats left", one_seat_left: "1 seat left",
+      seats_left: "%n seats left", one_seat_left: "1 seat left", low_seats: "Only %n spots left", low_one: "Only 1 spot left",
       only_left: "Only %n left", soldout: "Sold out",
       your_details: "Your details", party: "How many guests?",
       guest: "guest", guests: "guests", max_reached: "Max %n per booking",
@@ -153,7 +153,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       includes_head: "Inclusief",
       inc_cocktails: "3 cocktails", inc_bars: "3 geselecteerde bars",
       inc_map: "Digitale routekaart", inc_tables: "Tafels gereserveerd",
-      seats_left: "%n plekken vrij", one_seat_left: "nog 1 plek",
+      seats_left: "%n plekken vrij", one_seat_left: "nog 1 plek", low_seats: "Nog maar %n plekken", low_one: "Nog maar 1 plek",
       only_left: "Nog maar %n vrij", soldout: "Uitverkocht",
       your_details: "Jouw gegevens", party: "Hoeveel gasten?",
       guest: "gast", guests: "gasten", max_reached: "Max %n per boeking",
@@ -671,18 +671,21 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       btn.type = "button";
       btn.setAttribute("data-slot", s.slot); // lets relang() re-find the chosen time after a re-render
       btn.appendChild(el("span", "wc-slot-time", s.slot));
-      // The number of seats left is deliberately NOT shown (owner decision,
-      // 15 Nov 2026): a quiet slot should not look empty. A slot only says
-      // something when it is sold out. seats_left still caps the party size.
-      const seatsTxt = soldout ? this.t.soldout : "";
-      if (soldout) btn.appendChild(el("span", "wc-slot-seats", seatsTxt));
+      // The number of seats left is NOT shown for a slot with plenty of room
+      // (owner decision, 15 Nov 2026: a quiet slot should not look empty). It
+      // IS shown once only 1 to 5 are left (owner, 18 Nov 2026), because that
+      // is real and helps a guest decide. seats_left still caps the party size.
+      const low = !soldout && s.seats_left >= 1 && s.seats_left <= 5;
+      const lowTxt = low ? (s.seats_left === 1 ? this.t.low_one : this.t.low_seats.replace("%n", s.seats_left)) : "";
+      if (soldout) btn.appendChild(el("span", "wc-slot-seats", this.t.soldout));
+      else if (low) btn.appendChild(el("span", "wc-slot-seats wc-low", lowTxt));
 
       if (soldout) {
         btn.disabled = true;
         btn.setAttribute("aria-label", `${s.slot} — ${this.t.soldout}`);
       } else {
         btn.setAttribute("aria-pressed", "false");
-        btn.setAttribute("aria-label", s.slot);
+        btn.setAttribute("aria-label", low ? `${s.slot} — ${lowTxt}` : s.slot);
         btn.addEventListener("click", () => this.selectSlot(s, btn));
       }
       return btn;

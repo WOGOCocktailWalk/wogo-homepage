@@ -44,21 +44,20 @@ function setup({ status = 'confirmed_conflict', booking = BOOKING, failMail = fa
 }
 
 describe('payment arrives for seats that are gone', () => {
-  test('guest gets the honest mail, owner gets email + push, bars get NOTHING, no Meta purchase', async () => {
+  test('owner gets email + push, guest gets NO automatic mail (owner contacts them), bars get NOTHING, no Meta purchase', async () => {
     const { calls, run } = setup();
     const res = await run();
     assert.equal(res.status, 200);
 
     const to = calls.mails.map((m) => m.to);
-    assert.ok(to.includes('anna@example.com'), 'guest is told');
+    assert.ok(!to.includes('anna@example.com'), 'no automatic mail to the guest (owner decision 18 Nov 2026)');
     assert.ok(to.includes(OWNER_ALERT_EMAIL), 'owner gets the alert email');
     assert.ok(!to.includes('bara@example.com'), 'bars are NOT told about this booking');
     assert.equal(calls.barLookups, 0, 'bars are not even looked up');
-    assert.equal(calls.mails.length, 2, 'exactly guest + owner alert');
+    assert.equal(calls.mails.length, 1, 'only the owner alert');
     assert.equal(calls.metaEvents, 0, 'not counted as a sale in Meta');
 
-    const guest = calls.mails.find((m) => m.to === 'anna@example.com');
-    assert.ok(!/you['’]re booked/i.test(guest.subject + guest.htmlContent), 'must not read as a confirmation');
+    assert.ok(!calls.mails.some((m) => /you['’]re booked/i.test(m.subject)), 'nobody gets a normal confirmation');
 
     assert.equal(calls.notifications.length, 1, 'owner push notification row created');
     assert.equal(calls.notifications[0].kind, 'booking_conflict');
@@ -114,10 +113,9 @@ describe('renderGuestPaymentSlotFull', () => {
     assert.ok(!m.html.includes('<script>x'));
   });
 
-  test('an NL booking gets the NL mail through the webhook', async () => {
+  test('an NL booking: still no automatic guest mail through the webhook', async () => {
     const { calls, run } = setup({ booking: { ...BOOKING, locale: 'nl' } });
     await run();
-    const guest = calls.mails.find((m) => m.to === 'anna@example.com');
-    assert.ok(guest.htmlContent.includes('binnen één werkdag'));
+    assert.ok(!calls.mails.some((m) => m.to === 'anna@example.com'));
   });
 });
