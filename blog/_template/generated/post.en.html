@@ -165,6 +165,10 @@
     white-space:nowrap;
     box-shadow:var(--wogo-cta-shadow); transition:transform .2s, background .2s; }
   .bl-cta-btn:hover { background:var(--wogo-cta-bg-hover); transform:translateY(-2px); }
+  /* Links under the article to the city pages and the occasion pages (plain text links). */
+  .bl-more-links { max-width:720px; margin:22px auto 0; font-size:13px; line-height:1.9; font-weight:600; color:var(--wogo-brown); text-align:left; }
+  .bl-more-links p { margin:0 0 6px; }
+  .bl-more-links a { color:var(--wogo-brown); font-weight:800; text-decoration:underline; text-underline-offset:3px; white-space:nowrap; }
   .bl-back { display:block; max-width:720px; margin:26px auto 0; font-size:13px; font-weight:800; color:var(--wogo-brown); text-align:left; }
 
   .w-group-wrap { max-width: 920px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; }
@@ -452,6 +456,13 @@
   <div class="bl-cta-band wg-reveal">
     <p data-i18n="post_cta_p">Ready to see it for yourself? Find your city's cocktail walk, from €29,95.</p>
     <a href="../../#cities" class="bl-cta-btn" data-i18n="post_cta_btn">Book your walk</a>
+  </div>
+
+  <!-- Plain links from every article to the five city pages and to the pages people
+       look for next. Same facts as the rest of the site: Utrecht has a waiting list. -->
+  <div class="bl-more-links">
+    <p><span data-i18n="post_links_city">Find your city:</span> <a href="../../rotterdam/" data-i18n="post_l_rot">Cocktail walk Rotterdam</a> · <a href="../../delft/" data-i18n="post_l_del">Cocktail walk Delft</a> · <a href="../../groningen/" data-i18n="post_l_gro">Cocktail walk Groningen</a> · <a href="../../amsterdam/" data-i18n="post_l_ams">Cocktail walk Amsterdam</a> · <a href="../../utrecht/" data-i18n="post_l_utr">Cocktail walk Utrecht (waiting list)</a></p>
+    <p><span data-i18n="post_links_more">Planning something?</span> <a href="../../how-it-works/" data-i18n="post_l_how">How a cocktail walk works</a> · <a href="../../date-night/" data-i18n="post_l_date">Date night</a> · <a href="../../bachelorette/" data-i18n="post_l_bach">Bachelorette party</a> · <a href="../../birthday/" data-i18n="post_l_bday">Birthday</a> · <a href="../../company-outing/" data-i18n="post_l_comp">Company outing</a> · <a href="../../faq/" data-i18n="post_l_faq">Frequently asked questions</a></p>
   </div>
 
   <a href="../" class="bl-back wg-reveal" data-i18n="post_back">← Back to the journal</a>
@@ -844,6 +855,10 @@
     post_cta_p: "Ervaar het zelf: vind de cocktailwandeling in jouw stad, vanaf €29,95.",
     post_cta_btn: "Boek je walk",
     post_back: "← Terug naar het journal",
+    post_links_city: "Kies je stad:",
+    post_l_rot: "Cocktail walk Rotterdam", post_l_del: "Cocktail walk Delft", post_l_gro: "Cocktail walk Groningen", post_l_ams: "Cocktail walk Amsterdam", post_l_utr: "Cocktail walk Utrecht (wachtlijst)",
+    post_links_more: "Iets te plannen?",
+    post_l_how: "Hoe een cocktail walk werkt", post_l_date: "Date night", post_l_bach: "Vrijgezellenfeest", post_l_bday: "Verjaardag", post_l_comp: "Bedrijfsuitje", post_l_faq: "Veelgestelde vragen",
     group_eyebrow: "Voor groepen", group_h2: "Vrijgezellenfeesten, <br class=\"w-br-m\">verjaardagen &amp; teamuitjes",
     group_p: "Wij regelen de bars, de tijden en de tafels. Jullie nemen het gezelschap mee. Groepen van 7 tot 30, gepersonaliseerde routes mogelijk.",
     group_btn: "Plan jullie groepswandeling →",
