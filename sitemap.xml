@@ -579,22 +579,6 @@
   </url>
 
   <url>
-    <loc>https://www.wogococktailwalk.com/blog/top-7-bars-utrecht/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/top-7-bars-utrecht/"/>
-    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/top-7-bars-utrecht/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/top-7-bars-utrecht/"/>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://www.wogococktailwalk.com/nl/blog/top-7-bars-utrecht/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/top-7-bars-utrecht/"/>
-    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/top-7-bars-utrecht/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/top-7-bars-utrecht/"/>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://www.wogococktailwalk.com/blog/summer-cocktail-recipes/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/summer-cocktail-recipes/"/>
     <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/summer-cocktail-recipes/"/>
@@ -949,6 +933,22 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/rotterdam-premium-gin-walk-launch/"/>
     <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/rotterdam-premium-gin-walk-launch/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/rotterdam-premium-gin-walk-launch/"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/blog/top-7-bars-utrecht/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/top-7-bars-utrecht/"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/top-7-bars-utrecht/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/top-7-bars-utrecht/"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/nl/blog/top-7-bars-utrecht/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/top-7-bars-utrecht/"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/top-7-bars-utrecht/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/top-7-bars-utrecht/"/>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
