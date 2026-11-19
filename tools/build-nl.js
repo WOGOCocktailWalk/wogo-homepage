@@ -270,10 +270,18 @@ let PAGESET = new Set();
 /* The blog index also exists in both languages (/blog/ and /nl/blog/), but it is
    written by the Worker, so it is not in PAGES. Links to it follow the language. */
 const TWIN_EXTRA = new Set(['blog/']);
+/* A blog article that the Worker has also published in Dutch (nl/blog/<slug>/): a link
+   to it on a Dutch page goes to the Dutch article. Articles without a Dutch version
+   keep pointing at the English one. (Only used for links; not part of NL_PAGES.) */
+let NL_BLOG_TWINS = null;
+const isNlBlogTwin = (p) => {
+  if (!NL_BLOG_TWINS) NL_BLOG_TWINS = new Set(nlBlogSlugs().map((slug) => 'blog/' + slug + '/'));
+  return NL_BLOG_TWINS.has(p);
+};
 const isTwinPath = (pathname) => {
   let p = pathname.replace(/index\.html$/, '');
   if (!p.endsWith('/')) p += '/';
-  return PAGESET.has(p.slice(1)) || TWIN_EXTRA.has(p.slice(1));
+  return PAGESET.has(p.slice(1)) || TWIN_EXTRA.has(p.slice(1)) || isNlBlogTwin(p.slice(1));
 };
 const depthOf = (page) => page.split('/').filter(Boolean).length;
 /* A link written on English page `page`, as it must read on that page's Dutch twin
