@@ -579,22 +579,6 @@
   </url>
 
   <url>
-    <loc>https://www.wogococktailwalk.com/blog/best-bars-in-amsterdam/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/best-bars-in-amsterdam/"/>
-    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/best-bars-in-amsterdam/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/best-bars-in-amsterdam/"/>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://www.wogococktailwalk.com/nl/blog/best-bars-in-amsterdam/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/best-bars-in-amsterdam/"/>
-    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/best-bars-in-amsterdam/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/best-bars-in-amsterdam/"/>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://www.wogococktailwalk.com/blog/midori-spring-matcha/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -949,6 +933,22 @@
   </url>
   <url>
     <loc>https://www.wogococktailwalk.com/blog/your-spring-fling-lillet/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/blog/best-bars-in-amsterdam/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/best-bars-in-amsterdam/"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/best-bars-in-amsterdam/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/best-bars-in-amsterdam/"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/nl/blog/best-bars-in-amsterdam/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/best-bars-in-amsterdam/"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/best-bars-in-amsterdam/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/best-bars-in-amsterdam/"/>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
