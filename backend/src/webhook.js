@@ -206,7 +206,7 @@ export async function handleWebhook(request, env, deps = {}) {
   } else if (event.type === 'checkout.session.expired') {
     const session = event.data.object;
     const bookingId = session.client_reference_id;
-    if (bookingId) await database.cancelIfHold(env.DB, bookingId);
+    if (bookingId) await database.expireIfHold(env.DB, bookingId);
   }
   // anything else: ignore, still ack 200 (Stripe expects 2xx for any event type)
 

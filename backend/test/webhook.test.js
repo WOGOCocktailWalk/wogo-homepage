@@ -78,6 +78,7 @@ describe('handleWebhook — full flow with mocked db/stripe/brevo/meta', () => {
       listBarsForDate: overrides.listBarsForDate || (async () => (overrides.listBars ? overrides.listBars() : [])),
       listOverridesForDate: overrides.listOverridesForDate || (async () => []),
       cancelIfHold: overrides.cancelIfHold || (async () => true),
+      expireIfHold: overrides.expireIfHold || (async () => true),
       // migrations/0033: webhook.js's confirm flow fetches this once per
       // booking — [] (no add-ons) for every existing test here unless a
       // test explicitly overrides it.
@@ -267,10 +268,12 @@ describe('handleWebhook — full flow with mocked db/stripe/brevo/meta', () => {
     assert.ok(sent.some((s) => s.to === 'bara@example.com'), 'bar email still sent despite the guest confirmation failing');
   });
 
-  test('checkout.session.expired cancels a still-held booking', async () => {
+  test('checkout.session.expired marks a still-held booking expired (so the abandoned reminder can fire)', async () => {
     let cancelledId = null;
+    let wrongCall = false;
     const fakeDb = makeFakeDb({
-      cancelIfHold: async (_db, id) => { cancelledId = id; return true; },
+      expireIfHold: async (_db, id) => { cancelledId = id; return true; },
+      cancelIfHold: async () => { wrongCall = true; return true; },
     });
     const body = JSON.stringify({
       id: 'evt_expired', type: 'checkout.session.expired',
@@ -283,6 +286,7 @@ describe('handleWebhook — full flow with mocked db/stripe/brevo/meta', () => {
     const res = await handleWebhook(request, env, deps);
     assert.equal(res.status, 200);
     assert.equal(cancelledId, 'b_2');
+    assert.equal(wrongCall, false, 'an expired Stripe session must not be marked cancelled');
   });
 
   test('unknown event types are ignored but still ack 200', async () => {

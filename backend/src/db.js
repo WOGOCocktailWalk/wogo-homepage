@@ -549,6 +549,23 @@ export async function confirmBooking(db, bookingId, sessionId, paymentIntentId) 
   return { status: 'confirmed_conflict', booking };
 }
 
+/**
+ * Stripe closed an unpaid Checkout (checkout.session.expired). Mark the hold
+ * 'expired' — the same status the 5-minute sweep gives a timed-out hold — NOT
+ * 'cancelled'. Stripe's session (30 min) always closes before our hold
+ * (30 min + margin), so marking it 'cancelled' here meant the abandoned-
+ * checkout reminder (which looks for 'hold'/'expired') never fired, and
+ * unpaid checkouts were counted as cancellations (found 19 Nov 2026).
+ */
+export async function expireIfHold(db, bookingId) {
+  const result = await run(
+    db,
+    `UPDATE bookings SET status = 'expired', hold_expires = NULL, ip = NULL WHERE id = :id AND status = 'hold'`,
+    { id: bookingId }
+  );
+  return result.meta.changes === 1;
+}
+
 export async function cancelIfHold(db, bookingId) {
   const result = await run(
     db,
