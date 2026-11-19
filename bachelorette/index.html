@@ -49,7 +49,7 @@
      takes its Dutch from those visible answers. Organization = the light block
      every content page carries. -->
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","name":"Bachelorette Cocktail Walk · 3 bars, tables reserved for the whole group","description":"Bachelorette party idea in Amsterdam, Rotterdam, Delft or Groningen: 3 bars, 3 cocktails each, tables reserved for the whole group. From €32,95 per person for 7 to 30.","url":"https://www.wogococktailwalk.com/bachelorette/","isPartOf":{"@type":"WebSite","name":"WOGO Cocktail Walk","url":"https://www.wogococktailwalk.com/"},"about":{"@type":"Service","name":"Bachelorette Party Cocktail Walk","description":"A WOGO Cocktail Walk is a bachelorette party without a guide or a fixed programme: the group walks past three hand-picked bars, with tables reserved for everyone and a signature cocktail or mocktail for each guest at every bar. Groups of 7 to 30 pay from €32,95 per person, the walk takes 3 to 4 hours, and you can do it in Amsterdam, Rotterdam, Delft and Groningen (Utrecht has a waiting list right now).","provider":{"@type":"Organization","name":"WOGO Cocktail Walk","telephone":"+31202101168","email":"info@wogoamsterdam.com","url":"https://www.wogococktailwalk.com/"},"areaServed":["Amsterdam","Rotterdam","Delft","Groningen","Utrecht"],"offers":{"@type":"Offer","price":"32.95","priceCurrency":"EUR","eligibleQuantity":{"@type":"QuantitativeValue","minValue":6,"maxValue":30},"url":"https://www.wogococktailwalk.com/groups/"}}}
+{"@context":"https://schema.org","@type":"WebPage","name":"Bachelorette Cocktail Walk · 3 bars, tables reserved for the whole group","description":"Bachelorette party idea in Amsterdam, Rotterdam, Delft or Groningen: 3 bars, 3 cocktails each, tables reserved for the whole group. From €32,95 per person for 7 to 30.","url":"https://www.wogococktailwalk.com/bachelorette/","isPartOf":{"@type":"WebSite","name":"WOGO Cocktail Walk","url":"https://www.wogococktailwalk.com/"},"about":{"@type":"Service","name":"Bachelorette Party Cocktail Walk","description":"A WOGO Cocktail Walk is a bachelorette party without a guide or a fixed programme: the group walks past three hand-picked bars, with tables reserved for everyone and a signature cocktail or mocktail for each guest at every bar. Groups of 7 to 30 pay from €32,95 per person, the walk takes 3 to 4 hours, and you can do it in Amsterdam, Rotterdam, Delft and Groningen (Utrecht has a waiting list right now).","provider":{"@type":"Organization","@id":"https://www.wogococktailwalk.com/#organization","name":"WOGO Cocktail Walk","telephone":"+31202101168","email":"info@wogoamsterdam.com","url":"https://www.wogococktailwalk.com/"},"areaServed":["Amsterdam","Rotterdam","Delft","Groningen","Utrecht"],"offers":{"@type":"Offer","price":"32.95","priceCurrency":"EUR","eligibleQuantity":{"@type":"QuantitativeValue","minValue":7,"maxValue":30},"url":"https://www.wogococktailwalk.com/groups/"}}}
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
@@ -63,7 +63,7 @@
 ]}
 </script>
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Organization","name":"WOGO Cocktail Walk","url":"https://www.wogococktailwalk.com/","logo":"https://www.wogococktailwalk.com/wogo-logo.png","email":"info@wogoamsterdam.com","telephone":"+31202101168","address":{"@type":"PostalAddress","addressLocality":"Amsterdam","addressCountry":"NL"},"sameAs":["https://www.instagram.com/wogococktailwalk/","https://www.tiktok.com/@wogococktailwalk","https://www.facebook.com/wogoamsterdam/"]}
+{"@context":"https://schema.org","@type":"Organization","@id":"https://www.wogococktailwalk.com/#organization","name":"WOGO Cocktail Walk","url":"https://www.wogococktailwalk.com/","logo":"https://www.wogococktailwalk.com/wogo-logo.png","email":"info@wogoamsterdam.com","telephone":"+31202101168","address":{"@type":"PostalAddress","addressLocality":"Amsterdam","addressCountry":"NL"},"sameAs":["https://www.instagram.com/wogococktailwalk/","https://www.tiktok.com/@wogococktailwalk","https://www.facebook.com/wogoamsterdam/"]}
 </script>
 <!-- Anti-flicker for Dutch visitors: the page is authored in English and translated by
      the script at the foot of the body, so briefly hide the body ONLY when Dutch is about
@@ -607,6 +607,8 @@
 </style>
 </head>
 <body>
+<!-- Cloudflare: keep the contact email readable in the page source (no "[email protected]"). This pair switches its email scrambling off from here to the closing mark at the very end of the page. Keep both marks exactly as written. -->
+<!--email_off-->
 <a class="w-skip" href="#wMain">Skip to content</a>
 
 <script>document.documentElement.classList.add('wg-js');</script>
@@ -710,7 +712,7 @@
     <span class="w-chip"><span class="w-chip-ico" aria-hidden="true">🍹</span><span data-i18n="chip_mock">Mocktail at every bar</span></span>
     <span class="w-chip"><span class="w-chip-ico" aria-hidden="true">🪪</span><span data-i18n="chip_age">18+</span></span>
   </div>
-  <p class="w-occ-trust" data-i18n="rev_trust">★ 4.4 on Google · Trustpilot 4.2 / 5</p>
+  <p class="w-occ-trust" data-i18n="rev_trust">★ 4.4 on Google · 4.2 on Trustpilot</p>
 </section>
 
 <!-- ============================================================
@@ -860,6 +862,9 @@
     <details><summary data-i18n="fq7">Does everyone have to be 18?</summary><div class="w-faq-body" data-i18n="fa7">Yes. Dutch law requires all guests to be 18 or older to drink alcohol, so bring ID just in case. Under-18s are welcome on the mocktail version when accompanied by an adult; contact us to arrange it.</div></details>
   </div>
   <p class="w-occ-more"><a href="../faq/" class="w-navlink" data-i18n="faq_more">Everything else: see the full FAQ →</a></p>
+  <!-- RELATED-LINKS:start -->
+  <p class="w-occ-more" style="margin-top:10px;"><span data-i18n="rel_read">From the journal:</span> <a href="../blog/what-is-a-self-guided-cocktail-walk/" class="w-navlink" data-i18n="rel_b_what">What is a self-guided cocktail walk?</a> · <a href="../blog/espresso-martini-recipe/" class="w-navlink" data-i18n="rel_b_esp">Espresso martini recipe</a></p>
+  <!-- RELATED-LINKS:end -->
 </section>
 
 <!-- ============================================================
@@ -963,8 +968,8 @@
         <!-- Column 1: Routes -->
         <nav class="w-footer-col" aria-label="Routes">
           <h3 data-i18n="foot_c1_h">Routes</h3>
-          <!-- Populated from WOGO_ROUTES (see JS): city sub-headings + every route page -->
-          <div class="w-footer-routes" id="wFooterRoutes"></div>
+          <!-- The links below are also rebuilt from WOGO_ROUTES by the script (see JS). They are written out here too, so the route pages are linked for readers without JavaScript. When a route is added or removed, change BOTH this list and WOGO_ROUTES, on every page. -->
+          <div class="w-footer-routes" id="wFooterRoutes"><a href="../rotterdam/route-1/" class="w-navlink">Rotterdam Route 1</a><a href="../rotterdam/route-2/" class="w-navlink">Rotterdam Route 2</a><a href="../rotterdam/route-3-premium/" class="w-navlink">Rotterdam Premium</a><a href="../delft/" class="w-navlink">Delft</a><a href="../groningen/" class="w-navlink">Groningen</a><a href="../amsterdam/" class="w-navlink">Amsterdam</a><a href="../utrecht/" class="w-navlink">Utrecht</a></div>
         </nav>
         <!-- Column 2: Discover -->
         <nav class="w-footer-col" aria-label="Discover">
@@ -986,7 +991,7 @@
     </div>
 
     <!-- Trust / badge line -->
-    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.2 / 5<span class="w-sep-m"> · </span><br class="w-br-m">100,000+ guests · 18+</div>
+    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · 4.2 on Trustpilot<span class="w-sep-m"> · </span><br class="w-br-m">100,000+ guests · 18+</div>
 
     <!-- Socials -->
     <div class="w-footer-socials" role="group" aria-label="WOGO on social media">
@@ -1240,6 +1245,11 @@
      Keys shared with the homepage (nav_*, foot_*, gift_*, chs_*,
      explore, trust items) keep the homepage's exact NL text. ===== */
   var NL = {
+    /* related-links:start */
+    rel_read: "Uit het journal:",
+    rel_b_what: "Wat is een zelfgeleide cocktail walk?",
+    rel_b_esp: "Espresso martini recept",
+    /* related-links:end */
     /* --- page content, in page order --- */
     hero_eyebrow: "Vrijgezellenfeest",
     hero_price: "Vanaf €32,95 per persoon · groepen van 7 tot 30",
@@ -1255,7 +1265,7 @@
     chip_tables: "Tafels voor de hele groep",
     chip_mock: "Mocktail bij elke bar",
     chip_age: "18+",
-    rev_trust: "★ 4,4 op Google · Trustpilot 4,2 / 5",
+    rev_trust: "★ 4,4 op Google · 4,2 op Trustpilot",
     why_eyebrow: "Waarom het werkt voor een vrijgezellenfeest",
     why_h2: "Eén plan voor de hele groep",
     why_1: "Wij reserveren tafels voor de hele groep bij drie zorgvuldig gekozen bars. Niemand hoeft rond te bellen.",
@@ -1341,7 +1351,7 @@
     foot_bars: "Voor bars",
     foot_contact_link: "Contact",
     foot_hours: "Maandag – vrijdag<br>10:00 – 18:00",
-    foot_trust: "★ 4,4 op Google · Trustpilot 4,2 / 5<span class=\"w-sep-m\"> · </span><br class=\"w-br-m\">100.000+ gasten · 18+",
+    foot_trust: "★ 4,4 op Google · 4,2 op Trustpilot<span class=\"w-sep-m\"> · </span><br class=\"w-br-m\">100.000+ gasten · 18+",
     /* legal-link keys pre-stubbed: uncomment the footer legal links (see the
        bottom legal bar comment) when the privacy/cookie/terms pages ship */
     foot_privacy: "Privacybeleid", foot_cookie: "Cookiebeleid", foot_terms: "Algemene voorwaarden",
@@ -2362,6 +2372,7 @@
 @media (prefers-reduced-motion:reduce){.w-wa,.w-wa:hover{transition:none;transform:none;}}
 </style>
 <!-- ===== /WOGO WHATSAPP FLOAT ===== -->
+<!--/email_off-->
 <!-- i18n-switch:start (made by tools/build-nl.js; do not edit) -->
 <style>.w-lang-menu li{list-style:none;margin:0;padding:0}.w-lang-menu a.w-lang-opt{color:var(--wogo-ink);text-decoration:none}</style>
 <script>

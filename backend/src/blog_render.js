@@ -40,6 +40,8 @@ const CATEGORY_NL = {
  * that has no cover image uploaded yet — so a draft/preview never shows a
  * broken <img>. Absolute (see module doc comment on why every blog image
  * reference, cover or in-body, is an absolute URL rather than relative). */
+// The one company entity every page's structured data points at (same @id as the site pages).
+const ORG_ID = `${BLOG_CANONICAL_BASE}/#organization`;
 const FALLBACK_COVER_PATH = 'how-it-works/how-it-works-hero.jpg';
 
 /** JSON for a <script type="application/ld+json"> block. Plain JSON.stringify
@@ -169,9 +171,10 @@ export function renderPostPage(template, post, opts = {}) {
     image: coverAbsUrl,
     datePublished,
     dateModified,
-    author: { '@type': 'Organization', name: 'WOGO' },
+    author: { '@type': 'Organization', '@id': ORG_ID, name: 'WOGO Cocktail Walk' },
     publisher: {
       '@type': 'Organization',
+      '@id': ORG_ID,
       name: 'WOGO Cocktail Walk',
       logo: { '@type': 'ImageObject', url: `${BLOG_CANONICAL_BASE}/wogo-logo.png` },
     },
@@ -236,9 +239,10 @@ export function renderPostPageNl(template, post, opts = {}) {
     image: coverAbsUrl,
     datePublished,
     dateModified,
-    author: { '@type': 'Organization', name: 'WOGO' },
+    author: { '@type': 'Organization', '@id': ORG_ID, name: 'WOGO Cocktail Walk' },
     publisher: {
       '@type': 'Organization',
+      '@id': ORG_ID,
       name: 'WOGO Cocktail Walk',
       logo: { '@type': 'ImageObject', url: `${BLOG_CANONICAL_BASE}/wogo-logo.png` },
     },
@@ -303,7 +307,7 @@ const INDEX_TEXT = {
     ogTitle: 'The WOGO Journal · cocktail culture & city guides',
     ogDescription: 'City guides, cocktail culture and the stories behind every WOGO route.',
     ldName: 'The WOGO Journal',
-    ldDescription: "Cocktail culture, city guides and stories from WOGO's self-guided cocktail walks in Amsterdam, Rotterdam, Utrecht and Groningen.",
+    ldDescription: "Cocktail culture, city guides and stories from WOGO's self-guided cocktail walks in Amsterdam, Rotterdam, Delft, Groningen and Utrecht.",
   },
   nl: {
     title: 'Het WOGO Journal · cocktailcultuur & stadsgidsen',
@@ -311,7 +315,7 @@ const INDEX_TEXT = {
     ogTitle: 'Het WOGO Journal · cocktailcultuur & stadsgidsen',
     ogDescription: 'Stadsgidsen, cocktailcultuur en de verhalen achter elke WOGO-route.',
     ldName: 'Het WOGO Journal',
-    ldDescription: 'Cocktailcultuur, stadsgidsen en verhalen over de zelfgeleide cocktailwandelingen van WOGO in Amsterdam, Rotterdam, Utrecht en Groningen.',
+    ldDescription: 'Cocktailcultuur, stadsgidsen en verhalen over de zelfgeleide cocktail walks van WOGO in Amsterdam, Rotterdam, Delft, Groningen en Utrecht.',
   },
 };
 
@@ -324,7 +328,7 @@ function indexJsonLd(posts, lang) {
     name: t.ldName,
     url: lang === 'nl' ? `${BLOG_CANONICAL_BASE}/nl/blog/` : `${BLOG_CANONICAL_BASE}/blog/`,
     description: t.ldDescription,
-    publisher: { '@type': 'Organization', name: 'WOGO Cocktail Walk', logo: `${BLOG_CANONICAL_BASE}/wogo-logo.png` },
+    publisher: { '@type': 'Organization', '@id': ORG_ID, name: 'WOGO Cocktail Walk', logo: `${BLOG_CANONICAL_BASE}/wogo-logo.png` },
     blogPost: posts.map((p) => ({
       '@type': 'BlogPosting',
       inLanguage: lang,
