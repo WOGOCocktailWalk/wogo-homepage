@@ -43,7 +43,7 @@
 <meta name="twitter:image" content="https://www.wogococktailwalk.com/rotterdam/route-2/hidden-gems-hero.jpg">
 <!-- Structured data: BlogPosting + BreadcrumbList (Home > Blog > this post). -->
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","inLanguage":"en","headline":"The Best Cocktail Bars in Rotterdam: A Local's Guide","description":"Where Rotterdam actually drinks — the best neighbourhoods and cocktail spots, and the easiest way to taste three of them in one night.","image":"https://www.wogococktailwalk.com/rotterdam/route-2/hidden-gems-hero.jpg","datePublished":"2026-07-09","dateModified":"2026-11-18","author":{"@type":"Organization","name":"WOGO"},"publisher":{"@type":"Organization","name":"WOGO Cocktail Walk","logo":{"@type":"ImageObject","url":"https://www.wogococktailwalk.com/wogo-logo.png"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://www.wogococktailwalk.com/blog/best-cocktail-bars-in-rotterdam/"}}
+{"@context":"https://schema.org","@type":"BlogPosting","inLanguage":"en","headline":"The Best Cocktail Bars in Rotterdam: A Local's Guide","description":"Where Rotterdam actually drinks — the best neighbourhoods and cocktail spots, and the easiest way to taste three of them in one night.","image":"https://www.wogococktailwalk.com/rotterdam/route-2/hidden-gems-hero.jpg","datePublished":"2026-07-09","dateModified":"2026-11-18","author":{"@type":"Organization","@id":"https://www.wogococktailwalk.com/#organization","name":"WOGO Cocktail Walk"},"publisher":{"@type":"Organization","@id":"https://www.wogococktailwalk.com/#organization","name":"WOGO Cocktail Walk","logo":{"@type":"ImageObject","url":"https://www.wogococktailwalk.com/wogo-logo.png"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://www.wogococktailwalk.com/blog/best-cocktail-bars-in-rotterdam/"}}
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.wogococktailwalk.com/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://www.wogococktailwalk.com/blog/"},{"@type":"ListItem","position":3,"name":"The Best Cocktail Bars in Rotterdam: A Local's Guide","item":"https://www.wogococktailwalk.com/blog/best-cocktail-bars-in-rotterdam/"}]}
@@ -167,6 +167,10 @@
     white-space:nowrap;
     box-shadow:var(--wogo-cta-shadow); transition:transform .2s, background .2s; }
   .bl-cta-btn:hover { background:var(--wogo-cta-bg-hover); transform:translateY(-2px); }
+  /* Links under the article to the city pages and the occasion pages (plain text links). */
+  .bl-more-links { max-width:720px; margin:22px auto 0; font-size:13px; line-height:1.9; font-weight:600; color:var(--wogo-brown); text-align:left; }
+  .bl-more-links p { margin:0 0 6px; }
+  .bl-more-links a { color:var(--wogo-brown); font-weight:800; text-decoration:underline; text-underline-offset:3px; white-space:nowrap; }
   .bl-back { display:block; max-width:720px; margin:26px auto 0; font-size:13px; font-weight:800; color:var(--wogo-brown); text-align:left; }
 
   .w-group-wrap { max-width: 920px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; }
@@ -357,6 +361,8 @@
 </style>
 </head>
 <body>
+<!-- Cloudflare: keep the contact email readable in the page source (no "[email protected]"). This pair switches its email scrambling off from here to the closing mark at the very end of the page. Keep both marks exactly as written. -->
+<!--email_off-->
 <a class="w-skip" href="#wMain">Skip to content</a>
 
 <script>document.documentElement.classList.add('wg-js');</script>
@@ -480,6 +486,13 @@
     <a href="../../#cities" class="bl-cta-btn" data-i18n="post_cta_btn">Book your walk</a>
   </div>
 
+  <!-- Plain links from every article to the five city pages and to the pages people
+       look for next. Same facts as the rest of the site: Utrecht has a waiting list. -->
+  <div class="bl-more-links">
+    <p><span data-i18n="post_links_city">Find your city:</span> <a href="../../rotterdam/" data-i18n="post_l_rot">Cocktail walk Rotterdam</a> · <a href="../../delft/" data-i18n="post_l_del">Cocktail walk Delft</a> · <a href="../../groningen/" data-i18n="post_l_gro">Cocktail walk Groningen</a> · <a href="../../amsterdam/" data-i18n="post_l_ams">Cocktail walk Amsterdam</a> · <a href="../../utrecht/" data-i18n="post_l_utr">Cocktail walk Utrecht (waiting list)</a></p>
+    <p><span data-i18n="post_links_more">Planning something?</span> <a href="../../how-it-works/" data-i18n="post_l_how">How a cocktail walk works</a> · <a href="../../date-night/" data-i18n="post_l_date">Date night</a> · <a href="../../bachelorette/" data-i18n="post_l_bach">Bachelorette party</a> · <a href="../../birthday/" data-i18n="post_l_bday">Birthday</a> · <a href="../../company-outing/" data-i18n="post_l_comp">Company outing</a> · <a href="../../faq/" data-i18n="post_l_faq">Frequently asked questions</a></p>
+  </div>
+
   <a href="../" class="bl-back wg-reveal" data-i18n="post_back">← Back to the journal</a>
 </section>
 
@@ -592,8 +605,8 @@
         <!-- Column 1: Routes -->
         <nav class="w-footer-col" aria-label="Routes">
           <h3 data-i18n="foot_c1_h">Routes</h3>
-          <!-- Populated from WOGO_ROUTES (see JS): city sub-headings + every route page -->
-          <div class="w-footer-routes" id="wFooterRoutes"></div>
+          <!-- The links below are also rebuilt from WOGO_ROUTES by the script (see JS). They are written out here too, so the route pages are linked for readers without JavaScript. When a route is added or removed, change BOTH this list and WOGO_ROUTES, on every page. -->
+          <div class="w-footer-routes" id="wFooterRoutes"><a href="../../rotterdam/route-1/" class="w-navlink">Rotterdam Route 1</a><a href="../../rotterdam/route-2/" class="w-navlink">Rotterdam Route 2</a><a href="../../rotterdam/route-3-premium/" class="w-navlink">Rotterdam Premium</a><a href="../../delft/" class="w-navlink">Delft</a><a href="../../groningen/" class="w-navlink">Groningen</a><a href="../../amsterdam/" class="w-navlink">Amsterdam</a><a href="../../utrecht/" class="w-navlink">Utrecht</a></div>
         </nav>
         <!-- Column 2: Discover -->
         <nav class="w-footer-col" aria-label="Discover">
@@ -615,7 +628,7 @@
     </div>
 
     <!-- Trust / badge line -->
-    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · Trustpilot 4.2 / 5<span class="w-sep-m"> · </span><br class="w-br-m">100,000+ guests · 18+</div>
+    <div class="w-footer-trust" data-i18n="foot_trust">★ 4.4 on Google · 4.2 on Trustpilot<span class="w-sep-m"> · </span><br class="w-br-m">100,000+ guests · 18+</div>
 
     <!-- Socials -->
     <div class="w-footer-socials" role="group" aria-label="WOGO on social media">
@@ -870,6 +883,10 @@
     post_cta_p: "Ervaar het zelf: vind de cocktailwandeling in jouw stad, vanaf €29,95.",
     post_cta_btn: "Boek je walk",
     post_back: "← Terug naar het journal",
+    post_links_city: "Kies je stad:",
+    post_l_rot: "Cocktail walk Rotterdam", post_l_del: "Cocktail walk Delft", post_l_gro: "Cocktail walk Groningen", post_l_ams: "Cocktail walk Amsterdam", post_l_utr: "Cocktail walk Utrecht (wachtlijst)",
+    post_links_more: "Iets te plannen?",
+    post_l_how: "Hoe een cocktail walk werkt", post_l_date: "Date night", post_l_bach: "Vrijgezellenfeest", post_l_bday: "Verjaardag", post_l_comp: "Bedrijfsuitje", post_l_faq: "Veelgestelde vragen",
     group_eyebrow: "Voor groepen", group_h2: "Vrijgezellenfeesten, <br class=\"w-br-m\">verjaardagen &amp; teamuitjes",
     group_p: "Wij regelen de bars, de tijden en de tafels. Jullie nemen het gezelschap mee. Groepen van 7 tot 30, gepersonaliseerde routes mogelijk.",
     group_btn: "Plan jullie groepswandeling →",
@@ -885,7 +902,7 @@
     foot_bars: "Voor bars",
     foot_contact_link: "Contact",
     foot_hours: "Maandag – vrijdag<br>10:00 – 18:00",
-    foot_trust: "★ 4.4 op Google · Trustpilot 4,2 / 5<span class=\"w-sep-m\"> · </span><br class=\"w-br-m\">100.000+ gasten · 18+",
+    foot_trust: "★ 4,4 op Google · 4,2 op Trustpilot<span class=\"w-sep-m\"> · </span><br class=\"w-br-m\">100.000+ gasten · 18+",
     foot_privacy: "Privacybeleid", foot_cookie: "Cookiebeleid", foot_terms: "Algemene voorwaarden",
     foot_disclaimer: "Disclaimer", foot_accessibility: "Toegankelijkheid", foot_complaints: "Klachten", foot_cookie_settings: "Cookie-instellingen",
     foot_copyright: "© 2026 WOGO Amsterdam B.V. · KvK 92237347 · BTW NL865949323B01 · Amsterdam"
@@ -1865,6 +1882,7 @@
   } catch (e) {}
 })();
 </script>
+<!--/email_off-->
 <!-- i18n-switch:start (made by tools/build-nl.js; do not edit) -->
 <style>.w-lang-menu li{list-style:none;margin:0;padding:0}.w-lang-menu a.w-lang-opt{color:var(--wogo-ink);text-decoration:none}</style>
 <script>
