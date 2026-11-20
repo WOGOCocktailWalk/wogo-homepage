@@ -60,11 +60,6 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.wogococktailwalk.com/"},{"@type":"ListItem","position":2,"name":"Rotterdam","item":"https://www.wogococktailwalk.com/rotterdam/"}]}
 </script>
-<!-- CITY-GUIDE-FAQ:start — this city's own questions only; word-for-word the visible answers in the city guide below -->
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Which Rotterdam cocktail walk should I choose?","acceptedAnswer":{"@type":"Answer","text":"Route 1 visits local favourites and starts in the Witte de Withstraat. Route 2 is the most-booked route and goes to three brand-new bars. Rotterdam Premium goes to three high-end bars with a Bobby's Gin cocktail at each, including a skybar with a view of the Erasmus Bridge."}},{"@type":"Question","name":"On which days can I do a cocktail walk in Rotterdam?","acceptedAnswer":{"@type":"Answer","text":"Rotterdam Premium runs from Tuesday to Saturday. Route 1 and Route 2 run from Thursday to Saturday. You pick your date and start time in the booking calendar."}},{"@type":"Question","name":"What time does a cocktail walk in Rotterdam start?","acceptedAnswer":{"@type":"Answer","text":"Route 1 starts at 5pm. Route 2 starts between 6pm and 8.30pm and Rotterdam Premium between 5pm and 8.30pm. Only the start time at the first bar is fixed."}},{"@type":"Question","name":"What does a cocktail walk in Rotterdam cost?","acceptedAnswer":{"@type":"Answer","text":"€29,95 per person for Route 1 and Route 2 and €34,95 per person for Rotterdam Premium. Each ticket covers a reserved table and one cocktail or mocktail at each of the three bars."}}]}
-</script>
-<!-- CITY-GUIDE-FAQ:end -->
 <!-- Static hero (no video on city hubs): preload the self-hosted photo so it paints fast. -->
 <link rel="preload" as="image" fetchpriority="high" href="rotterdam-hero.jpg">
 <!-- Anti-flicker for Dutch visitors: the page is authored in English and translated by
@@ -533,124 +528,6 @@
   <div class="w-pad" style="text-align:center;margin-top:18px;"><span data-i18n="route_reassure" style="display:inline-block;font-size:12.5px;font-weight:700;color:#3f2b21;letter-spacing:0.01em;">✓ Reservations &amp; route map included<span class="w-sep-m">&nbsp;·&nbsp;</span><br class="w-br-m">✓ Mocktail option on every route<span class="w-sep-m">&nbsp;·&nbsp;</span><br class="w-br-m">✓ Questions? <a class="w-mail" href="mailto:info@wogoamsterdam.com">Write us</a></span></div>
 </section>
 
-<!-- CITY-GUIDE:start ============================================
-     CITY GUIDE — three short sections UNDER the booking block, so the way to
-     booking stays as it was: the walk in short + who it suits + practical
-     details, this city's own questions, and links to read on.
-     RULES: every fact here is copied from the route pages, /faq/, /how-it-works/
-     and the occasion pages; when one of those changes, change it here too.
-     Bars are not named. Never promise cancellation or free rescheduling.
-     The questions are this city's own (not repeated on /faq/ or other pages,
-     the same rule the occasion pages follow); keep the visible answers and the
-     FAQPage structured data in <head> word-for-word the same.
-     After any edit: node tools/build-nl.js
-     ================================================================== -->
-<style>
-  /* CITY GUIDE block: the same rules on all five city pages. Change one, change all five. */
-  .w-cg-answer { max-width: 760px; margin: 0 auto 28px; font-size: clamp(16px, 1.7vw, 19px); line-height: 1.6; font-weight: 600; color: #201611; text-align: center; }
-  .w-cg-cols { max-width: 1040px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
-  .w-cg-card { background: #ffe5d9; border-radius: 14px; padding: 24px 26px; }
-  .w-cg-card h3 { font-size: 17px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; color: #201611; margin: 0 0 14px; }
-  .w-cg-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px; }
-  .w-cg-list li { position: relative; padding-left: 30px; font-size: 14.5px; line-height: 1.55; font-weight: 500; color: #3f2b21; }
-  .w-cg-list li::before { content: "✓"; position: absolute; left: 0; top: 1px; width: 20px; height: 20px; border-radius: 50%; background: #3f2b21; color: #ffe5d9; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
-  .w-cg a { color: #643e2b; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
-  .w-cg a:hover { color: #201611; }
-  .w-cg-faq { max-width: 740px; margin: 0 auto; }
-  .w-cg-faq details { border-bottom: 1px solid rgba(63,43,33,0.15); }
-  .w-cg-faq summary { padding: 16px 0; font-size: 15px; font-weight: 800; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; color: #201611; }
-  .w-cg-faq summary::-webkit-details-marker { display: none; }
-  .w-cg-faq summary::after { content: "+"; font-size: 24px; font-weight: 400; color: #643e2b; line-height: 1; flex-shrink: 0; transition: transform 0.3s; }
-  .w-cg-faq details[open] summary::after { transform: rotate(45deg); }
-  .w-cg-faq-body { padding: 0 0 18px; font-size: 14px; line-height: 1.65; font-weight: 500; color: #3f2b21; }
-  .w-cg-more { text-align: center; margin: 26px auto 0; max-width: 740px; font-size: 13.5px; font-weight: 700; color: #643e2b; line-height: 1.6; }
-  .w-cg-read { list-style: none; max-width: 740px; margin: 0 auto 28px; padding: 0; display: flex; flex-direction: column; gap: 10px; text-align: center; }
-  .w-cg-read li { font-size: 14.5px; line-height: 1.5; }
-  .w-cg-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 780px; margin: 0 auto; }
-  .w-cg a.w-cg-chip { display: inline-flex; align-items: center; gap: 8px; background: #fffaf6; border: 1.5px solid rgba(63,43,33,0.16); color: #643e2b; font-size: 13.5px; font-weight: 700; padding: 11px 18px; border-radius: 999px; text-decoration: none; }
-  .w-cg a.w-cg-chip:hover { border-color: #f2905c; color: #201611; }
-  #city-guide, #city-faq, #city-more { scroll-margin-top: 76px; }
-  @media (max-width: 720px) {
-    .w-cg-answer { text-align: left; margin-bottom: 20px; }
-    .w-cg-card { padding: 20px 18px; }
-    .w-cg-list li { font-size: 14px; }
-    .w-cg-faq summary { padding: 14px 0; font-size: 14.5px; min-height: 52px; }
-    .w-cg-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .w-cg a.w-cg-chip { font-size: 12px; padding: 10px 10px; justify-content: center; line-height: 1.3; }
-  }
-</style>
-<section class="w-section alt w-pad w-cg" id="city-guide">
-  <div class="w-head">
-    <div class="w-eyebrow" data-i18n="cg_eyebrow">In short</div>
-    <h2 data-i18n="cg_h2">The Rotterdam cocktail walk in short</h2>
-  </div>
-  <p class="w-cg-answer" data-i18n="cg_answer">A cocktail walk in Rotterdam is a self-guided evening past three hand-picked bars, with a reserved table and one cocktail or mocktail at each bar and a digital route map. Rotterdam has three routes: Route 1 and Route 2 cost €29,95 per person and run from Thursday to Saturday, Rotterdam Premium costs €34,95 per person and runs from Tuesday to Saturday. Most guests take 3 to 4 hours.</p>
-  <div class="w-cg-cols">
-    <div class="w-cg-card">
-      <h3 data-i18n="cg_rt_h">Which route</h3>
-      <ul class="w-cg-list">
-        <li data-i18n="cg_rt_1"><a href="route-1/" class="w-navlink">Rotterdam Route 1</a>: local favourites. It starts in the Witte de Withstraat at 5pm, and the map has questions and games for along the way.</li>
-        <li data-i18n="cg_rt_2"><a href="route-2/" class="w-navlink">Rotterdam Route 2</a>: hidden gems, and our most-booked route. Three brand-new bars in the city centre, from playful to refined. Start between 6pm and 8.30pm.</li>
-        <li data-i18n="cg_rt_3"><a href="route-3-premium/" class="w-navlink">Rotterdam Premium</a>: three high-end bars with a Bobby's Gin cocktail at each, including a skybar with a view of the Erasmus Bridge. Start between 5pm and 8.30pm, €34,95 per person.</li>
-      </ul>
-    </div>
-    <div class="w-cg-card">
-      <h3 data-i18n="cg_who_h">Who it suits</h3>
-      <ul class="w-cg-list">
-        <li data-i18n="cg_who_1">A <a href="../date-night/" class="w-navlink">date night</a>. With three routes there is one for a second date too, and Premium is the one for a special occasion.</li>
-        <li data-i18n="cg_who_2">A <a href="../birthday/" class="w-navlink">birthday</a> or an evening out with friends. Up to 6 people book online straight away.</li>
-        <li data-i18n="cg_who_3">A <a href="../bachelorette/" class="w-navlink">bachelorette party</a> or <a href="../company-outing/" class="w-navlink">company outing</a>. For 7 to 30 people you send a <a href="../groups/#enquire" class="w-navlink w-enquire">group request</a>, from €32,95 per person.</li>
-        <li data-i18n="cg_who_4">Anyone who doesn't drink alcohol. On every route, each bar has a mocktail on the WOGO menu.</li>
-      </ul>
-    </div>
-    <div class="w-cg-card">
-      <h3 data-i18n="cg_pr_h">Practical details</h3>
-      <ul class="w-cg-list">
-        <li data-i18n="cg_pr_1">Days: Route 1 and Route 2 from Thursday to Saturday, Rotterdam Premium from Tuesday to Saturday.</li>
-        <li data-i18n="cg_pr_2">Where: Route 1 and Route 2 are in the city centre. Premium starts near the Erasmus Bridge and finishes in the city centre.</li>
-        <li data-i18n="cg_pr_3">Duration: 3 to 4 hours. The bars are a 5 to 15 minute walk apart, and only the start time at the first bar is fixed.</li>
-        <li data-i18n="cg_pr_4">Price: €29,95 per person for Route 1 and Route 2, €34,95 per person for Rotterdam Premium.</li>
-        <li data-i18n="cg_pr_5">The bars stay a surprise until you book. They are in the route map you receive by email right after booking.</li>
-        <li data-i18n="cg_pr_6">18+ to drink alcohol. Food is not included; almost all stops serve snacks you can order at the bar.</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<section class="w-section peach w-pad w-cg" id="city-faq">
-  <div class="w-head">
-    <h2 data-i18n="cg_faq_h2">Questions about the Rotterdam cocktail walk</h2>
-  </div>
-  <div class="w-cg-faq">
-    <details><summary data-i18n="cg_q1">Which Rotterdam cocktail walk should I choose?</summary><div class="w-cg-faq-body" data-i18n="cg_a1">Route 1 visits local favourites and starts in the Witte de Withstraat. Route 2 is the most-booked route and goes to three brand-new bars. Rotterdam Premium goes to three high-end bars with a Bobby's Gin cocktail at each, including a skybar with a view of the Erasmus Bridge.</div></details>
-    <details><summary data-i18n="cg_q2">On which days can I do a cocktail walk in Rotterdam?</summary><div class="w-cg-faq-body" data-i18n="cg_a2">Rotterdam Premium runs from Tuesday to Saturday. Route 1 and Route 2 run from Thursday to Saturday. You pick your date and start time in the booking calendar.</div></details>
-    <details><summary data-i18n="cg_q3">What time does a cocktail walk in Rotterdam start?</summary><div class="w-cg-faq-body" data-i18n="cg_a3">Route 1 starts at 5pm. Route 2 starts between 6pm and 8.30pm and Rotterdam Premium between 5pm and 8.30pm. Only the start time at the first bar is fixed.</div></details>
-    <details><summary data-i18n="cg_q4">What does a cocktail walk in Rotterdam cost?</summary><div class="w-cg-faq-body" data-i18n="cg_a4">€29,95 per person for Route 1 and Route 2 and €34,95 per person for Rotterdam Premium. Each ticket covers a reserved table and one cocktail or mocktail at each of the three bars.</div></details>
-  </div>
-  <p class="w-cg-more" data-i18n="cg_faq_more">Everything else: <a href="../faq/" class="w-navlink">see the full FAQ</a> or read <a href="../how-it-works/" class="w-navlink">how a cocktail walk works</a>, step by step.</p>
-</section>
-
-<section class="w-section alt w-pad w-cg" id="city-more">
-  <div class="w-head">
-    <div class="w-eyebrow" data-i18n="cg_more_eyebrow">Read on</div>
-    <h2 data-i18n="cg_more_h2">Planning a night out in Rotterdam?</h2>
-    <p data-i18n="cg_more_p">Looking for something to do in Rotterdam with friends, a date or colleagues? These pages help you plan.</p>
-  </div>
-  <ul class="w-cg-read">
-    <li><a href="../blog/best-cocktail-bars-in-rotterdam/" class="w-navlink" data-i18n="cg_read_1">The best cocktail bars in Rotterdam: a local's guide</a></li>
-    <li><a href="../blog/new-bars-rotterdam-night-out/" class="w-navlink" data-i18n="cg_read_2">New bars in Rotterdam to add to your night out</a></li>
-    <li><a href="../blog/rotterdam-premium-gin-walk-launch/" class="w-navlink" data-i18n="cg_read_3">Rotterdam's Premium cocktail walk with Bobby's Gin</a></li>
-  </ul>
-  <div class="w-cg-chips">
-    <a class="w-cg-chip w-navlink" href="../date-night/"><span aria-hidden="true">🥂</span><span data-i18n="cg_occ_date">Date night</span></a>
-    <a class="w-cg-chip w-navlink" href="../bachelorette/"><span aria-hidden="true">👰</span><span data-i18n="cg_occ_bach">Bachelorette party</span></a>
-    <a class="w-cg-chip w-navlink" href="../birthday/"><span aria-hidden="true">🎂</span><span data-i18n="cg_occ_bday">Birthday</span></a>
-    <a class="w-cg-chip w-navlink" href="../company-outing/"><span aria-hidden="true">💼</span><span data-i18n="cg_occ_comp">Company outing</span></a>
-    <a class="w-cg-chip w-navlink" href="../groups/"><span aria-hidden="true">🍸</span><span data-i18n="cg_occ_groups">Group bookings</span></a>
-    <a class="w-cg-chip w-navlink" href="../gift-cards/"><span aria-hidden="true">🎁</span><span data-i18n="cg_occ_gift">Gift cards</span></a>
-  </div>
-</section>
-<!-- CITY-GUIDE:end -->
 
 <!-- ============================================================
      SECTION: FAQ LINK — V7 CLEAN: one line only, no accordion here;
@@ -1006,49 +883,6 @@
      Keys shared with the homepage (nav_*, foot_*) keep the homepage's
      exact NL text. ===== */
   var NL = {
-    /* city-guide:start (the CITY GUIDE block under the booking section) */
-    cg_eyebrow: "In het kort",
-    cg_h2: "De cocktail walk in Rotterdam in het kort",
-    cg_answer: "Bij een cocktail walk in Rotterdam loop je zonder gids langs drie zorgvuldig gekozen bars, met in elke bar een gereserveerde tafel en één cocktail of mocktail, en een digitale routekaart. Rotterdam heeft drie routes: Route 1 en Route 2 kosten €29,95 per persoon en kun je van donderdag tot en met zaterdag boeken, Rotterdam Premium kost €34,95 per persoon en kan van dinsdag tot en met zaterdag. De meeste gasten doen er 3 tot 4 uur over.",
-    cg_rt_h: "Welke route",
-    cg_rt_1: "<a href=\"route-1/\" class=\"w-navlink\">Rotterdam Route 1</a>: lokale favorieten. De route start om 17.00 uur in de Witte de Withstraat, en op de kaart staan vragen en spelletjes voor onderweg.",
-    cg_rt_2: "<a href=\"route-2/\" class=\"w-navlink\">Rotterdam Route 2</a>: verborgen parels, en onze meest geboekte route. Drie gloednieuwe bars in het centrum, van speels tot verfijnd. Start tussen 18.00 en 20.30 uur.",
-    cg_rt_3: "<a href=\"route-3-premium/\" class=\"w-navlink\">Rotterdam Premium</a>: drie high-end bars met in elke bar een cocktail met Bobby's Gin, waaronder een skybar met uitzicht op de Erasmusbrug. Start tussen 17.00 en 20.30 uur, €34,95 per persoon.",
-    cg_who_h: "Voor wie",
-    cg_who_1: "Een <a href=\"../date-night/\" class=\"w-navlink\">date night</a>. Met drie routes is er ook een voor de tweede date, en Premium is die voor een speciale gelegenheid.",
-    cg_who_2: "Een <a href=\"../birthday/\" class=\"w-navlink\">verjaardag</a> of een avondje uit met vrienden. Tot en met 6 personen boek je direct online.",
-    cg_who_3: "Een <a href=\"../bachelorette/\" class=\"w-navlink\">vrijgezellenfeest</a> of <a href=\"../company-outing/\" class=\"w-navlink\">bedrijfsuitje</a>. Voor 7 tot 30 personen stuur je een <a href=\"../groups/#enquire\" class=\"w-navlink w-enquire\">groepsaanvraag</a>, vanaf €32,95 per persoon.",
-    cg_who_4: "Iedereen die geen alcohol drinkt. Op elke route heeft elke bar een mocktail op het WOGO-menu.",
-    cg_pr_h: "Praktisch",
-    cg_pr_1: "Dagen: Route 1 en Route 2 van donderdag tot en met zaterdag, Rotterdam Premium van dinsdag tot en met zaterdag.",
-    cg_pr_2: "Waar: Route 1 en Route 2 liggen in het centrum. Premium start bij de Erasmusbrug en eindigt in het centrum.",
-    cg_pr_3: "Duur: 3 tot 4 uur. De bars liggen 5 tot 15 minuten lopen van elkaar, en alleen de starttijd bij de eerste bar staat vast.",
-    cg_pr_4: "Prijs: €29,95 per persoon voor Route 1 en Route 2, €34,95 per persoon voor Rotterdam Premium.",
-    cg_pr_5: "De bars blijven een verrassing tot je boekt. Ze staan in de routekaart die je direct na het boeken per e-mail krijgt.",
-    cg_pr_6: "18+ om alcohol te drinken. Eten is niet inbegrepen; bijna alle stops hebben snacks die je bij de bar kunt bestellen.",
-    cg_faq_h2: "Vragen over de cocktail walk in Rotterdam",
-    cg_q1: "Welke cocktail walk in Rotterdam past bij mij?",
-    cg_a1: "Route 1 gaat langs lokale favorieten en start in de Witte de Withstraat. Route 2 is de meest geboekte route en gaat langs drie gloednieuwe bars. Rotterdam Premium gaat langs drie high-end bars met in elke bar een cocktail met Bobby's Gin, waaronder een skybar met uitzicht op de Erasmusbrug.",
-    cg_q2: "Op welke dagen kan ik een cocktail walk in Rotterdam doen?",
-    cg_a2: "Rotterdam Premium kan van dinsdag tot en met zaterdag. Route 1 en Route 2 kunnen van donderdag tot en met zaterdag. Je kiest je datum en starttijd in de boekingskalender.",
-    cg_q3: "Hoe laat begint een cocktail walk in Rotterdam?",
-    cg_a3: "Route 1 start om 17.00 uur. Route 2 start tussen 18.00 en 20.30 uur en Rotterdam Premium tussen 17.00 en 20.30 uur. Alleen de starttijd bij de eerste bar staat vast.",
-    cg_q4: "Wat kost een cocktail walk in Rotterdam?",
-    cg_a4: "€29,95 per persoon voor Route 1 en Route 2 en €34,95 per persoon voor Rotterdam Premium. Bij elk ticket zit een gereserveerde tafel en één cocktail of mocktail bij elk van de drie bars.",
-    cg_faq_more: "Al het andere: <a href=\"../faq/\" class=\"w-navlink\">bekijk de volledige FAQ</a> of lees stap voor stap <a href=\"../how-it-works/\" class=\"w-navlink\">hoe een cocktail walk werkt</a>.",
-    cg_more_eyebrow: "Verder lezen",
-    cg_more_h2: "Een avondje uit in Rotterdam plannen?",
-    cg_more_p: "Zoek je een uitje in Rotterdam met vrienden, je date of collega's? Deze pagina's helpen je verder.",
-    cg_read_1: "De beste cocktailbars in Rotterdam",
-    cg_read_2: "Nieuwe bars in Rotterdam voor je avondje uit",
-    cg_read_3: "De premium cocktail walk van Rotterdam met Bobby's Gin",
-    cg_occ_date: "Date night",
-    cg_occ_bach: "Vrijgezellenfeest",
-    cg_occ_bday: "Verjaardag",
-    cg_occ_comp: "Bedrijfsuitje",
-    cg_occ_groups: "Groepsboekingen",
-    cg_occ_gift: "Cadeaukaarten",
-    /* city-guide:end */
     /* --- hero (lean: eyebrow + H1 + subline + one CTA; hero_brand / hero_p /
        hero trust strip removed in V5) --- */
     hero_h1: "Rotterdam Cocktail Walk",
