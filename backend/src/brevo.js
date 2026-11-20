@@ -341,3 +341,59 @@ export async function sendTransactional(env, msg) {
   });
   if (!res.ok) throw new Error(`brevo_send_failed: ${res.status} ${await res.text()}`);
 }
+
+// ---------------------------------------------------------------------------
+// Brevo EMAIL CAMPAIGNS (v3) — the dashboard "Campaigns" page (20 Nov 2026).
+// The owner picks a saved template + an audience + a time; we copy that
+// template's HTML into a real Brevo campaign aimed at a list. Brevo itself
+// skips blacklisted (unsubscribed) contacts at send time.
+// ---------------------------------------------------------------------------
+
+/** One template with its full HTML (GET /smtp/templates/{id}). */
+export async function getTemplate(env, id) {
+  const { json } = await brevoRequest(env, 'GET', `/smtp/templates/${encodeURIComponent(id)}`);
+  return json;
+}
+
+/** Adds EXISTING Brevo contacts to a list, 150 per call (Brevo's cap).
+ * Returns { added, failed } counts; emails Brevo doesn't know yet are
+ * reported as failed (they are still syncing) rather than thrown. */
+export async function addEmailsToList(env, listId, emails) {
+  let added = 0;
+  let failed = 0;
+  for (let i = 0; i < emails.length; i += 150) {
+    const chunk = emails.slice(i, i + 150);
+    try {
+      const { json } = await brevoRequest(env, 'POST', `/contacts/lists/${listId}/contacts/add`, { emails: chunk });
+      const c = (json && json.contacts) || {};
+      added += Array.isArray(c.success) ? c.success.length : 0;
+      failed += Array.isArray(c.failure) ? c.failure.length : 0;
+    } catch (err) {
+      // Brevo answers 400 when NONE of a chunk could be added (e.g. all
+      // already in the list or all unknown) — count the chunk as failed.
+      if (err && err.status === 400) failed += chunk.length; else throw err;
+    }
+  }
+  return { added, failed };
+}
+
+/** POST /emailCampaigns — returns { id }. */
+export async function createEmailCampaign(env, body) {
+  const { json } = await brevoRequest(env, 'POST', '/emailCampaigns', body);
+  return json;
+}
+
+export async function sendCampaignNow(env, id) {
+  await brevoRequest(env, 'POST', `/emailCampaigns/${encodeURIComponent(id)}/sendNow`);
+}
+
+/** Stops a scheduled campaign from going out (status → suspended). */
+export async function suspendCampaign(env, id) {
+  await brevoRequest(env, 'PUT', `/emailCampaigns/${encodeURIComponent(id)}/status`, { status: 'suspended' });
+}
+
+/** The latest campaigns, newest first, without their HTML. */
+export async function listEmailCampaigns(env, limit = 15) {
+  const { json } = await brevoRequest(env, 'GET', `/emailCampaigns?limit=${limit}&offset=0&sort=desc&excludeHtmlContent=true&statistics=globalStats`);
+  return (json && json.campaigns) || [];
+}

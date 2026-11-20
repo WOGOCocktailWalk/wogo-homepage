@@ -21,7 +21,7 @@ import {
   FAILED_EMAIL_RESOLVED_RETENTION_MINUTES, BREVO_SYNC_RESOLVED_RETENTION_MINUTES,
   MISSING_PAGE_RETENTION_DAYS,
 } from './config.js';
-import { adminResponse, newsletterResponse } from './admin/assets.js';
+import { adminResponse, newsletterResponse, campaignsResponse } from './admin/assets.js';
 import { manifestResponse, serviceWorkerResponse, iconResponse } from './admin/pwa.js';
 import { withSecurityHeaders } from './security_headers.js';
 import { captureError } from './errors.js';
@@ -195,6 +195,10 @@ router.delete('/admin/api/inquiries/:id', adminApi.handleDeleteWaitlistEntry);
 router.post('/admin/api/brevo/setup', adminApi.handleBrevoSetup);
 router.post('/admin/api/brevo/push-reference-templates', adminApi.handleBrevoPushReferenceTemplates);
 router.post('/admin/api/brevo/upsert-template', adminApi.handleBrevoUpsertTemplate);
+router.get('/admin/api/campaigns', adminApi.handleListCampaigns);
+router.post('/admin/api/campaigns/test', adminApi.handleTestCampaign);
+router.post('/admin/api/campaigns', adminApi.handleCreateCampaign);
+router.post('/admin/api/campaigns/:id/cancel', adminApi.handleCancelCampaign);
 router.post('/admin/api/stripe/ensure-welcome-code', adminApi.handleEnsureWelcomeCode);
 router.post('/admin/api/stripe/promo-code', adminApi.handleSetPromoCodeActive);
 router.get('/admin/api/stripe/payouts', adminApi.handleStripePayouts);
@@ -275,6 +279,10 @@ export default {
         // Newsletter maker: a data-free tool page, same reasoning as the shell
         // above. Saving goes through the gated /admin/api/ route.
         response = newsletterResponse();
+      } else if (request.method === 'GET' && pathname === '/admin/campaigns') {
+        // Campaigns page: data-free shell like the newsletter maker; every
+        // read/send goes through the owner-only /admin/api/campaigns routes.
+        response = campaignsResponse();
       } else {
         // Matched ONCE, up front — both the role check below and the final
         // dispatch need the SAME match (its `pattern` is how ROUTE_ROLES is

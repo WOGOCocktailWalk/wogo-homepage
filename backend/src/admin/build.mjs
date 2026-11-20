@@ -24,6 +24,7 @@ const sw = readFileSync(join(here, "sw.js"), "utf8");
 // Stand-alone newsletter maker page (GET /admin/newsletter) — one complete
 // HTML document, served as-is; it saves into Brevo through /admin/api/.
 const newsletter = readFileSync(join(here, "newsletter.html"), "utf8");
+const campaigns = readFileSync(join(here, "campaigns.html"), "utf8");
 
 // Prevent an accidental "</script>" inside JS from closing the tag early.
 const guard = (s) => s.replace(/<\/script/gi, "<\\/script");
@@ -83,6 +84,20 @@ export function adminResponse() {
 }
 
 export const NEWSLETTER_HTML = ${JSON.stringify(newsletter)};
+export const CAMPAIGNS_HTML = ${JSON.stringify(campaigns)};
+
+/** GET /admin/campaigns — send or schedule a newsletter (owner only; the
+ * page itself carries no data, the /admin/api/campaigns routes are gated). */
+export function campaignsResponse() {
+  return new Response(CAMPAIGNS_HTML, {
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff",
+      "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'"
+    }
+  });
+}
 
 /** GET /admin/newsletter — the newsletter maker. Carries no data (saving goes
  * through the session-gated /admin/api/brevo/upsert-template), so like the

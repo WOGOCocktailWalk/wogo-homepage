@@ -43,9 +43,9 @@ import {
 import { constantTimeEqual } from './logic.js';
 import { verifyTurnstile } from './turnstile.js';
 import { runHealthCheck } from './healthcheck.js';
-import { ensureContactFolder, ensureContactList, ensureContactAttribute, sendTransactional } from './brevo.js';
+import { ensureContactFolder, ensureContactList, ensureContactAttribute, sendTransactional, listContactTemplates, getTemplate, addEmailsToList, createEmailCampaign, sendCampaignNow, suspendCampaign, listEmailCampaigns } from './brevo.js';
 import { ensureWelcomePromotionCode, setPromotionCodeActive, ensureImportedPromotionCode, getPayoutOverview } from './stripe.js';
-import { importSubscribers, handleConfirmedBookingOptIn } from './subscribers.js';
+import { importSubscribers, handleConfirmedBookingOptIn, getBrevoListId } from './subscribers.js';
 import { sendWithRetry } from './email_retry.js';
 import { renderAdminLoginLink } from './emails.js';
 import {
@@ -336,6 +336,10 @@ export const ROUTE_ROLES = {
   'POST /admin/api/brevo/setup': 'owner',
   'POST /admin/api/brevo/push-reference-templates': 'owner',
   'POST /admin/api/brevo/upsert-template': 'staff',
+  'GET /admin/api/campaigns': 'owner',
+  'POST /admin/api/campaigns': 'owner',
+  'POST /admin/api/campaigns/test': 'owner',
+  'POST /admin/api/campaigns/:id/cancel': 'owner',
   'POST /admin/api/stripe/ensure-welcome-code': 'owner',
   'POST /admin/api/stripe/promo-code': 'owner',
   'GET /admin/api/stripe/payouts': 'owner',
@@ -3717,4 +3721,160 @@ export async function handleImportPromoCodes(request, env) {
   const created = results.filter((r) => r.status === 'created').length;
   await audit(env, request, 'import.promo_codes', null, null, { created, total: results.length, live: String(env.STRIPE_SECRET_KEY).startsWith('sk_live') });
   return json({ created, live: String(env.STRIPE_SECRET_KEY).startsWith('sk_live'), results });
+}
+
+// ---------------------------------------------------------------------------
+// CAMPAIGNS (owner only, 20 Nov 2026) — send or schedule a newsletter from the
+// dashboard (page: GET /admin/campaigns). A campaign = a saved Brevo template
+// + an audience (everyone / Dutch / English confirmed subscribers) + a time.
+// For a language audience we build a fresh Brevo list for that one campaign
+// from D1's confirmed subscribers, so it never includes unsubscribed people.
+// Nothing here sends without an explicit `confirm: true` from the page.
+// ---------------------------------------------------------------------------
+
+const CAMPAIGN_AUDIENCES = { all: null, nl: 'nl', en: 'en' };
+
+function campaignTemplateUsable(t) {
+  return t && t.isActive && !String(t.name || '').startsWith('[REFERENCE]') && !/MASTER/.test(String(t.name || ''));
+}
+
+/** Brevo requires {{ unsubscribe }} in campaign HTML; a test mail has no
+ * campaign context, so swap the placeholders for working links there. */
+function htmlForTest(html) {
+  return String(html || '')
+    .replace(/\{\{\s*unsubscribe\s*\}\}/g, 'https://www.wogococktailwalk.com/')
+    .replace(/\{\{\s*mirror\s*\}\}/g, 'https://www.wogococktailwalk.com/');
+}
+
+/** GET /admin/api/campaigns — templates to choose from, audience sizes, and
+ * the latest campaigns with their status. */
+export async function handleListCampaigns(request, env) {
+  if (!env.BREVO_API_KEY) return errorJson('bad_request', 'BREVO_API_KEY is not configured', 400);
+  try {
+    const [templates, campaigns, all, nl, en] = await Promise.all([
+      listContactTemplates(env),
+      listEmailCampaigns(env),
+      db.listConfirmedSubscriberEmails(env.DB, null),
+      db.listConfirmedSubscriberEmails(env.DB, 'nl'),
+      db.listConfirmedSubscriberEmails(env.DB, 'en'),
+    ]);
+    return json({
+      templates: templates.filter(campaignTemplateUsable)
+        .sort((a, b) => String(b.modifiedAt || '').localeCompare(String(a.modifiedAt || '')))
+        .map((t) => ({ id: t.id, name: t.name, subject: t.subject, modified_at: t.modifiedAt })),
+      audiences: { all: all.length, nl: nl.length, en: en.length },
+      campaigns: campaigns.map((c) => {
+        const g = (c.statistics && c.statistics.globalStats) || {};
+        return {
+          id: c.id, name: c.name, subject: c.subject, status: c.status,
+          scheduled_at: c.scheduledAt || null, sent_at: c.sentDate || null,
+          sent: g.sent || 0, opened: g.uniqueViews || 0, clicked: g.uniqueClicks || 0,
+        };
+      }),
+    });
+  } catch (err) {
+    return errorJson('upstream_error', String(err && err.message ? err.message : err), 502);
+  }
+}
+
+/** POST /admin/api/campaigns/test — body { template_id, subject, to }:
+ * sends ONE copy to `to` (marked [TEST]). Never reaches subscribers. */
+export async function handleTestCampaign(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  if (!env.BREVO_API_KEY) return errorJson('bad_request', 'BREVO_API_KEY is not configured', 400);
+  let body;
+  try { body = await request.json(); } catch { return errorJson('bad_request', 'invalid JSON', 400); }
+  const to = String((body && body.to) || '').trim();
+  const subject = String((body && body.subject) || '').trim();
+  if (!EMAIL_RE.test(to)) return errorJson('bad_request', 'Fill in a valid email address for the test.', 400);
+  if (!subject) return errorJson('bad_request', 'Fill in the subject.', 400);
+  try {
+    const t = await getTemplate(env, body.template_id);
+    if (!t || !t.htmlContent) return errorJson('not_found', 'That email design was not found in Brevo.', 404);
+    await sendTransactional(env, { to, subject: `[TEST] ${subject}`, htmlContent: htmlForTest(t.htmlContent) });
+    await audit(env, request, 'campaign.test', null, null, { template_id: t.id, to });
+    return json({ ok: true, to });
+  } catch (err) {
+    return errorJson('upstream_error', String(err && err.message ? err.message : err), 502);
+  }
+}
+
+/** POST /admin/api/campaigns — body { template_id, subject, preview_text?,
+ * audience: 'all'|'nl'|'en', send_now?: bool, scheduled_at?: ISO, confirm: true }. */
+export async function handleCreateCampaign(request, env) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  if (!env.BREVO_API_KEY) return errorJson('bad_request', 'BREVO_API_KEY is not configured', 400);
+  let body;
+  try { body = await request.json(); } catch { return errorJson('bad_request', 'invalid JSON', 400); }
+  if (!body || body.confirm !== true) return errorJson('bad_request', 'Not confirmed.', 400);
+  const subject = String(body.subject || '').trim();
+  const previewText = String(body.preview_text || '').trim();
+  const audience = String(body.audience || '');
+  if (!subject || subject.length > 200) return errorJson('bad_request', 'Fill in the subject (max 200 characters).', 400);
+  if (!(audience in CAMPAIGN_AUDIENCES)) return errorJson('bad_request', 'Pick who gets the email.', 400);
+  const sendNow = body.send_now === true;
+  let scheduledAt = null;
+  if (!sendNow) {
+    const when = new Date(String(body.scheduled_at || ''));
+    const now = Date.now();
+    if (Number.isNaN(when.getTime())) return errorJson('bad_request', 'Pick a date and time.', 400);
+    if (when.getTime() < now + 10 * 60 * 1000) return errorJson('bad_request', 'Pick a time at least 10 minutes from now, or choose "Send now".', 400);
+    if (when.getTime() > now + 90 * 24 * 3600 * 1000) return errorJson('bad_request', 'Pick a time within the next 90 days.', 400);
+    scheduledAt = when.toISOString();
+  }
+  try {
+    const t = await getTemplate(env, body.template_id);
+    if (!campaignTemplateUsable(t) || !t.htmlContent) return errorJson('bad_request', 'That email design cannot be sent. Pick another one.', 400);
+    if (!/\{\{\s*unsubscribe\s*\}\}/.test(t.htmlContent)) return errorJson('bad_request', 'This email has no unsubscribe link. Make it with the newsletter maker first.', 400);
+
+    let listId;
+    let recipients;
+    let notYetInBrevo = 0;
+    const locale = CAMPAIGN_AUDIENCES[audience];
+    if (!locale) {
+      listId = await getBrevoListId(env);
+      if (!listId) return errorJson('bad_request', 'The Brevo subscriber list is not set up.', 400);
+      recipients = (await db.listConfirmedSubscriberEmails(env.DB, null)).length;
+    } else {
+      const emails = await db.listConfirmedSubscriberEmails(env.DB, locale);
+      if (!emails.length) return errorJson('bad_request', 'Nobody in that group yet.', 400);
+      const folder = await ensureContactFolder(env, BREVO_FOLDER_NAME);
+      const stamp = new Date().toISOString().replace('T', ' ').slice(0, 16);
+      const list = await ensureContactList(env, `Campaign ${locale.toUpperCase()} ${stamp}`, folder.id);
+      listId = list.id;
+      const r = await addEmailsToList(env, listId, emails);
+      recipients = r.added;
+      notYetInBrevo = r.failed;
+    }
+
+    const name = `${t.name} · ${audience.toUpperCase()} · ${sendNow ? 'sent' : scheduledAt.slice(0, 10)}`;
+    const campaignBody = {
+      name, subject, sender: EMAIL_SENDER, htmlContent: t.htmlContent,
+      recipients: { listIds: [listId] },
+    };
+    if (previewText) campaignBody.previewText = previewText.slice(0, 150);
+    if (scheduledAt) campaignBody.scheduledAt = scheduledAt;
+    const created = await createEmailCampaign(env, campaignBody);
+    if (sendNow) await sendCampaignNow(env, created.id);
+    await audit(env, request, sendNow ? 'campaign.send_now' : 'campaign.schedule', null, String(created.id),
+      { template_id: t.id, audience, recipients, scheduled_at: scheduledAt, subject });
+    return json({ id: created.id, recipients, not_yet_in_brevo: notYetInBrevo, scheduled_at: scheduledAt, sent_now: sendNow });
+  } catch (err) {
+    return errorJson('upstream_error', String(err && err.message ? err.message : err), 502);
+  }
+}
+
+/** POST /admin/api/campaigns/:id/cancel — stops a scheduled campaign. */
+export async function handleCancelCampaign(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  if (!env.BREVO_API_KEY) return errorJson('bad_request', 'BREVO_API_KEY is not configured', 400);
+  const id = params && params.id;
+  if (!/^\d+$/.test(String(id || ''))) return errorJson('bad_request', 'bad campaign id', 400);
+  try {
+    await suspendCampaign(env, id);
+    await audit(env, request, 'campaign.cancel', null, String(id), {});
+    return json({ ok: true, id: Number(id) });
+  } catch (err) {
+    return errorJson('upstream_error', String(err && err.message ? err.message : err), 502);
+  }
 }

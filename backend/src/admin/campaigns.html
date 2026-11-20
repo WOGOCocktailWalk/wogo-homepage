@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>WOGO campaigns</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#201611;--espresso:#3f2b21;--brown:#643e2b;--muted:#8a6a58;--blush:#ffe5d9;--cream:#fffaf6;--page:#f4e6dc;--salmon:#ffaa81;--salmon-deep:#f2905c;--line:#e7d3c6;--ok:#2f7a4a;--bad:#a8402a;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--page);color:var(--espresso);font:15px/1.5 'Helvetica Neue',Helvetica,Arial,sans-serif;}
+  header{background:var(--ink);color:var(--blush);padding:14px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  header h1{font:800 17px/1 'Poppins',sans-serif;letter-spacing:.06em;margin:0;color:var(--salmon);}
+  header span{font-size:13px;opacity:.8;}
+  header a{color:var(--blush);font-size:13px;margin-left:auto;}
+  main{max-width:760px;margin:0 auto;padding:20px 16px 60px;}
+  .panel{background:var(--cream);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:18px;}
+  h2{font:700 12px/1 'Poppins',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--salmon-deep);margin:0 0 12px;}
+  label{display:block;font-weight:600;font-size:13px;color:var(--ink);margin:14px 0 4px;}
+  label small{font-weight:400;color:var(--muted);}
+  input[type=text],input[type=email],input[type=date],input[type=time],select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit;color:var(--ink);}
+  input:focus,select:focus{outline:2px solid var(--salmon);border-color:var(--salmon);}
+  .row{display:flex;gap:12px;flex-wrap:wrap;} .row > *{flex:1;min-width:140px;}
+  .choices{display:grid;gap:8px;margin-top:6px;}
+  .choice{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;font-weight:600;color:var(--ink);}
+  .choice input{width:18px;height:18px;accent-color:var(--salmon-deep);margin:0;}
+  .choice small{font-weight:400;color:var(--muted);margin-left:auto;}
+  .btn{border:0;border-radius:999px;padding:13px 22px;font:700 13px/1 'Poppins',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;background:var(--salmon);color:var(--ink);}
+  .btn:hover{background:var(--salmon-deep);} .btn:disabled{opacity:.5;cursor:default;}
+  .btn.ghost{background:transparent;border:1.5px solid var(--brown);color:var(--brown);}
+  .btn.ghost:hover{background:var(--blush);}
+  .btn.small{padding:8px 14px;font-size:11px;}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px;}
+  .hint{font-size:12px;color:var(--muted);margin:4px 0 0;}
+  .note{background:var(--blush);border-radius:12px;padding:12px 14px;font-size:14px;margin-top:14px;}
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th{text-align:left;font:700 11px/1 'Poppins',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:8px 6px;border-bottom:1px solid var(--line);}
+  td{padding:10px 6px;border-bottom:1px solid var(--line);vertical-align:top;}
+  .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;background:#eee;color:var(--brown);}
+  .pill.queued{background:var(--blush);color:var(--salmon-deep);} .pill.sent{background:#dff0e4;color:var(--ok);} .pill.suspended{background:#f5dcd5;color:var(--bad);}
+  .wrap{overflow-x:auto;}
+  dialog{border:0;border-radius:18px;padding:22px;max-width:440px;width:calc(100% - 32px);background:var(--cream);color:var(--espresso);}
+  dialog::backdrop{background:rgba(32,22,17,.55);}
+  dialog h3{font:800 18px/1.25 'Poppins',sans-serif;margin:0 0 10px;color:var(--ink);}
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--ink);color:var(--blush);padding:12px 20px;border-radius:999px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;max-width:calc(100% - 32px);text-align:center;}
+  #toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<header>
+  <h1>WOGO CAMPAIGNS</h1>
+  <span>Send or schedule a newsletter to your subscribers</span>
+  <a href="/admin/">← Back to dashboard</a>
+</header>
+<main>
+  <div class="panel" id="loading">Loading…</div>
+
+  <div id="app" hidden>
+    <div class="panel">
+      <h2>1 · Which email</h2>
+      <label for="tpl">Email design <small>(made with the newsletter maker or saved into Brevo)</small></label>
+      <select id="tpl"></select>
+      <label for="subject">Subject</label>
+      <input type="text" id="subject" maxlength="200">
+      <label for="preview">Preview line <small>(the grey line after the subject in the inbox, optional)</small></label>
+      <input type="text" id="preview" maxlength="150">
+    </div>
+
+    <div class="panel">
+      <h2>2 · Who gets it</h2>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="aud" value="nl" checked> Dutch subscribers <small id="cnt-nl"></small></label>
+        <label class="choice"><input type="radio" name="aud" value="en"> English subscribers <small id="cnt-en"></small></label>
+        <label class="choice"><input type="radio" name="aud" value="all"> Everyone <small id="cnt-all"></small></label>
+      </div>
+      <p class="hint">Only people who said yes to WOGO news. Anyone who unsubscribed is skipped automatically.</p>
+    </div>
+
+    <div class="panel">
+      <h2>3 · Send yourself a test first</h2>
+      <div class="row">
+        <div><label for="testTo">Send a test to</label><input type="email" id="testTo" value="info@wogoamsterdam.com"></div>
+      </div>
+      <div class="bar"><button class="btn ghost" id="testBtn">Send test</button></div>
+    </div>
+
+    <div class="panel">
+      <h2>4 · When</h2>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="when" value="later" checked> Schedule for later</label>
+        <label class="choice"><input type="radio" name="when" value="now"> Send now</label>
+      </div>
+      <div class="row" id="whenRow">
+        <div><label for="date">Date</label><input type="date" id="date"></div>
+        <div><label for="time">Time <small>(Amsterdam)</small></label><input type="time" id="time" value="19:00" step="300"></div>
+      </div>
+      <div class="bar"><button class="btn" id="goBtn">Schedule</button></div>
+    </div>
+
+    <div class="panel">
+      <h2>Your campaigns</h2>
+      <div class="wrap"><table>
+        <thead><tr><th>Email</th><th>Status</th><th>When</th><th>Opened</th><th></th></tr></thead>
+        <tbody id="list"></tbody>
+      </table></div>
+      <p class="hint">"Scheduled" ones can still be stopped with Cancel. Open and click numbers appear a few hours after sending.</p>
+    </div>
+  </div>
+</main>
+
+<dialog id="confirm">
+  <h3 id="cTitle"></h3>
+  <p id="cText"></p>
+  <div class="bar"><button class="btn" id="cYes">Yes, go</button><button class="btn ghost" id="cNo">Cancel</button></div>
+</dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let DATA = null;
+function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 4200); }
+async function api(method, path, body) {
+  const res = await fetch(path, {
+    method, credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'wogo-admin' },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  let j = {}; try { j = await res.json(); } catch (e) {}
+  if (res.status === 401) throw new Error('You are logged out. Open the dashboard, log in, then come back.');
+  if (res.status === 403) throw new Error('Only the owner can send campaigns.');
+  if (!res.ok) throw new Error(j.message || 'Something went wrong.');
+  return j;
+}
+const aud = () => document.querySelector('input[name=aud]:checked').value;
+const when = () => document.querySelector('input[name=when]:checked').value;
+const nf = (n) => Number(n || 0).toLocaleString('nl-NL');
+function fmt(iso) { if (!iso) return ''; const d = new Date(iso); return d.toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' }); }
+function nextSunday() { const d = new Date(); d.setDate(d.getDate() + ((7 - d.getDay()) % 7 || 7)); return d.toISOString().slice(0, 10); }
+
+function fillTemplates() {
+  const sel = $('tpl'); sel.innerHTML = '';
+  DATA.templates.forEach((t) => { const o = document.createElement('option'); o.value = t.id; o.textContent = t.name; sel.appendChild(o); });
+  sel.onchange = () => {
+    const t = DATA.templates.find((x) => String(x.id) === sel.value);
+    if (t) $('subject').value = t.subject || '';
+    // Pick the matching language group when the design name says (NL)/(EN).
+    if (t && /\(NL\)/.test(t.name)) document.querySelector('input[name=aud][value=nl]').checked = true;
+    if (t && /\(EN\)/.test(t.name)) document.querySelector('input[name=aud][value=en]').checked = true;
+  };
+  sel.onchange();
+}
+function fillList() {
+  const tb = $('list'); tb.innerHTML = '';
+  if (!DATA.campaigns.length) { tb.innerHTML = '<tr><td colspan="5" class="hint">No campaigns yet.</td></tr>'; return; }
+  DATA.campaigns.forEach((c) => {
+    const tr = document.createElement('tr');
+    const label = { queued: 'Scheduled', sent: 'Sent', suspended: 'Cancelled', draft: 'Draft', in_process: 'Sending' }[c.status] || c.status;
+    const td = (txt) => { const x = document.createElement('td'); x.textContent = txt; return x; };
+    const name = document.createElement('td'); name.innerHTML = '<strong></strong><br><span class="hint"></span>';
+    name.querySelector('strong').textContent = c.subject || c.name; name.querySelector('.hint').textContent = c.name;
+    tr.appendChild(name);
+    const st = document.createElement('td'); const p = document.createElement('span'); p.className = 'pill ' + c.status; p.textContent = label; st.appendChild(p); tr.appendChild(st);
+    tr.appendChild(td(fmt(c.sent_at || c.scheduled_at)));
+    tr.appendChild(td(c.sent ? nf(c.opened) + ' of ' + nf(c.sent) : ''));
+    const act = document.createElement('td');
+    if (c.status === 'queued') {
+      const b = document.createElement('button'); b.className = 'btn ghost small'; b.textContent = 'Cancel';
+      b.onclick = () => ask('Stop this campaign?', 'It will not be sent. You can schedule it again later.', async () => {
+        try { await api('POST', '/admin/api/campaigns/' + c.id + '/cancel'); toast('Stopped. It will not be sent.'); load(); } catch (e) { toast(e.message); }
+      });
+      act.appendChild(b);
+    }
+    tr.appendChild(act);
+    tb.appendChild(tr);
+  });
+}
+function ask(title, text, onYes) {
+  $('cTitle').textContent = title; $('cText').textContent = text;
+  const d = $('confirm'); d.showModal();
+  $('cNo').onclick = () => d.close();
+  $('cYes').onclick = () => { d.close(); onYes(); };
+}
+async function load() {
+  try {
+    DATA = await api('GET', '/admin/api/campaigns');
+    $('cnt-nl').textContent = nf(DATA.audiences.nl) + ' people';
+    $('cnt-en').textContent = nf(DATA.audiences.en) + ' people';
+    $('cnt-all').textContent = nf(DATA.audiences.all) + ' people';
+    if (!$('tpl').options.length) fillTemplates();
+    fillList();
+    $('loading').hidden = true; $('app').hidden = false;
+  } catch (e) { $('loading').textContent = e.message; }
+}
+document.querySelectorAll('input[name=when]').forEach((r) => r.onchange = () => {
+  $('whenRow').hidden = when() === 'now'; $('goBtn').textContent = when() === 'now' ? 'Send now' : 'Schedule';
+});
+$('date').value = nextSunday();
+$('testBtn').onclick = async () => {
+  const b = $('testBtn'); b.disabled = true; b.textContent = 'Sending…';
+  try { const r = await api('POST', '/admin/api/campaigns/test', { template_id: Number($('tpl').value), subject: $('subject').value, to: $('testTo').value.trim() }); toast('Test sent to ' + r.to + '. Check your inbox.'); }
+  catch (e) { toast(e.message); }
+  b.disabled = false; b.textContent = 'Send test';
+};
+$('goBtn').onclick = () => {
+  const subject = $('subject').value.trim();
+  if (!subject) { toast('Fill in the subject first.'); return; }
+  const a = aud(); const n = DATA.audiences[a];
+  const group = { nl: 'Dutch subscribers', en: 'English subscribers', all: 'all subscribers' }[a];
+  const now = when() === 'now';
+  let iso = null;
+  if (!now) {
+    if (!$('date').value || !$('time').value) { toast('Pick a date and time.'); return; }
+    iso = new Date($('date').value + 'T' + $('time').value).toISOString();
+  }
+  const whenText = now ? 'right now' : 'on ' + fmt(iso);
+  ask(now ? 'Send this email now?' : 'Schedule this email?',
+    '"' + subject + '" goes to ' + nf(n) + ' ' + group + ' ' + whenText + '. Did you check the test email?',
+    async () => {
+      const b = $('goBtn'); b.disabled = true; b.textContent = 'Working…';
+      try {
+        const r = await api('POST', '/admin/api/campaigns', { template_id: Number($('tpl').value), subject, preview_text: $('preview').value, audience: a, send_now: now, scheduled_at: iso, confirm: true });
+        toast(now ? 'Sending now to ' + nf(r.recipients) + ' people.' : 'Scheduled for ' + fmt(r.scheduled_at) + ' (' + nf(r.recipients) + ' people).');
+        load();
+      } catch (e) { toast(e.message); }
+      b.disabled = false; b.textContent = now ? 'Send now' : 'Schedule';
+    });
+};
+load();
+</script>
+</body>
+</html>

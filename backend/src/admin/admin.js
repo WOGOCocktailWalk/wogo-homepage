@@ -2310,7 +2310,7 @@
       links: [
         ["Newsletter maker", "/admin/newsletter",
           "Write a WOGO newsletter by filling in boxes, see it live, and save it into Brevo as a template. Saving never sends anything."],
-        ["Campaigns", TOOL_LINKS.brevoCampaigns, "Write, schedule and send a newsletter."],
+        ["Campaigns", "/admin/campaigns", "Send or schedule a newsletter to your subscribers: pick the email, who gets it, and when. Send yourself a test first. Owner only."],
         ["Email templates", TOOL_LINKS.brevoTemplates,
           "The 21 [REFERENCE] WOGO designs live here — duplicate one to start a newsletter. Editing a [REFERENCE] template changes nothing in the real booking emails."],
         ["Contacts & lists", TOOL_LINKS.brevoContacts,

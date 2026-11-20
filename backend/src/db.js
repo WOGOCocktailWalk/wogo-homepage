@@ -3519,3 +3519,12 @@ export async function listBlogViewCounts(db) {
   for (const r of rows) out[r.k.slice(BLOG_VIEW_PREFIX.length)] = { views: Number(r.views) || 0, wix: Number(r.wix) || 0 };
   return out;
 }
+
+/** Emails of every CONFIRMED subscriber, optionally only one language
+ * ('nl' | 'en') — the audience for a dashboard campaign (20 Nov 2026). */
+export async function listConfirmedSubscriberEmails(db, locale = null) {
+  const rows = locale
+    ? await all(db, `SELECT email FROM subscribers WHERE status = 'confirmed' AND locale = :locale`, { locale })
+    : await all(db, `SELECT email FROM subscribers WHERE status = 'confirmed'`, {});
+  return rows.map((r) => r.email);
+}
