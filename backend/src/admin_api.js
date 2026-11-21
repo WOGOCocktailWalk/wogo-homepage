@@ -9,7 +9,7 @@ import {
   buildHighlightsSales, computePctDelta, pageViewsByCity,
   validateBlogSlug, validateBlogCategory, sanitizeBlogHtml, stripHtmlTags,
   analyticsRevenueCents, formatNotificationDate, formatEuros, summarizeAddonsForNotification,
-  computeBarArrivals, utcToBusinessTime, businessTimeToUtc, businessToday,
+  computeBarArrivals, utcToBusinessTime, businessTimeToUtc, businessToday, withExtraStops, validateAddonHours,
 } from './logic.js';
 import {
   LOGIN_FAIL_THRESHOLD,
@@ -782,7 +782,8 @@ export async function handleBookingBars(request, env, params) {
   if (!route) return errorJson('route_not_found', null, 404);
   const bars = await db.listBarsForDate(env.DB, booking.route_id, booking.date);
   const overrides = await db.listOverridesForDate(env.DB, booking.route_id, booking.date);
-  const arrivals = computeBarArrivals(route, bars, overrides, booking);
+  const addonLines = await db.getAddonsForBooking(env.DB, booking.id);
+  const arrivals = withExtraStops(route, computeBarArrivals(route, bars, overrides, booking), booking, addonLines);
   return json({ bars: arrivals.map((a) => ({ bar_name: a.bar_name, bar_email: a.bar_email, arrival_time: a.arrival_time })) });
 }
 
@@ -1316,7 +1317,52 @@ function validateAddonFields(body, cols) {
   if (cols.includes('sort_order') && body.sort_order !== undefined && !Number.isInteger(body.sort_order)) {
     return { ok: false, message: 'sort_order must be an integer' };
   }
+  // migrations/0034 — extra stop, opening hours, 4-bar map. All optional.
+  if (cols.includes('extra_stop_name') && body.extra_stop_name != null && (typeof body.extra_stop_name !== 'string' || body.extra_stop_name.length > ADDON_NAME_MAX_LENGTH)) {
+    return { ok: false, message: `extra_stop_name must be at most ${ADDON_NAME_MAX_LENGTH} chars` };
+  }
+  if (cols.includes('extra_stop_email') && body.extra_stop_email != null && (typeof body.extra_stop_email !== 'string' || body.extra_stop_email.length > 300
+    || !body.extra_stop_email.split(',').map((e) => e.trim()).filter(Boolean).length
+    || !body.extra_stop_email.split(',').map((e) => e.trim()).filter(Boolean).every((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)))) {
+    return { ok: false, message: 'extra_stop_email must be a valid email address (several allowed, separated by commas)' };
+  }
+  if (cols.includes('extra_stop_locale') && body.extra_stop_locale != null && !['nl', 'en'].includes(body.extra_stop_locale)) {
+    return { ok: false, message: "extra_stop_locale must be 'nl' or 'en'" };
+  }
+  if (cols.includes('extra_stop_offset_minutes') && body.extra_stop_offset_minutes != null && (!Number.isInteger(body.extra_stop_offset_minutes) || body.extra_stop_offset_minutes < 0 || body.extra_stop_offset_minutes > 720)) {
+    return { ok: false, message: 'extra_stop_offset_minutes must be an integer between 0 and 720' };
+  }
+  if (cols.includes('min_minutes_before_close') && body.min_minutes_before_close !== undefined && (!Number.isInteger(body.min_minutes_before_close) || body.min_minutes_before_close < 0 || body.min_minutes_before_close > 600)) {
+    return { ok: false, message: 'min_minutes_before_close must be an integer between 0 and 600' };
+  }
+  if (cols.includes('hours')) {
+    const h = validateAddonHours(body.hours);
+    if (!h.ok) return { ok: false, message: h.message };
+  }
+  for (const field of ['available_from', 'available_until']) {
+    if (cols.includes(field) && body[field] != null && body[field] !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(String(body[field]))) {
+      return { ok: false, message: `${field} must be a date YYYY-MM-DD (or empty for no limit)` };
+    }
+  }
+  if (cols.includes('available_from') && cols.includes('available_until') && body.available_from && body.available_until && body.available_from > body.available_until) {
+    return { ok: false, message: 'available_from must be on or before available_until' };
+  }
+  for (const field of ['map_url_en', 'map_url_nl']) {
+    if (cols.includes(field) && body[field] != null && (typeof body[field] !== 'string' || !/^https:\/\//.test(body[field]) || body[field].length > ADDON_IMAGE_URL_MAX_LENGTH)) {
+      return { ok: false, message: `${field} must be an https:// link` };
+    }
+  }
   return { ok: true };
+}
+
+/** Normalizes the 0034 fields on a create/update body in place: `hours` is
+ * stored as a canonical JSON string (or null); empty strings become null. */
+function normalizeAddonExtraFields(body) {
+  if ('hours' in body) body.hours = validateAddonHours(body.hours).value;
+  for (const f of ['extra_stop_name', 'extra_stop_email', 'extra_stop_locale', 'map_url_en', 'map_url_nl', 'available_from', 'available_until']) {
+    if (f in body && (body[f] === '' || body[f] === undefined)) body[f] = null;
+  }
+  if ('extra_stop_email' in body && typeof body.extra_stop_email === 'string') body.extra_stop_email = body.extra_stop_email.trim();
 }
 
 /** `true` when the margin (price_cents - cost_cents) is under the owner's
@@ -1365,10 +1411,25 @@ export async function handleCreateAddon(request, env, params) {
     // a brand-new add-on is NEVER live by surprise; the owner has to come
     // back and flip it on once the details are right.
     active: false,
+    extra_stop_name: body.extra_stop_name ?? null,
+    extra_stop_email: body.extra_stop_email ?? null,
+    extra_stop_locale: body.extra_stop_locale ?? null,
+    extra_stop_offset_minutes: body.extra_stop_offset_minutes ?? null,
+    hours: body.hours ?? null,
+    min_minutes_before_close: Number.isInteger(body.min_minutes_before_close) ? body.min_minutes_before_close : 90,
+    map_url_en: body.map_url_en ?? null,
+    map_url_nl: body.map_url_nl ?? null,
+    available_from: body.available_from ?? null,
+    available_until: body.available_until ?? null,
   };
-  const allCols = ['name_en', 'name_nl', 'description_en', 'description_nl', 'image_url', 'price_cents', 'cost_cents', 'currency', 'vat_rate', 'unit', 'max_qty_per_booking', 'capacity_per_slot', 'cutoff_hours', 'sort_order'];
+  const allCols = ['name_en', 'name_nl', 'description_en', 'description_nl', 'image_url', 'price_cents', 'cost_cents', 'currency', 'vat_rate', 'unit', 'max_qty_per_booking', 'capacity_per_slot', 'cutoff_hours', 'sort_order',
+    'extra_stop_name', 'extra_stop_email', 'extra_stop_locale', 'extra_stop_offset_minutes', 'hours', 'min_minutes_before_close', 'map_url_en', 'map_url_nl', 'available_from', 'available_until'];
   const check = validateAddonFields(payload, allCols);
   if (!check.ok) return errorJson('bad_request', check.message, 400);
+  normalizeAddonExtraFields(payload);
+  if (!!payload.extra_stop_name !== !!payload.extra_stop_email) {
+    return errorJson('bad_request', 'an extra stop needs both a bar name and a bar email', 400);
+  }
 
   if (payload.bar_id) {
     const bars = await db.listBars(env.DB, params.id);
@@ -1393,10 +1454,17 @@ export async function handleUpdateAddon(request, env, params) {
   const existing = await db.getAddon(env.DB, params.addonId);
   if (!existing || existing.route_id !== params.id) return errorJson('not_found', null, 404);
 
-  const writableCols = ['bar_id', 'name_en', 'name_nl', 'description_en', 'description_nl', 'image_url', 'price_cents', 'cost_cents', 'currency', 'vat_rate', 'is_food', 'unit', 'max_qty_per_booking', 'capacity_per_slot', 'cutoff_hours', 'sort_order', 'active'];
+  const writableCols = ['bar_id', 'name_en', 'name_nl', 'description_en', 'description_nl', 'image_url', 'price_cents', 'cost_cents', 'currency', 'vat_rate', 'is_food', 'unit', 'max_qty_per_booking', 'capacity_per_slot', 'cutoff_hours', 'sort_order', 'active',
+    'extra_stop_name', 'extra_stop_email', 'extra_stop_locale', 'extra_stop_offset_minutes', 'hours', 'min_minutes_before_close', 'map_url_en', 'map_url_nl', 'available_from', 'available_until'];
   const touchedCols = writableCols.filter((c) => c in body);
   const check = validateAddonFields(body, touchedCols);
   if (!check.ok) return errorJson('bad_request', check.message, 400);
+  normalizeAddonExtraFields(body);
+  const finalStopName = 'extra_stop_name' in body ? body.extra_stop_name : existing.extra_stop_name;
+  const finalStopEmail = 'extra_stop_email' in body ? body.extra_stop_email : existing.extra_stop_email;
+  if (!!finalStopName !== !!finalStopEmail) {
+    return errorJson('bad_request', 'an extra stop needs both a bar name and a bar email', 400);
+  }
 
   // The price >= cost guard needs BOTH final values, even when only one of
   // the pair is in this particular PUT — merge against the existing row
@@ -1700,7 +1768,9 @@ export async function handleRescheduleBooking(request, env, params) {
     return errorJson(
       'addon_conflict',
       `this booking's add-ons can't move to that slot: ${addonProblems
-        .map((p) => (p.reason === 'cutoff' ? `${p.name_en} (past its cutoff for that time)` : `${p.name_en} (only ${p.available_qty} left, needs ${p.requested_qty})`))
+        .map((p) => (p.reason === 'cutoff' ? `${p.name_en} (past its cutoff for that time)`
+          : p.reason === 'hours' ? `${p.name_en} (the extra bar is closed or closes too soon for that time)`
+          : `${p.name_en} (only ${p.available_qty} left, needs ${p.requested_qty})`))
         .join('; ')}`,
       409
     );

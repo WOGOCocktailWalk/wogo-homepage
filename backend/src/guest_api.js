@@ -33,7 +33,7 @@ import {
   buildSlotsForDate,
   isDateBookable,
   isValidDateStr,
-  isSlotPastCutoff,
+  isSlotPastCutoff, addonFitsTime,
   validateNotes,
   validateUtmFields,
   isoWeekday,
@@ -302,6 +302,8 @@ export async function handleListAddons(request, env) {
   const addons = rows
     .filter((a) => (a.currency || 'EUR') === (route.currency || 'EUR'))
     .filter((a) => !isSlotPastCutoff(date, slot, route.timezone, (a.cutoff_hours || 0) * 60))
+    // migrations/0034: opening-hours rule of the bar that fulfils it.
+    .filter((a) => addonFitsTime(a, date, slot))
     .filter((a) => a.capacity_per_slot == null || a.reserved_qty < a.capacity_per_slot)
     .map((a) => ({
       id: a.id,
@@ -540,6 +542,31 @@ export async function handleBook(request, env, params, ctx) {
     const addonCutoffMinutes = (addon.cutoff_hours || 0) * 60;
     if (isSlotPastCutoff(date, slot, route.timezone, addonCutoffMinutes)) {
       return errorJson('addon_cutoff_passed', 'it’s too late to add that extra to this booking — the kitchen needs more notice', 409, request);
+    }
+    // migrations/0034: the extra bar must be open (with the closing margin)
+    // when this group would arrive. Same error code as "no longer available"
+    // so older widget builds already show a sensible message.
+    if (!addonFitsTime(addon, date, slot)) {
+      return errorJson('addon_not_found', 'that extra isn’t available at this time', 400, request);
+    }
+    // whole_group: one yes/no for the entire party — the quantity must be
+    // EXACTLY the party size (never "1 extra stop for a group of 6").
+    if (addon.unit === 'whole_group') {
+      if (reqItem.qty !== party) {
+        return errorJson('bad_request', 'that extra is for the whole group', 400, request);
+      }
+      addonsTotalCents += addon.price_cents * reqItem.qty;
+      resolvedAddons.push({
+        addon_id: addon.id,
+        qty: reqItem.qty,
+        unit_price_cents: addon.price_cents,
+        unit_cost_cents: addon.cost_cents,
+        vat_rate: addon.vat_rate,
+        name_snapshot_en: addon.name_en,
+        name_snapshot_nl: addon.name_nl,
+        currency: addon.currency,
+      });
+      continue;
     }
     // per_person caps at the party size just booked; per_booking caps at 1 —
     // either way also capped by the add-on's own max_qty_per_booking.

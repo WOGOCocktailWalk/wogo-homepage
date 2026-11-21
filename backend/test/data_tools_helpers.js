@@ -16,7 +16,7 @@ export const SCHEMA_SQL = [
   '0009_webhook_processing_status.sql', '0010_booking_notes.sql', '0011_currency_timezone.sql',
   '0018_gift_cards.sql', '0019_gift_card_redemptions.sql', '0021_inquiries.sql',
   '0024_subscribers.sql', '0025_admin_users.sql', '0026_review_requests.sql',
-  '0027_booking_utm.sql', '0031_abandoned_reminders.sql', '0033_addons.sql',
+  '0027_booking_utm.sql', '0031_abandoned_reminders.sql', '0033_addons.sql', '0034_addon_extra_stop.sql',
 ].map(migration).join('\n');
 
 export function freshDb() { return makeTestDb(SCHEMA_SQL); }

@@ -1998,6 +1998,34 @@
      live into a draft object — there's no cross-field live preview here
      that needs it (the margin-under-€1 check comes back in the server's
      own response, not computed client-side). */
+  /* Opening hours for an extra-stop add-on, typed as plain text:
+     "Fri 18:00-23:00, Sat 18:00-23:00" <-> {"5":["18:00","23:00"],"6":[…]}.
+     Empty = no time rule. Unreadable text is sent as-is so the server
+     rejects it with a clear message instead of silently dropping it. */
+  const ADDON_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  function formatAddonHours(raw) {
+    if (!raw) return "";
+    let o; try { o = typeof raw === "string" ? JSON.parse(raw) : raw; } catch (e) { return String(raw); }
+    return Object.keys(o).sort().map((d) => ADDON_DAYS[+d - 1] + " " + o[d][0] + "-" + o[d][1]).join(", ");
+  }
+  function parseAddonHoursInput(text) {
+    const t = String(text || "").trim();
+    if (!t) return null;
+    const out = {};
+    for (const part of t.split(/[,;\n]+/)) {
+      const m = part.trim().match(/^([A-Za-z]{2,3})[a-z]*\.?\s+(\d{1,2}[:.]\d{2})\s*[-–]\s*(\d{1,2}[:.]\d{2})$/);
+      if (!m) return t; // let the server explain
+      const nl = { ma: "Mon", di: "Tue", wo: "Wed", do: "Thu", vr: "Fri", za: "Sat", zo: "Sun" };
+      const key = m[1].slice(0, 3);
+      const name = nl[m[1].slice(0, 2).toLowerCase()] || (key.charAt(0).toUpperCase() + key.slice(1).toLowerCase());
+      const idx = ADDON_DAYS.indexOf(name);
+      if (idx < 0) return t;
+      const fix = (x) => x.replace(".", ":").padStart(5, "0");
+      out[String(idx + 1)] = [fix(m[2]), fix(m[3])];
+    }
+    return out;
+  }
+
   function addonCard(r, addon, bars, repaint) {
     const nameEnI = el("input", { type: "text", value: addon.name_en || "", placeholder: "Bites" });
     const nameNlI = el("input", { type: "text", value: addon.name_nl || "", placeholder: "Bites" });
@@ -2014,8 +2042,25 @@
     const unitSel = el("select", {}, [
       el("option", { value: "per_person", text: "Per person" }),
       el("option", { value: "per_booking", text: "Per booking" }),
+      el("option", { value: "whole_group", text: "Whole group (one yes/no)" }),
     ]);
-    unitSel.value = addon.unit === "per_booking" ? "per_booking" : "per_person";
+    unitSel.value = ["per_booking", "whole_group"].includes(addon.unit) ? addon.unit : "per_person";
+    // migrations/0034 — extra stop (a bar only emailed when this is bought),
+    // its opening hours, and a different map for guests who buy it.
+    const stopNameI = el("input", { type: "text", value: addon.extra_stop_name || "", placeholder: "e.g. Patio Bar (leave empty if not an extra stop)" });
+    const stopEmailI = el("input", { type: "email", value: addon.extra_stop_email || "", placeholder: "reservations@bar.nl" });
+    const stopLocaleSel = el("select", {}, [
+      el("option", { value: "nl", text: "Dutch" }),
+      el("option", { value: "en", text: "English" }),
+    ]);
+    stopLocaleSel.value = addon.extra_stop_locale === "en" ? "en" : "nl";
+    const stopOffsetIn = el("input", { type: "number", min: "0", step: "15", value: addon.extra_stop_offset_minutes == null ? "" : addon.extra_stop_offset_minutes, placeholder: "180 = 3 h after start" });
+    const hoursI = el("input", { type: "text", value: formatAddonHours(addon.hours), placeholder: "Fri 18:00-23:00, Sat 18:00-23:00 (empty = any time)" });
+    const minCloseIn = el("input", { type: "number", min: "0", step: "15", value: addon.min_minutes_before_close ?? 90 });
+    const mapEnI = el("input", { type: "text", value: addon.map_url_en || "", placeholder: "https:// 4-bar map EN (optional)" });
+    const mapNlI = el("input", { type: "text", value: addon.map_url_nl || "", placeholder: "https:// 4-bar map NL (optional)" });
+    const fromIn = el("input", { type: "date", value: addon.available_from || "" });
+    const untilIn = el("input", { type: "date", value: addon.available_until || "" });
     const maxQtyIn = el("input", { type: "number", min: "1", step: "1", value: addon.max_qty_per_booking ?? 10 });
     const capIn = el("input", { type: "number", min: "0", step: "1", value: addon.capacity_per_slot == null ? "" : addon.capacity_per_slot, placeholder: "Unlimited" });
     const cutoffIn = el("input", { type: "number", min: "0", step: "1", value: addon.cutoff_hours ?? 24 });
@@ -2041,6 +2086,16 @@
         field("Capacity per slot", capIn),
         field("Cutoff (hours before)", cutoffIn),
         field("Sort order", sortIn),
+        field("Extra stop: bar name", stopNameI),
+        field("Extra stop: bar email", stopEmailI),
+        field("Extra stop: email language", stopLocaleSel),
+        field("Extra stop: minutes after start", stopOffsetIn),
+        field("Opening hours of that bar", hoursI, "wide"),
+        field("Arrive at least … min before closing", minCloseIn),
+        field("Offered for walks from (empty = no limit)", fromIn),
+        field("Offered for walks until (empty = no limit)", untilIn),
+        field("Map for these guests (EN)", mapEnI, "wide"),
+        field("Map for these guests (NL)", mapNlI, "wide"),
       ]),
       el("div", { class: "rc-actions" }, [
         el("label", { class: "chk-inline" }, [foodIn, el("span", { text: " Food — shows the guest an allergy/dietary field" })]),
@@ -2068,6 +2123,16 @@
                 cutoff_hours: parseInt(cutoffIn.value, 10) || 0,
                 sort_order: parseInt(sortIn.value, 10) || 0,
                 active: activeIn.checked,
+                extra_stop_name: stopNameI.value.trim() || null,
+                extra_stop_email: stopEmailI.value.trim() || null,
+                extra_stop_locale: stopNameI.value.trim() ? stopLocaleSel.value : null,
+                extra_stop_offset_minutes: stopOffsetIn.value === "" ? null : (parseInt(stopOffsetIn.value, 10) || 0),
+                hours: parseAddonHoursInput(hoursI.value),
+                min_minutes_before_close: parseInt(minCloseIn.value, 10) || 0,
+                map_url_en: mapEnI.value.trim() || null,
+                map_url_nl: mapNlI.value.trim() || null,
+                available_from: fromIn.value || null,
+                available_until: untilIn.value || null,
               };
               const result = addon.id
                 ? await api("/admin/api/routes/" + r.id + "/addons/" + addon.id, { method: "PUT", body })

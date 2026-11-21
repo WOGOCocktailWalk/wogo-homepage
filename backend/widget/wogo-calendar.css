@@ -289,6 +289,14 @@
 .wc-addon-stepper { flex: 0 0 auto; gap: 2px; }
 .wc-addon-stepper .wc-step-btn { width: 34px; height: 34px; font-size: 17px; border-radius: 9px; }
 .wc-addon-stepper .wc-step-val { min-width: 28px; font-size: 15px; }
+/* whole_group add-on (migrations/0034): one Add / Added button */
+.wc-addon-toggle {
+  flex: 0 0 auto; min-height: 38px; padding: 0 16px; border-radius: 10px;
+  border: 1.5px solid var(--wc-line); background: #fff; color: var(--wc-espresso);
+  font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer; white-space: nowrap;
+}
+.wc-addon-toggle.is-on { background: var(--wc-espresso); border-color: var(--wc-espresso); color: #fff; }
+.wc-addon-toggle:disabled { opacity: 0.35; cursor: not-allowed; }
 .wc-addons-skip {
   margin-top: 12px; font-size: 11px; font-weight: 600; color: var(--wc-brown-soft);
   text-align: center;

@@ -44,7 +44,7 @@ const schemaSql = [
   '0011_currency_timezone.sql', '0012_map_url_nl.sql',
   '0014_weekday_capacity.sql', '0015_weekday_bars.sql',
   '0022_bar_locale.sql', '0025_admin_users.sql', '0029_route_booking_cutoff.sql',
-  '0033_addons.sql',
+  '0033_addons.sql', '0034_addon_extra_stop.sql',
 ].map(migration).join('\n');
 
 function exec(db, sql, params = {}) {

@@ -338,7 +338,7 @@ export const ADDON_IMAGE_URL_MAX_LENGTH = 1000;
 export const ADDON_MAX_QTY_SANITY_CAP = 999;         // hard ceiling, however the owner misconfigures max_qty_per_booking
 export const ADDON_MAX_CUTOFF_HOURS = 24 * 30;       // sanity ceiling (30 days' notice)
 export const ADDON_LOW_MARGIN_WARNING_CENTS = 100;   // €1 — admin UI WARNS (never blocks) under this
-export const ADDON_UNITS = ['per_person', 'per_booking'];
+export const ADDON_UNITS = ['per_person', 'per_booking', 'whole_group'];
 
 // --- Contact + group-booking inquiries (migrations/0021, POST /api/contact) --
 // Field length caps, kept here (not hardcoded in guest_api.js) so the

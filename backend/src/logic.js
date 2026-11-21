@@ -1536,3 +1536,117 @@ export function sanitizeBlogHtml(html) {
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// Extra-stop add-ons (migrations/0034) — opening-hours rule + the optional
+// 4th bar that is only emailed when a booking bought that add-on.
+// ---------------------------------------------------------------------------
+
+export const ADDON_HHMM_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+function hhmmToMinutes(hhmm) {
+  const [h, m] = String(hhmm).split(':').map(Number);
+  return h * 60 + m;
+}
+
+/** Parses addons.hours. NULL/empty = no time rule (returns null). A stored
+ * value that can't be parsed returns {} — "offered on no day" — so a broken
+ * value fails CLOSED (never sells a stop the bar can't take). */
+export function parseAddonHours(raw) {
+  if (raw === null || raw === undefined || raw === '') return null;
+  if (typeof raw === 'object') return raw;
+  try {
+    const v = JSON.parse(raw);
+    return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+/** Validates an admin-supplied `hours` value. Accepts null (no rule), or an
+ * object / JSON string of { "1".."7": ["HH:MM","HH:MM"] }. Returns
+ * { ok: true, value: <JSON string or null> } or { ok: false, message }. */
+export function validateAddonHours(value) {
+  if (value === null || value === undefined || value === '') return { ok: true, value: null };
+  let obj = value;
+  if (typeof value === 'string') {
+    try { obj = JSON.parse(value); } catch (e) { return { ok: false, message: 'hours must be valid JSON' }; }
+  }
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
+    return { ok: false, message: 'hours must be an object like {"5":["18:00","23:00"]}' };
+  }
+  const clean = {};
+  for (const [day, span] of Object.entries(obj)) {
+    if (!/^[1-7]$/.test(day)) return { ok: false, message: 'hours keys must be ISO weekdays 1-7 (Mon=1 .. Sun=7)' };
+    if (!Array.isArray(span) || span.length !== 2 || !span.every((s) => typeof s === 'string' && ADDON_HHMM_RE.test(s))) {
+      return { ok: false, message: `hours["${day}"] must be ["HH:MM","HH:MM"] (open, close)` };
+    }
+    clean[day] = [span[0], span[1]];
+  }
+  return { ok: true, value: JSON.stringify(clean) };
+}
+
+/** True when an add-on may be sold for this (date, slot) under its opening-
+ * hours rule: the group ARRIVES (slot + extra_stop_offset_minutes) no earlier
+ * than opening and at least min_minutes_before_close before closing, on a
+ * weekday listed in `hours`. No rule (hours NULL) = always true, so every
+ * pre-0034 add-on is unaffected. Wall-clock minutes only — arrival and
+ * opening hours are both local times on the same evening, so no timezone
+ * math is needed. A close time at or before the open time means the bar
+ * closes after midnight. */
+export function addonFitsTime(addon, date, slot) {
+  // Walk-date window (inclusive, 'YYYY-MM-DD' strings compare correctly).
+  if (addon && addon.available_from && String(date) < addon.available_from) return false;
+  if (addon && addon.available_until && String(date) > addon.available_until) return false;
+  const hours = parseAddonHours(addon && addon.hours);
+  if (hours === null) return true;
+  const span = hours[String(isoWeekday(date))];
+  if (!Array.isArray(span) || span.length !== 2) return false;
+  if (!ADDON_HHMM_RE.test(span[0]) || !ADDON_HHMM_RE.test(span[1]) || !ADDON_HHMM_RE.test(String(slot))) return false;
+  const open = hhmmToMinutes(span[0]);
+  let close = hhmmToMinutes(span[1]);
+  if (close <= open) close += 24 * 60;
+  const arrival = hhmmToMinutes(slot) + (Number(addon.extra_stop_offset_minutes) || 0);
+  const minBefore = addon.min_minutes_before_close == null ? 90 : Number(addon.min_minutes_before_close);
+  return arrival >= open && arrival + minBefore <= close;
+}
+
+/** The extra-stop bars a booking bought, as arrival objects shaped exactly
+ * like computeBarArrivals' output (plus extra_stop: true). `addonLines` are
+ * db.getAddonsForBooking rows (which join the live add-on's extra_stop_*
+ * columns). One entry per distinct add-on; lines whose add-on has no extra
+ * stop (or was deleted) contribute nothing. bar_id is null, so a bar email's
+ * own add-on block stays empty — to the extra bar this is a normal booking. */
+export function extraStopArrivals(route, booking, addonLines) {
+  if (!Array.isArray(addonLines) || addonLines.length === 0) return [];
+  const timeZone = (route && route.timezone) || DEFAULT_TIMEZONE;
+  const seen = new Set();
+  const out = [];
+  for (const line of addonLines) {
+    if (!line || !line.extra_stop_email || !line.extra_stop_name || seen.has(line.addon_id)) continue;
+    seen.add(line.addon_id);
+    const offset = Number(line.extra_stop_offset_minutes) || 0;
+    const arrival_time = offset === 0
+      ? booking.slot
+      : utcToZonedHHMM(
+          new Date(zonedDateTimeToUtc(booking.date, booking.slot, timeZone).getTime() + offset * MS_PER_MINUTE),
+          timeZone
+        );
+    out.push({
+      bar_id: null,
+      bar_name: line.extra_stop_name,
+      bar_email: line.extra_stop_email,
+      arrival_time,
+      locale: line.extra_stop_locale === 'en' ? 'en' : 'nl',
+      extra_stop: true,
+      addon_id: line.addon_id,
+    });
+  }
+  return out;
+}
+
+/** computeBarArrivals' result with the booking's extra stops appended. */
+export function withExtraStops(route, arrivals, booking, addonLines) {
+  const extras = extraStopArrivals(route, booking, addonLines);
+  return extras.length ? [...(arrivals || []), ...extras] : (arrivals || []);
+}

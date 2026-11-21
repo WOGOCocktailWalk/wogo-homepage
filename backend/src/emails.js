@@ -477,6 +477,7 @@ const GUEST_STRINGS = {
 };
 
 export function renderGuestConfirmation(booking, route, opts = {}) {
+  route = routeWithAddonMap(route, opts.addons);
   const lang = loc(opts.locale || booking.locale);
   const t = GUEST_STRINGS[lang];
   const firstName = booking.name ? String(booking.name).trim().split(/\s+/)[0] : '';
@@ -925,11 +926,29 @@ const CANCEL_STRINGS = {
   },
 };
 
+/** migrations/0034: when one of the booking's add-on lines carries its own
+ * map (map_url_en/map_url_nl — e.g. the 4-bar map for an extra stop), returns
+ * a copy of `route` that resolveMapUrl will answer with that map. Otherwise
+ * returns `route` untouched, so bookings without such an add-on are
+ * byte-for-byte unchanged. */
+export function routeWithAddonMap(route, addons) {
+  if (!route || !Array.isArray(addons)) return route;
+  const line = addons.find((a) => a && (a.map_url_en || a.map_url_nl));
+  if (!line) return route;
+  return { ...route, __addon_map: { en: line.map_url_en || null, nl: line.map_url_nl || null } };
+}
+
 /** The route map for a booking's language AND weekday. A route may set
  * map_url_by_weekday = {"4":{"en":"…","nl":"…"}} (ISO weekday Mon=1..Sun=7) to
  * send a DIFFERENT map on a specific day — e.g. a Thursday line-up with an extra
  * bar (1NUL8). Falls back to the route's normal map_url / map_url_nl. */
 export function resolveMapUrl(route, lang, dateStr) {
+  // migrations/0034: a guest who bought an add-on with its own map (the
+  // 4-bar "extra stop" map) gets THAT map — it outranks every other rule.
+  if (route && route.__addon_map) {
+    const am = route.__addon_map;
+    return lang === 'nl' ? (am.nl || am.en) : (am.en || am.nl);
+  }
   // Date-specific map first (src/config.js:MAP_BY_DATE), e.g. a temporary or
   // upcoming line-up that the weekday rule cannot express.
   const byDate = route && MAP_BY_DATE[route.id];
@@ -981,6 +1000,7 @@ function guestMapSection(gt, route, lang, dateStr) {
 // booking = the NEW state (new date/slot). opts.previous = { date, slot } is
 // the old one, shown struck-through so the guest sees exactly what changed.
 export function renderGuestReschedule(booking, route, opts = {}) {
+  route = routeWithAddonMap(route, opts.addons);
   const lang = loc(opts.locale || booking.locale);
   const t = RESCHEDULE_STRINGS[lang];
   const gt = GUEST_STRINGS[lang];
@@ -2037,6 +2057,7 @@ const WALK_REMINDER_STRINGS = {
  * wrong-looking answer is worse than no row. `opts.unsubscribeUrl` is the
  * SAME reminder opt-out as the abandoned mails (migrations/0031). */
 export function renderWalkReminder(booking, route, opts = {}) {
+  route = routeWithAddonMap(route, opts.addons);
   const lang = loc(opts.locale || booking.locale);
   const t = WALK_REMINDER_STRINGS[lang];
   const gt = { ...GUEST_STRINGS[lang], ...(t.map || {}) };

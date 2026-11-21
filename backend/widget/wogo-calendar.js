@@ -130,6 +130,10 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       addons_subtitle: "Optional extras from the bars on your route. Skip this if you like.",
       addons_skip: "Nothing here is required to book.",
       addons_each: "each",
+      addons_pp: "per person",
+      addon_add: "Add",
+      addon_added: "Added ✓",
+      addon_group_full: "Not enough room left for your whole group at this time.",
       addons_total: "Extras total",
       addon_notes: "Allergies or dietary needs?",
       addon_notes_ph: "Let the kitchen know about any allergies or dietary needs…",
@@ -189,6 +193,10 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       addons_subtitle: "Optionele extra's van de bars op jouw route. Sla dit gerust over.",
       addons_skip: "Niets hier is verplicht om te boeken.",
       addons_each: "per stuk",
+      addons_pp: "per persoon",
+      addon_add: "Toevoegen",
+      addon_added: "Toegevoegd ✓",
+      addon_group_full: "Niet genoeg plek meer voor je hele groep op dit tijdstip.",
       addons_total: "Totaal extra's",
       addon_notes: "Allergieën of dieetwensen?",
       addon_notes_ph: "Laat de keuken weten over allergieën of dieetwensen…",
@@ -914,8 +922,37 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       const info = el("div", "wc-addon-info");
       info.appendChild(el("div", "wc-addon-name", name));
       if (desc) info.appendChild(el("div", "wc-addon-desc", desc));
-      info.appendChild(el("div", "wc-addon-price", `${money(addon.price_cents, addon.currency)} ${t.addons_each}`));
+      const wholeGroup = addon.unit === "whole_group";
+      info.appendChild(el("div", "wc-addon-price", `${money(addon.price_cents, addon.currency)} ${wholeGroup ? t.addons_pp : t.addons_each}`));
       card.appendChild(info);
+
+      /* whole_group (migrations/0034, e.g. the extra 4th bar): one yes/no
+         button for the entire party — the quantity is always the party size,
+         which is exactly what the server requires. */
+      if (wholeGroup) {
+        const btn = el("button", "wc-addon-toggle", t.addon_add);
+        btn.type = "button";
+        const note = el("div", "wc-addon-desc wc-addon-full");
+        const sync = () => {
+          const on = (this._addonQty[addon.id] || 0) > 0;
+          const fits = this.addonCapFor(addon) >= this.party;
+          btn.textContent = on ? t.addon_added : t.addon_add;
+          btn.setAttribute("aria-pressed", on ? "true" : "false");
+          btn.classList.toggle("is-on", on);
+          btn.disabled = !on && !fits;
+          note.textContent = fits ? "" : t.addon_group_full;
+        };
+        btn.addEventListener("click", () => {
+          const on = (this._addonQty[addon.id] || 0) > 0;
+          this._addonQty[addon.id] = on ? 0 : this.party;
+          sync(); this.onAddonQtyChanged();
+        });
+        info.appendChild(note);
+        card.appendChild(btn);
+        this._addonCardSyncs.push(sync);
+        sync();
+        return card;
+      }
 
       const stepper = el("div", "wc-stepper wc-addon-stepper");
       stepper.setAttribute("role", "group");
@@ -954,6 +991,9 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
        same cap logic src/guest_api.js:handleBook enforces server-side —
        this is only the UX ceiling; the server never trusts it. */
     addonCapFor(addon) {
+      if (addon.unit === "whole_group") {
+        return addon.remaining_qty != null && addon.remaining_qty < this.party ? 0 : this.party;
+      }
       const unitCap = addon.unit === "per_booking" ? 1 : this.party;
       let cap = Math.min(unitCap, addon.max_qty_per_booking);
       if (addon.remaining_qty != null) cap = Math.min(cap, addon.remaining_qty);
@@ -963,6 +1003,12 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
     reclampAddonQty() {
       (this._addons || []).forEach((a) => {
         const cap = this.addonCapFor(a);
+        // whole_group follows the party size up AND down (or drops off when
+        // the remaining room no longer fits the whole group).
+        if (a.unit === "whole_group") {
+          if ((this._addonQty[a.id] || 0) > 0) this._addonQty[a.id] = cap >= this.party ? this.party : 0;
+          return;
+        }
         if ((this._addonQty[a.id] || 0) > cap) this._addonQty[a.id] = cap;
       });
       (this._addonCardSyncs || []).forEach((fn) => fn());

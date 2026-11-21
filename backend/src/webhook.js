@@ -3,7 +3,7 @@
 import { verifyStripeSignature } from './stripe.js';
 import { sendTransactional } from './brevo.js';
 import { sendPurchaseEvent } from './meta.js';
-import { computeBarArrivals, extractDiscount, analyticsRevenueCents, formatNotificationDate, formatEuros, summarizeAddonsForNotification } from './logic.js';
+import { computeBarArrivals, withExtraStops, extractDiscount, analyticsRevenueCents, formatNotificationDate, formatEuros, summarizeAddonsForNotification } from './logic.js';
 import { notifyAdmins } from './notifications.js';
 import { reportPaymentProblem } from './payment_alerts.js';
 import {
@@ -309,7 +309,9 @@ export async function notifyBars(env, booking, route, deps = {}) {
 
   const bars = await database.listBarsForDate(env.DB, booking.route_id, booking.date);
   const overridesForDate = await database.listOverridesForDate(env.DB, booking.route_id, booking.date);
-  const allArrivals = computeBars(route, bars, overridesForDate, booking);
+  // migrations/0034: an extra-stop add-on's bar is appended ONLY when this
+  // booking bought it — every other booking's bar list is unchanged.
+  const allArrivals = withExtraStops(route, computeBars(route, bars, overridesForDate, booking), booking, allAddons);
   // Optional single-bar send (admin "Send to one bar"): deps.onlyBarEmail
   // narrows the fan-out to that one bar, and deps.arrivalTime ("HH:MM")
   // replaces its computed arrival time for this one mail only. Without
@@ -404,7 +406,7 @@ export async function notifyBarsReschedule(env, booking, route, deps = {}) {
 
   const newBars = await database.listBarsForDate(env.DB, booking.route_id, booking.date);
   const overridesForNewDate = await database.listOverridesForDate(env.DB, booking.route_id, booking.date);
-  const newArrivals = computeBars(route, newBars, overridesForNewDate, booking);
+  const newArrivals = withExtraStops(route, computeBars(route, newBars, overridesForNewDate, booking), booking, allAddons);
 
   let oldArrivalByEmail = new Map();
   if (previous.date && previous.slot) {
@@ -417,7 +419,7 @@ export async function notifyBarsReschedule(env, booking, route, deps = {}) {
     // Booking-shaped object at the OLD date/slot, purely so computeBarArrivals
     // can derive what each bar's arrival time used to be.
     const oldBooking = { ...booking, date: previous.date, slot: previous.slot };
-    const oldArrivals = computeBars(route, oldBars, overridesForOldDate, oldBooking);
+    const oldArrivals = withExtraStops(route, computeBars(route, oldBars, overridesForOldDate, oldBooking), oldBooking, allAddons);
     oldArrivalByEmail = new Map(oldArrivals.map((a) => [a.bar_email, a]));
   }
 
@@ -443,7 +445,13 @@ export async function notifyBarsCancellation(env, booking, route, deps = {}) {
 
   const bars = await database.listBarsForDate(env.DB, booking.route_id, booking.date);
   const overridesForDate = await database.listOverridesForDate(env.DB, booking.route_id, booking.date);
-  const arrivals = computeBars(route, bars, overridesForDate, booking);
+  // migrations/0034: the extra-stop bar (if this booking bought one) must
+  // hear about the cancellation too.
+  let addonLines = Array.isArray(deps.addons) ? deps.addons : [];
+  if (!Array.isArray(deps.addons) && typeof database.getAddonsForBooking === 'function') {
+    try { addonLines = await database.getAddonsForBooking(env.DB, booking.id); } catch (err) { addonLines = []; }
+  }
+  const arrivals = withExtraStops(route, computeBars(route, bars, overridesForDate, booking), booking, addonLines);
 
   for (const bar of arrivals) {
     const mail = renderBarCancellation(bar, booking, route);

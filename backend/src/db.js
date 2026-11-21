@@ -9,7 +9,7 @@
 // No business-logic math lives here beyond what SQL itself expresses; pure
 // aggregation/formatting is delegated to src/logic.js.
 
-import { nowSqlite, sqliteMinutesAgo, todayInTimezone, buildSlotsForDate, isSlotPastCutoff, aggregateCustomers, generateGiftCardCode, normalizeGiftCardCode } from './logic.js';
+import { nowSqlite, sqliteMinutesAgo, todayInTimezone, buildSlotsForDate, isSlotPastCutoff, aggregateCustomers, generateGiftCardCode, normalizeGiftCardCode, addonFitsTime } from './logic.js';
 import {
   SAME_DAY_CUTOFF_MINUTES,
   ABANDONED_FIRST_EMAIL_MIN_MINUTES, ABANDONED_FOLLOWUP_MIN_MINUTES, ABANDONED_WINDOW_MAX_MINUTES,
@@ -918,11 +918,15 @@ export async function createAddon(db, routeId, addon) {
     `INSERT INTO addons
       (id, route_id, bar_id, name_en, name_nl, description_en, description_nl, image_url,
        price_cents, cost_cents, currency, vat_rate, is_food, unit, max_qty_per_booking,
-       capacity_per_slot, cutoff_hours, sort_order, active, created_at, updated_at)
+       capacity_per_slot, cutoff_hours, sort_order, active,
+       extra_stop_name, extra_stop_email, extra_stop_locale, extra_stop_offset_minutes,
+       hours, min_minutes_before_close, map_url_en, map_url_nl, available_from, available_until, created_at, updated_at)
      VALUES
       (:id, :route_id, :bar_id, :name_en, :name_nl, :description_en, :description_nl, :image_url,
        :price_cents, :cost_cents, :currency, :vat_rate, :is_food, :unit, :max_qty_per_booking,
-       :capacity_per_slot, :cutoff_hours, :sort_order, :active, datetime('now'), datetime('now'))`,
+       :capacity_per_slot, :cutoff_hours, :sort_order, :active,
+       :extra_stop_name, :extra_stop_email, :extra_stop_locale, :extra_stop_offset_minutes,
+       :hours, :min_minutes_before_close, :map_url_en, :map_url_nl, :available_from, :available_until, datetime('now'), datetime('now'))`,
     {
       id,
       route_id: routeId,
@@ -941,12 +945,24 @@ export async function createAddon(db, routeId, addon) {
       currency: addon.currency || 'EUR',
       vat_rate: addon.vat_rate,
       is_food: addon.is_food ? 1 : 0,
-      unit: addon.unit === 'per_booking' ? 'per_booking' : 'per_person',
+      unit: normalizeAddonUnit(addon.unit),
       max_qty_per_booking: addon.max_qty_per_booking,
       capacity_per_slot: addon.capacity_per_slot ?? null,
       cutoff_hours: addon.cutoff_hours,
       sort_order: Number.isInteger(addon.sort_order) ? addon.sort_order : 0,
       active: addon.active ? 1 : 0,
+      // migrations/0034 (extra stop / opening hours / 4-bar map) — all
+      // optional; null keeps an add-on behaving exactly as before.
+      extra_stop_name: addon.extra_stop_name ?? null,
+      extra_stop_email: addon.extra_stop_email ?? null,
+      extra_stop_locale: addon.extra_stop_locale === 'en' ? 'en' : (addon.extra_stop_name ? 'nl' : null),
+      extra_stop_offset_minutes: addon.extra_stop_offset_minutes ?? null,
+      hours: addon.hours ?? null,
+      min_minutes_before_close: Number.isInteger(addon.min_minutes_before_close) ? addon.min_minutes_before_close : 90,
+      map_url_en: addon.map_url_en ?? null,
+      map_url_nl: addon.map_url_nl ?? null,
+      available_from: addon.available_from ?? null,
+      available_until: addon.available_until ?? null,
     }
   );
   return getAddon(db, id);
@@ -956,7 +972,15 @@ const ADDON_PATCH_COLUMNS = [
   'bar_id', 'name_en', 'name_nl', 'description_en', 'description_nl', 'image_url',
   'price_cents', 'cost_cents', 'currency', 'vat_rate', 'is_food', 'unit',
   'max_qty_per_booking', 'capacity_per_slot', 'cutoff_hours', 'sort_order', 'active',
+  'extra_stop_name', 'extra_stop_email', 'extra_stop_locale', 'extra_stop_offset_minutes',
+  'hours', 'min_minutes_before_close', 'map_url_en', 'map_url_nl', 'available_from', 'available_until',
 ];
+
+/** 'per_person' | 'per_booking' | 'whole_group' (migrations/0034: a yes/no
+ * for the whole party, qty always == party size). Anything else -> per_person. */
+export function normalizeAddonUnit(unit) {
+  return unit === 'per_booking' || unit === 'whole_group' ? unit : 'per_person';
+}
 
 export async function updateAddon(db, id, patch) {
   const cols = ADDON_PATCH_COLUMNS.filter((k) => k in patch);
@@ -966,7 +990,8 @@ export async function updateAddon(db, id, patch) {
   for (const c of cols) {
     let v = patch[c];
     if (c === 'is_food' || c === 'active') v = v ? 1 : 0;
-    if (c === 'unit') v = v === 'per_booking' ? 'per_booking' : 'per_person';
+    if (c === 'unit') v = normalizeAddonUnit(v);
+    if (c === 'extra_stop_locale') v = v === 'en' ? 'en' : (v == null ? null : 'nl');
     if (c === 'bar_id') v = v != null ? Number(v) : null;
     bound[c] = v;
   }
@@ -1103,7 +1128,10 @@ export async function setBookingAddonNotes(db, id, addonNotes) {
 export async function getAddonsForBooking(db, bookingId) {
   return all(
     db,
-    `SELECT ba.*, a.bar_id AS bar_id, a.is_food AS is_food, a.image_url AS image_url
+    `SELECT ba.*, a.bar_id AS bar_id, a.is_food AS is_food, a.image_url AS image_url,
+            a.unit AS unit, a.extra_stop_name AS extra_stop_name, a.extra_stop_email AS extra_stop_email,
+            a.extra_stop_locale AS extra_stop_locale, a.extra_stop_offset_minutes AS extra_stop_offset_minutes,
+            a.map_url_en AS map_url_en, a.map_url_nl AS map_url_nl
        FROM booking_addons ba
        LEFT JOIN addons a ON a.id = ba.addon_id
       WHERE ba.booking_id = :booking_id
@@ -1140,7 +1168,8 @@ export async function getAddonsForBooking(db, bookingId) {
 export async function checkAddonsFitSlot(db, bookingId, routeId, newDate, newSlot, timezone) {
   const lines = await all(
     db,
-    `SELECT ba.addon_id, ba.qty, ba.name_snapshot_en, a.capacity_per_slot, a.cutoff_hours
+    `SELECT ba.addon_id, ba.qty, ba.name_snapshot_en, a.capacity_per_slot, a.cutoff_hours,
+            a.hours, a.extra_stop_offset_minutes, a.min_minutes_before_close, a.available_from, a.available_until
        FROM booking_addons ba
        JOIN addons a ON a.id = ba.addon_id
       WHERE ba.booking_id = :booking_id`,
@@ -1151,6 +1180,12 @@ export async function checkAddonsFitSlot(db, bookingId, routeId, newDate, newSlo
     const cutoffMinutes = (line.cutoff_hours || 0) * 60;
     if (isSlotPastCutoff(newDate, newSlot, timezone, cutoffMinutes)) {
       problems.push({ addon_id: line.addon_id, name_en: line.name_snapshot_en, reason: 'cutoff', requested_qty: line.qty });
+      continue;
+    }
+    // migrations/0034: the extra stop's bar must be open (with the 1.5 h
+    // margin) at the NEW arrival time too.
+    if (!addonFitsTime(line, newDate, newSlot)) {
+      problems.push({ addon_id: line.addon_id, name_en: line.name_snapshot_en, reason: 'hours', requested_qty: line.qty });
       continue;
     }
     if (line.capacity_per_slot == null) continue; // unlimited
