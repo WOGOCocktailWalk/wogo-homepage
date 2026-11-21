@@ -281,3 +281,13 @@ describe('4-bar map', () => {
     assert.doesNotMatch(mail.html, /4bars/);
   });
 });
+
+describe('paid total includes extras', () => {
+  test('guest confirmation total = tickets + add-ons (3 x 29,95 + 3 x 9,00 = 116,85)', () => {
+    const route = { id: 'r', name: 'Rotterdam Route 2', city: 'Rotterdam', currency: 'EUR', price_cents: 2995 };
+    const booking = { id: 'b_1', date: '2026-11-27', slot: '18:00', party: 3, name: 'Anna', locale: 'nl' };
+    const line = { qty: 3, name_snapshot_en: 'Make it 4 bars', name_snapshot_nl: 'Maak er 4 bars van', unit_price_cents: 900, currency: 'EUR' };
+    assert.match(renderGuestConfirmation(booking, route, { locale: 'nl', addons: [line] }).html, /116,85/);
+    assert.match(renderGuestConfirmation(booking, route, { locale: 'nl', addons: [] }).html, /89,85/);
+  });
+});

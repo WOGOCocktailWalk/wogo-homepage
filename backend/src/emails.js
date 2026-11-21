@@ -382,8 +382,13 @@ function discountBlock(code, lang, percent) {
   </table>`;
 }
 
-function priceLine(booking, route) {
-  const gross = (route.price_cents || 0) * (booking.party || 0);
+function priceLine(booking, route, addons) {
+  // Tickets plus every add-on line the guest paid for (the extras are a
+  // separate Stripe line item, so the total they were charged includes them).
+  const extras = Array.isArray(addons)
+    ? addons.reduce((sum, a) => sum + (Number(a.qty) || 0) * (Number(a.unit_price_cents) || 0), 0)
+    : 0;
+  const gross = (route.price_cents || 0) * (booking.party || 0) + extras;
   const disc = booking.discount_cents || 0;
   const net = Math.max(0, gross - disc);
   // migrations/0011: money is formatted in the ROUTE's own currency (defaults
@@ -489,7 +494,7 @@ export function renderGuestConfirmation(booking, route, opts = {}) {
     [t.labels.date, escapeHtml(formatLongDate(booking.date, lang))],
     [t.labels.time, escapeHtml(booking.slot)],
     [t.labels.party, escapeHtml(t.guests(booking.party))],
-    [t.labels.total, priceLine(booking, route)],
+    [t.labels.total, priceLine(booking, route, opts.addons)],
     [t.labels.ref, `<span style="font-family:ui-monospace,Menlo,monospace;font-size:12px;color:${C.muted};">${escapeHtml(booking.id)}</span>`],
   ];
   // Gift-card redemption (migrations/0018/0019) — additive row, only when a
@@ -578,7 +583,7 @@ export function renderOwnerNotification(booking, route, opts = {}) {
     ['Date', escapeHtml(formatLongDate(booking.date, 'en'))],
     ['Start time', escapeHtml(booking.slot)],
     ['Party', `${escapeHtml(String(booking.party))} ${booking.party === 1 ? 'guest' : 'guests'}`],
-    ['Revenue', priceLine(booking, route)],
+    ['Revenue', priceLine(booking, route, opts.addons)],
     ['Source', escapeHtml(source)],
   ];
   if (discountCents > 0 || discountCode) {
