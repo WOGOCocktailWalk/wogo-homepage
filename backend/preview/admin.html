@@ -6427,6 +6427,10 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
        the chosen period is not, and no conversion rate on half-counted days. */
     const tNo = ok && t.own_counter !== undefined && t.comparable === false;
     const tNote = ok && t.complete === false ? "Not every visitor counted before 24 Nov" : null;
+    /* Days before 1 Nov 2026 come from the old Wix site: orders and revenue
+       are exact, guests and customers per day are not known there. */
+    const lg = !!(d.sales.legacy || d.previous_sales.legacy);
+    const lgNote = d.sales.legacy ? "Before 1 Nov: not counted (Wix)" : null;
     const cards = [
       ok
         ? { title: "Site sessions", noDelta: tNo, note: tNote, daily: series(t.daily, "sessions"), deltaPct: pctDeltaClient(t.totals.sessions, t.previous_totals.sessions), valueText: String(t.totals.sessions), fmt: (v) => String(v) }
@@ -6444,11 +6448,15 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
       ok
         ? { title: "Unique visitors", noDelta: tNo, note: tNote, daily: series(t.daily, "unique_visitors"), deltaPct: pctDeltaClient(t.totals.unique_visitors, t.previous_totals.unique_visitors), valueText: String(t.totals.unique_visitors), fmt: (v) => String(v) }
         : { title: "Unique visitors", muted: true },
-      { title: "Items sold", daily: series(d.sales.daily, "guests"), deltaPct: pctDeltaClient(d.sales.totals.guests, d.previous_sales.totals.guests), valueText: String(d.sales.totals.guests), fmt: (v) => String(v) },
-      { title: "Customers", daily: series(d.sales.daily, "customers"), deltaPct: pctDeltaClient(d.sales.totals.customers, d.previous_sales.totals.customers), valueText: String(d.sales.totals.customers), fmt: (v) => String(v) },
+      { title: "Items sold", noDelta: lg, note: lgNote, daily: series(d.sales.daily, "guests"), deltaPct: pctDeltaClient(d.sales.totals.guests, d.previous_sales.totals.guests), valueText: String(d.sales.totals.guests), fmt: (v) => String(v) },
+      { title: "Customers", noDelta: lg, note: lgNote, daily: series(d.sales.daily, "customers"), deltaPct: pctDeltaClient(d.sales.totals.customers, d.previous_sales.totals.customers), valueText: String(d.sales.totals.customers), fmt: (v) => String(v) },
       { title: "Avg. order value", daily: series(d.sales.daily, "revenue_cents").map((p, i) => ({ date: p.date, value: d.sales.daily[i].orders > 0 ? Math.round(d.sales.daily[i].revenue_cents / d.sales.daily[i].orders) : 0 })), deltaPct: pctDeltaClient(d.sales.totals.avg_order_value_cents, d.previous_sales.totals.avg_order_value_cents), valueText: euros(d.sales.totals.avg_order_value_cents), fmt: (v) => euros(v) },
     ];
     cards.forEach((c) => grid.appendChild(keyStatCard(c)));
+    if (d.previous_from && d.previous_to) {
+      const cmp = d.previous_from === d.previous_to ? prettyDate(d.previous_from) : prettyDate(d.previous_from) + " → " + prettyDate(d.previous_to);
+      return el("div", {}, [grid, el("div", { class: "capacity-hint kpi-compare", text: "The % on each tile compares with " + cmp + (d.previous_sales.legacy ? " (sales from Wix)" : "") + "." })]);
+    }
     return grid;
   }
 

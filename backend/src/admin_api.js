@@ -6,7 +6,7 @@ import * as db from './db.js';
 import {
   toCsv, maskEmail, aggregateCustomers, computeLoginLockout, nowSqlite, sqliteMinutesAgo, sqliteMinutesFromNow,
   validateNotes, isValidCurrencyCode, isValidIanaTimeZone, buildBookingAnalytics, addDaysToDateStr,
-  buildHighlightsSales, computePctDelta, pageViewsByCity, addGiftCardSalesToHighlights, overlaySiteVisitTraffic,
+  buildHighlightsSales, computePctDelta, pageViewsByCity, addGiftCardSalesToHighlights, overlayLegacySales, overlaySiteVisitTraffic,
   validateBlogSlug, validateBlogCategory, sanitizeBlogHtml, stripHtmlTags,
   analyticsRevenueCents, formatNotificationDate, formatEuros, summarizeAddonsForNotification,
   computeBarArrivals, utcToBusinessTime, businessTimeToUtc, businessToday, withExtraStops, validateAddonHours,
@@ -2337,6 +2337,7 @@ function parseAnalyticsRange(url) {
   return { from, to };
 }
 
+const LEGACY_SALES_CUTOFF = '2026-11-01';
 const SITE_VISIT_COUNTER_FIRST_PARTIAL_DAY = '2026-11-23';
 const ANALYTICS_GROUPS = new Set(['day', 'week', 'month']);
 
@@ -2607,6 +2608,15 @@ async function cachedGa4(env, cacheKey, ttlSeconds, fetcher) {
  * totals, top-selling-items/sales-by-source deltas) so "previous period"
  * means the same thing everywhere on Highlights. */
 function previousPeriod(from, to) {
+  // Month-to-date (starts on the 1st, ends in the same month): compare with
+  // the SAME days of the month before, like Wix did — "how far was I on this
+  // day last month" (owner, 23 Nov 2026).
+  if (from.slice(8) === '01' && from.slice(0, 7) === to.slice(0, 7)) {
+    const lastOfPrev = addDaysToDateStr(from, -1);
+    const prevMonth = lastOfPrev.slice(0, 7);
+    const day = to.slice(8) > lastOfPrev.slice(8) ? lastOfPrev.slice(8) : to.slice(8);
+    return { previousFrom: `${prevMonth}-01`, previousTo: `${prevMonth}-${day}` };
+  }
   const days = Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86400000) + 1;
   const previousTo = addDaysToDateStr(from, -1);
   const previousFrom = addDaysToDateStr(previousTo, -(days - 1));
@@ -2676,6 +2686,14 @@ export async function handleAnalyticsHighlights(request, env) {
   const giftNow = toLocal(giftNowUtc), giftPrev = toLocal(giftPrevUtc);
   addGiftCardSalesToHighlights(sales, giftNow);
   addGiftCardSalesToHighlights(previousSales, giftPrev);
+  // Days before 1 Nov 2026: the old Wix site's own daily sales (see
+  // logic.js:overlayLegacySales). Only on the unfiltered view.
+  if (!analyticsChannel(request) && (range.from < LEGACY_SALES_CUTOFF || previousFrom < LEGACY_SALES_CUTOFF)) {
+    let legacy = null;
+    try { legacy = JSON.parse((await db.getSetting(env.DB, 'legacy_daily_sales')) || 'null'); } catch { legacy = null; }
+    overlayLegacySales(sales, legacy, LEGACY_SALES_CUTOFF);
+    overlayLegacySales(previousSales, legacy, LEGACY_SALES_CUTOFF);
+  }
 
   // Top selling items / sales by source: match current <-> previous rows by
   // key and attach a %-delta — a route/source with no previous-period rows
@@ -2737,8 +2755,8 @@ export async function handleAnalyticsHighlights(request, env) {
     to: range.to,
     previous_from: previousFrom,
     previous_to: previousTo,
-    sales: { daily: sales.daily, totals: sales.totals },
-    previous_sales: { daily: previousSales.daily, totals: previousSales.totals },
+    sales: { daily: sales.daily, totals: sales.totals, legacy: !!sales.legacy },
+    previous_sales: { daily: previousSales.daily, totals: previousSales.totals, legacy: !!previousSales.legacy },
     traffic: trafficOut,
     top_selling_items: topSellingItems,
     sales_by_source: salesBySource,

@@ -1656,6 +1656,32 @@ export function withExtraStops(route, arrivals, booking, addonLines) {
 /** Adds paid gift card sales (rows: {initial_cents, created_at}) to a
  * buildHighlightsSales() result: each card is one order worth its value on
  * the day it was bought. Mutates and returns `sales`. (23 Nov 2026) */
+/** Sales made on the old Wix site, per day, for days before the new system
+ * holds every sale (only bookings with a walk from 1 Nov 2026 were copied
+ * over). `legacy` = { 'YYYY-MM-DD': { o: orders, r: revenue_cents } } from the
+ * Wix orders export (settings row `legacy_daily_sales`). For every day before
+ * `cutoff` the day's orders and revenue are REPLACED by Wix's own figures
+ * (never added: the copied-over bookings are already inside them). Guests and
+ * customers are not known per day there, so `sales.legacy` tells the dashboard
+ * not to compare those. Returns the same object. */
+export function overlayLegacySales(sales, legacy, cutoff) {
+  if (!legacy || !sales || !Array.isArray(sales.daily)) return sales;
+  let touched = false;
+  for (const day of sales.daily) {
+    if (!(day.date < cutoff)) continue;
+    const l = legacy[day.date] || { o: 0, r: 0 };
+    day.orders = Number(l.o) || 0;
+    day.revenue_cents = Number(l.r) || 0;
+    touched = true;
+  }
+  if (!touched) return sales;
+  sales.totals.orders = sales.daily.reduce((n, d) => n + d.orders, 0);
+  sales.totals.revenue_cents = sales.daily.reduce((n, d) => n + d.revenue_cents, 0);
+  sales.totals.avg_order_value_cents = sales.totals.orders > 0 ? Math.round(sales.totals.revenue_cents / sales.totals.orders) : 0;
+  sales.legacy = true;
+  return sales;
+}
+
 export function addGiftCardSalesToHighlights(sales, giftRows) {
   const byDate = new Map(sales.daily.map((d) => [d.date, d]));
   let added = 0;
