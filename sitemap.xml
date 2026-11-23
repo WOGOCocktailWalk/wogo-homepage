@@ -515,22 +515,6 @@
   </url>
 
   <url>
-    <loc>https://www.wogococktailwalk.com/blog/2026-cocktail-trends/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/2026-cocktail-trends/"/>
-    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/2026-cocktail-trends/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/2026-cocktail-trends/"/>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://www.wogococktailwalk.com/nl/blog/2026-cocktail-trends/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/2026-cocktail-trends/"/>
-    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/2026-cocktail-trends/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/2026-cocktail-trends/"/>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://www.wogococktailwalk.com/blog/best-bars-in-groningen/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/best-bars-in-groningen/"/>
     <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/best-bars-in-groningen/"/>
@@ -885,6 +869,22 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/mocktails-and-their-history/"/>
     <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/mocktails-and-their-history/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/mocktails-and-their-history/"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/blog/2026-cocktail-trends/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/2026-cocktail-trends/"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/2026-cocktail-trends/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/2026-cocktail-trends/"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/nl/blog/2026-cocktail-trends/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/2026-cocktail-trends/"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/2026-cocktail-trends/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/2026-cocktail-trends/"/>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
