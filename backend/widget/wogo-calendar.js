@@ -98,6 +98,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       notes_ph: "Nut allergy, wheelchair access, celebrating a birthday…",
       gift: "Gift card code (optional)", gift_ph: "WOGO-XXXX-XXXX",
       gift_hint: "Have a discount code? You add it in the next step, on the payment page. A gift card and a discount code cannot be used on the same booking.",
+      notes_link: "+ Allergies or notes", gift_link: "+ Use a gift card", discount_line: "Discount code? You add it on the payment page.", paybar_btn: "Pay securely", wa_help: "Question? WhatsApp us",
       /* Marketing opt-in. Unticked by default (GDPR: consent must be a positive
          act) — the checkbox is created unchecked and only ever restored from the
          guest's own in-session snapshot. */
@@ -126,7 +127,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
          upsell panel. Only ever rendered when the route actually has an
          active add-on to offer (GET /api/routes' has_addons flag) — a route
          with none skips every one of these strings entirely. */
-      addons_title: "Make it a night out?",
+      addons_title: "Make it a night out? (optional)",
       addons_subtitle: "Optional extras from the bars on your route. Skip this if you like.",
       addons_skip: "Nothing here is required to book.",
       addons_each: "each",
@@ -168,6 +169,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       notes_ph: "Notenallergie, rolstoeltoegang, een verjaardag vieren…",
       gift: "Cadeaubon-code (optioneel)", gift_ph: "WOGO-XXXX-XXXX",
       gift_hint: "Heb je een kortingscode? Die vul je in bij de volgende stap, op de betaalpagina. Een cadeaubon en een kortingscode kun je niet op dezelfde boeking gebruiken.",
+      notes_link: "+ Allergieën of opmerkingen", gift_link: "+ Cadeaubon gebruiken", discount_line: "Kortingscode? Die vul je in op de betaalpagina.", paybar_btn: "Veilig betalen", wa_help: "Vraag? WhatsApp ons",
       optin: "Houd me op de hoogte van nieuwe routes en acties",
       total: "Totaal", book: "Naar veilig betalen",
       redirecting: "Je gaat naar de beveiligde betaalpagina…",
@@ -189,7 +191,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       status_form: "%s om %t geselecteerd. Vul je gegevens in om te boeken.",
       step_date: "Datum", step_time: "Tijd", step_details: "Gegevens",
       placeholder_note: "Online boeken opent zodra deze stad live gaat.",
-      addons_title: "Maak er een avond van?",
+      addons_title: "Maak er een avond van? (optioneel)",
       addons_subtitle: "Optionele extra's van de bars op jouw route. Sla dit gerust over.",
       addons_skip: "Niets hier is verplicht om te boeken.",
       addons_each: "per stuk",
@@ -349,6 +351,8 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       const set = (f, val) => { if (f && f.el && val) f.el.value = val; };
       set(this.nameInput, s.name); set(this.emailInput, s.email); set(this.phoneInput, s.phone);
       set(this.notesInput, s.notes); set(this.giftInput, s.gift);
+      if (s.notes && this.notesInput && this.notesInput._open) this.notesInput._open(false);
+      if (s.gift && this.giftInput && this.giftInput._open) this.giftInput._open(false);
       if (this.optIn) this.optIn.checked = s.optIn;
     }
 
@@ -628,7 +632,11 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       this.card.querySelectorAll('.wc-day[aria-pressed]').forEach((b) => b.setAttribute("aria-pressed", "false"));
       cell.setAttribute("aria-pressed", "true");
       this.selectedDate = ds; this.selectedSlot = null; this._dayCell = cell;
+      this._removePaybar();
       this.slotHost.innerHTML = "";
+      /* Step counting (23 Nov 2026): date picked. GA4 custom event via the
+         site's shared helper (buffers until analytics consent). */
+      try { if (window.wogoTrack) window.wogoTrack("select_date", { item_id: this.routeId, date: ds }); } catch (e) {}
       this.announce(fmt(this.t.status_slots, { "%s": this.dayLabel(ds) }));
 
       // loading placeholder
@@ -654,6 +662,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
     }
 
     renderSlots() {
+      this._removePaybar();
       this.slotHost.innerHTML = "";
       const panel = el("div", "wc-panel");
       const ph = el("div", "wc-panel-head");
@@ -704,6 +713,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       this.slotHost.querySelectorAll('.wc-slot[aria-pressed]').forEach((b) => b.setAttribute("aria-pressed", "false"));
       btn.setAttribute("aria-pressed", "true");
       this.selectedSlot = s;
+      try { if (window.wogoTrack) window.wogoTrack("select_time", { item_id: this.routeId, slot: s.slot }); } catch (e) {}
       this.party = Math.min(this.party, Math.min(this.route.max_party, s.seats_left));
       if (this.party < 1) this.party = 1;
       this.announce(fmt(this.t.status_form, { "%s": this.dayLabel(this.selectedDate), "%t": s.slot }));
@@ -762,6 +772,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       const back = el("button", "wc-back", t.back);
       back.type = "button";
       back.addEventListener("click", () => {
+        this._removePaybar();
         this.formHost.innerHTML = "";
         this.slotHost.querySelectorAll('.wc-slot[aria-pressed]').forEach((b) => b.setAttribute("aria-pressed", "false"));
         this.setStep(1);
@@ -805,7 +816,9 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       // DOM at all for a route with no active add-ons (loadAddons returns
       // before touching this node) — "byte-for-byte as today".
       this.addonsHost = el("div", "wc-addons-host");
-      panel.appendChild(this.addonsHost);
+      /* 23 Nov 2026: appended further down (just above the newsletter box and
+         the total) so the extra is a last, small choice instead of a block
+         between the guest count and the name field. */
 
       // name
       this.nameInput = this.textField(panel, "wc-name", t.name, "text", t.name_ph, "name");
@@ -815,6 +828,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       this.phoneInput = this.textField(panel, "wc-phone", t.phone, "tel", t.phone_ph, "tel");
       // allergies / notes — optional free text, sent as `notes` on /api/book
       this.notesInput = this.textareaField(panel, "wc-notes", t.notes, t.notes_ph);
+      this._collapse(panel, this.notesInput, t.notes_link);
       // gift-card code — optional, SEPARATE from any marketing promo code
       // (which is entered on Stripe's own Checkout page, not here). Sent as
       // `gift_code` on /api/book; server validates it (backend/src/guest_api.js).
@@ -824,6 +838,10 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       giftHint.id = "wc-gift-hint";
       this.giftInput.el.parentNode.appendChild(giftHint);
       this.giftInput.el.setAttribute("aria-describedby", "wc-gift-err wc-gift-hint");
+      this._collapse(panel, this.giftInput, t.gift_link);
+      panel.appendChild(el("div", "wc-hint wc-discount-line", t.discount_line));
+
+      panel.appendChild(this.addonsHost);
 
       // opt-in
       const optWrap = el("label", "wc-check");
@@ -843,6 +861,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       book.type = "button";
       book.addEventListener("click", () => this.submit(book));
       panel.appendChild(book);
+      this._book = book;
       panel.appendChild(el("div", "wc-fine", t.fine));
       if (t.legal) {
         const legal = el("div", "wc-fine wc-legal");
@@ -851,8 +870,18 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
           .replace("{privacy}", SITE_ROOT + "privacy/");
         panel.appendChild(legal);
       }
+      /* The WhatsApp bubble is hidden while this form is open on phones, so
+         offer it here as a quiet text link (review 23 Nov). */
+      const wa = el("a", "wc-fine wc-wa-link", this.t.wa_help);
+      wa.href = "https://wa.me/31202101168"; wa.target = "_blank"; wa.rel = "noopener";
+      panel.appendChild(wa);
 
       this.formHost.appendChild(panel);
+      this._renderPaybar(panel, book);
+      /* While the details form is open on a phone the WhatsApp bubble is
+         hidden (it covered the price and the pay button). Removed again by
+         _removePaybar (back / new date). */
+      try { document.documentElement.classList.add("wc-form-on"); } catch (e) {}
       this.setStep(2); // details step
       syncParty();
       this.nameInput.el.focus();
@@ -1038,6 +1067,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
       if (!this.totalEl) return;
       const grand = this.route.price_cents * this.party + this.addonsTotalCents();
       this.totalEl.innerHTML = `${this.t.total} <b>${money(grand, this.route.currency)}</b>`;
+      if (this._paybarTotal) this._paybarTotal.innerHTML = `${this.t.total} <b>${money(grand, this.route.currency)}</b>`;
     }
 
     /* The dietary/allergy field appears the MOMENT any FOOD add-on has
@@ -1054,6 +1084,72 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
         if (wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap);
         this._addonNotesInput = null;
       }
+    }
+
+    /* Optional field tucked behind a small "+ ..." link (23 Nov 2026: shorter
+       form on phones). The field itself is unchanged; it is only hidden until
+       the guest taps the link, and opens by itself if it already has a value. */
+    _collapse(parent, field, linkText) {
+      const wrap = field.el.parentNode;
+      const link = el("button", "wc-more-link", linkText);
+      link.type = "button";
+      link.setAttribute("aria-expanded", "false");
+      wrap.hidden = true;
+      parent.insertBefore(link, wrap);
+      field._open = (focus) => {
+        wrap.hidden = false; link.hidden = true; link.setAttribute("aria-expanded", "true");
+        if (focus !== false) field.el.focus();
+      };
+      link.addEventListener("click", () => field._open(true));
+    }
+
+    /* Phone-only sticky bar with the total + pay button, shown while the
+       details form is on screen but its own pay button is not (23 Nov 2026).
+       Tapping it runs the exact same submit as the real button. */
+    _removePaybar() {
+      if (this._paybarObs) { try { this._paybarObs.disconnect(); } catch (e) {} this._paybarObs = null; }
+      if (this._paybar && this._paybar.parentNode) this._paybar.parentNode.removeChild(this._paybar);
+      this._paybar = null; this._paybarTotal = null;
+      try { document.documentElement.classList.remove("wc-paybar-on", "wc-form-on"); } catch (e) {}
+    }
+    _renderPaybar(panel, book) {
+      this._removePaybar();
+      if (!("IntersectionObserver" in window)) return;
+      const bar = el("div", "wc-paybar");
+      bar.setAttribute("aria-hidden", "true");
+      this._paybarTotal = el("div", "wc-paybar-total");
+      const btn = el("button", "wc-paybar-btn", this.t.paybar_btn);
+      btn.type = "button"; btn.tabIndex = -1;
+      btn.addEventListener("click", () => {
+        if (book.disabled) return;
+        book.click();
+        /* Feedback (review 23 Nov): if validation did not jump to an empty
+           field, bring the real button (with its "redirecting" text or its
+           error message) into view; the bar then hides itself. */
+        setTimeout(() => {
+          const a = document.activeElement;
+          const onField = a && panel.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName);
+          if (!onField) book.scrollIntoView({ block: "center", behavior: "smooth" });
+        }, 60);
+      });
+      bar.appendChild(this._paybarTotal); bar.appendChild(btn);
+      document.body.appendChild(bar);
+      this._paybar = bar;
+      let panelIn = false, bookIn = false, typing = false;
+      const sync = () => {
+        const on = panelIn && !bookIn && !typing;
+        bar.classList.toggle("is-on", on);
+        try { document.documentElement.classList.toggle("wc-paybar-on", on); } catch (e) {}
+      };
+      this._paybarObs = new IntersectionObserver((entries) => {
+        entries.forEach((en) => { if (en.target === panel) panelIn = en.isIntersecting; else if (en.target === book) bookIn = en.isIntersecting; });
+        sync();
+      });
+      this._paybarObs.observe(panel); this._paybarObs.observe(book);
+      /* Hidden while the guest types (iPhone keyboard + fixed bars misbehave). */
+      const isField = (n) => n && /^(INPUT|TEXTAREA|SELECT)$/.test(n.tagName) && n.type !== "checkbox";
+      panel.addEventListener("focusin", (e) => { if (isField(e.target)) { typing = true; sync(); } });
+      panel.addEventListener("focusout", () => { setTimeout(() => { typing = isField(document.activeElement) && panel.contains(document.activeElement); sync(); }, 120); });
     }
 
     textField(parent, id, label, type, placeholder, autocomplete) {
@@ -1283,6 +1379,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
     inst.mount.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
       if (inst.formHost && inst.formHost.firstChild) {
+        if (inst._removePaybar) inst._removePaybar();
         inst.formHost.innerHTML = "";
         inst.slotHost.querySelectorAll('.wc-slot[aria-pressed]').forEach((b) => b.setAttribute("aria-pressed", "false"));
         inst.setStep(1);
