@@ -409,7 +409,8 @@ export async function getEmailCampaign(env, id) {
 export async function listCampaignRecipients(env, id, { waitMs = 1500, tries = 20 } = {}) {
   const { json } = await brevoRequest(env, 'POST', `/emailCampaigns/${encodeURIComponent(id)}/exportRecipients`, { recipientsType: 'all' });
   const processId = json && json.processId;
-  if (!processId) throw new Error('brevo_export_no_process');
+  // Brevo starts no export when the campaign reached nobody yet.
+  if (!processId) return [];
   for (let i = 0; i < tries; i++) {
     const { json: p } = await brevoRequest(env, 'GET', `/processes/${processId}`);
     if (p && p.status === 'completed' && p.export_url) {
