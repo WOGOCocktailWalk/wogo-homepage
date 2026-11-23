@@ -1679,7 +1679,20 @@ export function addGiftCardSalesToHighlights(sales, giftRows) {
  * over a range = the sum of daily uniques (someone visiting on two days counts
  * twice), the same simplification for both sources. */
 export function overlaySiteVisitTraffic(daily, own) {
-  const out = (daily || []).map((d) => (own && own[d.date] ? { date: d.date, ...own[d.date], source: 'own' } : d));
+  // Per day and per number, the HIGHER of the two: our counter sees everyone
+  // and should win, but on its first (partial) day, or for visitors whose ad
+  // blocker stops the hit, Google Analytics can be higher.
+  const out = (daily || []).map((d) => {
+    const o = own && own[d.date];
+    if (!o) return d;
+    return {
+      date: d.date,
+      sessions: Math.max(Number(d.sessions) || 0, o.sessions || 0),
+      page_views: Math.max(Number(d.page_views) || 0, o.page_views || 0),
+      unique_visitors: Math.max(Number(d.unique_visitors) || 0, o.unique_visitors || 0),
+      source: 'own',
+    };
+  });
   const totals = { sessions: 0, page_views: 0, unique_visitors: 0 };
   for (const d of out) {
     totals.sessions += Number(d.sessions) || 0;

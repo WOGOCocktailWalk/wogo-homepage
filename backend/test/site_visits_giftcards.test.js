@@ -29,6 +29,8 @@ describe('own visit counter', () => {
     const ga = [{ date: '2026-11-22', sessions: 10, page_views: 20, unique_visitors: 8 }, { date: '2026-11-23', sessions: 5, page_views: 9, unique_visitors: 4 }];
     const r = overlaySiteVisitTraffic(ga, { '2026-11-23': { sessions: 50, page_views: 90, unique_visitors: 40 } });
     assert.deepEqual(r.totals, { sessions: 60, page_views: 110, unique_visitors: 48 });
+    const partial = overlaySiteVisitTraffic(ga, { '2026-11-23': { sessions: 2, page_views: 3, unique_visitors: 2 } });
+    assert.equal(partial.daily[1].sessions, 5, 'a partial own day never undercuts Google Analytics');
   });
 
   test('db counter increments page views, sessions and uniques', async () => {
