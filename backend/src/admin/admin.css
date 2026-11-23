@@ -1769,3 +1769,10 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
 /* Blog list: views per article */
 .blog-views-days { min-height: 36px; padding: 4px 10px; font: inherit; font-size: 13px; border-radius: 10px; border: 1px solid var(--line-strong); background: transparent; }
 .blog-views-note { padding: 10px var(--card-pad-x, 18px); font-size: 13px; line-height: 1.45; opacity: .8; border-bottom: 1px solid var(--line); }
+
+/* Home "Your key stats" header (23 Nov 2026) */
+.home-stats { margin-bottom: 18px; }
+.home-stats-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 4px 0 12px; }
+.home-stats-title { margin: 0; font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.home-stats-select { width: auto !important; min-width: 0; display: inline-block; border: 0; background-color: transparent; color: var(--salmon-deep); font: inherit; font-weight: 700; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+.home-stats-select:focus { outline: 2px solid var(--salmon); }

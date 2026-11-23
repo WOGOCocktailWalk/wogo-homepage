@@ -320,7 +320,7 @@
     $("#sidebar").classList.remove("open");
     $("#topbar-actions").innerHTML = "";
     const titles = {
-      today: ["Today", "What's happening today, and what's new since you last looked"],
+      today: ["Home", "Your key stats, today's walks, and what's new since you last looked"],
       bookings: ["Bookings", "Every walk booked, across all cities and routes"],
       customers: ["Customers", "Who books with you, how often, and what they spend"],
       hours: ["Participants per hour", "Who is arriving, and when — pick a date"],
@@ -3542,36 +3542,7 @@
     ]));
     body.appendChild(liveCard);
 
-    const grid = el("div", { class: "kpi-grid" });
-    const series = (arr, key) => (arr || []).map((row) => ({ date: row.date, value: row[key] || 0 }));
-    const conversionSeries = d.sales.daily.map((row, i) => {
-      const sessions = ok ? (t.daily[i] ? t.daily[i].sessions : 0) : 0;
-      return { date: row.date, value: ok ? computeConversionRateClient(row.orders, sessions) : 0 };
-    });
-    const totalConversion = ok ? computeConversionRateClient(d.sales.totals.orders, t.totals.sessions) : 0;
-    const prevConversion = ok ? computeConversionRateClient(d.previous_sales.totals.orders, t.previous_totals.sessions) : 0;
-
-    const cards = [
-      ok
-        ? { title: "Site sessions", daily: series(t.daily, "sessions"), deltaPct: pctDeltaClient(t.totals.sessions, t.previous_totals.sessions), valueText: String(t.totals.sessions), fmt: (v) => String(v) }
-        : { title: "Site sessions", muted: true },
-      { title: "Total sales", daily: series(d.sales.daily, "revenue_cents"), deltaPct: pctDeltaClient(d.sales.totals.revenue_cents, d.previous_sales.totals.revenue_cents), valueText: euros(d.sales.totals.revenue_cents), fmt: (v) => euros(v) },
-      { title: "Total orders", daily: series(d.sales.daily, "orders"), deltaPct: pctDeltaClient(d.sales.totals.orders, d.previous_sales.totals.orders), valueText: String(d.sales.totals.orders), fmt: (v) => String(v) },
-      ok
-        ? { title: "Conversion rate", daily: conversionSeries, deltaPct: pctDeltaClient(totalConversion, prevConversion), valueText: (totalConversion * 100).toFixed(1) + "%", fmt: (v) => (v * 100).toFixed(1) + "%" }
-        : { title: "Conversion rate", muted: true, mutedNote: "Needs Google Analytics (orders ÷ sessions)" },
-      ok
-        ? { title: "Page views", daily: series(t.daily, "page_views"), deltaPct: pctDeltaClient(t.totals.page_views, t.previous_totals.page_views), valueText: String(t.totals.page_views), fmt: (v) => String(v) }
-        : { title: "Page views", muted: true },
-      ok
-        ? { title: "Unique visitors", daily: series(t.daily, "unique_visitors"), deltaPct: pctDeltaClient(t.totals.unique_visitors, t.previous_totals.unique_visitors), valueText: String(t.totals.unique_visitors), fmt: (v) => String(v) }
-        : { title: "Unique visitors", muted: true },
-      { title: "Items sold", daily: series(d.sales.daily, "guests"), deltaPct: pctDeltaClient(d.sales.totals.guests, d.previous_sales.totals.guests), valueText: String(d.sales.totals.guests), fmt: (v) => String(v) },
-      { title: "Customers", daily: series(d.sales.daily, "customers"), deltaPct: pctDeltaClient(d.sales.totals.customers, d.previous_sales.totals.customers), valueText: String(d.sales.totals.customers), fmt: (v) => String(v) },
-      { title: "Avg. order value", daily: series(d.sales.daily, "revenue_cents").map((p, i) => ({ date: p.date, value: d.sales.daily[i].orders > 0 ? Math.round(d.sales.daily[i].revenue_cents / d.sales.daily[i].orders) : 0 })), deltaPct: pctDeltaClient(d.sales.totals.avg_order_value_cents, d.previous_sales.totals.avg_order_value_cents), valueText: euros(d.sales.totals.avg_order_value_cents), fmt: (v) => euros(v) },
-    ];
-    cards.forEach((c) => grid.appendChild(keyStatCard(c)));
-    body.appendChild(grid);
+    body.appendChild(keyStatsGrid(d));
 
     // ---- Track your sales --------------------------------------------
     const salesHead = el("h2", { class: "section-head", text: "Track your sales" });
@@ -3626,6 +3597,42 @@
     });
     custCard.appendChild(custBody);
     body.appendChild(custCard);
+  }
+
+  /** The Wix-style 9-tile "Key stats" grid for one /analytics/highlights
+     response. Shared by Analytics -> Highlights and the Home screen. */
+  function keyStatsGrid(d) {
+    const t = d.traffic, ok = t && t.configured;
+    const grid = el("div", { class: "kpi-grid" });
+    const series = (arr, key) => (arr || []).map((row) => ({ date: row.date, value: row[key] || 0 }));
+    const conversionSeries = d.sales.daily.map((row, i) => {
+      const sessions = ok ? (t.daily[i] ? t.daily[i].sessions : 0) : 0;
+      return { date: row.date, value: ok ? computeConversionRateClient(row.orders, sessions) : 0 };
+    });
+    const totalConversion = ok ? computeConversionRateClient(d.sales.totals.orders, t.totals.sessions) : 0;
+    const prevConversion = ok ? computeConversionRateClient(d.previous_sales.totals.orders, t.previous_totals.sessions) : 0;
+
+    const cards = [
+      ok
+        ? { title: "Site sessions", daily: series(t.daily, "sessions"), deltaPct: pctDeltaClient(t.totals.sessions, t.previous_totals.sessions), valueText: String(t.totals.sessions), fmt: (v) => String(v) }
+        : { title: "Site sessions", muted: true },
+      { title: "Total sales", daily: series(d.sales.daily, "revenue_cents"), deltaPct: pctDeltaClient(d.sales.totals.revenue_cents, d.previous_sales.totals.revenue_cents), valueText: euros(d.sales.totals.revenue_cents), fmt: (v) => euros(v) },
+      { title: "Total orders", daily: series(d.sales.daily, "orders"), deltaPct: pctDeltaClient(d.sales.totals.orders, d.previous_sales.totals.orders), valueText: String(d.sales.totals.orders), fmt: (v) => String(v) },
+      ok
+        ? { title: "Conversion rate", daily: conversionSeries, deltaPct: pctDeltaClient(totalConversion, prevConversion), valueText: (totalConversion * 100).toFixed(1) + "%", fmt: (v) => (v * 100).toFixed(1) + "%" }
+        : { title: "Conversion rate", muted: true, mutedNote: "Needs Google Analytics (orders ÷ sessions)" },
+      ok
+        ? { title: "Page views", daily: series(t.daily, "page_views"), deltaPct: pctDeltaClient(t.totals.page_views, t.previous_totals.page_views), valueText: String(t.totals.page_views), fmt: (v) => String(v) }
+        : { title: "Page views", muted: true },
+      ok
+        ? { title: "Unique visitors", daily: series(t.daily, "unique_visitors"), deltaPct: pctDeltaClient(t.totals.unique_visitors, t.previous_totals.unique_visitors), valueText: String(t.totals.unique_visitors), fmt: (v) => String(v) }
+        : { title: "Unique visitors", muted: true },
+      { title: "Items sold", daily: series(d.sales.daily, "guests"), deltaPct: pctDeltaClient(d.sales.totals.guests, d.previous_sales.totals.guests), valueText: String(d.sales.totals.guests), fmt: (v) => String(v) },
+      { title: "Customers", daily: series(d.sales.daily, "customers"), deltaPct: pctDeltaClient(d.sales.totals.customers, d.previous_sales.totals.customers), valueText: String(d.sales.totals.customers), fmt: (v) => String(v) },
+      { title: "Avg. order value", daily: series(d.sales.daily, "revenue_cents").map((p, i) => ({ date: p.date, value: d.sales.daily[i].orders > 0 ? Math.round(d.sales.daily[i].revenue_cents / d.sales.daily[i].orders) : 0 })), deltaPct: pctDeltaClient(d.sales.totals.avg_order_value_cents, d.previous_sales.totals.avg_order_value_cents), valueText: euros(d.sales.totals.avg_order_value_cents), fmt: (v) => euros(v) },
+    ];
+    cards.forEach((c) => grid.appendChild(keyStatCard(c)));
+    return grid;
   }
 
   function computeConversionRateClient(orders, sessions) {
@@ -5118,8 +5125,37 @@
      lands on Bookings, unchanged). Today's walks, who's expected, what's
      come in since the owner last opened the dashboard, and quick links.
      ====================================================================== */
+  /* Home "Your key stats" block (owner request 23 Nov 2026: "like Wix, so I
+     can easily see total and per-day revenue"). Only ranges that END today,
+     so each tile's "X today / Y yesterday" line really is today/yesterday. */
+  const HOME_STAT_PRESETS = ["This month", "Last 7 days", "Last 30 days", "This year"];
+  function renderHomeStats(box) {
+    if (!S.homeStatsPreset) S.homeStatsPreset = "This month";
+    clear(box);
+    const sel = el("select", { class: "home-stats-select", "aria-label": "Period" },
+      HOME_STAT_PRESETS.map((p) => {
+        const o = el("option", { value: p, text: p.toLowerCase() });
+        if (p === S.homeStatsPreset) o.selected = true;
+        return o;
+      }));
+    sel.addEventListener("change", () => { S.homeStatsPreset = sel.value; renderHomeStats(box); });
+    box.appendChild(el("div", { class: "home-stats-head" }, [
+      el("h2", { class: "home-stats-title" }, [el("span", { text: "Your key stats for " }), sel]),
+      el("button", { class: "btn btn-quiet btn-sm", text: "All analytics →", onclick: () => { S.analytics.sub = "highlights"; S.analytics.range = rangeForPreset(S.homeStatsPreset); go("analytics"); } })
+    ]));
+    const gridBox = el("div", {}, [skeletonCard()]);
+    box.appendChild(gridBox);
+    const r = rangeForPreset(S.homeStatsPreset);
+    api("/admin/api/analytics/highlights?from=" + r.from + "&to=" + r.to)
+      .then((d) => { clear(gridBox); gridBox.appendChild(keyStatsGrid(d)); })
+      .catch((e) => { if (e.message !== "unauthenticated") { clear(gridBox); gridBox.appendChild(errorCard(e.message, () => renderHomeStats(box))); } });
+  }
+
   function renderToday(root) {
     clear(root);
+    const statsBox = el("div", { id: "home-stats", class: "home-stats" });
+    root.appendChild(statsBox);
+    if (S.me && S.me.role === "owner") renderHomeStats(statsBox);
     root.appendChild(el("div", { id: "today-walks" }, [skeletonCard()]));
     root.appendChild(el("div", { id: "today-notifs" }));
     loadToday();
@@ -5526,7 +5562,7 @@
       const isMobile = (window.matchMedia && window.matchMedia("(max-width: 900px)").matches) ||
         window.navigator.standalone === true ||
         (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
-      go(isMobile ? "today" : "bookings");
+      go("today"); // Home (key stats + today's walks) on every device since 23 Nov 2026
     } catch (e) {
       if (e.message === "unauthenticated") showLogin();
       else { showLogin(); toast(e.message, "err"); }
