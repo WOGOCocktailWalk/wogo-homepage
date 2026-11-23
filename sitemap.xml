@@ -525,11 +525,6 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://www.wogococktailwalk.com/blog/where-cocktails-got-their-names/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://www.wogococktailwalk.com/blog/damrak-gin/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -885,6 +880,11 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/best-cocktail-bars-amsterdam/"/>
     <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/best-cocktail-bars-amsterdam/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/best-cocktail-bars-amsterdam/"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/blog/where-cocktails-got-their-names/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
