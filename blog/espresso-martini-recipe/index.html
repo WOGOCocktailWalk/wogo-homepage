@@ -1354,7 +1354,7 @@
     .wogo-cc-banner .wogo-cc-h{display:none}
     .wogo-cc-banner .wogo-cc-p{font-size:.8rem; line-height:1.4}
     .wogo-cc-banner-actions{flex-wrap:nowrap; gap:8px}
-    .wogo-cc-banner .wogo-cc-btn{flex:1 1 0; padding:10px 6px; font-size:.82rem; white-space:nowrap}
+    .wogo-cc-banner-actions{flex-wrap:wrap} .wogo-cc-banner .wogo-cc-btn{flex:1 1 0; min-width:0; padding:11px 6px; font-size:.82rem; line-height:1.2; white-space:normal; text-align:center} .wogo-cc-banner .wogo-cc-btn-primary{order:-1; flex:1 1 100%; padding:13px 8px; font-size:.9rem} /* 23 Nov 2026: Accept full width on top, never cut off on any phone */
   }
 
   /* ---- visible focus everywhere (independent of page styles) ---- */
@@ -1392,7 +1392,7 @@
   <div class="wogo-cc-banner" id="wogoCcBanner" role="region" aria-label="Cookie consent" data-cc-aria="region_label" tabindex="-1" hidden>
     <div class="wogo-cc-banner-text">
       <h2 class="wogo-cc-h" data-cc="banner_title">We value your privacy</h2>
-      <p class="wogo-cc-p" data-cc="banner_body">We use cookies to keep the site working and, only if you agree, to understand our audience and improve our ads. You choose what to allow.</p>
+      <p class="wogo-cc-p" data-cc="banner_body">We use cookies to keep the site working and to measure which ads work. Google Analytics only if you agree.</p>
     </div>
     <div class="wogo-cc-banner-actions">
       <button type="button" class="wogo-cc-btn wogo-cc-btn-ghost" data-cc-act="reject" data-cc="btn_reject">Reject all</button>
@@ -1456,7 +1456,7 @@
               <span class="wogo-cc-slider" aria-hidden="true"></span>
             </label>
           </div>
-          <p class="wogo-cc-cat-desc" data-cc="cat_marketing_d">Lets us measure our ads (Meta Pixel) so we show them to the right people and waste less budget.</p>
+          <p class="wogo-cc-cat-desc" data-cc="cat_marketing_d">Google ad features, so we show our ads to the right people. Note: the Meta Pixel, which measures our ads, runs for every visitor (see the cookie policy).</p>
         </li>
       </ul>
 
@@ -1483,7 +1483,7 @@
   var I18N = {
     en: {
       banner_title: "We value your privacy",
-      banner_body:  "We use cookies to keep the site working and, only if you agree, to understand our audience and improve our ads. You choose what to allow.",
+      banner_body:  "We use cookies to keep the site working and to measure which ads work. Google Analytics only if you agree.",
       btn_reject:   "Reject all",
       btn_accept:   "Accept all",
       btn_customize:"Customize",
@@ -1500,11 +1500,11 @@
       cat_functional_h: "Functional",
       cat_functional_d: "Extra conveniences like embedded maps, videos or chat, if we add them.",
       cat_marketing_h: "Marketing",
-      cat_marketing_d: "Lets us measure our ads (Meta Pixel) so we show them to the right people and waste less budget."
+      cat_marketing_d: "Google ad features, so we show our ads to the right people. Note: the Meta Pixel, which measures our ads, runs for every visitor (see the cookie policy)."
     },
     nl: {
       banner_title: "Jouw privacy telt",
-      banner_body:  "We gebruiken cookies om de site te laten werken en, alleen als je dat goedvindt, om ons publiek te begrijpen en onze advertenties te verbeteren. Jij kiest wat je toestaat.",
+      banner_body:  "We gebruiken cookies zodat de site goed werkt en om te meten welke advertenties werken. Google Analytics alleen als jij dat wilt.",
       btn_reject:   "Alles weigeren",
       btn_accept:   "Alles accepteren",
       btn_customize:"Zelf instellen",
@@ -1521,7 +1521,7 @@
       cat_functional_h: "Functioneel",
       cat_functional_d: "Extra gemak zoals ingesloten kaarten, video’s of chat, mocht dat er komen.",
       cat_marketing_h: "Marketing",
-      cat_marketing_d: "Hiermee meten we onze advertenties (Meta Pixel), zodat we ze aan de juiste mensen tonen en minder budget verspillen."
+      cat_marketing_d: "Advertentiefuncties van Google, zodat we onze advertenties aan de juiste mensen tonen. Let op: de Meta Pixel, die onze advertenties meet, draait voor iedere bezoeker (zie het cookiebeleid)."
     }
   };
 
