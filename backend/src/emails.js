@@ -418,7 +418,7 @@ const GUEST_STRINGS = {
     labels: { route: 'Experience', date: 'Date', time: 'Start time', party: 'Guests', total: 'Total paid', ref: 'Booking ref', gift: 'Gift card' },
     includedTitle: "What's included",
     included: [
-      'A reserved table waiting at every stop on your route',
+      'A reserved spot waiting at every stop on your route',
       'One signature cocktail at each bar, from that bar’s own WOGO menu',
       "A curated walk through the city's most-loved hidden bars",
       'Nothing to organise on the night — just turn up and enjoy',
@@ -453,7 +453,7 @@ const GUEST_STRINGS = {
     labels: { route: 'Ervaring', date: 'Datum', time: 'Starttijd', party: 'Gasten', total: 'Totaal betaald', ref: 'Boekingsnr.', gift: 'Cadeaubon' },
     includedTitle: 'Wat is inbegrepen',
     included: [
-      'Een gereserveerde tafel bij elke stop op je route',
+      'Een gereserveerde plek bij elke stop op je route',
       'Eén signature cocktail in elke bar, van het eigen WOGO-menu van die bar',
       'Een uitgekiende wandeling langs de leukste verborgen bars van de stad',
       'Niets te regelen op de avond zelf — kom gewoon langs en geniet',

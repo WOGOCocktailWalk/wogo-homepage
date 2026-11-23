@@ -1,7 +1,7 @@
 {
   "name": "WOGO Cocktail Walk",
   "short_name": "WOGO",
-  "description": "Self-guided cocktail walks: three hand-picked bars, three cocktails, tables reserved.",
+  "description": "Self-guided cocktail walks: three hand-picked bars, three cocktails, spots reserved.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
