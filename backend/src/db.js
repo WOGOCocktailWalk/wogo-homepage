@@ -3563,3 +3563,55 @@ export async function listConfirmedSubscriberEmails(db, locale = null) {
     : await all(db, `SELECT email FROM subscribers WHERE status = 'confirmed'`, {});
   return rows.map((r) => r.email);
 }
+
+// ---------------------------------------------------------------------------
+// Own site-visit counter (23 Nov 2026). Google Analytics only sees visitors
+// who accept the cookie banner; this counts every page view server-side
+// without storing anything on the visitor's device. One settings row per
+// Amsterdam calendar day: 'sitevisit:YYYY-MM-DD' -> {pv, s, u}
+// (page views, sessions, unique visitors). No schema change.
+// ---------------------------------------------------------------------------
+const SITE_VISIT_PREFIX = 'sitevisit:';
+
+export async function recordSiteVisit(db, date, { session, unique }) {
+  const s = session ? 1 : 0;
+  const u = unique ? 1 : 0;
+  await run(
+    db,
+    `INSERT INTO settings (k, v) VALUES (:k, json_object('pv', 1, 's', :s, 'u', :u))
+     ON CONFLICT(k) DO UPDATE SET v = json_set(v,
+       '$.pv', COALESCE(json_extract(v, '$.pv'), 0) + 1,
+       '$.s', COALESCE(json_extract(v, '$.s'), 0) + :s,
+       '$.u', COALESCE(json_extract(v, '$.u'), 0) + :u)`,
+    { k: SITE_VISIT_PREFIX + date, s, u }
+  );
+}
+
+/** { 'YYYY-MM-DD': { page_views, sessions, unique_visitors } } for days that
+ * have own-counter data between from..to (inclusive). */
+export async function listSiteVisitDays(db, from, to) {
+  const rows = await all(
+    db,
+    `SELECT k, COALESCE(json_extract(v, '$.pv'), 0) AS pv, COALESCE(json_extract(v, '$.s'), 0) AS s, COALESCE(json_extract(v, '$.u'), 0) AS u
+       FROM settings WHERE k >= :a AND k <= :b`,
+    { a: SITE_VISIT_PREFIX + from, b: SITE_VISIT_PREFIX + to }
+  );
+  const out = {};
+  for (const r of rows) out[r.k.slice(SITE_VISIT_PREFIX.length)] = { page_views: Number(r.pv) || 0, sessions: Number(r.s) || 0, unique_visitors: Number(r.u) || 0 };
+  return out;
+}
+
+/** Paid gift cards (bought through Stripe, not voided) per sale day, for the
+ * revenue tiles. Imported Wix cards and staff-issued cards have no Stripe
+ * session and are left out (they were not sold on this site). Redemptions
+ * are never revenue twice: a booking's revenue already subtracts the gift
+ * card amount it used (logic.js:analyticsRevenueCents). */
+export async function listGiftCardSalesBySaleDate(db, fromTs, toTs) {
+  return all(
+    db,
+    `SELECT id, initial_cents, buyer_email, created_at FROM gift_cards
+      WHERE stripe_session IS NOT NULL AND status != 'void'
+        AND created_at >= :from AND created_at <= :to`,
+    { from: fromTs, to: toTs }
+  );
+}

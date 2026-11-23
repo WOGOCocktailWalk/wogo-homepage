@@ -14,7 +14,7 @@ import * as db from './db.js';
 import { corsHeaders } from './guest_api.js';
 import { isAllowedOrigin, MISSING_PAGE_MAX_DISTINCT, MISSING_PAGE_RETENTION_DAYS, MISSING_PAGE_HITS_PER_WINDOW, MISSING_PAGE_WINDOW_MINUTES, MISSING_PAGE_MAX_LENGTH } from './config.js';
 import { sha256Hex, hasCsrfHeader } from './auth.js';
-import { sqliteMinutesAgo } from './logic.js';
+import { sqliteMinutesAgo, businessToday } from './logic.js';
 import { audit } from './admin_api.js';
 
 const MAX_RAW_LENGTH = 300;
@@ -156,6 +156,36 @@ export async function handleBlogViewHit(request, env) {
     await db.recordBlogView(env.DB, slug);
   } catch (err) {
     console.error('blog_view_hit_failed', String(err && err.message ? err.message : err));
+  }
+  return done();
+}
+
+/** POST /api/site-visit — body: the page path (text). Counts one page view
+ * for today's own-counter row, plus a session (no hit from this visitor in
+ * the last 30 minutes) and a unique visitor (first hit today). The visitor is
+ * recognised by a one-way hash of IP + browser + date, kept ~24h in
+ * rate_events — nothing is stored on the visitor's device. */
+export async function handleSiteVisitHit(request, env) {
+  const done = (status = 204) => new Response(null, { status, headers: corsHeaders(request) });
+  try {
+    const origin = request.headers.get('Origin');
+    if (!origin) return done();
+    if (!isAllowedOrigin(origin)) return done(403);
+    const ua = request.headers.get('User-Agent') || '';
+    if (!ua || BOT_UA_RE.test(ua) || /lighthouse|pagespeed|gtmetrix|pingdom/i.test(ua)) return done();
+    const path = (await request.text()).slice(0, 300).trim();
+    if (!path.startsWith('/') || path.startsWith('/admin')) return done();
+    const date = businessToday();
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const identity = (await sha256Hex(`site-visit|${date}|${ip}|${ua}`)).slice(0, 32);
+    const [today, recent] = await Promise.all([
+      db.countRateEventsSince(env.DB, 'site_visit', identity, sqliteMinutesAgo(24 * 60)),
+      db.countRateEventsSince(env.DB, 'site_visit', identity, sqliteMinutesAgo(30)),
+    ]);
+    await db.recordRateEvent(env.DB, 'site_visit', identity);
+    await db.recordSiteVisit(env.DB, date, { session: recent === 0, unique: today === 0 });
+  } catch (err) {
+    console.error('site_visit_hit_failed', String(err && err.message ? err.message : err));
   }
   return done();
 }

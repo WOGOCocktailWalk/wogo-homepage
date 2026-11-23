@@ -6,7 +6,7 @@ import * as db from './db.js';
 import {
   toCsv, maskEmail, aggregateCustomers, computeLoginLockout, nowSqlite, sqliteMinutesAgo, sqliteMinutesFromNow,
   validateNotes, isValidCurrencyCode, isValidIanaTimeZone, buildBookingAnalytics, addDaysToDateStr,
-  buildHighlightsSales, computePctDelta, pageViewsByCity,
+  buildHighlightsSales, computePctDelta, pageViewsByCity, addGiftCardSalesToHighlights, overlaySiteVisitTraffic,
   validateBlogSlug, validateBlogCategory, sanitizeBlogHtml, stripHtmlTags,
   analyticsRevenueCents, formatNotificationDate, formatEuros, summarizeAddonsForNotification,
   computeBarArrivals, utcToBusinessTime, businessTimeToUtc, businessToday, withExtraStops, validateAddonHours,
@@ -2657,6 +2657,17 @@ export async function handleAnalyticsHighlights(request, env) {
 
   const sales = buildHighlightsSales(currentRows, range.from, range.to, { dateField: 'created_at' });
   const previousSales = buildHighlightsSales(previousRows, previousFrom, previousTo, { dateField: 'created_at' });
+  // Gift cards sold count as revenue + orders (owner, 23 Nov 2026) — only on
+  // the unfiltered view, since a gift card has no booking channel.
+  // Own site-visit counter replaces GA4 traffic on days it has data.
+  const [giftNow, giftPrev, ownNow, ownPrev] = await Promise.all([
+    analyticsChannel(request) ? [] : db.listGiftCardSalesBySaleDate(env.DB, `${range.from} 00:00:00`, `${range.to} 23:59:59`),
+    analyticsChannel(request) ? [] : db.listGiftCardSalesBySaleDate(env.DB, `${previousFrom} 00:00:00`, `${previousTo} 23:59:59`),
+    db.listSiteVisitDays(env.DB, range.from, range.to),
+    db.listSiteVisitDays(env.DB, previousFrom, previousTo),
+  ]);
+  addGiftCardSalesToHighlights(sales, giftNow);
+  addGiftCardSalesToHighlights(previousSales, giftPrev);
 
   // Top selling items / sales by source: match current <-> previous rows by
   // key and attach a %-delta — a route/source with no previous-period rows
@@ -2690,6 +2701,15 @@ export async function handleAnalyticsHighlights(request, env) {
         previous_totals: trafficRaw.previous_totals,
       }
     : { configured: false };
+  const hasOwn = Object.keys(ownNow).length > 0 || Object.keys(ownPrev).length > 0;
+  let trafficOut = traffic;
+  if (hasOwn) {
+    const baseNow = traffic.configured ? traffic.daily : zeroFillTrafficDaily([], range.from, range.to);
+    const basePrev = traffic.configured ? traffic.previous_daily : zeroFillTrafficDaily([], previousFrom, previousTo);
+    const cur = overlaySiteVisitTraffic(baseNow, ownNow);
+    const prev = overlaySiteVisitTraffic(basePrev, ownPrev);
+    trafficOut = { ...traffic, configured: true, daily: cur.daily, previous_daily: prev.daily, totals: cur.totals, previous_totals: prev.totals, own_counter: true };
+  }
 
   return json({
     from: range.from,
@@ -2698,7 +2718,7 @@ export async function handleAnalyticsHighlights(request, env) {
     previous_to: previousTo,
     sales: { daily: sales.daily, totals: sales.totals },
     previous_sales: { daily: previousSales.daily, totals: previousSales.totals },
-    traffic,
+    traffic: trafficOut,
     top_selling_items: topSellingItems,
     sales_by_source: salesBySource,
     top_paying_customers: sales.top_customers,

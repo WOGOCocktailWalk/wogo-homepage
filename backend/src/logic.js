@@ -1650,3 +1650,41 @@ export function withExtraStops(route, arrivals, booking, addonLines) {
   const extras = extraStopArrivals(route, booking, addonLines);
   return extras.length ? [...(arrivals || []), ...extras] : (arrivals || []);
 }
+
+/** Adds paid gift card sales (rows: {initial_cents, created_at}) to a
+ * buildHighlightsSales() result: each card is one order worth its value on
+ * the day it was bought. Mutates and returns `sales`. (23 Nov 2026) */
+export function addGiftCardSalesToHighlights(sales, giftRows) {
+  const byDate = new Map(sales.daily.map((d) => [d.date, d]));
+  let added = 0;
+  for (const g of giftRows || []) {
+    const day = byDate.get(String(g.created_at || '').slice(0, 10));
+    if (!day) continue;
+    const cents = Number(g.initial_cents) || 0;
+    day.revenue_cents += cents;
+    day.orders += 1;
+    day.gift_cards = (day.gift_cards || 0) + 1;
+    sales.totals.revenue_cents += cents;
+    sales.totals.orders += 1;
+    added += 1;
+  }
+  sales.totals.gift_cards = (sales.totals.gift_cards || 0) + added;
+  sales.totals.avg_order_value_cents = sales.totals.orders > 0 ? Math.round(sales.totals.revenue_cents / sales.totals.orders) : 0;
+  return sales;
+}
+
+/** Replaces Google Analytics' per-day traffic with the site's own counter
+ * wherever the own counter has a row for that day (own = { date: {sessions,
+ * page_views, unique_visitors} }). Returns { daily, totals }. Unique visitors
+ * over a range = the sum of daily uniques (someone visiting on two days counts
+ * twice), the same simplification for both sources. */
+export function overlaySiteVisitTraffic(daily, own) {
+  const out = (daily || []).map((d) => (own && own[d.date] ? { date: d.date, ...own[d.date], source: 'own' } : d));
+  const totals = { sessions: 0, page_views: 0, unique_visitors: 0 };
+  for (const d of out) {
+    totals.sessions += Number(d.sessions) || 0;
+    totals.page_views += Number(d.page_views) || 0;
+    totals.unique_visitors += Number(d.unique_visitors) || 0;
+  }
+  return { daily: out, totals };
+}
