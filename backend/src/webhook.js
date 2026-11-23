@@ -181,11 +181,19 @@ export async function handleWebhook(request, env, deps = {}) {
           // the owner is losing at cutover. notifyAdmins never throws (see
           // its own doc comment) so this is called directly, same contract
           // as sendWithRetry above — no extra safe() wrapper needed.
-          const totalCents = analyticsRevenueCents({
-            price_cents: route.price_cents, party: booking.party,
-            discount_cents: booking.discount_cents, gift_applied_cents: booking.gift_applied_cents,
-            source: booking.source, payment_status: booking.payment_status,
-          });
+          // The amount in the alert = what the guest actually paid, add-ons
+          // included (owner, 23 Nov 2026: a "Make it 4 bars" booking showed
+          // tickets only). Stripe's amount_total is the source of truth; the
+          // fallback adds the add-on lines to the ticket revenue.
+          const addonCents = (addonLines || []).reduce(
+            (sum, l) => sum + (Number(l.qty) || 0) * (Number(l.unit_price_cents) || 0), 0);
+          const totalCents = Number.isInteger(session.amount_total)
+            ? session.amount_total
+            : analyticsRevenueCents({
+              price_cents: route.price_cents, party: booking.party,
+              discount_cents: booking.discount_cents, gift_applied_cents: booking.gift_applied_cents,
+              source: booking.source, payment_status: booking.payment_status,
+            }) + addonCents;
           // migrations/0033: a short "+ 2× Bites" suffix when the booking
           // carries add-ons, so the push tickle itself (not just the inbox
           // mails above) tells the owner there's something extra to prep —
