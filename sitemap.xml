@@ -515,22 +515,6 @@
   </url>
 
   <url>
-    <loc>https://www.wogococktailwalk.com/blog/best-cocktail-bars-amsterdam/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/best-cocktail-bars-amsterdam/"/>
-    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/best-cocktail-bars-amsterdam/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/best-cocktail-bars-amsterdam/"/>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://www.wogococktailwalk.com/nl/blog/best-cocktail-bars-amsterdam/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/best-cocktail-bars-amsterdam/"/>
-    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/best-cocktail-bars-amsterdam/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/best-cocktail-bars-amsterdam/"/>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://www.wogococktailwalk.com/blog/muddling-like-a-pro/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -885,6 +869,22 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/birthday-celebration-ideas-netherlands/"/>
     <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/birthday-celebration-ideas-netherlands/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/birthday-celebration-ideas-netherlands/"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/blog/best-cocktail-bars-amsterdam/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/best-cocktail-bars-amsterdam/"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/best-cocktail-bars-amsterdam/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/best-cocktail-bars-amsterdam/"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/nl/blog/best-cocktail-bars-amsterdam/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.wogococktailwalk.com/blog/best-cocktail-bars-amsterdam/"/>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://www.wogococktailwalk.com/nl/blog/best-cocktail-bars-amsterdam/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.wogococktailwalk.com/blog/best-cocktail-bars-amsterdam/"/>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
