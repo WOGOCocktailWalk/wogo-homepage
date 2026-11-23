@@ -34,6 +34,11 @@ routes = [
   { pattern = "*wogococktailwalk.com/blog/tags*", zone_name = "wogococktailwalk.com" },
   { pattern = "*wogococktailwalk.com/category/*", zone_name = "wogococktailwalk.com" },
   { pattern = "*wogococktailwalk.com/product-page*", zone_name = "wogococktailwalk.com" },
+  # The four occasion pages removed 23 Nov 2026 -> group page.
+  { pattern = "*wogococktailwalk.com/date-night*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/bachelorette*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/birthday*", zone_name = "wogococktailwalk.com" },
+  { pattern = "*wogococktailwalk.com/company-outing*", zone_name = "wogococktailwalk.com" },
   # Old Wix DUTCH addresses (/nl/<old name>). Only the old names are listed, so
   # the real Dutch pages of the new site (/nl/, /nl/faq/, /nl/rotterdam/... made
   # by tools/build-nl.js) are served straight by the website and never pass
