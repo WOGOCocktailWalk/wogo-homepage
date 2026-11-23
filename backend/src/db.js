@@ -2571,7 +2571,8 @@ const ANALYTICS_BOOKING_COLUMNS = `
   b.id, b.route_id, r.name AS route_name, r.city, b.date, b.slot, b.party,
   b.created_at, b.source, b.locale, b.payment_status, b.discount_code,
   b.discount_cents, b.gift_applied_cents, r.price_cents,
-  b.email, b.name, b.utm_source, b.utm_medium, b.utm_campaign, b.utm_content`;
+  b.email, b.name, b.utm_source, b.utm_medium, b.utm_campaign, b.utm_content,
+  (SELECT COALESCE(SUM(ba.qty * ba.unit_price_cents), 0) FROM booking_addons ba WHERE ba.booking_id = b.id) AS addons_cents`;
 
 /** Optional "where was it booked" filter for the analytics queries:
  * 'wix' = bookings copied over from the old Wix site, 'web' = everything made

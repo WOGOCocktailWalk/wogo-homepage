@@ -981,7 +981,9 @@ export function analyticsRevenueCents(row) {
   const gross = (Number(row.price_cents) || 0) * (Number(row.party) || 0)
     - (Number(row.discount_cents) || 0)
     - (Number(row.gift_applied_cents) || 0);
-  return gross > 0 ? gross : 0;
+  // Paid extras on the booking (e.g. "Make it 4 bars") are money the guest
+  // paid too; `addons_cents` is only present on the analytics queries.
+  return (gross > 0 ? gross : 0) + (Number(row.addons_cents) || 0);
 }
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
