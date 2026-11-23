@@ -514,6 +514,7 @@ input:focus, select:focus, textarea:focus {
 }
 .chip.active .dot { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35); }
 
+.kpi-note { opacity: .75; font-style: italic; margin-top: 2px; }
 .range-quick { align-items: center; margin-bottom: 12px; }
 .range-quick .range-step { padding: 7px 12px; font-size: 16px; line-height: 1; }
 .range-quick .range-step:disabled { opacity: .35; cursor: default; }

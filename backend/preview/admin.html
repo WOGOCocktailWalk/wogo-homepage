@@ -521,6 +521,7 @@ input:focus, select:focus, textarea:focus {
 }
 .chip.active .dot { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35); }
 
+.kpi-note { opacity: .75; font-style: italic; margin-top: 2px; }
 .range-quick { align-items: center; margin-bottom: 12px; }
 .range-quick .range-step { padding: 7px 12px; font-size: 16px; line-height: 1; }
 .range-quick .range-step:disabled { opacity: .35; cursor: default; }
@@ -6299,11 +6300,12 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
       : lastDate === todayStr() ? opts.fmt(today) + " today · " + opts.fmt(yesterday) + " yesterday"
       : opts.fmt(today) + " on " + prettyDate(lastDate) + " · " + opts.fmt(yesterday) + " the day before";
     return el("div", { class: "stat kpi" }, [
-      el("div", { class: "kpi-head" }, [el("div", { class: "k", text: opts.title }), deltaChip(opts.deltaPct)]),
+      el("div", { class: "kpi-head" }, [el("div", { class: "k", text: opts.title }), opts.noDelta ? null : deltaChip(opts.deltaPct)].filter(Boolean)),
       el("div", { class: "v", text: opts.valueText }),
       sparklineSvg(daily.map((d) => d.value), { color: opts.sparkColor }),
-      el("div", { class: "d", text: dayLine })
-    ]);
+      el("div", { class: "d", text: dayLine }),
+      opts.note ? el("div", { class: "d kpi-note", text: opts.note }) : null
+    ].filter(Boolean));
   }
 
   /* ======================================================================
@@ -6419,20 +6421,28 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
     const totalConversion = ok ? computeConversionRateClient(d.sales.totals.orders, t.totals.sessions) : 0;
     const prevConversion = ok ? computeConversionRateClient(d.previous_sales.totals.orders, t.previous_totals.sessions) : 0;
 
+    /* Visitors are only fully counted from 24 Nov 2026 (own counter, every
+       visitor). Before that: cookie-accepters only, and 23 Nov only from 18:30.
+       So: no %-chip unless both periods are fully counted, a plain note when
+       the chosen period is not, and no conversion rate on half-counted days. */
+    const tNo = ok && t.own_counter !== undefined && t.comparable === false;
+    const tNote = ok && t.complete === false ? "Not every visitor counted before 24 Nov" : null;
     const cards = [
       ok
-        ? { title: "Site sessions", daily: series(t.daily, "sessions"), deltaPct: pctDeltaClient(t.totals.sessions, t.previous_totals.sessions), valueText: String(t.totals.sessions), fmt: (v) => String(v) }
+        ? { title: "Site sessions", noDelta: tNo, note: tNote, daily: series(t.daily, "sessions"), deltaPct: pctDeltaClient(t.totals.sessions, t.previous_totals.sessions), valueText: String(t.totals.sessions), fmt: (v) => String(v) }
         : { title: "Site sessions", muted: true },
       { title: "Total sales", daily: series(d.sales.daily, "revenue_cents"), deltaPct: pctDeltaClient(d.sales.totals.revenue_cents, d.previous_sales.totals.revenue_cents), valueText: euros(d.sales.totals.revenue_cents), fmt: (v) => euros(v) },
       { title: "Total orders", daily: series(d.sales.daily, "orders"), deltaPct: pctDeltaClient(d.sales.totals.orders, d.previous_sales.totals.orders), valueText: String(d.sales.totals.orders), fmt: (v) => String(v) },
-      ok
-        ? { title: "Conversion rate", daily: conversionSeries, deltaPct: pctDeltaClient(totalConversion, prevConversion), valueText: (totalConversion * 100).toFixed(1) + "%", fmt: (v) => (v * 100).toFixed(1) + "%" }
+      ok && t.complete === false
+        ? { title: "Conversion rate", muted: true, mutedNote: "Needs full visitor counts (from 24 Nov)" }
+        : ok
+        ? { title: "Conversion rate", noDelta: tNo, daily: conversionSeries, deltaPct: pctDeltaClient(totalConversion, prevConversion), valueText: (totalConversion * 100).toFixed(1) + "%", fmt: (v) => (v * 100).toFixed(1) + "%" }
         : { title: "Conversion rate", muted: true, mutedNote: "Needs Google Analytics (orders ÷ sessions)" },
       ok
-        ? { title: "Page views", daily: series(t.daily, "page_views"), deltaPct: pctDeltaClient(t.totals.page_views, t.previous_totals.page_views), valueText: String(t.totals.page_views), fmt: (v) => String(v) }
+        ? { title: "Page views", noDelta: tNo, note: tNote, daily: series(t.daily, "page_views"), deltaPct: pctDeltaClient(t.totals.page_views, t.previous_totals.page_views), valueText: String(t.totals.page_views), fmt: (v) => String(v) }
         : { title: "Page views", muted: true },
       ok
-        ? { title: "Unique visitors", daily: series(t.daily, "unique_visitors"), deltaPct: pctDeltaClient(t.totals.unique_visitors, t.previous_totals.unique_visitors), valueText: String(t.totals.unique_visitors), fmt: (v) => String(v) }
+        ? { title: "Unique visitors", noDelta: tNo, note: tNote, daily: series(t.daily, "unique_visitors"), deltaPct: pctDeltaClient(t.totals.unique_visitors, t.previous_totals.unique_visitors), valueText: String(t.totals.unique_visitors), fmt: (v) => String(v) }
         : { title: "Unique visitors", muted: true },
       { title: "Items sold", daily: series(d.sales.daily, "guests"), deltaPct: pctDeltaClient(d.sales.totals.guests, d.previous_sales.totals.guests), valueText: String(d.sales.totals.guests), fmt: (v) => String(v) },
       { title: "Customers", daily: series(d.sales.daily, "customers"), deltaPct: pctDeltaClient(d.sales.totals.customers, d.previous_sales.totals.customers), valueText: String(d.sales.totals.customers), fmt: (v) => String(v) },

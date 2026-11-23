@@ -2337,6 +2337,7 @@ function parseAnalyticsRange(url) {
   return { from, to };
 }
 
+const SITE_VISIT_COUNTER_FIRST_PARTIAL_DAY = '2026-11-23';
 const ANALYTICS_GROUPS = new Set(['day', 'week', 'month']);
 
 /** ?channel=wix|web on any analytics endpoint narrows the numbers to
@@ -2642,9 +2643,14 @@ export async function handleAnalyticsHighlights(request, env) {
   // buildHighlightsSales' doc comment) — matching §19.2's KPI endpoint and
   // the fact that utm_source/GA4 sessions are both naturally dated by when
   // the visit/purchase happened, not by some future walk date.
-  const [currentRows, previousRows, trafficRaw] = await Promise.all([
-    db.listBookingsForAnalyticsBySaleDate(env.DB, `${range.from} 00:00:00`, `${range.to} 23:59:59`, analyticsChannel(request)),
-    db.listBookingsForAnalyticsBySaleDate(env.DB, `${previousFrom} 00:00:00`, `${previousTo} 23:59:59`, analyticsChannel(request)),
+  // The chosen days are Dutch days; the database clock is UTC (same as
+  // handleAnalytics) — otherwise a sale just after midnight lands on the day before.
+  const curFrom = businessTimeToUtc(`${range.from} 00:00:00`), curTo = businessTimeToUtc(`${range.to} 23:59:59`);
+  const prevFrom = businessTimeToUtc(`${previousFrom} 00:00:00`), prevTo = businessTimeToUtc(`${previousTo} 23:59:59`);
+  const toLocal = (rows) => rows.map((r) => ({ ...r, created_at: utcToBusinessTime(r.created_at) }));
+  const [currentRowsUtc, previousRowsUtc, trafficRaw] = await Promise.all([
+    db.listBookingsForAnalyticsBySaleDate(env.DB, curFrom, curTo, analyticsChannel(request)),
+    db.listBookingsForAnalyticsBySaleDate(env.DB, prevFrom, prevTo, analyticsChannel(request)),
     isGa4Configured(env)
       ? cachedGa4(
           env,
@@ -2655,17 +2661,19 @@ export async function handleAnalyticsHighlights(request, env) {
       : Promise.resolve({ configured: false }),
   ]);
 
+  const currentRows = toLocal(currentRowsUtc), previousRows = toLocal(previousRowsUtc);
   const sales = buildHighlightsSales(currentRows, range.from, range.to, { dateField: 'created_at' });
   const previousSales = buildHighlightsSales(previousRows, previousFrom, previousTo, { dateField: 'created_at' });
   // Gift cards sold count as revenue + orders (owner, 23 Nov 2026) — only on
   // the unfiltered view, since a gift card has no booking channel.
   // Own site-visit counter replaces GA4 traffic on days it has data.
-  const [giftNow, giftPrev, ownNow, ownPrev] = await Promise.all([
-    analyticsChannel(request) ? [] : db.listGiftCardSalesBySaleDate(env.DB, `${range.from} 00:00:00`, `${range.to} 23:59:59`),
-    analyticsChannel(request) ? [] : db.listGiftCardSalesBySaleDate(env.DB, `${previousFrom} 00:00:00`, `${previousTo} 23:59:59`),
+  const [giftNowUtc, giftPrevUtc, ownNow, ownPrev] = await Promise.all([
+    analyticsChannel(request) ? [] : db.listGiftCardSalesBySaleDate(env.DB, curFrom, curTo),
+    analyticsChannel(request) ? [] : db.listGiftCardSalesBySaleDate(env.DB, prevFrom, prevTo),
     db.listSiteVisitDays(env.DB, range.from, range.to),
     db.listSiteVisitDays(env.DB, previousFrom, previousTo),
   ]);
+  const giftNow = toLocal(giftNowUtc), giftPrev = toLocal(giftPrevUtc);
   addGiftCardSalesToHighlights(sales, giftNow);
   addGiftCardSalesToHighlights(previousSales, giftPrev);
 
@@ -2709,6 +2717,19 @@ export async function handleAnalyticsHighlights(request, env) {
     const cur = overlaySiteVisitTraffic(baseNow, ownNow);
     const prev = overlaySiteVisitTraffic(basePrev, ownPrev);
     trafficOut = { ...traffic, configured: true, daily: cur.daily, previous_daily: prev.daily, totals: cur.totals, previous_totals: prev.totals, own_counter: true };
+  }
+  // Honest-numbers flags for the dashboard. The site's own visit counter
+  // (every visitor) started on the evening of 23 Nov 2026; before that only
+  // Google Analytics' cookie-accepters were counted. `complete` = every day of
+  // the chosen period is a FULL own-counter day; `comparable` = the previous
+  // period is too, so a %-change compares like with like.
+  if (trafficOut.configured) {
+    const fullOwn = (own, from, to) => {
+      for (let d = from; d <= to; d = addDaysToDateStr(d, 1)) { if (d <= SITE_VISIT_COUNTER_FIRST_PARTIAL_DAY || !own[d]) return false; }
+      return true;
+    };
+    const complete = fullOwn(ownNow, range.from, range.to);
+    trafficOut = { ...trafficOut, complete, comparable: complete && fullOwn(ownPrev, previousFrom, previousTo), counter_started: '2026-11-23 18:30' };
   }
 
   return json({
