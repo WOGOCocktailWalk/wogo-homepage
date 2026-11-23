@@ -1162,7 +1162,7 @@ const WOGO_API = "https://wogo-booking-backend.purple-glitter-720e.workers.dev";
          checkout and the later purchase to Meta server-side. Nothing is sent
          for a guest who declined. */
       try {
-        if (window.wogoConsent && window.wogoConsent.marketing === true) {
+        { /* sent for every booking, like the old Wix site (owner decision 23 Nov 2026) */
           const ck = (n) => { const m = document.cookie.match(new RegExp("(?:^|; )" + n + "=([^;]*)")); return m ? decodeURIComponent(m[1]) : null; };
           let fbc = ck("_fbc");
           if (!fbc) {

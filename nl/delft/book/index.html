@@ -677,7 +677,7 @@
          "launching soon" card (with the right €29,95 price) instead of an error.
          -->
     <div class="wogo-calendar" data-route="delft" data-hide-title="1" data-currency="EUR" data-price-cents="2995" data-max-party="6" data-name="Delft City Centre" data-city="Delft"></div>
-    <script src="../../../backend/widget/wogo-calendar.js?v=06fdfa1a" defer></script>
+    <script src="../../../backend/widget/wogo-calendar.js?v=3cb3bd0d" defer></script>
     <div class="w-book-trust">
       <p class="w-book-trustline" data-i18n="bt_trust">★ 4,4 op Google · 100.000+ gasten · Veilig betalen · 18+</p>
       <details class="w-book-faq">
@@ -2068,7 +2068,7 @@
       if (!gaLoaded) loadGA(c);
       else if (window.gtag) gtag("consent", "update", consentFlags(c));
     }
-    if (c.marketing) loadMeta();
+    loadMeta(); /* Meta Pixel for every visitor, like the old Wix site (owner decision 23 Nov 2026) */
     if ((gaLoaded || metaLoaded) && buffer.length) flush();
   }
   if (window.wogoOnConsent) window.wogoOnConsent(onConsent);

@@ -2129,7 +2129,7 @@
       if (!gaLoaded) loadGA(c);
       else if (window.gtag) gtag("consent", "update", consentFlags(c));
     }
-    if (c.marketing) loadMeta();
+    loadMeta(); /* Meta Pixel for every visitor, like the old Wix site (owner decision 23 Nov 2026) */
     if ((gaLoaded || metaLoaded) && buffer.length) flush();
   }
   if (window.wogoOnConsent) window.wogoOnConsent(onConsent);

@@ -397,3 +397,29 @@ export async function listEmailCampaigns(env, limit = 15) {
   const { json } = await brevoRequest(env, 'GET', `/emailCampaigns?limit=${limit}&offset=0&sort=desc&excludeHtmlContent=true&statistics=globalStats`);
   return (json && json.campaigns) || [];
 }
+
+/** One campaign with its HTML and recipients (GET /emailCampaigns/{id}). */
+export async function getEmailCampaign(env, id) {
+  const { json } = await brevoRequest(env, 'GET', `/emailCampaigns/${encodeURIComponent(id)}`);
+  return json;
+}
+
+/** Every address a campaign was actually sent to. Brevo exports this as a
+ * CSV in the background: start the export, wait for it, read the file. */
+export async function listCampaignRecipients(env, id, { waitMs = 1500, tries = 20 } = {}) {
+  const { json } = await brevoRequest(env, 'POST', `/emailCampaigns/${encodeURIComponent(id)}/exportRecipients`, { recipientsType: 'all' });
+  const processId = json && json.processId;
+  if (!processId) throw new Error('brevo_export_no_process');
+  for (let i = 0; i < tries; i++) {
+    const { json: p } = await brevoRequest(env, 'GET', `/processes/${processId}`);
+    if (p && p.status === 'completed' && p.export_url) {
+      const res = await fetch(p.export_url);
+      const text = await res.text();
+      const emails = new Set((text.match(/[^\s,;"<>]+@[^\s,;"<>]+\.[a-z]{2,}/gi) || []).map((e) => e.toLowerCase()));
+      return [...emails];
+    }
+    if (p && p.status === 'completed' && !p.export_url) return [];
+    await new Promise((r) => setTimeout(r, waitMs));
+  }
+  throw new Error('brevo_export_timeout');
+}

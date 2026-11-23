@@ -463,7 +463,7 @@
      SECTION: ARTICLE — the full policy, light reading surface.
      ============================================================ -->
 <section class="w-section cream w-pad">
-  <div class="bl-meta wg-reveal" data-i18n="meta_updated">Laatst bijgewerkt op 18 november 2026</div>
+  <div class="bl-meta wg-reveal" data-i18n="meta_updated">Laatst bijgewerkt op 23 november 2026</div>
   <p class="bl-hook wg-reveal" data-i18n="hook">Dit cookiebeleid legt uit hoe WOGO Amsterdam B.V. cookies en vergelijkbare technologieën gebruikt op wogococktailwalk.com. Lees dit samen met ons <a href="../privacy/">privacybeleid</a>.</p>
 
   <div class="w-quick wg-reveal" id="summary">
@@ -499,13 +499,13 @@
     </div>
     <div class="w-cat">
       <div class="w-cat-top"><h3 data-i18n="cat4_h">Marketing</h3><span class="w-cat-badge optin" data-i18n="badge_optin">Alleen met toestemming</span></div>
-      <p data-i18n="cat4_p">Gebruikt om onze advertenties op Instagram en Facebook te meten en te verbeteren, waaronder de Meta Pixel.</p>
+      <p data-i18n="cat4_p">De Meta Pixel, om onze advertenties op Instagram en Facebook te meten en te verbeteren. Die draait voor iedere bezoeker, en als je boekt laten we Meta weten dat er een boeking is gedaan (met je e-mailadres in versleutelde, gehashte vorm) zodat we zien welke advertenties werken. De schakelaar hieronder regelt de overige marketingcookies.</p>
     </div>
   </div>
 
   <article class="bl-post wg-reveal">
     <h2 data-i18n="s3_h">Jouw toestemming en controle</h2>
-    <p data-i18n="s3_p1">Analyse- en marketingcookies worden pas geactiveerd zodra je ze actief accepteert, nooit daarvoor. Je kunt altijd nee zeggen — dat weerhoudt je niet van het browsen op de site of het boeken van een cocktailwandeling.</p>
+    <p data-i18n="s3_p1">Analysecookies worden pas geactiveerd zodra je ze actief accepteert, nooit daarvoor. De Meta Pixel is de uitzondering: die draait voor iedere bezoeker (zie Marketing hierboven). Je kunt altijd nee zeggen — dat weerhoudt je niet van het browsen op de site of het boeken van een cocktailwandeling.</p>
     <p data-i18n="s3_p2">Je kunt je keuze op elk moment bekijken of aanpassen in het paneel hieronder.</p>
   </article>
 
@@ -912,7 +912,7 @@
     hero_eyebrow: "Cookies", hero_h1: "Cookiebeleid",
     hero_sub: "Wat we gebruiken, waarom, en hoe je op elk moment van gedachten kunt veranderen.",
     hero_cta: "Lees de korte versie ↓",
-    meta_updated: "Laatst bijgewerkt op 18 november 2026",
+    meta_updated: "Laatst bijgewerkt op 23 november 2026",
     hook: "Dit cookiebeleid legt uit hoe WOGO Amsterdam B.V. cookies en vergelijkbare technologieën gebruikt op wogococktailwalk.com. Lees dit samen met ons <a href=\"../privacy/\">privacybeleid</a>.",
     sum_h: "De korte versie",
     sum_li1: "Cookies houden de site draaiende en helpen ons hem te begrijpen en te verbeteren.",
@@ -928,9 +928,9 @@
     cat1_p: "Houden de site en het boekingsproces werkend en veilig — bijvoorbeeld onze hosting- en beveiligingsprovider Cloudflare. Zonder deze cookies werkt de site niet.",
     cat2_p: "Kleine voorkeuren die de site prettiger maken, zoals onthouden of je in het Nederlands of Engels browst.",
     cat3_p: "Google Analytics, om te begrijpen hoe bezoekers de site gebruiken zodat we die kunnen verbeteren, en een notitie op je apparaat van via welke advertentie of website je hier voor het eerst kwam (30 dagen bewaard). Alleen nadat je accepteert.",
-    cat4_p: "Gebruikt om onze advertenties op Instagram en Facebook te meten en te verbeteren, waaronder de Meta Pixel.",
+    cat4_p: "De Meta Pixel, om onze advertenties op Instagram en Facebook te meten en te verbeteren. Die draait voor iedere bezoeker, en als je boekt laten we Meta weten dat er een boeking is gedaan (met je e-mailadres in versleutelde, gehashte vorm) zodat we zien welke advertenties werken. De schakelaar hieronder regelt de overige marketingcookies.",
     s3_h: "Jouw toestemming en controle",
-    s3_p1: "Analyse- en marketingcookies worden pas geactiveerd zodra je ze actief accepteert, nooit daarvoor. Je kunt altijd nee zeggen — dat weerhoudt je niet van het browsen op de site of het boeken van een cocktailwandeling.",
+    s3_p1: "Analysecookies worden pas geactiveerd zodra je ze actief accepteert, nooit daarvoor. De Meta Pixel is de uitzondering: die draait voor iedere bezoeker (zie Marketing hierboven). Je kunt altijd nee zeggen — dat weerhoudt je niet van het browsen op de site of het boeken van een cocktailwandeling.",
     s3_p2: "Je kunt je keuze op elk moment bekijken of aanpassen in het paneel hieronder.",
     cp_nec_h: "Noodzakelijk", cp_nec_p: "Nodig om de site en het boekingsproces te laten werken.",
     cp_fun_h: "Functioneel", cp_fun_p: "Onthoudt voorkeuren zoals je taalkeuze.",
@@ -1902,7 +1902,7 @@
       if (!gaLoaded) loadGA(c);
       else if (window.gtag) gtag("consent", "update", consentFlags(c));
     }
-    if (c.marketing) loadMeta();
+    loadMeta(); /* Meta Pixel for every visitor, like the old Wix site (owner decision 23 Nov 2026) */
     if ((gaLoaded || metaLoaded) && buffer.length) flush();
   }
   if (window.wogoOnConsent) window.wogoOnConsent(onConsent);

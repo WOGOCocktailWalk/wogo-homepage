@@ -43,7 +43,7 @@ import {
 import { constantTimeEqual } from './logic.js';
 import { verifyTurnstile } from './turnstile.js';
 import { runHealthCheck } from './healthcheck.js';
-import { ensureContactFolder, ensureContactList, ensureContactAttribute, sendTransactional, listContactTemplates, getTemplate, addEmailsToList, createEmailCampaign, sendCampaignNow, suspendCampaign, listEmailCampaigns } from './brevo.js';
+import { ensureContactFolder, ensureContactList, ensureContactAttribute, sendTransactional, listContactTemplates, getTemplate, addEmailsToList, createEmailCampaign, sendCampaignNow, suspendCampaign, listEmailCampaigns, getEmailCampaign, listCampaignRecipients } from './brevo.js';
 import { ensureWelcomePromotionCode, setPromotionCodeActive, ensureImportedPromotionCode, getPayoutOverview } from './stripe.js';
 import { importSubscribers, handleConfirmedBookingOptIn, getBrevoListId } from './subscribers.js';
 import { sendWithRetry } from './email_retry.js';
@@ -340,6 +340,7 @@ export const ROUTE_ROLES = {
   'POST /admin/api/campaigns': 'owner',
   'POST /admin/api/campaigns/test': 'owner',
   'POST /admin/api/campaigns/:id/cancel': 'owner',
+  'POST /admin/api/campaigns/:id/send-rest': 'owner',
   'POST /admin/api/stripe/ensure-welcome-code': 'owner',
   'POST /admin/api/stripe/promo-code': 'owner',
   'GET /admin/api/stripe/payouts': 'owner',
@@ -3944,6 +3945,49 @@ export async function handleCancelCampaign(request, env, params) {
     await suspendCampaign(env, id);
     await audit(env, request, 'campaign.cancel', null, String(id), {});
     return json({ ok: true, id: Number(id) });
+  } catch (err) {
+    return errorJson('upstream_error', String(err && err.message ? err.message : err), 502);
+  }
+}
+
+/** POST /admin/api/campaigns/:id/send-rest — body { confirm: true }: for a
+ * campaign Brevo stopped part-way (e.g. the free plan's daily cap), send the
+ * same email now to everyone on its list who did NOT get it yet. The people
+ * who already received it go into a one-off exclusion list. */
+export async function handleSendCampaignRest(request, env, params) {
+  if (!requireCsrf(request)) return errorJson('forbidden', 'missing CSRF header', 403);
+  if (!env.BREVO_API_KEY) return errorJson('bad_request', 'BREVO_API_KEY is not configured', 400);
+  const id = params && params.id;
+  if (!/^\d+$/.test(String(id || ''))) return errorJson('bad_request', 'bad campaign id', 400);
+  let body = {};
+  try { body = await request.json(); } catch { /* empty */ }
+  if (!body || body.confirm !== true) return errorJson('bad_request', 'Not confirmed.', 400);
+  try {
+    const orig = await getEmailCampaign(env, id);
+    if (!orig || !orig.htmlContent) return errorJson('not_found', 'Campaign not found.', 404);
+    if (orig.status === 'sent' || orig.status === 'queued' || orig.status === 'in_process') {
+      return errorJson('bad_request', 'This campaign is not stopped, so there is nothing to resend.', 400);
+    }
+    const listIds = (orig.recipients && orig.recipients.lists) || (orig.recipients && orig.recipients.listIds) || [];
+    if (!listIds.length) return errorJson('bad_request', 'This campaign has no list.', 400);
+    const already = await listCampaignRecipients(env, id);
+    const recipients = { listIds };
+    if (already.length) {
+      const folder = await ensureContactFolder(env, BREVO_FOLDER_NAME);
+      const stamp = new Date().toISOString().replace('T', ' ').slice(0, 16);
+      const ex = await ensureContactList(env, `Already got campaign ${id} ${stamp}`, folder.id);
+      await addEmailsToList(env, ex.id, already);
+      recipients.exclusionListIds = [ex.id];
+    }
+    const campaignBody = {
+      name: `${orig.name} · rest`, subject: orig.subject, sender: EMAIL_SENDER,
+      htmlContent: orig.htmlContent, recipients,
+    };
+    if (orig.previewText) campaignBody.previewText = orig.previewText;
+    const created = await createEmailCampaign(env, campaignBody);
+    await sendCampaignNow(env, created.id);
+    await audit(env, request, 'campaign.send_rest', null, String(created.id), { from: Number(id), excluded: already.length });
+    return json({ id: created.id, excluded: already.length, list_ids: listIds });
   } catch (err) {
     return errorJson('upstream_error', String(err && err.message ? err.message : err), 502);
   }

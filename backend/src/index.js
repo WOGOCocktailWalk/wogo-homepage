@@ -199,6 +199,7 @@ router.get('/admin/api/campaigns', adminApi.handleListCampaigns);
 router.post('/admin/api/campaigns/test', adminApi.handleTestCampaign);
 router.post('/admin/api/campaigns', adminApi.handleCreateCampaign);
 router.post('/admin/api/campaigns/:id/cancel', adminApi.handleCancelCampaign);
+router.post('/admin/api/campaigns/:id/send-rest', adminApi.handleSendCampaignRest);
 router.post('/admin/api/stripe/ensure-welcome-code', adminApi.handleEnsureWelcomeCode);
 router.post('/admin/api/stripe/promo-code', adminApi.handleSetPromoCodeActive);
 router.get('/admin/api/stripe/payouts', adminApi.handleStripePayouts);
