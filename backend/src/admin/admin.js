@@ -3087,10 +3087,12 @@
     ["sales", "Sales", "Your own booking numbers — guests, revenue, discounts, gift cards and subscribers, by route, city, weekday and more."],
     ["all", "All reports", "An index of every report page above."]
   ];
-  const RANGE_PRESETS = ["Last 7 days", "Last 30 days", "Last 90 days", "This month", "Last month", "This year", "Custom"];
+  const RANGE_PRESETS = ["Today", "Yesterday", "Last 7 days", "Last 30 days", "Last 90 days", "This month", "Last month", "This year", "Custom"];
 
   function rangeForPreset(preset) {
     const t = todayStr();
+    if (preset === "Today") return { from: t, to: t };
+    if (preset === "Yesterday") return { from: addDays(t, -1), to: addDays(t, -1) };
     if (preset === "Last 7 days") return { from: addDays(t, -6), to: t };
     if (preset === "Last 90 days") return { from: addDays(t, -89), to: t };
     if (preset === "This month") return { from: t.slice(0, 8) + "01", to: t };
@@ -3102,6 +3104,13 @@
     if (preset === "This year") return { from: t.slice(0, 4) + "-01-01", to: t };
     return { from: addDays(t, -29), to: t }; // "Last 30 days" default
   }
+
+  /** Which preset the current dates match ("Custom" when none), so the Range
+     box and the quick buttons always show what is really selected. */
+  function presetForRange(r) {
+    return RANGE_PRESETS.find((p) => { if (p === "Custom") return false; const x = rangeForPreset(p); return x.from === r.from && x.to === r.to; }) || "Custom";
+  }
+  function rangeDays(r) { return Math.round((parseD(r.to) - parseD(r.from)) / 864e5) + 1; }
 
   function renderAnalytics(root) {
     if (realtimeTimer) { clearInterval(realtimeTimer); realtimeTimer = null; } // leaving (or re-rendering) Real-time always stops the old tick first
@@ -3138,14 +3147,28 @@
       if (v === "Custom") return;
       S.analytics.range = rangeForPreset(v);
       renderAnalytics(root);
-    }, "Custom");
+    }, presetForRange(r));
     const groupSel = selectField("Group by", "", ["day", "week", "month"], (v) => { S.analytics.group = v; renderAnalytics(root); }, S.analytics.group);
     /* Where the booking was made: everything, only this new website, or only
        the bookings that were copied over from Wix. */
     const CH = { "All bookings": "all", "New website": "web", "Wix (copied over)": "wix" };
     const chLabel = Object.keys(CH).find((k) => CH[k] === S.analytics.channel) || "All bookings";
     const chSel = selectField("Bookings from", "", Object.keys(CH), (v) => { S.analytics.channel = CH[v] || "all"; renderAnalytics(root); }, chLabel);
-    return el("div", { class: "filters" }, el("div", { class: "filters-row" }, [presetSel, fromF, toF, groupSel, chSel]));
+    /* One-click days (owner request 23 Nov 2026): Today / Yesterday and the
+       usual periods as buttons, plus arrows that step the chosen period back
+       or forward (one day at a time when a single day is chosen). */
+    const active = presetForRange(r), n = rangeDays(r), t = todayStr();
+    const setRange = (x) => { S.analytics.range = x; renderAnalytics(root); };
+    const step = (dir) => setRange({ from: addDays(r.from, dir * n), to: addDays(r.to, dir * n) });
+    const nextBtn = el("button", { class: "chip range-step", type: "button", text: "›", "aria-label": n === 1 ? "Next day" : "Next period", onclick: () => step(1) });
+    if (r.to >= t) nextBtn.disabled = true;
+    const quick = el("div", { class: "chips range-quick" }, [
+      el("button", { class: "chip range-step", type: "button", text: "‹", "aria-label": n === 1 ? "Previous day" : "Previous period", onclick: () => step(-1) }),
+      el("span", { class: "range-label", text: r.from === r.to ? prettyDate(r.from) : prettyDate(r.from) + " → " + prettyDate(r.to) }),
+      nextBtn
+    ].concat(["Today", "Yesterday", "Last 7 days", "This month", "Last 30 days"].map((p) =>
+      chip(p, active === p, null, () => setRange(rangeForPreset(p)), true))));
+    return el("div", { class: "filters" }, [quick, el("div", { class: "filters-row" }, [presetSel, fromF, toF, groupSel, chSel])]);
   }
   function chq() { return S.analytics.channel && S.analytics.channel !== "all" ? "&channel=" + S.analytics.channel : ""; }
 
@@ -3226,6 +3249,13 @@
     soldStats.appendChild(stat("Revenue", euros(sold.revenue_cents), "net of discounts + gift cards"));
     soldStats.appendChild(stat("Avg order", euros(sold.bookings > 0 ? Math.round(sold.revenue_cents / sold.bookings) : 0), "per booking"));
     body.appendChild(soldStats);
+    {
+      const perDay = (d.series_by_sale_date || []).slice().reverse();
+      const lbl = (p) => (/^\d{4}-\d{2}-\d{2}$/.test(p) ? prettyDate(p) : p);
+      body.appendChild(breakdownTable("Booked per " + S.analytics.group + " — sales made on each " + S.analytics.group,
+        [S.analytics.group === "day" ? "Day" : "Period", "Bookings", "Guests", "Revenue"],
+        perDay.map((x) => [lbl(x.period), x.bookings, x.guests, euros(x.revenue_cents)])));
+    }
 
     // Selected range, part 2: the WALKS that take place in these days.
     body.appendChild(el("div", { class: "an-section", text: "Walks taking place in your chosen period — whenever they were booked" }));
@@ -3361,8 +3391,12 @@
   async function loadAnalyticsTraffic(body) {
     try {
       const r = S.analytics.range;
-      const data = await api("/admin/api/analytics/traffic?from=" + r.from + "&to=" + r.to);
+      const [data, hl] = await Promise.all([
+        api("/admin/api/analytics/traffic?from=" + r.from + "&to=" + r.to),
+        api("/admin/api/analytics/highlights?from=" + r.from + "&to=" + r.to).catch(() => null) // per-day table only
+      ]);
       S.analytics.traffic = data;
+      S.analytics.trafficDaily = hl;
       paintAnalyticsTraffic(body);
     } catch (e) {
       if (e.message !== "unauthenticated") { clear(body); body.appendChild(errorCard(e.message, () => loadAnalyticsTraffic(body))); }
@@ -3392,6 +3426,7 @@
     stats.appendChild(stat("Engaged sessions", t.totals.engaged_sessions, ""));
     stats.appendChild(stat("Avg. session", Math.round(t.totals.avg_session_duration) + "s", ""));
     body.appendChild(stats);
+    if (S.analytics.trafficDaily && S.analytics.trafficDaily.sales) body.appendChild(perDayTable(S.analytics.trafficDaily, true));
 
     body.appendChild(breakdownTable("Sessions by source / medium", ["Source", "Medium", "Sessions"], t.by_source.map((r) => [r.source, r.medium, r.sessions])));
     body.appendChild(breakdownTable("Top pages", ["Page", "Views"], t.by_page.map((r) => [r.page, r.views])));
@@ -3492,11 +3527,17 @@
     const daily = opts.daily || [];
     const today = daily.length ? daily[daily.length - 1].value : 0;
     const yesterday = daily.length > 1 ? daily[daily.length - 2].value : 0;
+    /* The line under the number names the real days: "today/yesterday" only
+       when the period ends today; a single chosen day shows no second line. */
+    const lastDate = daily.length ? daily[daily.length - 1].date : null;
+    const dayLine = daily.length < 2 ? (lastDate ? prettyDate(lastDate) : "")
+      : lastDate === todayStr() ? opts.fmt(today) + " today · " + opts.fmt(yesterday) + " yesterday"
+      : opts.fmt(today) + " on " + prettyDate(lastDate) + " · " + opts.fmt(yesterday) + " the day before";
     return el("div", { class: "stat kpi" }, [
       el("div", { class: "kpi-head" }, [el("div", { class: "k", text: opts.title }), deltaChip(opts.deltaPct)]),
       el("div", { class: "v", text: opts.valueText }),
       sparklineSvg(daily.map((d) => d.value), { color: opts.sparkColor }),
-      el("div", { class: "d", text: opts.fmt(today) + " today · " + opts.fmt(yesterday) + " yesterday" })
+      el("div", { class: "d", text: dayLine })
     ]);
   }
 
@@ -3543,6 +3584,7 @@
     body.appendChild(liveCard);
 
     body.appendChild(keyStatsGrid(d));
+    body.appendChild(perDayTable(d));
 
     // ---- Track your sales --------------------------------------------
     const salesHead = el("h2", { class: "section-head", text: "Track your sales" });
@@ -3633,6 +3675,23 @@
     ];
     cards.forEach((c) => grid.appendChild(keyStatCard(c)));
     return grid;
+  }
+
+  /** Day-by-day table (newest first) from the Highlights data: visitors next
+     to what was sold that day. Visitor columns only when traffic is known. */
+  function perDayTable(d, trafficOnly) {
+    const t = d.traffic, ok = t && t.configured;
+    const tByDate = {}; if (ok) (t.daily || []).forEach((x) => { tByDate[x.date] = x; });
+    const rows = (d.sales.daily || []).slice().reverse().map((x) => {
+      const tr = tByDate[x.date] || {};
+      const row = [prettyDate(x.date)];
+      if (ok) row.push(tr.sessions || 0, tr.page_views || 0);
+      if (!trafficOnly) row.push(x.orders || 0, x.guests || 0, euros(x.revenue_cents || 0));
+      else row.push(x.orders || 0);
+      return row;
+    });
+    const head = ["Day"].concat(ok ? ["Sessions", "Page views"] : [], trafficOnly ? ["Orders"] : ["Orders", "Guests", "Sales"]);
+    return breakdownTable("Per day", head, rows);
   }
 
   function computeConversionRateClient(orders, sessions) {
@@ -5128,7 +5187,7 @@
   /* Home "Your key stats" block (owner request 23 Nov 2026: "like Wix, so I
      can easily see total and per-day revenue"). Only ranges that END today,
      so each tile's "X today / Y yesterday" line really is today/yesterday. */
-  const HOME_STAT_PRESETS = ["This month", "Last 7 days", "Last 30 days", "This year"];
+  const HOME_STAT_PRESETS = ["Today", "Yesterday", "This month", "Last 7 days", "Last 30 days", "This year"];
   function renderHomeStats(box) {
     if (!S.homeStatsPreset) S.homeStatsPreset = "This month";
     clear(box);
