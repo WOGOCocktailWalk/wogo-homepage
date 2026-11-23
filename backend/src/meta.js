@@ -100,6 +100,25 @@ export async function sendPurchaseEvent(env, booking, route, opts = {}) {
   });
 }
 
+/** Gift card paid (Stripe webhook). event_id = the Stripe Checkout Session id,
+ * shared with the browser pixel's Purchase on gift-confirmed/ (eventID =
+ * ?session_id) so Meta counts the sale once. Sent for every gift card, like
+ * bookings (owner decision 23 Nov 2026). */
+export async function sendGiftCardPurchaseEvent(env, session, giftCard) {
+  if (!env.META_ACCESS_TOKEN) return { skipped: 'no_token' };
+  const md = (session && session.metadata) || {};
+  return sendMetaEvent(env, {
+    consent: true,
+    event_name: 'Purchase',
+    event_id: session.id,
+    url: `${SITE_URL}/gift-cards/`,
+    email: giftCard.buyer_email || md.buyer_email || session.customer_email || null,
+    fbp: clip(md.fbp, 200), fbc: clip(md.fbc, 400),
+    currency: (giftCard.currency || 'EUR').toUpperCase(),
+    value: (giftCard.initial_cents || 0) / 100,
+  });
+}
+
 async function sha256Hex(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');

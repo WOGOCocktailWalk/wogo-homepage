@@ -2,7 +2,7 @@
 
 import { verifyStripeSignature } from './stripe.js';
 import { sendTransactional } from './brevo.js';
-import { sendPurchaseEvent } from './meta.js';
+import { sendPurchaseEvent, sendGiftCardPurchaseEvent } from './meta.js';
 import { computeBarArrivals, withExtraStops, extractDiscount, analyticsRevenueCents, formatNotificationDate, formatEuros, summarizeAddonsForNotification } from './logic.js';
 import { notifyAdmins } from './notifications.js';
 import { reportPaymentProblem } from './payment_alerts.js';
@@ -522,6 +522,9 @@ export async function handleGiftCardPurchaseCompleted(env, session, deps = {}) {
   // redelivered webhook for the SAME purchase session (idempotent re-find
   // above) never fires a second "sold" notification for one real sale.
   if (justMinted) {
+    // Meta Conversions API Purchase (same justMinted gate: one sale = one event).
+    try { await (deps.sendGiftCardPurchaseEvent || sendGiftCardPurchaseEvent)(env, session, giftCard); }
+    catch (err) { console.error('meta_giftcard_purchase_failed', err); }
     await notifyAdmins(env, {
       kind: 'giftcard_sold',
       title: `🎁 Cadeaubon verkocht — ${formatEuros(giftCard.initial_cents)}`,

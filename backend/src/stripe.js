@@ -164,6 +164,8 @@ export async function createGiftCardCheckoutSession(env, gift) {
   body.set('metadata[delivery]', print ? 'print' : 'email');
   body.set('metadata[message]', (gift.message || '').slice(0, 490));
   body.set('metadata[locale]', gift.locale === 'nl' ? 'nl' : 'en');
+  if (gift.fbp) body.set('metadata[fbp]', gift.fbp);
+  if (gift.fbc) body.set('metadata[fbc]', gift.fbc);
   body.set('locale', gift.locale === 'nl' ? 'nl' : 'en');
   // No fixed payment_method_types: Stripe then offers every method that is
   // switched ON in the dashboard (Settings > Payment methods) and fits the

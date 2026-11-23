@@ -2075,6 +2075,26 @@
      To upgrade to a true purchase event, add a gift-card lookup endpoint
      (GET /api/giftcard?session_id=…) and mirror booking-confirmed/'s pattern. -->
 <script>
+/* Meta Pixel Purchase for a paid gift card. eventID = Stripe session id, the
+   same id the webhook's server-side (CAPI) Purchase uses, so Meta counts it
+   once. Only fired when the amount is known (stashed on /gift-cards/ in this
+   tab); otherwise the server-side event alone reports the sale. */
+(function () {
+  try {
+    var sid = new URLSearchParams(location.search).get('session_id');
+    var cents = Number(sessionStorage.getItem('wogo_gift_amount'));
+    if (!sid || !cents) return;
+    var key = 'wogo_giftpurch_' + sid;
+    if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1');
+    if (!window.fbq) {
+      !function(f,b2,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b2.createElement(e);t.async=!0;t.src=v;s=b2.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+      window.fbq('init', '317282807557294'); window.fbq('track', 'PageView');
+    }
+    window.fbq('track', 'Purchase', { value: cents / 100, currency: 'EUR', content_type: 'product', content_ids: ['gift_card'] }, { eventID: sid });
+  } catch (e) {}
+})();
+</script>
+<script>
 (function () {
   if (!window.wogoTrack) return;                 /* shared analytics block absent */
   var key = 'wogo_giftconf_' + (location.search || '');

@@ -811,6 +811,7 @@ export async function handleGiftCardCheckout(request, env) {
     return errorJson('too_many_requests', 'too many attempts — please try again in a few minutes', 429, request);
   }
 
+  const giftTracking = readTracking(body && body.tracking);
   let session;
   try {
     session = await createGiftCardCheckoutSession(env, {
@@ -822,6 +823,7 @@ export async function handleGiftCardCheckout(request, env) {
       delivery,
       message: message || '',
       locale: locale === 'nl' ? 'nl' : 'en',
+      fbp: giftTracking.fbp, fbc: giftTracking.fbc,
     });
   } catch (err) {
     console.error('giftcard_checkout_failed', err);

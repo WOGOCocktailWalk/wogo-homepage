@@ -2441,6 +2441,16 @@
       message: String(fd.get('message') || '').trim(),
       locale: lang()
     };
+    /* Meta ids (every buyer, like bookings — owner decision 23 Nov 2026) so the
+       paid gift card is reported to Meta server-side; amount stashed for the
+       browser Purchase on gift-confirmed/. */
+    try {
+      var ck = function (n) { var m = document.cookie.match(new RegExp('(?:^|; )' + n + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : null; };
+      var fbc = ck('_fbc'), click = new URLSearchParams(location.search).get('fbclid');
+      if (!fbc && click) fbc = 'fb.1.' + Date.now() + '.' + click;
+      payload.tracking = { consent: true, fbp: ck('_fbp'), fbc: fbc || null };
+      sessionStorage.setItem('wogo_gift_amount', String(selectedCents));
+    } catch (e) {}
 
     submitBtn.disabled = true;
     var original = submitBtn.textContent;
