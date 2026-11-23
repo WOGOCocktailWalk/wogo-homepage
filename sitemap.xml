@@ -579,11 +579,6 @@
   </url>
 
   <url>
-    <loc>https://www.wogococktailwalk.com/blog/damrak-gin/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://www.wogococktailwalk.com/blog/5-tips-for-a-successful-dry-january/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -949,6 +944,11 @@
   </url>
   <url>
     <loc>https://www.wogococktailwalk.com/blog/get-that-sunset-vibe-with-passoa/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.wogococktailwalk.com/blog/damrak-gin/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
