@@ -1776,6 +1776,13 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
 /* Blog list: views per article */
 .blog-views-days { min-height: 36px; padding: 4px 10px; font: inherit; font-size: 13px; border-radius: 10px; border: 1px solid var(--line-strong); background: transparent; }
 .blog-views-note { padding: 10px var(--card-pad-x, 18px); font-size: 13px; line-height: 1.45; opacity: .8; border-bottom: 1px solid var(--line); }
+
+/* Home "Your key stats" header (23 Nov 2026) */
+.home-stats { margin-bottom: 18px; }
+.home-stats-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 4px 0 12px; }
+.home-stats-title { margin: 0; font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.home-stats-select { width: auto !important; min-width: 0; display: inline-block; border: 0; background-color: transparent; color: var(--salmon-deep); font: inherit; font-weight: 700; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+.home-stats-select:focus { outline: 2px solid var(--salmon); }
 </style>
 </head>
 <body>
@@ -1848,7 +1855,7 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
       <nav class="nav" id="nav">
         <button class="nav-item" data-view="today">
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
-          Today
+          Home
         </button>
         <button class="nav-item" data-view="analytics">
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 4 3 5-6"/></svg>
@@ -3073,7 +3080,7 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
     $("#sidebar").classList.remove("open");
     $("#topbar-actions").innerHTML = "";
     const titles = {
-      today: ["Today", "What's happening today, and what's new since you last looked"],
+      today: ["Home", "Your key stats, today's walks, and what's new since you last looked"],
       bookings: ["Bookings", "Every walk booked, across all cities and routes"],
       customers: ["Customers", "Who books with you, how often, and what they spend"],
       hours: ["Participants per hour", "Who is arriving, and when — pick a date"],
@@ -4751,6 +4758,34 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
      live into a draft object — there's no cross-field live preview here
      that needs it (the margin-under-€1 check comes back in the server's
      own response, not computed client-side). */
+  /* Opening hours for an extra-stop add-on, typed as plain text:
+     "Fri 18:00-23:00, Sat 18:00-23:00" <-> {"5":["18:00","23:00"],"6":[…]}.
+     Empty = no time rule. Unreadable text is sent as-is so the server
+     rejects it with a clear message instead of silently dropping it. */
+  const ADDON_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  function formatAddonHours(raw) {
+    if (!raw) return "";
+    let o; try { o = typeof raw === "string" ? JSON.parse(raw) : raw; } catch (e) { return String(raw); }
+    return Object.keys(o).sort().map((d) => ADDON_DAYS[+d - 1] + " " + o[d][0] + "-" + o[d][1]).join(", ");
+  }
+  function parseAddonHoursInput(text) {
+    const t = String(text || "").trim();
+    if (!t) return null;
+    const out = {};
+    for (const part of t.split(/[,;\n]+/)) {
+      const m = part.trim().match(/^([A-Za-z]{2,3})[a-z]*\.?\s+(\d{1,2}[:.]\d{2})\s*[-–]\s*(\d{1,2}[:.]\d{2})$/);
+      if (!m) return t; // let the server explain
+      const nl = { ma: "Mon", di: "Tue", wo: "Wed", do: "Thu", vr: "Fri", za: "Sat", zo: "Sun" };
+      const key = m[1].slice(0, 3);
+      const name = nl[m[1].slice(0, 2).toLowerCase()] || (key.charAt(0).toUpperCase() + key.slice(1).toLowerCase());
+      const idx = ADDON_DAYS.indexOf(name);
+      if (idx < 0) return t;
+      const fix = (x) => x.replace(".", ":").padStart(5, "0");
+      out[String(idx + 1)] = [fix(m[2]), fix(m[3])];
+    }
+    return out;
+  }
+
   function addonCard(r, addon, bars, repaint) {
     const nameEnI = el("input", { type: "text", value: addon.name_en || "", placeholder: "Bites" });
     const nameNlI = el("input", { type: "text", value: addon.name_nl || "", placeholder: "Bites" });
@@ -4767,8 +4802,25 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
     const unitSel = el("select", {}, [
       el("option", { value: "per_person", text: "Per person" }),
       el("option", { value: "per_booking", text: "Per booking" }),
+      el("option", { value: "whole_group", text: "Whole group (one yes/no)" }),
     ]);
-    unitSel.value = addon.unit === "per_booking" ? "per_booking" : "per_person";
+    unitSel.value = ["per_booking", "whole_group"].includes(addon.unit) ? addon.unit : "per_person";
+    // migrations/0034 — extra stop (a bar only emailed when this is bought),
+    // its opening hours, and a different map for guests who buy it.
+    const stopNameI = el("input", { type: "text", value: addon.extra_stop_name || "", placeholder: "e.g. Patio Bar (leave empty if not an extra stop)" });
+    const stopEmailI = el("input", { type: "email", value: addon.extra_stop_email || "", placeholder: "reservations@bar.nl" });
+    const stopLocaleSel = el("select", {}, [
+      el("option", { value: "nl", text: "Dutch" }),
+      el("option", { value: "en", text: "English" }),
+    ]);
+    stopLocaleSel.value = addon.extra_stop_locale === "en" ? "en" : "nl";
+    const stopOffsetIn = el("input", { type: "number", min: "0", step: "15", value: addon.extra_stop_offset_minutes == null ? "" : addon.extra_stop_offset_minutes, placeholder: "180 = 3 h after start" });
+    const hoursI = el("input", { type: "text", value: formatAddonHours(addon.hours), placeholder: "Fri 18:00-23:00, Sat 18:00-23:00 (empty = any time)" });
+    const minCloseIn = el("input", { type: "number", min: "0", step: "15", value: addon.min_minutes_before_close ?? 90 });
+    const mapEnI = el("input", { type: "text", value: addon.map_url_en || "", placeholder: "https:// 4-bar map EN (optional)" });
+    const mapNlI = el("input", { type: "text", value: addon.map_url_nl || "", placeholder: "https:// 4-bar map NL (optional)" });
+    const fromIn = el("input", { type: "date", value: addon.available_from || "" });
+    const untilIn = el("input", { type: "date", value: addon.available_until || "" });
     const maxQtyIn = el("input", { type: "number", min: "1", step: "1", value: addon.max_qty_per_booking ?? 10 });
     const capIn = el("input", { type: "number", min: "0", step: "1", value: addon.capacity_per_slot == null ? "" : addon.capacity_per_slot, placeholder: "Unlimited" });
     const cutoffIn = el("input", { type: "number", min: "0", step: "1", value: addon.cutoff_hours ?? 24 });
@@ -4794,6 +4846,16 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
         field("Capacity per slot", capIn),
         field("Cutoff (hours before)", cutoffIn),
         field("Sort order", sortIn),
+        field("Extra stop: bar name", stopNameI),
+        field("Extra stop: bar email", stopEmailI),
+        field("Extra stop: email language", stopLocaleSel),
+        field("Extra stop: minutes after start", stopOffsetIn),
+        field("Opening hours of that bar", hoursI, "wide"),
+        field("Arrive at least … min before closing", minCloseIn),
+        field("Offered for walks from (empty = no limit)", fromIn),
+        field("Offered for walks until (empty = no limit)", untilIn),
+        field("Map for these guests (EN)", mapEnI, "wide"),
+        field("Map for these guests (NL)", mapNlI, "wide"),
       ]),
       el("div", { class: "rc-actions" }, [
         el("label", { class: "chk-inline" }, [foodIn, el("span", { text: " Food — shows the guest an allergy/dietary field" })]),
@@ -4821,6 +4883,16 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
                 cutoff_hours: parseInt(cutoffIn.value, 10) || 0,
                 sort_order: parseInt(sortIn.value, 10) || 0,
                 active: activeIn.checked,
+                extra_stop_name: stopNameI.value.trim() || null,
+                extra_stop_email: stopEmailI.value.trim() || null,
+                extra_stop_locale: stopNameI.value.trim() ? stopLocaleSel.value : null,
+                extra_stop_offset_minutes: stopOffsetIn.value === "" ? null : (parseInt(stopOffsetIn.value, 10) || 0),
+                hours: parseAddonHoursInput(hoursI.value),
+                min_minutes_before_close: parseInt(minCloseIn.value, 10) || 0,
+                map_url_en: mapEnI.value.trim() || null,
+                map_url_nl: mapNlI.value.trim() || null,
+                available_from: fromIn.value || null,
+                available_until: untilIn.value || null,
               };
               const result = addon.id
                 ? await api("/admin/api/routes/" + r.id + "/addons/" + addon.id, { method: "PUT", body })
@@ -5063,7 +5135,7 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
       links: [
         ["Newsletter maker", "/admin/newsletter",
           "Write a WOGO newsletter by filling in boxes, see it live, and save it into Brevo as a template. Saving never sends anything."],
-        ["Campaigns", TOOL_LINKS.brevoCampaigns, "Write, schedule and send a newsletter."],
+        ["Campaigns", "/admin/campaigns", "Send or schedule a newsletter to your subscribers: pick the email, who gets it, and when. Send yourself a test first. Owner only."],
         ["Email templates", TOOL_LINKS.brevoTemplates,
           "The 21 [REFERENCE] WOGO designs live here — duplicate one to start a newsletter. Editing a [REFERENCE] template changes nothing in the real booking emails."],
         ["Contacts & lists", TOOL_LINKS.brevoContacts,
@@ -6230,36 +6302,7 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
     ]));
     body.appendChild(liveCard);
 
-    const grid = el("div", { class: "kpi-grid" });
-    const series = (arr, key) => (arr || []).map((row) => ({ date: row.date, value: row[key] || 0 }));
-    const conversionSeries = d.sales.daily.map((row, i) => {
-      const sessions = ok ? (t.daily[i] ? t.daily[i].sessions : 0) : 0;
-      return { date: row.date, value: ok ? computeConversionRateClient(row.orders, sessions) : 0 };
-    });
-    const totalConversion = ok ? computeConversionRateClient(d.sales.totals.orders, t.totals.sessions) : 0;
-    const prevConversion = ok ? computeConversionRateClient(d.previous_sales.totals.orders, t.previous_totals.sessions) : 0;
-
-    const cards = [
-      ok
-        ? { title: "Site sessions", daily: series(t.daily, "sessions"), deltaPct: pctDeltaClient(t.totals.sessions, t.previous_totals.sessions), valueText: String(t.totals.sessions), fmt: (v) => String(v) }
-        : { title: "Site sessions", muted: true },
-      { title: "Total sales", daily: series(d.sales.daily, "revenue_cents"), deltaPct: pctDeltaClient(d.sales.totals.revenue_cents, d.previous_sales.totals.revenue_cents), valueText: euros(d.sales.totals.revenue_cents), fmt: (v) => euros(v) },
-      { title: "Total orders", daily: series(d.sales.daily, "orders"), deltaPct: pctDeltaClient(d.sales.totals.orders, d.previous_sales.totals.orders), valueText: String(d.sales.totals.orders), fmt: (v) => String(v) },
-      ok
-        ? { title: "Conversion rate", daily: conversionSeries, deltaPct: pctDeltaClient(totalConversion, prevConversion), valueText: (totalConversion * 100).toFixed(1) + "%", fmt: (v) => (v * 100).toFixed(1) + "%" }
-        : { title: "Conversion rate", muted: true, mutedNote: "Needs Google Analytics (orders ÷ sessions)" },
-      ok
-        ? { title: "Page views", daily: series(t.daily, "page_views"), deltaPct: pctDeltaClient(t.totals.page_views, t.previous_totals.page_views), valueText: String(t.totals.page_views), fmt: (v) => String(v) }
-        : { title: "Page views", muted: true },
-      ok
-        ? { title: "Unique visitors", daily: series(t.daily, "unique_visitors"), deltaPct: pctDeltaClient(t.totals.unique_visitors, t.previous_totals.unique_visitors), valueText: String(t.totals.unique_visitors), fmt: (v) => String(v) }
-        : { title: "Unique visitors", muted: true },
-      { title: "Items sold", daily: series(d.sales.daily, "guests"), deltaPct: pctDeltaClient(d.sales.totals.guests, d.previous_sales.totals.guests), valueText: String(d.sales.totals.guests), fmt: (v) => String(v) },
-      { title: "Customers", daily: series(d.sales.daily, "customers"), deltaPct: pctDeltaClient(d.sales.totals.customers, d.previous_sales.totals.customers), valueText: String(d.sales.totals.customers), fmt: (v) => String(v) },
-      { title: "Avg. order value", daily: series(d.sales.daily, "revenue_cents").map((p, i) => ({ date: p.date, value: d.sales.daily[i].orders > 0 ? Math.round(d.sales.daily[i].revenue_cents / d.sales.daily[i].orders) : 0 })), deltaPct: pctDeltaClient(d.sales.totals.avg_order_value_cents, d.previous_sales.totals.avg_order_value_cents), valueText: euros(d.sales.totals.avg_order_value_cents), fmt: (v) => euros(v) },
-    ];
-    cards.forEach((c) => grid.appendChild(keyStatCard(c)));
-    body.appendChild(grid);
+    body.appendChild(keyStatsGrid(d));
 
     // ---- Track your sales --------------------------------------------
     const salesHead = el("h2", { class: "section-head", text: "Track your sales" });
@@ -6314,6 +6357,42 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
     });
     custCard.appendChild(custBody);
     body.appendChild(custCard);
+  }
+
+  /** The Wix-style 9-tile "Key stats" grid for one /analytics/highlights
+     response. Shared by Analytics -> Highlights and the Home screen. */
+  function keyStatsGrid(d) {
+    const t = d.traffic, ok = t && t.configured;
+    const grid = el("div", { class: "kpi-grid" });
+    const series = (arr, key) => (arr || []).map((row) => ({ date: row.date, value: row[key] || 0 }));
+    const conversionSeries = d.sales.daily.map((row, i) => {
+      const sessions = ok ? (t.daily[i] ? t.daily[i].sessions : 0) : 0;
+      return { date: row.date, value: ok ? computeConversionRateClient(row.orders, sessions) : 0 };
+    });
+    const totalConversion = ok ? computeConversionRateClient(d.sales.totals.orders, t.totals.sessions) : 0;
+    const prevConversion = ok ? computeConversionRateClient(d.previous_sales.totals.orders, t.previous_totals.sessions) : 0;
+
+    const cards = [
+      ok
+        ? { title: "Site sessions", daily: series(t.daily, "sessions"), deltaPct: pctDeltaClient(t.totals.sessions, t.previous_totals.sessions), valueText: String(t.totals.sessions), fmt: (v) => String(v) }
+        : { title: "Site sessions", muted: true },
+      { title: "Total sales", daily: series(d.sales.daily, "revenue_cents"), deltaPct: pctDeltaClient(d.sales.totals.revenue_cents, d.previous_sales.totals.revenue_cents), valueText: euros(d.sales.totals.revenue_cents), fmt: (v) => euros(v) },
+      { title: "Total orders", daily: series(d.sales.daily, "orders"), deltaPct: pctDeltaClient(d.sales.totals.orders, d.previous_sales.totals.orders), valueText: String(d.sales.totals.orders), fmt: (v) => String(v) },
+      ok
+        ? { title: "Conversion rate", daily: conversionSeries, deltaPct: pctDeltaClient(totalConversion, prevConversion), valueText: (totalConversion * 100).toFixed(1) + "%", fmt: (v) => (v * 100).toFixed(1) + "%" }
+        : { title: "Conversion rate", muted: true, mutedNote: "Needs Google Analytics (orders ÷ sessions)" },
+      ok
+        ? { title: "Page views", daily: series(t.daily, "page_views"), deltaPct: pctDeltaClient(t.totals.page_views, t.previous_totals.page_views), valueText: String(t.totals.page_views), fmt: (v) => String(v) }
+        : { title: "Page views", muted: true },
+      ok
+        ? { title: "Unique visitors", daily: series(t.daily, "unique_visitors"), deltaPct: pctDeltaClient(t.totals.unique_visitors, t.previous_totals.unique_visitors), valueText: String(t.totals.unique_visitors), fmt: (v) => String(v) }
+        : { title: "Unique visitors", muted: true },
+      { title: "Items sold", daily: series(d.sales.daily, "guests"), deltaPct: pctDeltaClient(d.sales.totals.guests, d.previous_sales.totals.guests), valueText: String(d.sales.totals.guests), fmt: (v) => String(v) },
+      { title: "Customers", daily: series(d.sales.daily, "customers"), deltaPct: pctDeltaClient(d.sales.totals.customers, d.previous_sales.totals.customers), valueText: String(d.sales.totals.customers), fmt: (v) => String(v) },
+      { title: "Avg. order value", daily: series(d.sales.daily, "revenue_cents").map((p, i) => ({ date: p.date, value: d.sales.daily[i].orders > 0 ? Math.round(d.sales.daily[i].revenue_cents / d.sales.daily[i].orders) : 0 })), deltaPct: pctDeltaClient(d.sales.totals.avg_order_value_cents, d.previous_sales.totals.avg_order_value_cents), valueText: euros(d.sales.totals.avg_order_value_cents), fmt: (v) => euros(v) },
+    ];
+    cards.forEach((c) => grid.appendChild(keyStatCard(c)));
+    return grid;
   }
 
   function computeConversionRateClient(orders, sessions) {
@@ -7806,8 +7885,37 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
      lands on Bookings, unchanged). Today's walks, who's expected, what's
      come in since the owner last opened the dashboard, and quick links.
      ====================================================================== */
+  /* Home "Your key stats" block (owner request 23 Nov 2026: "like Wix, so I
+     can easily see total and per-day revenue"). Only ranges that END today,
+     so each tile's "X today / Y yesterday" line really is today/yesterday. */
+  const HOME_STAT_PRESETS = ["This month", "Last 7 days", "Last 30 days", "This year"];
+  function renderHomeStats(box) {
+    if (!S.homeStatsPreset) S.homeStatsPreset = "This month";
+    clear(box);
+    const sel = el("select", { class: "home-stats-select", "aria-label": "Period" },
+      HOME_STAT_PRESETS.map((p) => {
+        const o = el("option", { value: p, text: p.toLowerCase() });
+        if (p === S.homeStatsPreset) o.selected = true;
+        return o;
+      }));
+    sel.addEventListener("change", () => { S.homeStatsPreset = sel.value; renderHomeStats(box); });
+    box.appendChild(el("div", { class: "home-stats-head" }, [
+      el("h2", { class: "home-stats-title" }, [el("span", { text: "Your key stats for " }), sel]),
+      el("button", { class: "btn btn-quiet btn-sm", text: "All analytics →", onclick: () => { S.analytics.sub = "highlights"; S.analytics.range = rangeForPreset(S.homeStatsPreset); go("analytics"); } })
+    ]));
+    const gridBox = el("div", {}, [skeletonCard()]);
+    box.appendChild(gridBox);
+    const r = rangeForPreset(S.homeStatsPreset);
+    api("/admin/api/analytics/highlights?from=" + r.from + "&to=" + r.to)
+      .then((d) => { clear(gridBox); gridBox.appendChild(keyStatsGrid(d)); })
+      .catch((e) => { if (e.message !== "unauthenticated") { clear(gridBox); gridBox.appendChild(errorCard(e.message, () => renderHomeStats(box))); } });
+  }
+
   function renderToday(root) {
     clear(root);
+    const statsBox = el("div", { id: "home-stats", class: "home-stats" });
+    root.appendChild(statsBox);
+    if (S.me && S.me.role === "owner") renderHomeStats(statsBox);
     root.appendChild(el("div", { id: "today-walks" }, [skeletonCard()]));
     root.appendChild(el("div", { id: "today-notifs" }));
     loadToday();
@@ -8214,7 +8322,7 @@ tr.wl-done td:last-child, tr.wl-done td:nth-last-child(2) { opacity: 1; }
       const isMobile = (window.matchMedia && window.matchMedia("(max-width: 900px)").matches) ||
         window.navigator.standalone === true ||
         (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
-      go(isMobile ? "today" : "bookings");
+      go("today"); // Home (key stats + today's walks) on every device since 23 Nov 2026
     } catch (e) {
       if (e.message === "unauthenticated") showLogin();
       else { showLogin(); toast(e.message, "err"); }

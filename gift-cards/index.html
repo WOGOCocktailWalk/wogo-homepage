@@ -2516,7 +2516,7 @@
 (function () {
   "use strict";
   var HERE = "en", ALT = {"en":"./","nl":"../nl/gift-cards/"}, TO_ROOT = "../",
-      NL_PAGES = ["","rotterdam/","utrecht/","amsterdam/","groningen/","delft/","rotterdam/route-1/","rotterdam/route-2/","rotterdam/route-3-premium/","rotterdam/route-1/book/","rotterdam/route-2/book/","rotterdam/route-3-premium/book/","amsterdam/book/","delft/book/","groningen/book/","utrecht/book/","how-it-works/","groups/","date-night/","bachelorette/","birthday/","company-outing/","gift-cards/","about/","contact/","faq/","for-bars/","privacy/","cookies/","terms/","disclaimer/","accessibility/","complaints/","blog/"];
+      NL_PAGES = ["","rotterdam/","utrecht/","amsterdam/","groningen/","delft/","rotterdam/route-1/","rotterdam/route-2/","rotterdam/route-3-premium/","rotterdam/route-1/book/","rotterdam/route-2/book/","rotterdam/route-3-premium/book/","amsterdam/book/","delft/book/","groningen/book/","utrecht/book/","how-it-works/","groups/","gift-cards/","about/","contact/","faq/","for-bars/","privacy/","cookies/","terms/","disclaimer/","accessibility/","complaints/","blog/"];
   var LABEL = { en: "English", nl: "Nederlands" };
   function remember(l) { try { localStorage.setItem("wogoLang", l); } catch (e) {} }
   function shown() { return (document.documentElement.lang || "en").toLowerCase().indexOf("nl") === 0 ? "nl" : "en"; }

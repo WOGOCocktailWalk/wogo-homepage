@@ -50,13 +50,15 @@ goes('/nl/rotterdam/route-1/', null);
 goes('/nl/rotterdam/route-3-premium/book/', null);
 goes('/nl/gift-cards/?utm_source=meta&fbclid=abc', null);
 goes('/nl/terms/', null);
-// the four occasion pages (added Nov 2026) exist in Dutch too
-goes('/nl/date-night/', null);
-goes('/nl/bachelorette/', null);
-goes('/nl/birthday/', null);
-goes('/nl/company-outing/', null);
-goes('/nl/date-night', '/nl/date-night/');
-goes('/date-night/', null);
+// the four occasion pages were removed 23 Nov 2026: their addresses go to the group page
+goes('/date-night/', '/groups/');
+goes('/bachelorette', '/groups/');
+goes('/birthday/?utm_source=x', '/groups/?utm_source=x');
+goes('/company-outing/', '/groups/');
+goes('/nl/date-night/', '/nl/groups/');
+goes('/nl/bachelorette', '/nl/groups/');
+goes('/nl/birthday/', '/nl/groups/');
+goes('/nl/company-outing/', '/nl/groups/');
 // ...and get their trailing slash when it is missing
 goes('/nl', '/nl/');
 goes('/nl/faq', '/nl/faq/');
