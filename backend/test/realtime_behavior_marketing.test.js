@@ -224,8 +224,8 @@ describe('GET /admin/api/analytics/marketing', () => {
     run(db, `INSERT INTO bookings (id, route_id, date, slot, party, name, email, locale, marketing_opt_in, status, created_at, source, discount_code, discount_cents)
               VALUES ('b1','ams','2026-02-05','18:00',2,'Anna','anna@example.com','en',0,'confirmed','2026-02-05 09:00:00','web','WELCOME10',500)`);
     run(db, `INSERT INTO subscribers (id, email, source, status, unsubscribe_token, confirmed_at, created_at) VALUES ('s1','new@example.com','site_footer','confirmed','tok1','2026-02-06 12:00:00','2026-02-01 12:00:00')`);
-    run(db, `INSERT INTO gift_cards (id, code, initial_cents, balance_cents, buyer_email, buyer_name, recipient_name, recipient_email, created_at)
-              VALUES ('gc1','WOGO-AAAA-BBBB',5000,5000,'buyer@example.com','Buyer','Rec','rec@example.com','2026-02-03 12:00:00')`);
+    run(db, `INSERT INTO gift_cards (id, code, initial_cents, balance_cents, buyer_email, buyer_name, recipient_name, recipient_email, created_at, stripe_session)
+              VALUES ('gc1','WOGO-AAAA-BBBB',5000,5000,'buyer@example.com','Buyer','Rec','rec@example.com','2026-02-03 12:00:00','cs_test_gc1')`);
 
     const res = await handleAnalyticsMarketing(new Request('https://api.example.com/admin/api/analytics/marketing?from=2026-02-01&to=2026-02-28'), { DB: db });
     assert.equal(res.status, 200);

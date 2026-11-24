@@ -3229,12 +3229,12 @@
     if (!d) return;
 
     // KPI row (last 7 vs previous 7 days, sale date) — fixed, whatever range is picked
-    body.appendChild(el("div", { class: "an-section", text: "Last 7 days — bookings made (does not change with the dates above)" }));
+    body.appendChild(el("div", { class: "an-section", text: "Last 7 days, today included (stays the same whatever dates you pick above)" }));
     const stats = el("div", { class: "stat-row" });
     stats.appendChild(stat("Bookings (7d)", kpi.last_7_days.bookings, kpi.previous_7_days.bookings + " previous 7d"));
     stats.appendChild(stat("Guests (7d)", kpi.last_7_days.guests, kpi.previous_7_days.guests + " previous 7d"));
     stats.appendChild(stat("Revenue (7d)", euros(kpi.last_7_days.revenue_cents), euros(kpi.previous_7_days.revenue_cents) + " previous 7d"));
-    stats.appendChild(stat("Avg order (7d)", euros(kpi.last_7_days.avg_order_value_cents), "per booking"));
+    stats.appendChild(stat("Avg order (7d)", euros(kpi.last_7_days.avg_order_value_cents), "per order"));
     stats.appendChild(stat("New subscribers (7d)", kpi.last_7_days.new_subscribers, kpi.previous_7_days.new_subscribers + " previous 7d"));
     stats.appendChild(stat("Gift cards sold (7d)", kpi.last_7_days.gift_cards_sold, kpi.previous_7_days.gift_cards_sold + " previous 7d"));
     body.appendChild(stats);
@@ -3246,8 +3246,12 @@
     const soldStats = el("div", { class: "stat-row" });
     soldStats.appendChild(stat("Bookings made", sold.bookings, "paid on these days"));
     soldStats.appendChild(stat("Guests", sold.guests, sold.bookings > 0 ? "avg party " + (sold.guests / sold.bookings).toFixed(1) : "—"));
-    soldStats.appendChild(stat("Revenue", euros(sold.revenue_cents), "net of discounts + gift cards"));
-    soldStats.appendChild(stat("Avg order", euros(sold.bookings > 0 ? Math.round(sold.revenue_cents / sold.bookings) : 0), "per booking"));
+    // Revenue includes gift cards sold, like the Highlights tab (24 Nov 2026).
+    const gc = d.gift_cards || { sold_count: 0, sold_value_cents: 0 };
+    const soldRevenue = sold.revenue_cents + (gc.sold_value_cents || 0);
+    const soldOrders = sold.bookings + (gc.sold_count || 0);
+    soldStats.appendChild(stat("Revenue", euros(soldRevenue), gc.sold_count ? "incl. " + gc.sold_count + " gift card" + (gc.sold_count === 1 ? "" : "s") : "bookings, after discounts"));
+    soldStats.appendChild(stat("Avg order", euros(soldOrders > 0 ? Math.round(soldRevenue / soldOrders) : 0), "per order"));
     body.appendChild(soldStats);
     {
       const perDay = (d.series_by_sale_date || []).slice().reverse();

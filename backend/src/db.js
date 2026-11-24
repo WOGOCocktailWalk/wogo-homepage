@@ -2666,7 +2666,9 @@ export async function giftCardSalesSummary(db, fromDatetime, toDatetime) {
   const row = await first(
     db,
     `SELECT COUNT(*) AS sold_count, COALESCE(SUM(initial_cents), 0) AS sold_value_cents
-       FROM gift_cards WHERE created_at BETWEEN :from AND :to`,
+       FROM gift_cards
+      WHERE stripe_session IS NOT NULL AND status != 'void'
+        AND created_at BETWEEN :from AND :to`,
     { from: fromDatetime, to: toDatetime }
   );
   return row || { sold_count: 0, sold_value_cents: 0 };
@@ -2705,7 +2707,7 @@ export async function countInquiriesByKind(db, fromDatetime, toDatetime) {
 export async function countNewConfirmedSubscribers(db, fromDatetime, toDatetime) {
   const row = await first(
     db,
-    `SELECT COUNT(*) AS n FROM subscribers WHERE status = 'confirmed' AND confirmed_at BETWEEN :from AND :to`,
+    `SELECT COUNT(*) AS n FROM subscribers WHERE status = 'confirmed' AND source != 'wix_import' AND confirmed_at BETWEEN :from AND :to`,
     { from: fromDatetime, to: toDatetime }
   );
   return row ? row.n : 0;
@@ -2722,7 +2724,7 @@ export async function subscribersGrowthByDay(db, fromDatetime, toDatetime) {
     db,
     `SELECT substr(confirmed_at, 1, 10) AS date, COUNT(*) AS n
        FROM subscribers
-      WHERE status = 'confirmed' AND confirmed_at BETWEEN :from AND :to
+      WHERE status = 'confirmed' AND source != 'wix_import' AND confirmed_at BETWEEN :from AND :to
       GROUP BY date`,
     { from: fromDatetime, to: toDatetime }
   );

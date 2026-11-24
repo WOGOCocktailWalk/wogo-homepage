@@ -202,8 +202,8 @@ describe('GET /admin/api/analytics', () => {
     seedBooking(db, { id: 'b2', route_id: 'ams', date: '2026-02-10', party: 3, status: 'cancelled' });
     seedBooking(db, { id: 'b3', route_id: 'ams', date: '2026-02-12', party: 1, source: 'manual', payment_status: 'comp', created_at: '2026-02-12 08:00:00' });
 
-    run(db, `INSERT INTO gift_cards (id, code, initial_cents, balance_cents, buyer_email, buyer_name, recipient_name, recipient_email, created_at)
-              VALUES ('gc1','WOGO-AAAA-BBBB',5000,5000,'buyer@example.com','Buyer','Rec','rec@example.com','2026-02-03 12:00:00')`);
+    run(db, `INSERT INTO gift_cards (id, code, initial_cents, balance_cents, buyer_email, buyer_name, recipient_name, recipient_email, created_at, stripe_session)
+              VALUES ('gc1','WOGO-AAAA-BBBB',5000,5000,'buyer@example.com','Buyer','Rec','rec@example.com','2026-02-03 12:00:00','cs_test_gc1')`);
     run(db, `INSERT INTO inquiries (id, kind, name, email, message, created_at) VALUES ('inq1','contact','Q','q@example.com','hi','2026-02-04 12:00:00')`);
     run(db, `INSERT INTO subscribers (id, email, source, status, unsubscribe_token, confirmed_at, created_at) VALUES ('sub1','new@example.com','site_footer','confirmed','tok1','2026-02-06 12:00:00','2026-02-01 12:00:00')`);
 

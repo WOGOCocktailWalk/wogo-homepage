@@ -2490,11 +2490,15 @@ export async function handleAnalyticsKpi(request, env) {
       db.giftCardSalesSummary(env.DB, fromDt, toDt),
     ]);
     const a = buildBookingAnalytics(rows, { group: 'day', dateField: 'created_at' });
-    const avgOrder = a.totals.bookings > 0 ? Math.round(a.totals.revenue_cents / a.totals.bookings) : 0;
+    // Revenue = bookings + gift cards sold on this site, the same as the
+    // Highlights tab (owner, 24 Nov 2026: the two tabs must agree).
+    const revenue = a.totals.revenue_cents + (giftSales.sold_value_cents || 0);
+    const orders = a.totals.bookings + (giftSales.sold_count || 0);
+    const avgOrder = orders > 0 ? Math.round(revenue / orders) : 0;
     return {
       bookings: a.totals.bookings,
       guests: a.totals.guests,
-      revenue_cents: a.totals.revenue_cents,
+      revenue_cents: revenue,
       avg_order_value_cents: avgOrder,
       new_subscribers: newSubs,
       gift_cards_sold: giftSales.sold_count,
