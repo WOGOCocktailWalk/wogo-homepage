@@ -653,16 +653,29 @@ export const MAP_BY_DATE = {
   // routes (R1: Heart Melt > Spikizi > Patio; R2: Bar-Tender > Bartendy >
   // Patio). Wins over the Thursday map, which no longer applies then
   // (Thursdays are closed from January).
+  // Thu 24 Dec 2026 (Christmas Eve): 1NUL8 is closed, so R1 already runs the
+  // January line-up Heart Melt > Spikizi > Patio that night.
   'rotterdam-witte-de-with': {
     from: '2027-01-01',
+    dates: ['2026-12-24'],
     en: `${SITE_ASSET_BASE}/maps/rotterdam-witte-de-with-patio-en.pdf`,
     nl: `${SITE_ASSET_BASE}/maps/rotterdam-witte-de-with-patio-nl.pdf`,
   },
-  'rotterdam-hidden-gems': {
-    from: '2027-01-01',
-    en: `${SITE_ASSET_BASE}/maps/rotterdam-hidden-gems-patio-en.pdf`,
-    nl: `${SITE_ASSET_BASE}/maps/rotterdam-hidden-gems-patio-nl.pdf`,
-  },
+  // A route can also take a LIST of entries; the first match wins.
+  'rotterdam-hidden-gems': [
+    // Thu 10 + 17 Dec 2026: Bar-Tender closed for private parties, so the
+    // walk runs 1NUL8 Meent > Bartendy > Patio Bar.
+    {
+      dates: ['2026-12-10', '2026-12-17'],
+      en: `${SITE_ASSET_BASE}/maps/rotterdam-hidden-gems-meent-patio-en.pdf`,
+      nl: `${SITE_ASSET_BASE}/maps/rotterdam-hidden-gems-meent-patio-nl.pdf`,
+    },
+    {
+      from: '2027-01-01',
+      en: `${SITE_ASSET_BASE}/maps/rotterdam-hidden-gems-patio-en.pdf`,
+      nl: `${SITE_ASSET_BASE}/maps/rotterdam-hidden-gems-patio-nl.pdf`,
+    },
+  ],
 };
 
 // --- Discount codes that must switch on at a set moment --------------------

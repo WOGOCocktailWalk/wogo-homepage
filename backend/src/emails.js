@@ -956,8 +956,9 @@ export function resolveMapUrl(route, lang, dateStr) {
   }
   // Date-specific map first (src/config.js:MAP_BY_DATE), e.g. a temporary or
   // upcoming line-up that the weekday rule cannot express.
-  const byDate = route && MAP_BY_DATE[route.id];
-  if (byDate && dateStr && ((byDate.from && dateStr >= byDate.from) || (byDate.dates || []).includes(dateStr))) {
+  const entries = route ? [].concat(MAP_BY_DATE[route.id] || []) : [];
+  const byDate = dateStr && entries.find((e) => (e.from && dateStr >= e.from) || (e.dates || []).includes(dateStr));
+  if (byDate) {
     return lang === 'nl' ? (byDate.nl || byDate.en) : (byDate.en || byDate.nl);
   }
   let byDay = null;
