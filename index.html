@@ -553,6 +553,45 @@
 <!--email_off-->
 <a class="w-skip" href="#wMain">Skip to content</a>
 
+<!-- ===== BLACK FRIDAY BAR (26 Nov 2026). Moving bar above the menu, front page only.
+     Switches itself ON Fri 27 Nov 00:00 and OFF Mon 30 Nov 00:00 (Dutch time) via the
+     small script below, so nothing has to be done by hand. Code FRIDAY27 = 15%, ends
+     29 Nov 23:59 in Stripe. To look at it outside those days: add ?bf=1 to the address.
+     Safe to delete this whole block after the weekend. ===== -->
+<style>
+  .bf-bar{display:none;position:fixed;top:0;left:0;right:0;z-index:60;height:40px;background:#201611;border-bottom:1px solid rgba(255,170,129,.45);overflow:hidden;text-decoration:none;}
+  html.bf-on .bf-bar{display:block;}
+  html.bf-on .w-nav{top:40px;}
+  html.bf-on .w-nav-overlay{padding-top:126px;}
+  html.bf-on .w-hero-content{padding-top:144px;}
+  html.bf-on{scroll-padding-top:116px;}
+  html.bf-on #cities, html.bf-on #how, html.bf-on #faq{scroll-margin-top:116px;}
+  .bf-track{display:flex;width:max-content;height:40px;align-items:center;animation:bf-move 36s linear infinite;}
+  .bf-bar:hover .bf-track{animation-play-state:paused;}
+  .bf-set{display:flex;align-items:center;flex:none;}
+  .bf-short{display:none;}
+  .bf-i{font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ffe5d9;white-space:nowrap;padding:0 18px;}
+  .bf-i b{color:#ffaa81;font-weight:800;}
+  .bf-i .bf-code{background:#ffaa81;color:#201611;border-radius:6px;padding:3px 9px;letter-spacing:.14em;}
+  .bf-s{color:#ffaa81;font-size:11px;}
+  @keyframes bf-move{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  @media (max-width:720px){
+    html.bf-on .w-hero-content{padding-top:136px;}
+    .bf-long{display:none;} .bf-short{display:flex;}
+    .bf-track{animation-duration:22s;}
+    .bf-i{font-size:11px;letter-spacing:.16em;padding:0 13px;}
+  }
+  @media (prefers-reduced-motion:reduce){.bf-track{animation:none;}}
+</style>
+<script>(function(){try{var n=Date.now(),on=n>=Date.parse('2026-11-27T00:00:00+01:00')&&n<Date.parse('2026-11-30T00:00:00+01:00');if(on||/[?&]bf=1(&|$)/.test(location.search))document.documentElement.classList.add('bf-on');}catch(e){}})();</script>
+<a class="bf-bar w-scroll" href="#cities" aria-label="Black Friday Weekend: 15% off every Cocktail Walk with code FRIDAY27, 27 to 29 November. View routes.">
+  <div class="bf-track" aria-hidden="true">
+    <div class="bf-set bf-long"><span class="bf-i"><b>Black Friday Weekend</b></span><span class="bf-s">✦</span><span class="bf-i">15% off every Cocktail Walk</span><span class="bf-s">✦</span><span class="bf-i">Code <b class="bf-code">FRIDAY27</b></span><span class="bf-s">✦</span><span class="bf-i">27 – 29 November only</span><span class="bf-s">✦</span><span class="bf-i"><b>Black Friday Weekend</b></span><span class="bf-s">✦</span><span class="bf-i">15% off every Cocktail Walk</span><span class="bf-s">✦</span><span class="bf-i">Code <b class="bf-code">FRIDAY27</b></span><span class="bf-s">✦</span><span class="bf-i">27 – 29 November only</span><span class="bf-s">✦</span><span class="bf-i"><b>Black Friday Weekend</b></span><span class="bf-s">✦</span><span class="bf-i">15% off every Cocktail Walk</span><span class="bf-s">✦</span><span class="bf-i">Code <b class="bf-code">FRIDAY27</b></span><span class="bf-s">✦</span><span class="bf-i">27 – 29 November only</span><span class="bf-s">✦</span></div><div class="bf-set bf-long"><span class="bf-i"><b>Black Friday Weekend</b></span><span class="bf-s">✦</span><span class="bf-i">15% off every Cocktail Walk</span><span class="bf-s">✦</span><span class="bf-i">Code <b class="bf-code">FRIDAY27</b></span><span class="bf-s">✦</span><span class="bf-i">27 – 29 November only</span><span class="bf-s">✦</span><span class="bf-i"><b>Black Friday Weekend</b></span><span class="bf-s">✦</span><span class="bf-i">15% off every Cocktail Walk</span><span class="bf-s">✦</span><span class="bf-i">Code <b class="bf-code">FRIDAY27</b></span><span class="bf-s">✦</span><span class="bf-i">27 – 29 November only</span><span class="bf-s">✦</span><span class="bf-i"><b>Black Friday Weekend</b></span><span class="bf-s">✦</span><span class="bf-i">15% off every Cocktail Walk</span><span class="bf-s">✦</span><span class="bf-i">Code <b class="bf-code">FRIDAY27</b></span><span class="bf-s">✦</span><span class="bf-i">27 – 29 November only</span><span class="bf-s">✦</span></div>
+    <div class="bf-set bf-short"><span class="bf-i"><b>Black Friday</b></span><span class="bf-s">✦</span><span class="bf-i">15% off</span><span class="bf-s">✦</span><span class="bf-i">Code <b class="bf-code">FRIDAY27</b></span><span class="bf-s">✦</span><span class="bf-i"><b>Black Friday</b></span><span class="bf-s">✦</span><span class="bf-i">15% off</span><span class="bf-s">✦</span><span class="bf-i">Code <b class="bf-code">FRIDAY27</b></span><span class="bf-s">✦</span><span class="bf-i"><b>Black Friday</b></span><span class="bf-s">✦</span><span class="bf-i">15% off</span><span class="bf-s">✦</span><span class="bf-i">Code <b class="bf-code">FRIDAY27</b></span><span class="bf-s">✦</span><span class="bf-i"><b>Black Friday</b></span><span class="bf-s">✦</span><span class="bf-i">15% off</span><span class="bf-s">✦</span><span class="bf-i">Code <b class="bf-code">FRIDAY27</b></span><span class="bf-s">✦</span></div><div class="bf-set bf-short"><span class="bf-i"><b>Black Friday</b></span><span class="bf-s">✦</span><span class="bf-i">15% off</span><span class="bf-s">✦</span><span class="bf-i">Code <b class="bf-code">FRIDAY27</b></span><span class="bf-s">✦</span><span class="bf-i"><b>Black Friday</b></span><span class="bf-s">✦</span><span class="bf-i">15% off</span><span class="bf-s">✦</span><span class="bf-i">Code <b class="bf-code">FRIDAY27</b></span><span class="bf-s">✦</span><span class="bf-i"><b>Black Friday</b></span><span class="bf-s">✦</span><span class="bf-i">15% off</span><span class="bf-s">✦</span><span class="bf-i">Code <b class="bf-code">FRIDAY27</b></span><span class="bf-s">✦</span><span class="bf-i"><b>Black Friday</b></span><span class="bf-s">✦</span><span class="bf-i">15% off</span><span class="bf-s">✦</span><span class="bf-i">Code <b class="bf-code">FRIDAY27</b></span><span class="bf-s">✦</span></div>
+  </div>
+</a>
+<!-- ===== /BLACK FRIDAY BAR ===== -->
+
 <script>document.documentElement.classList.add('wg-js');</script>
 
 <!-- ===== WOGO SHARED NAV v4 (copied verbatim onto every page — keep IDENTICAL.
